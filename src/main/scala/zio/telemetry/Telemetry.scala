@@ -72,6 +72,16 @@ object Telemetry {
         }
     }
 
+  def inject[R, R1 <: R with COT, E, A, C <: Object](
+      format: Format[C],
+      carrier: C
+  ): ZIO[Telemetry, Nothing, Unit] =
+    for {
+      tracer <- getTracer
+      span <- getSpan
+      _ <- ZIO.effectTotal(tracer.inject(span.context(), format, carrier))
+    } yield ()
+
   def root[R, R1 <: R with COT, E, A](
       zio: ZIO[R, E, A],
       opName: String,

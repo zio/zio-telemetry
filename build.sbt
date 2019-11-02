@@ -51,5 +51,6 @@ lazy val `zio-opentracing` =
         "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.1"
       )
     )
+addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
 
 testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework"))

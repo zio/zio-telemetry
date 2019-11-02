@@ -1,17 +1,20 @@
 package zio.telemetry
 
-import zio.test.DefaultRunnableSpec
+import io.opentracing.mock.MockSpan
 import io.opentracing.mock.MockTracer
-import zio.UIO
-import zio.test._
-import zio.test.Assertion._
-import zio.telemetry.TelemetryTestUtils._
-import zio.telemetry.Telemetry._
+import io.opentracing.propagation.Format
+import io.opentracing.propagation.TextMapAdapter
+import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 import zio.clock.Clock
+import zio.telemetry.Telemetry._
+import zio.telemetry.TelemetryTestUtils._
+import zio.test._
+import zio.test.Assertion._
+import zio.test.DefaultRunnableSpec
+import zio.UIO
 import zio.ZIO
 import zio.ZManaged
-import io.opentracing.mock.MockSpan
 
 object TelemetryTest
     extends DefaultRunnableSpec(
@@ -79,6 +82,31 @@ object TelemetryTest
                 )
               )
             )
+          }
+        },
+        testM("inject - extract roundtrip") {
+          for {
+            tracer <- makeTracer
+            tm = new TextMapAdapter(mutable.Map.empty.asJava)
+            _ <- makeService(tracer).use((for {
+              _ <- inject(Format.Builtin.TEXT_MAP, tm).span("foo")
+              _ <- UIO.unit
+                .spanFrom(Format.Builtin.TEXT_MAP, tm, "baz")
+                .span("bar")
+            } yield ()).provide)
+          } yield {
+            val spans = tracer.finishedSpans().asScala
+            val root = spans.find(_.operationName() == "ROOT")
+            val foo = spans.find(_.operationName() == "foo")
+            val bar = spans.find(_.operationName() == "bar")
+            val baz = spans.find(_.operationName() == "baz")
+            assert(root, isSome(anything)) &&
+            assert(foo, isSome(anything)) &&
+            assert(bar, isSome(anything)) &&
+            assert(baz, isSome(anything)) &&
+            assert(foo.get.parentId(), equalTo(root.get.context().spanId())) &&
+            assert(bar.get.parentId(), equalTo(root.get.context().spanId())) &&
+            assert(baz.get.parentId(), equalTo(foo.get.context().spanId()))
           }
         }
       )
