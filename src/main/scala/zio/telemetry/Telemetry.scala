@@ -1,11 +1,11 @@
 package zio.telemetry
 
+import java.util.concurrent.TimeUnit
+
 import io.opentracing.Span
 import io.opentracing.SpanContext
 import io.opentracing.Tracer
 import io.opentracing.propagation.Format
-import java.util.concurrent.TimeUnit
-import scala.jdk.CollectionConverters._
 import zio.Exit
 import zio.FiberRef
 import zio.IO
@@ -14,6 +14,8 @@ import zio.UIO
 import zio.ZIO
 import zio.ZManaged
 import zio.clock.Clock
+
+import scala.jdk.CollectionConverters._
 
 trait Telemetry extends Serializable {
   def telemetry: Telemetry.Service
