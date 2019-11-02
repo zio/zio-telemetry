@@ -86,19 +86,19 @@ object TelemetryTest
         testM("inject - extract roundtrip") {
           for {
             tracer <- makeTracer
-            tm = new TextMapAdapter(mutable.Map.empty.asJava)
+            tm     = new TextMapAdapter(mutable.Map.empty.asJava)
             _ <- makeService(tracer).use((for {
-              _ <- inject(Format.Builtin.TEXT_MAP, tm).span("foo")
-              _ <- UIO.unit
-                .spanFrom(Format.Builtin.TEXT_MAP, tm, "baz")
-                .span("bar")
-            } yield ()).provide)
+                  _ <- inject(Format.Builtin.TEXT_MAP, tm).span("foo")
+                  _ <- UIO.unit
+                        .spanFrom(Format.Builtin.TEXT_MAP, tm, "baz")
+                        .span("bar")
+                } yield ()).provide)
           } yield {
             val spans = tracer.finishedSpans().asScala
-            val root = spans.find(_.operationName() == "ROOT")
-            val foo = spans.find(_.operationName() == "foo")
-            val bar = spans.find(_.operationName() == "bar")
-            val baz = spans.find(_.operationName() == "baz")
+            val root  = spans.find(_.operationName() == "ROOT")
+            val foo   = spans.find(_.operationName() == "foo")
+            val bar   = spans.find(_.operationName() == "bar")
+            val baz   = spans.find(_.operationName() == "baz")
             assert(root, isSome(anything)) &&
             assert(foo, isSome(anything)) &&
             assert(bar, isSome(anything)) &&
