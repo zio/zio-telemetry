@@ -36,18 +36,18 @@ addCommandAlias(
   "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck"
 )
 
-val zioVersion = "1.0.0-RC16"
+val zioVersion         = "1.0.0-RC16"
 val opentracingVersion = "0.33.0"
 
 lazy val `zio-opentracing` =
   (project in file("."))
     .settings(
       libraryDependencies := Seq(
-        "dev.zio" %% "zio" % zioVersion,
-        "dev.zio" %% "zio-test" % zioVersion % Test,
-        "dev.zio" %% "zio-test-sbt" % zioVersion % Test,
-        "io.opentracing" % "opentracing-api" % opentracingVersion,
-        "io.opentracing" % "opentracing-mock" % opentracingVersion % Test,
+        "dev.zio"                %% "zio"                     % zioVersion,
+        "dev.zio"                %% "zio-test"                % zioVersion % Test,
+        "dev.zio"                %% "zio-test-sbt"            % zioVersion % Test,
+        "io.opentracing"         % "opentracing-api"          % opentracingVersion,
+        "io.opentracing"         % "opentracing-mock"         % opentracingVersion % Test,
         "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.1"
       )
     )
