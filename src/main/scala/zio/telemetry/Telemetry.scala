@@ -4,7 +4,6 @@ import io.opentracing.Span
 import io.opentracing.SpanContext
 import io.opentracing.Tracer
 import io.opentracing.propagation.Format
-import io.opentracing.tag.Tag
 import java.util.concurrent.TimeUnit
 import scala.jdk.CollectionConverters._
 import zio.Exit
@@ -147,9 +146,6 @@ object Telemetry {
     getSpan.flatMap(span => UIO(span.setTag(key, value))).unit
 
   def tag(key: String, value: Boolean): ZIO[Telemetry, Nothing, Unit] =
-    getSpan.flatMap(span => UIO(span.setTag(key, value))).unit
-
-  def tag[T <: Object](key: Tag[T], value: T): ZIO[Telemetry, Nothing, Unit] =
     getSpan.flatMap(span => UIO(span.setTag(key, value))).unit
 
   def log(msg: String): ZIO[Clock with Telemetry, Nothing, Unit] =
