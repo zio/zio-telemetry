@@ -6,7 +6,7 @@ import zio.clock.Clock
 
 package object telemetry {
 
-  implicit class TelemetrySyntax[R, E, A](private val zio: ZIO[R, E, A]) extends AnyVal {
+  implicit class TelemetryOps[R, E, A](private val zio: ZIO[R, E, A]) extends AnyVal {
 
     def spanFrom[C <: Object](
       format: Format[C],
