@@ -6,15 +6,14 @@ import zio.clock.Clock
 
 package object telemetry {
 
-  implicit class TelemetrySyntax[R, E, A](private val zio: ZIO[R, E, A])
-      extends AnyVal {
+  implicit class TelemetrySyntax[R, E, A](private val zio: ZIO[R, E, A]) extends AnyVal {
 
     def spanFrom[C <: Object](
-        format: Format[C],
-        carrier: C,
-        opName: String,
-        tagError: Boolean = true,
-        logError: Boolean = true
+      format: Format[C],
+      carrier: C,
+      opName: String,
+      tagError: Boolean = true,
+      logError: Boolean = true
     ): ZIO[R with Clock with Telemetry, E, A] =
       Telemetry.spanFrom(
         format,
@@ -26,23 +25,23 @@ package object telemetry {
       )
 
     def root(
-        opName: String,
-        tagError: Boolean = true,
-        logError: Boolean = true
+      opName: String,
+      tagError: Boolean = true,
+      logError: Boolean = true
     ): ZIO[R with Clock with Telemetry, E, A] =
       Telemetry.root(zio, opName, tagError, logError)
 
     def span(
-        opName: String,
-        tagError: Boolean = true,
-        logError: Boolean = true
+      opName: String,
+      tagError: Boolean = true,
+      logError: Boolean = true
     ): ZIO[R with Clock with Telemetry, E, A] =
       Telemetry.span(zio, opName, tagError, logError)
 
     def span(
-        span: Span,
-        tagError: Boolean,
-        logError: Boolean
+      span: Span,
+      tagError: Boolean,
+      logError: Boolean
     ): ZIO[R with Clock with Telemetry, E, A] =
       Telemetry.span(zio, span, tagError, logError)
   }

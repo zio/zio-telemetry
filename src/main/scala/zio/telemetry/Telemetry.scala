@@ -28,34 +28,34 @@ object Telemetry {
   }
 
   def managed(
-      tracer: Tracer,
-      rootOpName: String = "ROOT"
+    tracer: Tracer,
+    rootOpName: String = "ROOT"
   ): ZManaged[Clock, Nothing, Telemetry.Service] =
     ZManaged.make(
       for {
-        span <- UIO(tracer.buildSpan(rootOpName).start())
-        ref <- FiberRef.make(span)
+        span    <- UIO(tracer.buildSpan(rootOpName).start())
+        ref     <- FiberRef.make(span)
         tracer_ = tracer
       } yield new Telemetry.Service {
         override val currentSpan: FiberRef[Span] = ref
-        override val tracer: Tracer = tracer_
+        override val tracer: Tracer              = tracer_
       }
     )(_.currentSpan.get.flatMap(span => UIO(span.finish)))
 
   type COT = Clock with Telemetry
 
   def underlying[R, R1 <: R with Telemetry, E, A](
-      f: Tracer => ZIO[R, E, A]
+    f: Tracer => ZIO[R, E, A]
   ): ZIO[R1, E, A] =
     getTracer.flatMap(f)
 
   def spanFrom[R, R1 <: R with COT, E, A, C <: Object](
-      format: Format[C],
-      carrier: C,
-      zio: ZIO[R, E, A],
-      opName: String,
-      tagError: Boolean = true,
-      logError: Boolean = true
+    format: Format[C],
+    carrier: C,
+    zio: ZIO[R, E, A],
+    opName: String,
+    tagError: Boolean = true,
+    logError: Boolean = true
   ): ZIO[R1, E, A] =
     getTracer.flatMap { tracer =>
       Task(tracer.extract(format, carrier))
@@ -83,35 +83,35 @@ object Telemetry {
     } yield ()
 
   def root[R, R1 <: R with COT, E, A](
-      zio: ZIO[R, E, A],
-      opName: String,
-      tagError: Boolean = true,
-      logError: Boolean = true
+    zio: ZIO[R, E, A],
+    opName: String,
+    tagError: Boolean = true,
+    logError: Boolean = true
   ): ZIO[R1, E, A] =
     for {
       tracer <- getTracer
-      root <- UIO(tracer.buildSpan(opName).start())
-      r <- span(zio, root, tagError, logError)
+      root   <- UIO(tracer.buildSpan(opName).start())
+      r      <- span(zio, root, tagError, logError)
     } yield r
 
   def span[R, R1 <: R with COT, E, A](
-      zio: ZIO[R, E, A],
-      opName: String,
-      tagError: Boolean = true,
-      logError: Boolean = true
+    zio: ZIO[R, E, A],
+    opName: String,
+    tagError: Boolean = true,
+    logError: Boolean = true
   ): ZIO[R1, E, A] =
     for {
       tracer <- getTracer
-      old <- getSpan
-      child <- UIO(tracer.buildSpan(opName).asChildOf(old).start())
-      r <- span(zio, child, tagError, logError)
+      old    <- getSpan
+      child  <- UIO(tracer.buildSpan(opName).asChildOf(old).start())
+      r      <- span(zio, child, tagError, logError)
     } yield r
 
   def span[R, R1 <: R with COT, E, A](
-      zio: ZIO[R, E, A],
-      span: Span,
-      tagError: Boolean,
-      logError: Boolean
+    zio: ZIO[R, E, A],
+    span: Span,
+    tagError: Boolean,
+    logError: Boolean
   ): ZIO[R1, E, A] =
     ZManaged
       .make[R1, E, Span](getSpan <* setSpan(span)) { old =>
@@ -137,8 +137,8 @@ object Telemetry {
     getSpan.map(_.getBaggageItem(key)).map(Option.apply)
 
   def setBaggageItem(
-      key: String,
-      value: String
+    key: String,
+    value: String
   ): ZIO[Telemetry, Nothing, Unit] =
     getSpan.flatMap(span => UIO(span.setBaggageItem(key, value))).unit
 
@@ -157,15 +157,15 @@ object Telemetry {
   def log(msg: String): ZIO[COT, Nothing, Unit] =
     for {
       span <- getSpan
-      now <- getCurrentTimeMicros
-      _ <- UIO(span.log(now, msg))
+      now  <- getCurrentTimeMicros
+      _    <- UIO(span.log(now, msg))
     } yield ()
 
   def log(fields: Map[String, _]): ZIO[COT, Nothing, Unit] =
     for {
       span <- getSpan
-      now <- getCurrentTimeMicros
-      _ <- UIO(span.log(now, fields.asJava))
+      now  <- getCurrentTimeMicros
+      _    <- UIO(span.log(now, fields.asJava))
     } yield ()
 
   private def getSpan: ZIO[Telemetry, Nothing, Span] =
