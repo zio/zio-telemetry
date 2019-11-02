@@ -23,11 +23,11 @@ trait Telemetry extends Serializable {
 object Telemetry {
 
   trait Service {
-    def spanRef: FiberRef[Span]
+    def currentSpan: FiberRef[Span]
     def tracer: Tracer
   }
 
-  def managedService(
+  def managed(
       tracer: Tracer,
       rootOpName: String = "ROOT"
   ): ZManaged[Clock, Nothing, Telemetry.Service] =
@@ -37,10 +37,10 @@ object Telemetry {
         ref <- FiberRef.make(span)
         tracer_ = tracer
       } yield new Telemetry.Service {
-        override def spanRef: FiberRef[Span] = ref
-        override def tracer: Tracer = tracer_
+        override val currentSpan: FiberRef[Span] = ref
+        override val tracer: Tracer = tracer_
       }
-    )(_.spanRef.get.flatMap(span => UIO(span.finish)))
+    )(_.currentSpan.get.flatMap(span => UIO(span.finish)))
 
   type COT = Clock with Telemetry
 
@@ -72,7 +72,7 @@ object Telemetry {
         }
     }
 
-  def rootSpan[R, R1 <: R with COT, E, A](
+  def root[R, R1 <: R with COT, E, A](
       zio: ZIO[R, E, A],
       opName: String,
       tagError: Boolean = true,
@@ -80,8 +80,8 @@ object Telemetry {
   ): ZIO[R1, E, A] =
     for {
       tracer <- getTracer
-      child <- UIO(tracer.buildSpan(opName).start())
-      r <- span(zio, child, tagError, logError)
+      root <- UIO(tracer.buildSpan(opName).start())
+      r <- span(zio, root, tagError, logError)
     } yield r
 
   def span[R, R1 <: R with COT, E, A](
@@ -159,55 +159,15 @@ object Telemetry {
     } yield ()
 
   private def getSpan: ZIO[Telemetry, Nothing, Span] =
-    ZIO.accessM[Telemetry](_.telemetry.spanRef.get)
+    ZIO.accessM[Telemetry](_.telemetry.currentSpan.get)
 
   private def setSpan(span: Span): ZIO[Telemetry, Nothing, Unit] =
-    ZIO.accessM[Telemetry](_.telemetry.spanRef.set(span))
+    ZIO.accessM[Telemetry](_.telemetry.currentSpan.set(span))
 
   private def getTracer: ZIO[Telemetry, Nothing, Tracer] =
     ZIO.environment[Telemetry].map(_.telemetry.tracer)
 
   private def getCurrentTimeMicros: ZIO[Clock, Nothing, Long] =
     ZIO.accessM[Clock](_.clock.currentTime(TimeUnit.MICROSECONDS))
-
-  implicit class Implicits[R, E, A](zio: ZIO[R, E, A]) extends AnyRef {
-
-    def spanFrom[C <: Object](
-        format: Format[C],
-        carrier: C,
-        opName: String,
-        tagError: Boolean = true,
-        logError: Boolean = true
-    ): ZIO[R with COT, E, A] =
-      Telemetry.spanFrom(
-        format,
-        carrier,
-        zio,
-        opName,
-        tagError,
-        logError
-      )
-
-    def rootSpan(
-        opName: String,
-        tagError: Boolean = true,
-        logError: Boolean = true
-    ): ZIO[R with COT, E, A] =
-      Telemetry.rootSpan(zio, opName, tagError, logError)
-
-    def span(
-        opName: String,
-        tagError: Boolean = true,
-        logError: Boolean = true
-    ): ZIO[R with COT, E, A] =
-      Telemetry.span(zio, opName, tagError, logError)
-
-    def span(
-        span: Span,
-        tagError: Boolean,
-        logError: Boolean
-    ): ZIO[R with COT, E, A] =
-      Telemetry.span(zio, span, tagError, logError)
-  }
 
 }

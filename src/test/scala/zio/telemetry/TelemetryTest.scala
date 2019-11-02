@@ -19,7 +19,7 @@ object TelemetryTest
         testM("managedService") {
           makeTracer.flatMap {
             tracer =>
-              managedService(tracer)
+              managed(tracer)
                 .use_(UIO.unit)
                 .map(
                   _ =>
@@ -63,7 +63,7 @@ object TelemetryTest
         testM("rootSpan") {
           for {
             tracer <- makeTracer
-            _ <- makeService(tracer).use(UIO.unit.rootSpan("ROOT2").provide)
+            _ <- makeService(tracer).use(UIO.unit.root("ROOT2").provide)
           } yield {
             val spans = tracer.finishedSpans.asScala
             val root = spans.find(_.operationName() == "ROOT")
@@ -93,7 +93,7 @@ object TelemetryTestUtils {
   ): ZManaged[Clock, Nothing, Clock with Telemetry] =
     for {
       clockService <- ZIO.environment[Clock].toManaged_
-      telemetryService <- managedService(tracer)
+      telemetryService <- managed(tracer)
     } yield new Clock with Telemetry {
       override val clock: Clock.Service[Any] = clockService.clock
       override def telemetry: Telemetry.Service = telemetryService
