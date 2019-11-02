@@ -42,14 +42,12 @@ object Telemetry {
       }
     )(_.currentSpan.get.flatMap(span => UIO(span.finish)))
 
-  type COT = Clock with Telemetry
-
   def underlying[R, R1 <: R with Telemetry, E, A](
     f: Tracer => ZIO[R, E, A]
   ): ZIO[R1, E, A] =
     getTracer.flatMap(f)
 
-  def spanFrom[R, R1 <: R with COT, E, A, C <: Object](
+  def spanFrom[R, R1 <: R with Clock with Telemetry, E, A, C <: Object](
     format: Format[C],
     carrier: C,
     zio: ZIO[R, E, A],
@@ -72,7 +70,17 @@ object Telemetry {
         }
     }
 
-  def root[R, R1 <: R with COT, E, A](
+  def inject[R, R1 <: R with Clock with Telemetry, E, A, C <: Object](
+    format: Format[C],
+    carrier: C
+  ): ZIO[Telemetry, Nothing, Unit] =
+    for {
+      tracer <- getTracer
+      span   <- getSpan
+      _      <- ZIO.effectTotal(tracer.inject(span.context(), format, carrier))
+    } yield ()
+
+  def root[R, R1 <: R with Clock with Telemetry, E, A](
     zio: ZIO[R, E, A],
     opName: String,
     tagError: Boolean = true,
@@ -84,7 +92,7 @@ object Telemetry {
       r      <- span(zio, root, tagError, logError)
     } yield r
 
-  def span[R, R1 <: R with COT, E, A](
+  def span[R, R1 <: R with Clock with Telemetry, E, A](
     zio: ZIO[R, E, A],
     opName: String,
     tagError: Boolean = true,
@@ -97,7 +105,7 @@ object Telemetry {
       r      <- span(zio, child, tagError, logError)
     } yield r
 
-  def span[R, R1 <: R with COT, E, A](
+  def span[R, R1 <: R with Clock with Telemetry, E, A](
     zio: ZIO[R, E, A],
     span: Span,
     tagError: Boolean,
@@ -144,14 +152,14 @@ object Telemetry {
   def tag[T <: Object](key: Tag[T], value: T): ZIO[Telemetry, Nothing, Unit] =
     getSpan.flatMap(span => UIO(span.setTag(key, value))).unit
 
-  def log(msg: String): ZIO[COT, Nothing, Unit] =
+  def log(msg: String): ZIO[Clock with Telemetry, Nothing, Unit] =
     for {
       span <- getSpan
       now  <- getCurrentTimeMicros
       _    <- UIO(span.log(now, msg))
     } yield ()
 
-  def log(fields: Map[String, _]): ZIO[COT, Nothing, Unit] =
+  def log(fields: Map[String, _]): ZIO[Clock with Telemetry, Nothing, Unit] =
     for {
       span <- getSpan
       now  <- getCurrentTimeMicros
