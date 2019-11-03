@@ -8,6 +8,7 @@ import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 import zio.telemetry.Telemetry._
 import zio.telemetry.TelemetryTestUtils._
+import zio.telemetry.opentracing._
 import zio.test._
 import zio.test.Assertion._
 import zio.test.DefaultRunnableSpec
@@ -88,12 +89,17 @@ object TelemetryTest
           for {
             tracer <- makeTracer
             tm     = new TextMapAdapter(mutable.Map.empty.asJava)
-            _ <- makeService(tracer).use((for {
-                  _ <- inject(Format.Builtin.TEXT_MAP, tm).span("foo")
-                  _ <- UIO.unit
-                        .spanFrom(Format.Builtin.TEXT_MAP, tm, "baz")
-                        .span("bar")
-                } yield ()).provide)
+            _ <- makeService(tracer).use { env =>
+                  val injection =
+                    for {
+                      _ <- env.telemetry.inject(Format.Builtin.TEXT_MAP, tm).span("foo")
+                      _ <- UIO.unit
+                            .spanFrom(Format.Builtin.TEXT_MAP, tm, "baz")
+                            .span("bar")
+                    } yield ()
+
+                  injection.provide(env)
+                }
           } yield {
             val spans = tracer.finishedSpans().asScala
             val root  = spans.find(_.operationName() == "ROOT")

@@ -3,7 +3,6 @@ package zio.telemetry
 import java.util.concurrent.TimeUnit
 
 import io.opentracing.Span
-import io.opentracing.SpanContext
 import io.opentracing.Tracer
 import io.opentracing.propagation.Format
 import zio.Exit
@@ -71,16 +70,6 @@ object Telemetry {
         }
     }
 
-  def inject[R, R1 <: R with Clock with Telemetry, E, A, C <: Object](
-    format: Format[C],
-    carrier: C
-  ): ZIO[Telemetry, Nothing, Unit] =
-    for {
-      tracer <- getTracer
-      span   <- getSpan
-      _      <- ZIO.effectTotal(tracer.inject(span.context(), format, carrier))
-    } yield ()
-
   def root[R, R1 <: R with Clock with Telemetry, E, A](
     zio: ZIO[R, E, A],
     opName: String,
@@ -128,9 +117,6 @@ object Telemetry {
               IO.done(Exit.Failure(cause))
           }
       )
-
-  def context: ZIO[Telemetry, Nothing, SpanContext] =
-    getSpan.map(_.context)
 
   def getBaggageItem(key: String): ZIO[Telemetry, Nothing, Option[String]] =
     getSpan.map(_.getBaggageItem(key)).map(Option.apply)
