@@ -74,15 +74,12 @@ package object opentracing {
             )
         }
 
-    def inject[R, R1 <: R with Clock with OpenTracing.Service, E, A, C <: Object](
-      format: Format[C],
-      carrier: C
-    ): ZIO[Telemetry, Nothing, Unit] =
+    def inject[C <: Object](format: Format[C], carrier: C): ZIO[Any, Nothing, Unit] =
       telemetry.currentSpan.get.flatMap { span =>
         ZIO.effectTotal(telemetry.tracer.inject(span.context(), format, carrier)).unit
       }
 
-    def context: ZIO[OpenTracing.Service, Nothing, SpanContext] =
+    def context: UIO[SpanContext] =
       telemetry.currentSpan.get.map(_.context)
 
     def getBaggageItem(key: String): UIO[Option[String]] =
@@ -119,6 +116,37 @@ package object opentracing {
 
     private def getCurrentTimeMicros: ZIO[Clock, Nothing, Long] =
       ZIO.accessM(_.clock.currentTime(TimeUnit.MICROSECONDS))
+
+  }
+
+  implicit final class OpenTracingZioOps[R, E, A](val zio: ZIO[R, E, A]) extends AnyVal {
+
+    def spanFrom[R1 <: R with Clock with OpenTracing.Service, C <: Object](
+      format: Format[C],
+      carrier: C,
+      opName: String,
+      tagError: Boolean = true,
+      logError: Boolean = true
+    ): ZIO[R1, E, A] =
+      ZIO.accessM { _.telemetry.spanFrom(format, carrier, zio, opName, tagError, logError) }
+
+    def setBaggageItem(key: String, value: String): ZIO[R with OpenTracing, E, A] =
+      zio <* ZIO.accessM { _.telemetry.setBaggageItem(key, value) }
+
+    def tag(key: String, value: String): ZIO[R with OpenTracing, E, A] =
+      zio <* ZIO.accessM { _.telemetry.tag(key, value) }
+
+    def tag(key: String, value: Int): ZIO[R with OpenTracing, E, A] =
+      zio <* ZIO.accessM { _.telemetry.tag(key, value) }
+
+    def tag(key: String, value: Boolean): ZIO[R with OpenTracing, E, A] =
+      zio <* ZIO.accessM { _.telemetry.tag(key, value) }
+
+    def log(msg: String): ZIO[R with Clock with OpenTracing, E, A] =
+      zio <* ZIO.accessM { _.telemetry.log(msg) }
+
+    def log(fields: Map[String, _]): ZIO[R with Clock with OpenTracing, E, A] =
+      zio <* ZIO.accessM { _.telemetry.log(fields) }
 
   }
 }
