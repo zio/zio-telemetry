@@ -3,11 +3,15 @@
 [![CircleCI][badge-ci]][link-ci]
 [![Discord][badge-discord]][link-discord]
 
-ZIO telemetry is a purely-functional, type-safe [OpenTracing][link-otr] client, allowing to use opentracing with ZIO fibers.
+ZIO telemetry is a purely-functional, type-safe [OpenTracing][link-otr] client,
+allowing to use opentracing with ZIO fibers.
 
-OpenTracing is a standard and API for distributed tracing, i.e. collecting timings, and logs across process boundaries. Well known implementations are [Jaeger][jaeger] and [Zipkin][zipkin].   
+OpenTracing is a standard and API for distributed tracing, i.e. collecting timings,
+and logs across process boundaries. Well known implementations are [Jaeger][jaeger]
+and [Zipkin][zipkin].
 
-To use ZIO telemetry, you will need a `Clock` and a `Telemetry` service in you environment:
+To use ZIO telemetry, you will need a `Clock` and a `Telemetry` service in you
+environment:
 
 ```scala
 import io.opentracing.mock.MockTracer
@@ -27,7 +31,9 @@ val managedEnvironment =
   }
 ```
 
-After importing `import zio.telemetry._`, additional combinators on `ZIO`s are available to support starting child spans, tagging, logging and managing baggage. Alternatively, all operations are available on the `Telemetry` companion object. 
+After importing `import zio.telemetry._`, additional combinators on `ZIO`s are
+available to support starting child spans, tagging, logging and managing baggage.
+Alternatively, all operations are available on the `Telemetry` companion object. 
 
 ```scala
 // start a new root span and set some baggage item
@@ -46,9 +52,15 @@ val baggageIO = Telemetry.getBaggage("foo")
                           
 ```
 
-To propagate contexts across process boundaries, extraction and injection can be used. The current span context is injected into a carrier, which is passed through some side channel to the next process. There it is injected back and a child span of it is started. For the example we use the standardized `TextMap` carrier. For details about extraction and injection, please refer to [OpenTracing Documentation][otr-inject-extract]. 
+To propagate contexts across process boundaries, extraction and injection can be
+used. The current span context is injected into a carrier, which is passed
+through some side channel to the next process. There it is injected back and a
+child span of it is started. For the example we use the standardized `TextMap`
+carrier. For details about extraction and injection, please refer to 
+[OpenTracing Documentation][otr-inject-extract]. 
 
-Due to the use of the (mutable) opentracing carrier APIs, injection and extraction are not referentially transparent.
+Due to the use of the (mutable) opentracing carrier APIs, injection and extraction
+are not referentially transparent.
 
 ```scala
 val extractTM: TextMap = ???
