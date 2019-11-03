@@ -1,9 +1,8 @@
 inThisBuild(
   List(
     organization := "dev.zio",
-    licenses := List(
-      "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")
-    ),
+    homepage := Some(url("https://github.com/zio/zio-telemetry/")),
+    licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
     developers := List(
       Developer(
         "mijicd",
@@ -33,15 +32,13 @@ inThisBuild(
 ThisBuild / publishTo := sonatypePublishToBundle.value
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
-addCommandAlias(
-  "check",
-  "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck"
-)
+addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
+addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
 
 val zioVersion         = "1.0.0-RC16"
 val opentracingVersion = "0.33.0"
 
-lazy val `zio-opentracing` =
+lazy val `zio-telemetry` =
   (project in file("."))
     .settings(
       libraryDependencies := Seq(
@@ -53,6 +50,5 @@ lazy val `zio-opentracing` =
         "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.1"
       )
     )
-addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
 
 testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
