@@ -4,9 +4,9 @@ import zio.clock.Clock
 
 package object telemetry {
 
-  implicit class TelemetryOps[S, R, E, A](private val zio: ZIO[R, E, A]) extends AnyVal {
+  implicit class TelemetryOps[R, E, A](private val zio: ZIO[R, E, A]) extends AnyVal {
 
-    def root[R1 <: R with Clock with Telemetry[S]](
+    def root[R1 <: R with Clock with Telemetry](
       opName: String,
       tagError: Boolean = true,
       logError: Boolean = true
@@ -14,48 +14,45 @@ package object telemetry {
       for {
         telemetry <- getTelemetry
         root      <- telemetry.root(opName)
-        r         <- span(root, tagError, logError)
+        r         <- span(telemetry)(root, tagError, logError)
       } yield r
 
-    def span[R1 <: R with Clock with Telemetry[S]](
+    def span[R1 <: R with Clock with Telemetry](
       opName: String,
       tagError: Boolean = true,
       logError: Boolean = true
     ): ZIO[R1, E, A] =
       for {
         telemetry <- getTelemetry
-        old       <- getSpan
+        old       <- getSpan(telemetry)
         child     <- telemetry.span(old, opName)
-        r         <- span(child, tagError, logError)
+        r         <- span(telemetry)(child, tagError, logError)
       } yield r
 
-    def span[R1 <: R with Clock with Telemetry[S]](
-      span: S,
+    def span[R1 <: R with Clock](telemetry: Telemetry.Service)(
+      span: telemetry.A,
       tagError: Boolean,
       logError: Boolean
     ): ZIO[R1, E, A] =
-      ZManaged
-        .make[R1, E, S](getSpan <* setSpan(span)) { old =>
-          getTelemetry.flatMap(_.finish(span)) *> setSpan(old)
-        }
-        .use(
-          _ =>
-            zio.catchAllCause { cause =>
-              tag("error", true).when(tagError) *>
-                log(
-                  Map("error.object" -> cause, "stack" -> cause.prettyPrint)
-                ).when(logError) *>
-                IO.done(Exit.Failure(cause))
-            }
-        )
+      for {
+        old <- getSpan(telemetry)
+        r <- (setSpan(telemetry)(span) *>
+              zio.catchAllCause { cause =>
+                telemetry.error(span, cause, tagError, logError) *>
+                  IO.done(Exit.Failure(cause))
+              }).ensuring(
+              telemetry.finish(span) *>
+                setSpan(telemetry)(old)
+            )
+      } yield r
 
-    private def setSpan(span: S): ZIO[Telemetry[S], Nothing, Unit] =
-      ZIO.accessM[Telemetry[S]](_.telemetry.currentSpan.set(span))
+    private def setSpan(telemetry: Telemetry.Service)(span: telemetry.A): UIO[Unit] =
+      telemetry.currentSpan.set(span)
 
-    private def getSpan: ZIO[Telemetry[S], Nothing, S] =
-      ZIO.accessM[Telemetry[S]](_.telemetry.currentSpan.get)
+    private def getSpan(telemetry: Telemetry.Service): UIO[telemetry.A] =
+      telemetry.currentSpan.get
 
-    private def getTelemetry: ZIO[Telemetry[S], Nothing, Telemetry.Service[S]] =
-      ZIO.environment[Telemetry[S]].map(_.telemetry)
+    private def getTelemetry: ZIO[Telemetry, Nothing, Telemetry.Service] =
+      ZIO.environment[Telemetry].map(_.telemetry)
   }
 }

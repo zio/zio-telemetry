@@ -6,17 +6,16 @@ import io.opentracing.propagation.Format
 import io.opentracing.propagation.TextMapAdapter
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
-import zio.telemetry.Telemetry._
-import zio.telemetry.TelemetryTestUtils._
+import zio.duration._
 import zio.telemetry.opentracing._
+import zio.telemetry.TelemetryTestUtils._
 import zio.test._
 import zio.test.Assertion._
 import zio.test.DefaultRunnableSpec
+import zio.test.environment.TestClock
 import zio.UIO
 import zio.ZIO
 import zio.ZManaged
-import zio.test.environment.TestClock
-import zio.duration._
 
 object TelemetryTest
     extends DefaultRunnableSpec(
@@ -90,15 +89,11 @@ object TelemetryTest
             tracer <- makeTracer
             tm     = new TextMapAdapter(mutable.Map.empty.asJava)
             _ <- makeService(tracer).use { env =>
-                  val injection =
-                    for {
-                      _ <- env.telemetry.inject(Format.Builtin.TEXT_MAP, tm).span("foo")
-                      _ <- UIO.unit
-                            .spanFrom(Format.Builtin.TEXT_MAP, tm, "baz")
-                            .span("bar")
-                    } yield ()
-
-                  injection.provide(env)
+                  (env.telemetry.inject(Format.Builtin.TEXT_MAP, tm).span("foo") *>
+                    env.telemetry
+                      .spanFrom(Format.Builtin.TEXT_MAP, tm, UIO.unit, "baz")
+                      .span("bar"))
+                    .provide(env)
                 }
           } yield {
             val spans = tracer.finishedSpans().asScala
@@ -118,11 +113,14 @@ object TelemetryTest
         testM("tagging") {
           for {
             tracer <- makeTracer
-            _ <- makeService(tracer).use((for {
-                  _ <- tag("boolean", true)
-                  _ <- tag("int", 1)
-                  _ <- tag("string", "foo")
-                } yield ()).provide)
+            _ <- makeService(tracer).use(
+                  env =>
+                    (for {
+                      _ <- env.telemetry.tag("boolean", true)
+                      _ <- env.telemetry.tag("int", 1)
+                      _ <- env.telemetry.tag("string", "foo")
+                    } yield ()).provide(env)
+                )
           } yield {
             val tags     = tracer.finishedSpans().asScala.head.tags.asScala.toMap
             val expected = Map[String, Any]("boolean" -> true, "int" -> 1, "string" -> "foo")
@@ -132,11 +130,14 @@ object TelemetryTest
         testM("logging") {
           for {
             tracer <- makeTracer
-            _ <- makeService(tracer).use((for {
-                  _ <- log("message")
-                  _ <- TestClock.adjust(1000.micros)
-                  _ <- log(Map("msg" -> "message", "size" -> 1))
-                } yield ()).provide)
+            _ <- makeService(tracer).use(
+                  env =>
+                    (for {
+                      _ <- env.telemetry.log("message")
+                      _ <- TestClock.adjust(1000.micros)
+                      _ <- env.telemetry.log(Map("msg" -> "message", "size" -> 1))
+                    } yield ()).provide(env)
+                )
           } yield {
             val tags =
               tracer.finishedSpans().asScala.head.logEntries.asScala.map(le => le.timestampMicros -> le.fields.asScala)
@@ -150,10 +151,11 @@ object TelemetryTest
         testM("baggage") {
           val test =
             for {
-              _      <- setBaggageItem("foo", "bar")
-              _      <- setBaggageItem("bar", "baz")
-              fooBag <- getBaggageItem("foo")
-              barBag <- getBaggageItem("bar")
+              env    <- ZIO.environment[OpenTracing]
+              _      <- env.telemetry.setBaggageItem("foo", "bar")
+              _      <- env.telemetry.setBaggageItem("bar", "baz")
+              fooBag <- env.telemetry.getBaggageItem("foo")
+              barBag <- env.telemetry.getBaggageItem("bar")
             } yield assert(fooBag, isSome(equalTo("bar"))) &&
               assert(barBag, isSome(equalTo("baz")))
           test.provideSomeManaged(makeTracer.toManaged_.flatMap(makeService))
@@ -167,14 +169,14 @@ object TelemetryTestUtils {
 
   def makeService(
     tracer: MockTracer
-  ): ZManaged[TestClock, Nothing, TestClock with Telemetry] =
+  ): ZManaged[TestClock, Nothing, TestClock with OpenTracing] =
     for {
-      clockService     <- ZIO.environment[TestClock].toManaged_
-      telemetryService <- managed(tracer)
-    } yield new TestClock with Telemetry {
+      clockService <- ZIO.environment[TestClock].toManaged_
+      telemetry_   <- managed(tracer)
+    } yield new TestClock with OpenTracing {
       override val clock: TestClock.Service[Any]     = clockService.clock
       override val scheduler: TestClock.Service[Any] = clockService.scheduler
-      override def telemetry: Telemetry.Service      = telemetryService
+      override def telemetry: OpenTracing.Service    = telemetry_.telemetry
     }
 
 }
