@@ -4,11 +4,10 @@ import java.util.concurrent.TimeUnit
 
 import io.opentracing.Span
 import io.opentracing.Tracer
-import io.opentracing.propagation.Format
+import io.opentracing.tag.Tag
 import zio.Exit
 import zio.FiberRef
 import zio.IO
-import zio.Task
 import zio.UIO
 import zio.ZIO
 import zio.ZManaged
@@ -27,15 +26,6 @@ object Telemetry {
     def tracer: Tracer
 
     def underlying[R, R1 <: R with Telemetry, E, A](f: Tracer => ZIO[R, E, A]): ZIO[R1, E, A]
-
-    def spanFrom[R, R1 <: R with Clock with Telemetry, E, A, C <: Object](
-      format: Format[C],
-      carrier: C,
-      zio: ZIO[R, E, A],
-      opName: String,
-      tagError: Boolean = true,
-      logError: Boolean = true
-    ): ZIO[R1, E, A]
 
     def root[R, R1 <: R with Clock with Telemetry, E, A](
       zio: ZIO[R, E, A],
@@ -88,28 +78,6 @@ object Telemetry {
         ): ZIO[R1, E, A] =
           getTracer.flatMap(f)
 
-        override def spanFrom[R, R1 <: R with Clock with Telemetry, E, A, C <: Object](
-          format: Format[C],
-          carrier: C,
-          zio: ZIO[R, E, A],
-          opName: String,
-          tagError: Boolean = true,
-          logError: Boolean = true
-        ): ZIO[R1, E, A] =
-          getTracer.flatMap { tracer =>
-            Task(tracer.extract(format, carrier))
-              .fold(_ => None, Option.apply)
-              .flatMap {
-                case None => zio
-                case Some(spanCtx) =>
-                  span(
-                    zio,
-                    tracer.buildSpan(opName).asChildOf(spanCtx).start,
-                    tagError,
-                    logError
-                  )
-              }
-          }
         override def root[R, R1 <: R with Clock with Telemetry, E, A](
           zio: ZIO[R, E, A],
           opName: String,
