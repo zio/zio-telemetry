@@ -30,7 +30,7 @@ val managedEnvironment =
 After importing `import zio.telemetry._`, additional combinators on `ZIO`s are available to support starting child spans, tagging, logging and managing baggage. Alternatively, all operations are available on the `Telemetry` companion object. 
 
 ```scala
-// start a new root span and set some bagage item
+// start a new root span and set some baggage item
 val zio = UIO.unit
              .setBaggage("foo", "bar")
              .root("root span")
