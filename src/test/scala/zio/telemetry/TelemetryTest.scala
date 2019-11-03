@@ -114,12 +114,11 @@ object TelemetryTest
           for {
             tracer <- makeTracer
             _ <- makeService(tracer).use(
-                  env =>
-                    (for {
-                      _ <- env.telemetry.tag("boolean", true)
-                      _ <- env.telemetry.tag("int", 1)
-                      _ <- env.telemetry.tag("string", "foo")
-                    } yield ()).provide(env)
+                  UIO.unit
+                    .tag("boolean", true)
+                    .tag("int", 1)
+                    .tag("string", "foo")
+                    .provide
                 )
           } yield {
             val tags     = tracer.finishedSpans().asScala.head.tags.asScala.toMap
@@ -131,12 +130,9 @@ object TelemetryTest
           for {
             tracer <- makeTracer
             _ <- makeService(tracer).use(
-                  env =>
-                    (for {
-                      _ <- env.telemetry.log("message")
-                      _ <- TestClock.adjust(1000.micros)
-                      _ <- env.telemetry.log(Map("msg" -> "message", "size" -> 1))
-                    } yield ()).provide(env)
+                  (UIO.unit.log("message") *> TestClock.adjust(1000.micros))
+                    .log(Map("msg" -> "message", "size" -> 1))
+                    .provide
                 )
           } yield {
             val tags =
@@ -151,11 +147,10 @@ object TelemetryTest
         testM("baggage") {
           val test =
             for {
-              env    <- ZIO.environment[OpenTracing]
-              _      <- env.telemetry.setBaggageItem("foo", "bar")
-              _      <- env.telemetry.setBaggageItem("bar", "baz")
-              fooBag <- env.telemetry.getBaggageItem("foo")
-              barBag <- env.telemetry.getBaggageItem("bar")
+              _      <- OpenTracing.setBaggageItem("foo", "bar")
+              _      <- OpenTracing.setBaggageItem("bar", "baz")
+              fooBag <- OpenTracing.getBaggageItem("foo")
+              barBag <- OpenTracing.getBaggageItem("bar")
             } yield assert(fooBag, isSome(equalTo("bar"))) &&
               assert(barBag, isSome(equalTo("baz")))
           test.provideSomeManaged(makeTracer.toManaged_.flatMap(makeService))
