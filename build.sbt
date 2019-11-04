@@ -52,3 +52,25 @@ lazy val `zio-telemetry` =
     )
 
 testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
+
+val circeVersion  = "0.12.3"
+val sttpVersion   = "2.0.0-M9"
+val jaegerVersion = "1.0.0"
+val zipkinVersion = "2.11.0"
+
+lazy val examples =
+  (project in file("examples"))
+    .settings(skip in publish := true)
+    .settings(
+      libraryDependencies := Seq(
+        "io.circe"                     %% "circe-generic"                 % circeVersion,
+        "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % sttpVersion,
+        "com.softwaremill.sttp.client" %% "circe"                         % sttpVersion,
+        "io.jaegertracing"             % "jaeger-core"                    % jaegerVersion,
+        "io.jaegertracing"             % "jaeger-client"                  % jaegerVersion,
+        "io.jaegertracing"             % "jaeger-zipkin"                  % jaegerVersion,
+        "io.zipkin.reporter2"          % "zipkin-reporter"                % zipkinVersion,
+        "io.zipkin.reporter2"          % "zipkin-sender-okhttp3"          % zipkinVersion
+      )
+    )
+    .dependsOn(`zio-telemetry`)
