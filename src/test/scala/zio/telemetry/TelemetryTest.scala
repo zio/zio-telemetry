@@ -88,13 +88,10 @@ object TelemetryTest
           for {
             tracer <- makeTracer
             tm     = new TextMapAdapter(mutable.Map.empty.asJava)
-            _ <- makeService(tracer).use { env =>
-                  (env.telemetry.inject(Format.Builtin.TEXT_MAP, tm).span("foo") *>
-                    env.telemetry
-                      .spanFrom(Format.Builtin.TEXT_MAP, tm, UIO.unit, "baz")
-                      .span("bar"))
-                    .provide(env)
-                }
+            _ <- (OpenTracing.inject(Format.Builtin.TEXT_MAP, tm).span("foo") *>
+                  OpenTracing
+                    .spanFrom(Format.Builtin.TEXT_MAP, tm, UIO.unit, "baz")
+                    .span("bar")).provideSomeManaged(makeService(tracer))
           } yield {
             val spans = tracer.finishedSpans().asScala
             val root  = spans.find(_.operationName() == "ROOT")
