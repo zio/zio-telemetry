@@ -41,7 +41,10 @@ lazy val root =
     .settings(skip in publish := true)
     .aggregate(core, example)
 
+val jaegerVersion      = "1.0.0"
+val sttpVersion        = "2.0.0-M9"
 val opentracingVersion = "0.33.0"
+val zipkinVersion      = "2.11.0"
 val zioVersion         = "1.0.0-RC16"
 
 lazy val core =
@@ -60,10 +63,6 @@ lazy val core =
     )
 
 testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
-
-val jaegerVersion = "1.0.0"
-val sttpVersion   = "2.0.0-M9"
-val zipkinVersion = "2.11.0"
 
 lazy val example =
   project
