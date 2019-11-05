@@ -42,7 +42,7 @@ lazy val root =
     .aggregate(core, example)
 
 val jaegerVersion      = "1.0.0"
-val sttpVersion        = "2.0.0-M9"
+val sttpVersion        = "2.0.0-M10"
 val opentracingVersion = "0.33.0"
 val zipkinVersion      = "2.11.0"
 val zioVersion         = "1.0.0-RC16"
