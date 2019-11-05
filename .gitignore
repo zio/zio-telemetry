@@ -1,6 +1,3 @@
-project/project/*
-project/target/*
-target/*
-src/main/.DS_Store
 **/.DS_Store
 project/metals.sbt
+target
