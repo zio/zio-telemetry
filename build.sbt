@@ -35,6 +35,11 @@ addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
 addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
 
+lazy val root =
+  (project in file("."))
+    .settings(skip in publish := true)
+    .aggregate(`zio-telemetry`, example)
+
 val zioVersion         = "1.0.0-RC16"
 val opentracingVersion = "0.33.0"
 
@@ -58,8 +63,8 @@ val sttpVersion   = "2.0.0-M9"
 val jaegerVersion = "1.0.0"
 val zipkinVersion = "2.11.0"
 
-lazy val examples =
-  (project in file("examples"))
+lazy val example =
+  (project in file("example"))
     .settings(skip in publish := true)
     .settings(
       libraryDependencies := Seq(
