@@ -64,7 +64,7 @@ val jaegerVersion = "1.0.0"
 val zipkinVersion = "2.11.0"
 
 lazy val example =
-  (project in file("example"))
+  (project in file("modules/example"))
     .settings(skip in publish := true)
     .settings(
       libraryDependencies := Seq(
