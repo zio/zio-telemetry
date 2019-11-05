@@ -42,6 +42,7 @@ lazy val root =
     .settings(skip in publish := true)
     .aggregate(core, example)
 
+val http4sVersion      = "0.20.11"
 val jaegerVersion      = "1.0.0"
 val sttpVersion        = "2.0.0-M10"
 val opentracingVersion = "0.33.0"
@@ -72,12 +73,19 @@ lazy val example =
     .settings(skip in publish := true)
     .settings(
       libraryDependencies := Seq(
+        "org.typelevel"                %% "cats-core"                     % "2.0.0",
         "io.circe"                     %% "circe-generic"                 % "0.12.3",
-        "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % sttpVersion,
-        "com.softwaremill.sttp.client" %% "circe"                         % sttpVersion,
+        "org.http4s"                   %% "http4s-core"                   % http4sVersion,
+        "org.http4s"                   %% "http4s-blaze-server"           % http4sVersion,
+        "org.http4s"                   %% "http4s-dsl"                    % http4sVersion,
+        "org.http4s"                   %% "http4s-circe"                  % http4sVersion,
         "io.jaegertracing"             % "jaeger-core"                    % jaegerVersion,
         "io.jaegertracing"             % "jaeger-client"                  % jaegerVersion,
         "io.jaegertracing"             % "jaeger-zipkin"                  % jaegerVersion,
+        "com.github.pureconfig"        %% "pureconfig"                    % "0.12.1",
+        "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % sttpVersion,
+        "com.softwaremill.sttp.client" %% "circe"                         % sttpVersion,
+        "dev.zio"                      %% "zio-interop-cats"              % "2.0.0.0-RC7",
         "io.zipkin.reporter2"          % "zipkin-reporter"                % zipkinVersion,
         "io.zipkin.reporter2"          % "zipkin-sender-okhttp3"          % zipkinVersion
       )

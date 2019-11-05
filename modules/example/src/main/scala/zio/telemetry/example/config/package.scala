@@ -1,4 +1,4 @@
-package zio.telemetry.example.proxy
+package zio.telemetry.example
 
 import zio.RIO
 

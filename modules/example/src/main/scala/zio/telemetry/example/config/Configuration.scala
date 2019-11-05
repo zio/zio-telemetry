@@ -1,8 +1,8 @@
-package zio.telemetry.example.proxy.config
+package zio.telemetry.example.config
 
 import pureconfig.ConfigSource
-import zio.{ RIO, Task }
 import pureconfig.generic.auto._
+import zio.{ RIO, Task }
 
 trait Configuration extends Serializable {
   val config: Configuration.Service[Any]
@@ -15,7 +15,7 @@ object Configuration {
   }
 
   trait Live extends Configuration {
-    val config: Service[Any] = new Service[Any] {
+    override val config: Service[Any] = new Service[Any] {
       val load: Task[Config] = Task.effect(ConfigSource.default.loadOrThrow[Config])
     }
   }
