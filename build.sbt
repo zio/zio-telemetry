@@ -35,6 +35,11 @@ addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
 addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
 
+lazy val root =
+  (project in file("."))
+    .settings(skip in publish := true)
+    .aggregate(`zio-telemetry`, example)
+
 val zioVersion         = "1.0.0-RC16"
 val opentracingVersion = "0.33.0"
 
@@ -52,3 +57,25 @@ lazy val `zio-telemetry` =
     )
 
 testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
+
+val circeVersion  = "0.12.3"
+val sttpVersion   = "2.0.0-M9"
+val jaegerVersion = "1.0.0"
+val zipkinVersion = "2.11.0"
+
+lazy val example =
+  (project in file("example"))
+    .settings(skip in publish := true)
+    .settings(
+      libraryDependencies := Seq(
+        "io.circe"                     %% "circe-generic"                 % circeVersion,
+        "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % sttpVersion,
+        "com.softwaremill.sttp.client" %% "circe"                         % sttpVersion,
+        "io.jaegertracing"             % "jaeger-core"                    % jaegerVersion,
+        "io.jaegertracing"             % "jaeger-client"                  % jaegerVersion,
+        "io.jaegertracing"             % "jaeger-zipkin"                  % jaegerVersion,
+        "io.zipkin.reporter2"          % "zipkin-reporter"                % zipkinVersion,
+        "io.zipkin.reporter2"          % "zipkin-sender-okhttp3"          % zipkinVersion
+      )
+    )
+    .dependsOn(`zio-telemetry`)
