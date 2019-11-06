@@ -12,8 +12,8 @@ object BuildHelper {
     incOptions ~= (_.withLogRecompileOnMacro(false))
   )
 
-  private val Scala212        = "2.12.10"
-  private val Scala213        = "2.13.0"
+  private val Scala212 = "2.12.10"
+  private val Scala213 = "2.13.0"
 
   private val stdOptions = Seq(
     "-encoding",
