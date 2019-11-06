@@ -1,3 +1,5 @@
+import BuildHelper._
+
 inThisBuild(
   List(
     organization := "dev.zio",
@@ -49,8 +51,8 @@ val zioVersion         = "1.0.0-RC16"
 lazy val core =
   project
     .in(file("modules/core"))
+    .settings(stdSettings("zio-telemetry"))
     .settings(
-      name := "zio-telemetry",
       libraryDependencies := Seq(
         "dev.zio"                %% "zio"                     % zioVersion,
         "dev.zio"                %% "zio-test"                % zioVersion % Test,
@@ -66,6 +68,7 @@ testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
 lazy val example =
   project
     .in(file("modules/example"))
+    .settings(stdSettings("example"))
     .settings(skip in publish := true)
     .settings(
       libraryDependencies := Seq(
