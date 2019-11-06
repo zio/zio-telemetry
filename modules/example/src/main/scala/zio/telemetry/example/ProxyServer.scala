@@ -19,7 +19,7 @@ object ProxyServer extends CatsApp {
       backendUrl <- ZIO.fromEither(Uri.safeApply(conf.backend.url))
       router     = Router[AppTask]("/" -> StatusesService.statuses(backendUrl, service)).orNotFound
       result <- BlazeServerBuilder[AppTask]
-                 .bindHttp(conf.proxy.port, conf.proxy.host)
+                 .bindHttp(conf.port, conf.host)
                  .withHttpApp(router)
                  .serve
                  .compile[AppTask, AppTask, ExitCode]
