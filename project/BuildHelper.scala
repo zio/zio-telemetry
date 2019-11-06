@@ -5,16 +5,10 @@ object BuildHelper {
 
   def stdSettings(prjName: String) = Seq(
     name := s"$prjName",
-    scalacOptions := stdOptions,
     crossScalaVersions := Seq(Scala212, Scala213),
     scalaVersion in ThisBuild := Scala212,
     scalacOptions := stdOptions ++ extraOptions(scalaVersion.value),
-    libraryDependencies ++=
-      Seq(
-        ("com.github.ghik" % "silencer-lib" % "1.4.4" % Provided).cross(CrossVersion.full),
-        compilerPlugin(("com.github.ghik" % "silencer-plugin" % "1.4.4").cross(CrossVersion.full)),
-        compilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3")
-      ),
+    libraryDependencies += compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
     incOptions ~= (_.withLogRecompileOnMacro(false))
   )
 
