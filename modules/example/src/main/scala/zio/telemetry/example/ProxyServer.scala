@@ -15,7 +15,7 @@ object ProxyServer extends CatsApp {
   override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
     (for {
       conf       <- config.load.provide(Configuration.Live)
-      service    = JaegerTracer.makeService(conf.proxy.tracer.host, "zio-proxy")
+      service    = JaegerTracer.makeService(conf.tracer.host, "zio-proxy")
       backendUrl <- ZIO.fromEither(Uri.safeApply(conf.proxy.backend.url))
       router     = Router[AppTask]("/" -> StatusesService.statuses(backendUrl, service)).orNotFound
       result <- BlazeServerBuilder[AppTask]

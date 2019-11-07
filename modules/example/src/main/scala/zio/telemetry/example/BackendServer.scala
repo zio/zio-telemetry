@@ -1,27 +1,24 @@
-package zio.telemetry.example.backend
+package zio.telemetry.example
 
 import cats.effect.ExitCode
 import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.syntax.kleisli._
-import zio._
-import zio.clock.Clock
 import zio.interop.catz._
-import zio.telemetry.example.JaegerTracer._
-import zio.telemetry.example.backend.config.Configuration
-import zio.telemetry.example.backend.http.StatusService
+import zio.telemetry.example.JaegerTracer.makeService
+import zio.telemetry.example.config.Configuration
+import zio.telemetry.example.http.{ AppTask, StatusService }
+import zio.{ ZEnv, ZIO }
 
-object Server extends CatsApp {
-
-  type AppTask[A] = ZIO[Clock, Throwable, A]
+object BackendServer extends CatsApp {
 
   override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
     (for {
       conf    <- config.load.provide(Configuration.Live)
-      service = makeService(conf.tracer.host, "backend")
+      service = makeService(conf.tracer.host, "zio-backend")
       router  = Router[AppTask]("/" -> StatusService.status(service)).orNotFound
       result <- BlazeServerBuilder[AppTask]
-                 .bindHttp(conf.api.port, conf.api.host)
+                 .bindHttp(conf.backend.port, conf.backend.host)
                  .withHttpApp(router)
                  .serve
                  .compile[AppTask, AppTask, ExitCode]
