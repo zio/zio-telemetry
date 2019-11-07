@@ -11,12 +11,12 @@ trait Configuration extends Serializable {
 object Configuration {
 
   trait Service[R] {
-    val load: RIO[R, ProxyConfig]
+    val load: RIO[R, Config]
   }
 
   trait Live extends Configuration {
     override val config: Service[Any] = new Service[Any] {
-      val load: Task[ProxyConfig] = Task.effect(ConfigSource.default.loadOrThrow[ProxyConfig])
+      val load: Task[Config] = Task.effect(ConfigSource.default.loadOrThrow[Config])
     }
   }
 
