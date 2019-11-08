@@ -4,27 +4,25 @@ import cats.effect.ExitCode
 import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.syntax.kleisli._
-import sttp.model.Uri
 import zio.interop.catz._
+import zio.telemetry.example.JaegerTracer.makeService
 import zio.telemetry.example.config.Configuration
-import zio.telemetry.example.http.{ AppTask, StatusesService }
+import zio.telemetry.example.http.{ AppTask, StatusService }
 import zio.{ ZEnv, ZIO }
 
-object ProxyServer extends CatsApp {
+object BackendServer extends CatsApp {
 
   override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
     (for {
-      conf       <- config.load.provide(Configuration.Live)
-      service    = JaegerTracer.makeService(conf.tracer.host, "zio-proxy")
-      backendUrl <- ZIO.fromEither(Uri.safeApply(conf.proxy.backend.url))
-      router     = Router[AppTask]("/" -> StatusesService.statuses(backendUrl, service)).orNotFound
+      conf    <- config.load.provide(Configuration.Live)
+      service = makeService(conf.tracer.host, "zio-backend")
+      router  = Router[AppTask]("/" -> StatusService.status(service)).orNotFound
       result <- BlazeServerBuilder[AppTask]
-                 .bindHttp(conf.proxy.port, conf.proxy.host)
+                 .bindHttp(conf.backend.port, conf.backend.host)
                  .withHttpApp(router)
                  .serve
                  .compile[AppTask, AppTask, ExitCode]
                  .drain
                  .as(0)
-    } yield result) orElse ZIO.succeed(1)
-
+    } yield result).orElse(ZIO.succeed(1))
 }
