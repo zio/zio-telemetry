@@ -47,7 +47,7 @@ val jaegerVersion      = "1.0.0"
 val sttpVersion        = "2.0.0-RC1"
 val opentracingVersion = "0.33.0"
 val zipkinVersion      = "2.11.0"
-val zioVersion         = "1.0.0-RC16"
+val zioVersion         = "1.0.0-RC17"
 
 lazy val core =
   project
