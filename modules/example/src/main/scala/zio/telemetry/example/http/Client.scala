@@ -10,8 +10,11 @@ import zio.ZIO
 object Client {
   private val backend = AsyncHttpClientZioBackend()
 
-  def status(uri: Uri): ZIO[Any, Throwable, Response[Either[ResponseError[Error], Status]]] =
+  def status(
+    uri: Uri,
+    headers: Map[String, String]
+  ): ZIO[Any, Throwable, Response[Either[ResponseError[Error], Status]]] =
     backend.flatMap { implicit backend =>
-      basicRequest.get(uri).response(asJson[Status]).send()
+      basicRequest.get(uri).headers(headers).response(asJson[Status]).send()
     }
 }

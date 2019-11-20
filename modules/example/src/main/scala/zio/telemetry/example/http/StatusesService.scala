@@ -3,14 +3,15 @@ package zio.telemetry.example.http
 import io.circe.Encoder
 import io.opentracing.propagation.Format.Builtin.{ HTTP_HEADERS => HttpHeadersFormat }
 import io.opentracing.propagation.TextMapAdapter
+import io.opentracing.tag.Tags
 import org.http4s.circe.jsonEncoderOf
 import org.http4s.dsl.Http4sDsl
 import org.http4s.{ EntityEncoder, HttpRoutes }
 import sttp.model.Uri
-import zio.ZManaged
 import zio.clock.Clock
 import zio.interop.catz._
 import zio.telemetry.opentracing.OpenTracing
+import zio.{ UIO, ZManaged }
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
@@ -27,11 +28,15 @@ object StatusesService {
       case GET -> Root / "statuses" =>
         service.use { env =>
           (for {
-            _ <- env.telemetry.root("/statuses")
-            _ <- OpenTracing.tag("proxy-tag", "proxy-tag-value")
-            _ <- OpenTracing.inject(HttpHeadersFormat, new TextMapAdapter(mutable.Map.empty[String, String].asJava))
+            _       <- env.telemetry.root("/statuses")
+            _       <- OpenTracing.tag(Tags.SPAN_KIND.getKey, Tags.SPAN_KIND_CLIENT)
+            _       <- OpenTracing.tag(Tags.HTTP_METHOD.getKey, GET.name)
+            _       <- OpenTracing.setBaggageItem("proxy-baggage-item-key", "proxy-baggage-item-value")
+            buffer  <- UIO.succeed(new TextMapAdapter(mutable.Map.empty[String, String].asJava))
+            _       <- OpenTracing.inject(HttpHeadersFormat, buffer)
+            headers <- extractHeaders(buffer)
             res <- Client
-                    .status(backendUri.path("status"))
+                    .status(backendUri.path("status"), headers)
                     .map(_.body)
                     .flatMap {
                       case Right(s) => Ok(Statuses(List(s, StatusUp)))
@@ -40,6 +45,16 @@ object StatusesService {
           } yield res).provide(env)
         }
     }
+  }
+
+  private def extractHeaders(adapter: TextMapAdapter): UIO[Map[String, String]] = {
+    val m: mutable.Map[String, String] = mutable.Map.empty
+    for {
+      _ <- UIO.succeed(adapter.forEach { entry =>
+            m.put(entry.getKey, entry.getValue)
+            ()
+          })
+    } yield m.toMap
   }
 
   private val StatusUp = Status("proxy", "1.0.0", "up")
