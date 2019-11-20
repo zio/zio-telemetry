@@ -68,6 +68,78 @@ for {
 } yield buffer
 ```
 
+### Example usage
+
+Firstly, start [Jaeger][jaeger] by running following command:
+```bash
+docker run -d --name jaeger \
+  -e COLLECTOR_ZIPKIN_HTTP_PORT=9411 \
+  -p 5775:5775/udp \
+  -p 6831:6831/udp \
+  -p 6832:6832/udp \
+  -p 5778:5778 \
+  -p 16686:16686 \
+  -p 14268:14268 \
+  -p 9411:9411 \
+  jaegertracing/all-in-one:1.6
+``` 
+
+To check if it's running properly visit [Jaeger UI](http://localhost:16686/).
+More info can be found [here][jaeger-docker].
+
+Our application contains two services:
+ 1. [proxy](./modules/example/src/main/scala/zio/telemetry/example/ProxyServer.scala) service
+ 2. [backend](./modules/example/src/main/scala/zio/telemetry/example/BackendServer.scala) service
+
+#### Proxy service
+
+Represents entry point to example distributed system. It exposes `/statuses` endpoint which returns list of system's services statuses.
+
+In order to start service run:
+```bash
+sbt "example/runMain zio.telemetry.example.ProxyServer"
+```
+
+If it's start properly it should be available on `http://0.0.0.0:8080/statuses`.
+
+
+#### Backend service
+
+Represents "internal" service of the system. It exposes `/status` endpoint which returns service status.
+
+In order to start service run:
+```bash
+sbt "example/runMain zio.telemetry.example.BackendServer"
+```
+
+If it's start properly it should be available on `http://0.0.0.0:9000/status`.
+
+Configuration is given in [application.conf](./modules/example/src/main/resources/application.conf).
+
+After both services are properly started, running following command
+```bash
+curl -X GET http://0.0.0.0:8080/statuses
+```
+should return following response:
+```json
+{
+  "data": [
+    {
+      "name": "backend",
+      "version": "1.0.0",
+      "status": "up"
+    },
+    {
+      "name": "proxy",
+      "version": "1.0.0",
+      "status": "up"
+    }
+  ]
+}
+```
+
+Simultaneously, it will create trace that will be stored in Jaeger backend.
+
 [badge-ci]: https://circleci.com/gh/zio/zio-telemetry/tree/master.svg?style=svg
 [badge-discord]: https://img.shields.io/discord/629491597070827530?logo=discord 
 [link-ci]: https://circleci.com/gh/zio/zio-telemetry/tree/master
@@ -77,3 +149,4 @@ for {
 [otr-inject-extract]: https://opentracing.io/docs/overview/inject-extract/
 [jaeger]: https://www.jaegertracing.io
 [zipkin]: https://www.zipkin.io
+[jaeger-docker]: https://www.jaegertracing.io/docs/1.6/getting-started/#all-in-one-docker-image
