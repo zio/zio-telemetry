@@ -44,10 +44,10 @@ lazy val root =
 
 val http4sVersion      = "0.21.0-M5"
 val jaegerVersion      = "1.0.0"
-val sttpVersion        = "2.0.0-M11"
+val sttpVersion        = "2.0.0-RC1"
 val opentracingVersion = "0.33.0"
 val zipkinVersion      = "2.11.0"
-val zioVersion         = "1.0.0-RC16"
+val zioVersion         = "1.0.0-RC17"
 
 lazy val core =
   project
@@ -85,7 +85,7 @@ lazy val example =
         "com.github.pureconfig"        %% "pureconfig"                    % "0.12.1",
         "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % sttpVersion,
         "com.softwaremill.sttp.client" %% "circe"                         % sttpVersion,
-        "dev.zio"                      %% "zio-interop-cats"              % "2.0.0.0-RC7",
+        "dev.zio"                      %% "zio-interop-cats"              % "2.0.0.0-RC8",
         "io.zipkin.reporter2"          % "zipkin-reporter"                % zipkinVersion,
         "io.zipkin.reporter2"          % "zipkin-sender-okhttp3"          % zipkinVersion
       )
