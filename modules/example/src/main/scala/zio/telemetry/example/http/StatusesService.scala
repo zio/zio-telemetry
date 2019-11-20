@@ -31,7 +31,7 @@ object StatusesService {
             _ <- OpenTracing.tag("proxy-tag", "proxy-tag-value")
             _ <- OpenTracing.inject(HttpHeadersFormat, new TextMapAdapter(mutable.Map.empty[String, String].asJava))
             res <- Client
-                    .status(backendUri)
+                    .status(backendUri.path("status"))
                     .map(_.body)
                     .flatMap {
                       case Right(s) => Ok(Statuses(List(s, StatusUp)))
