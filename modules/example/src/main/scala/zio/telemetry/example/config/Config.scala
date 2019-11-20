@@ -6,7 +6,7 @@ final case class Config(proxy: ProxyConfig, backend: BackendConfig, tracer: Trac
 
 object Config {
 
-  final case class ProxyConfig(host: String, port: Int, backend: BackendUrl)
+  final case class ProxyConfig(host: String, port: Int)
 
   final case class BackendUrl(url: String) extends AnyVal
 
