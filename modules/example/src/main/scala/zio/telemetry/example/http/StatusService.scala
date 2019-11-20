@@ -26,15 +26,13 @@ object StatusService {
     HttpRoutes.of[AppTask] {
       case request @ GET -> Root / "status" =>
         val headers = request.headers.toList.map(h => h.name.value -> h.value).toMap
-
         service.use { env =>
           ZIO.unit
-            .spanFrom(HttpHeadersFormat, new TextMapAdapter(headers.asJava), "/statuses")
-            .span("/status")
+            .spanFrom(HttpHeadersFormat, new TextMapAdapter(headers.asJava), "/status")
             .provide(env)
-            .flatMap(_ => Ok(StatusResponse.asJson))
+            .flatMap(_ => Ok(StatusUp.asJson))
         }
     }
 
-  private val StatusResponse = ServiceStatus("backend", "1.0.0", "up")
+  private val StatusUp = ServiceStatus("backend", "1.0.0", "up")
 }
