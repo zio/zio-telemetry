@@ -27,6 +27,7 @@ object StatusesService {
     HttpRoutes.of[AppTask] {
       case GET -> Root / "statuses" =>
         service.use { env =>
+          val up = Status.up("proxy")
           val zio = for {
             _       <- env.telemetry.root("/statuses")
             _       <- OpenTracing.tag(Tags.SPAN_KIND.getKey, Tags.SPAN_KIND_CLIENT)
@@ -39,8 +40,8 @@ object StatusesService {
                     .status(backendUri.path("status"), headers)
                     .map(_.body)
                     .flatMap {
-                      case Right(s) => Ok(Statuses(List(s, Status.up("proxy"))))
-                      case _        => Ok(Statuses(List(Status.down("backend"), Status.up("proxy"))))
+                      case Right(s) => Ok(Statuses(List(s, up)))
+                      case _        => Ok(Statuses(List(Status.down("backend"), up)))
                     }
           } yield res
 

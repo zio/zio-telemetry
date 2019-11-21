@@ -3,7 +3,7 @@ package zio.telemetry.example.http
 import io.circe._
 import io.circe.generic.semiauto._
 
-final case class Status private (name: String, status: String)
+final case class Status(name: String, status: String)
 
 object Status {
   implicit val decoder: Decoder[Status] = deriveDecoder
