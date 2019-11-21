@@ -27,7 +27,7 @@ object StatusesService {
     HttpRoutes.of[AppTask] {
       case GET -> Root / "statuses" =>
         service.use { env =>
-          (for {
+          val zio = for {
             _       <- env.telemetry.root("/statuses")
             _       <- OpenTracing.tag(Tags.SPAN_KIND.getKey, Tags.SPAN_KIND_CLIENT)
             _       <- OpenTracing.tag(Tags.HTTP_METHOD.getKey, GET.name)
@@ -39,24 +39,22 @@ object StatusesService {
                     .status(backendUri.path("status"), headers)
                     .map(_.body)
                     .flatMap {
-                      case Right(s) => Ok(Statuses(List(s, StatusUp)))
-                      case _        => Ok(Statuses(List(Status("backend", "1.0.0", "down"), StatusUp)))
+                      case Right(s) => Ok(Statuses(List(s, Status.up("proxy"))))
+                      case _        => Ok(Statuses(List(Status.down("backend"), Status.up("proxy"))))
                     }
-          } yield res).provide(env)
+          } yield res
+
+          zio.provideSomeManaged(service)
         }
     }
   }
 
   private def extractHeaders(adapter: TextMapAdapter): UIO[Map[String, String]] = {
-    val m: mutable.Map[String, String] = mutable.Map.empty
-    for {
-      _ <- UIO.succeed(adapter.forEach { entry =>
-            m.put(entry.getKey, entry.getValue)
-            ()
-          })
-    } yield m.toMap
+    val m = mutable.Map.empty[String, String]
+    UIO(adapter.forEach { entry =>
+      m.put(entry.getKey, entry.getValue)
+      ()
+    }).as(m.toMap)
   }
-
-  private val StatusUp = Status("proxy", "1.0.0", "up")
 
 }

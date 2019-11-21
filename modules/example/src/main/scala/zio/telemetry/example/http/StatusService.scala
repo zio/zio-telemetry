@@ -9,7 +9,6 @@ import org.http4s.circe.jsonEncoderOf
 import org.http4s.dsl.Http4sDsl
 import zio.clock.Clock
 import zio.interop.catz._
-import zio.telemetry.example.http.{ Status => ServiceStatus }
 import zio.telemetry.opentracing._
 import zio.{ ZIO, ZManaged }
 
@@ -29,10 +28,8 @@ object StatusService {
         service.use { env =>
           ZIO.unit
             .spanFrom(HttpHeadersFormat, new TextMapAdapter(headers.asJava), "/status")
-            .provide(env)
-            .flatMap(_ => Ok(StatusUp.asJson))
+            .provide(env) *> Ok(Status.up("backend").asJson)
         }
     }
 
-  private val StatusUp = ServiceStatus("backend", "1.0.0", "up")
 }
