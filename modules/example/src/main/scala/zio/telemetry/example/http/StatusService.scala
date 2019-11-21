@@ -29,10 +29,8 @@ object StatusService {
         service.use { env =>
           ZIO.unit
             .spanFrom(HttpHeadersFormat, new TextMapAdapter(headers.asJava), "/status")
-            .provide(env)
-            .flatMap(_ => Ok(StatusUp.asJson))
+            .provide(env) *> Ok(ServiceStatus.up("backend").asJson)
         }
     }
 
-  private val StatusUp = ServiceStatus("backend", "1.0.0", "up")
 }
