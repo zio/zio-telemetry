@@ -27,7 +27,6 @@ object StatusesService {
     HttpRoutes.of[AppTask] {
       case GET -> Root / "statuses" =>
         service.use { env =>
-          val up = Status.up("proxy")
           val zio = for {
             _       <- env.telemetry.root("/statuses")
             _       <- OpenTracing.tag(Tags.SPAN_KIND.getKey, Tags.SPAN_KIND_CLIENT)
@@ -36,6 +35,7 @@ object StatusesService {
             buffer  <- UIO.succeed(new TextMapAdapter(mutable.Map.empty[String, String].asJava))
             _       <- OpenTracing.inject(HttpHeadersFormat, buffer)
             headers <- extractHeaders(buffer)
+            up      = Status.up("proxy")
             res <- Client
                     .status(backendUri.path("status"), headers)
                     .map(_.body)
