@@ -24,21 +24,20 @@ object TelemetryTest
           makeTracer.flatMap { tracer =>
             managed(tracer)
               .use_(UIO.unit)
-              .map(
-                _ =>
-                  assert(tracer.finishedSpans.asScala, hasSize(equalTo(1))) && assert(
-                    tracer.finishedSpans().get(0),
-                    hasField[MockSpan, String](
-                      "operationName",
-                      _.operationName(),
-                      equalTo("ROOT")
-                    ) &&
-                      hasField[MockSpan, Long](
-                        "parent",
-                        _.parentId,
-                        equalTo(0L)
-                      )
-                  )
+              .map(_ =>
+                assert(tracer.finishedSpans.asScala, hasSize(equalTo(1))) && assert(
+                  tracer.finishedSpans().get(0),
+                  hasField[MockSpan, String](
+                    "operationName",
+                    _.operationName(),
+                    equalTo("ROOT")
+                  ) &&
+                    hasField[MockSpan, Long](
+                      "parent",
+                      _.parentId,
+                      equalTo(0L)
+                    )
+                )
               )
           }
         },
