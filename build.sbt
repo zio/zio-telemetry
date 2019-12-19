@@ -73,7 +73,7 @@ lazy val example =
     .settings(skip in publish := true)
     .settings(
       libraryDependencies := Seq(
-        "org.typelevel"                %% "cats-core"                     % "2.0.0",
+        "org.typelevel"                %% "cats-core"                     % "2.1.0",
         "io.circe"                     %% "circe-generic"                 % "0.12.3",
         "org.http4s"                   %% "http4s-core"                   % http4sVersion,
         "org.http4s"                   %% "http4s-blaze-server"           % http4sVersion,
