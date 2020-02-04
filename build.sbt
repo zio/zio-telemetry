@@ -42,7 +42,7 @@ lazy val root =
     .settings(skip in publish := true)
     .aggregate(core, example)
 
-val http4sVersion      = "0.21.0-RC2"
+val http4sVersion      = "0.21.0-RC3"
 val jaegerVersion      = "1.1.0"
 val sttpVersion        = "2.0.0-RC7"
 val opentracingVersion = "0.33.0"
