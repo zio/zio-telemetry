@@ -1,9 +1,11 @@
 # ZIO telemetry
 
-[![CircleCI][badge-ci]][link-ci]
-[![Discord][badge-discord]][link-discord]
+[![CircleCI][Badge-Circle]][Link-Circle]
+[![Releases][Badge-SonatypeReleases]][Link-SonatypeReleases]
+[![Snapshots][Badge-SonatypeSnapshots]][Link-SonatypeSnapshots]
+[![Discord][Badge-Discord]][Link-Discord]
 
-ZIO telemetry is a purely-functional, type-safe [OpenTracing][link-otr] client.
+ZIO telemetry is a purely-functional, type-safe [OpenTracing][open-tracing] client.
 
 ### OpenTracing
 
@@ -140,13 +142,16 @@ should return following response:
 
 Simultaneously, it will create trace that will be stored in Jaeger backend.
 
-[badge-ci]: https://circleci.com/gh/zio/zio-telemetry/tree/master.svg?style=svg
-[badge-discord]: https://img.shields.io/discord/629491597070827530?logo=discord 
-[link-ci]: https://circleci.com/gh/zio/zio-telemetry/tree/master
-[link-discord]: https://discord.gg/2ccFBr4
-[link-ot]: https://opentelemetry.io/
-[link-otr]: https://opentracing.io/
+[open-tracing]: https://opentracing.io/
 [otr-inject-extract]: https://opentracing.io/docs/overview/inject-extract/
 [jaeger]: https://www.jaegertracing.io
 [zipkin]: https://www.zipkin.io
 [jaeger-docker]: https://www.jaegertracing.io/docs/1.6/getting-started/#all-in-one-docker-image
+[Badge-Circle]: https://circleci.com/gh/zio/interop-monix/tree/master.svg?style=svg
+[Badge-Discord]: https://img.shields.io/discord/629491597070827530?logo=discord 
+[Badge-SonatypeReleases]: https://img.shields.io/nexus/r/https/oss.sonatype.org/dev.zio/zio-interop-monix_2.12.svg "Sonatype Releases"
+[Badge-SonatypeSnapshots]: https://img.shields.io/nexus/s/https/oss.sonatype.org/dev.zio/zio-interop-monix_2.12.svg "Sonatype Snapshots"
+[Link-Discord]: https://discord.gg/2ccFBr4
+[Link-Circle]: https://circleci.com/gh/zio/interop-monix/tree/master
+[Link-SonatypeReleases]: https://oss.sonatype.org/content/repositories/releases/dev/zio/zio-interop-monix_2.12/ "Sonatype Releases"
+[Link-SonatypeSnapshots]: https://oss.sonatype.org/content/repositories/snapshots/dev/zio/zio-interop-monix_2.12/ "Sonatype Snapshots"
