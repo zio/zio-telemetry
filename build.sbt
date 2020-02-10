@@ -40,7 +40,7 @@ lazy val root =
     .settings(skip in publish := true)
     .aggregate(core, example)
 
-val http4sVersion      = "0.21.0-RC4"
+val http4sVersion      = "0.21.0"
 val jaegerVersion      = "1.1.0"
 val sttpVersion        = "2.0.0-RC9"
 val opentracingVersion = "0.33.0"
@@ -72,7 +72,7 @@ lazy val example =
     .settings(
       libraryDependencies := Seq(
         "org.typelevel"                %% "cats-core"                     % "2.1.0",
-        "io.circe"                     %% "circe-generic"                 % "0.12.3",
+        "io.circe"                     %% "circe-generic"                 % "0.13.0",
         "org.http4s"                   %% "http4s-core"                   % http4sVersion,
         "org.http4s"                   %% "http4s-blaze-server"           % http4sVersion,
         "org.http4s"                   %% "http4s-dsl"                    % http4sVersion,
