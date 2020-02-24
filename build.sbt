@@ -58,7 +58,7 @@ lazy val core =
         "dev.zio"                %% "zio-test-sbt"            % zioVersion % Test,
         "io.opentracing"         % "opentracing-api"          % opentracingVersion,
         "io.opentracing"         % "opentracing-mock"         % opentracingVersion % Test,
-        "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.3"
+        "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.4"
       )
     )
 
