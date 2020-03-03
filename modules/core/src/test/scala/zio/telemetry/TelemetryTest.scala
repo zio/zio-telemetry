@@ -25,9 +25,7 @@ object TelemetryTest
             managed(tracer)
               .use_(UIO.unit)
               .map(_ =>
-                assert(tracer.finishedSpans.asScala, hasSize(equalTo(1))) && assert(
-                  tracer.finishedSpans().get(0),
-                  hasField[MockSpan, String](
+                assert(tracer.finishedSpans.asScala)(hasSize(equalTo(1))) && assert(tracer.finishedSpans().get(0))(hasField[MockSpan, String](
                     "operationName",
                     _.operationName(),
                     equalTo("ROOT")
@@ -36,8 +34,7 @@ object TelemetryTest
                       "parent",
                       _.parentId,
                       equalTo(0L)
-                    )
-                )
+                    ))
               )
           }
         },
@@ -49,17 +46,14 @@ object TelemetryTest
             val spans = tracer.finishedSpans.asScala
             val root  = spans.find(_.operationName() == "ROOT")
             val child = spans.find(_.operationName() == "Child")
-            assert(root, isSome(anything)) &&
-            assert(
-              child,
-              isSome(
+            assert(root)(isSome(anything)) &&
+            assert(child)(isSome(
                 hasField[MockSpan, Long](
                   "parent",
                   _.parentId,
                   equalTo(root.get.context().spanId())
                 )
-              )
-            )
+              ))
           }
         },
         testM("rootSpan") {
@@ -70,17 +64,14 @@ object TelemetryTest
             val spans = tracer.finishedSpans.asScala
             val root  = spans.find(_.operationName() == "ROOT")
             val child = spans.find(_.operationName() == "ROOT2")
-            assert(root, isSome(anything)) &&
-            assert(
-              child,
-              isSome(
+            assert(root)(isSome(anything)) &&
+            assert(child)(isSome(
                 hasField[MockSpan, Long](
                   "parent",
                   _.parentId,
                   equalTo(0L)
                 )
-              )
-            )
+              ))
           }
         },
         testM("inject - extract roundtrip") {
@@ -97,13 +88,13 @@ object TelemetryTest
             val foo   = spans.find(_.operationName() == "foo")
             val bar   = spans.find(_.operationName() == "bar")
             val baz   = spans.find(_.operationName() == "baz")
-            assert(root, isSome(anything)) &&
-            assert(foo, isSome(anything)) &&
-            assert(bar, isSome(anything)) &&
-            assert(baz, isSome(anything)) &&
-            assert(foo.get.parentId(), equalTo(root.get.context().spanId())) &&
-            assert(bar.get.parentId(), equalTo(root.get.context().spanId())) &&
-            assert(baz.get.parentId(), equalTo(foo.get.context().spanId()))
+            assert(root)(isSome(anything)) &&
+            assert(foo)(isSome(anything)) &&
+            assert(bar)(isSome(anything)) &&
+            assert(baz)(isSome(anything)) &&
+            assert(foo.get.parentId())(equalTo(root.get.context().spanId())) &&
+            assert(bar.get.parentId())(equalTo(root.get.context().spanId())) &&
+            assert(baz.get.parentId())(equalTo(foo.get.context().spanId()))
           }
         },
         testM("tagging") {
@@ -119,7 +110,7 @@ object TelemetryTest
           } yield {
             val tags     = tracer.finishedSpans().asScala.head.tags.asScala.toMap
             val expected = Map[String, Any]("boolean" -> true, "int" -> 1, "string" -> "foo")
-            assert(tags, equalTo(expected))
+            assert(tags)(equalTo(expected))
           }
         },
         testM("logging") {
@@ -137,7 +128,7 @@ object TelemetryTest
               0L    -> Map("event"            -> "message"),
               1000L -> Map[String, Any]("msg" -> "message", "size" -> 1)
             )
-            assert(tags, equalTo(expected))
+            assert(tags)(equalTo(expected))
           }
         },
         testM("baggage") {
@@ -147,8 +138,8 @@ object TelemetryTest
               _      <- OpenTracing.setBaggageItem("bar", "baz")
               fooBag <- OpenTracing.getBaggageItem("foo")
               barBag <- OpenTracing.getBaggageItem("bar")
-            } yield assert(fooBag, isSome(equalTo("bar"))) &&
-              assert(barBag, isSome(equalTo("baz")))
+            } yield assert(fooBag)(isSome(equalTo("bar"))) &&
+              assert(barBag)(isSome(equalTo("baz")))
           test.provideSomeManaged(makeTracer.toManaged_.flatMap(makeService))
         }
       )
