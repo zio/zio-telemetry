@@ -80,7 +80,7 @@ lazy val example =
         "io.jaegertracing"             % "jaeger-core"                    % jaegerVersion,
         "io.jaegertracing"             % "jaeger-client"                  % jaegerVersion,
         "io.jaegertracing"             % "jaeger-zipkin"                  % jaegerVersion,
-        "com.github.pureconfig"        %% "pureconfig"                    % "0.12.2",
+        "com.github.pureconfig"        %% "pureconfig"                    % "0.12.3",
         "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % sttpVersion,
         "com.softwaremill.sttp.client" %% "circe"                         % sttpVersion,
         "dev.zio"                      %% "zio-interop-cats"              % "2.0.0.0-RC10",
