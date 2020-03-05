@@ -83,7 +83,7 @@ lazy val example =
         "com.github.pureconfig"        %% "pureconfig"                    % "0.12.3",
         "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % sttpVersion,
         "com.softwaremill.sttp.client" %% "circe"                         % sttpVersion,
-        "dev.zio"                      %% "zio-interop-cats"              % "2.0.0.0-RC10",
+        "dev.zio"                      %% "zio-interop-cats"              % "2.0.0.0-RC11",
         "io.zipkin.reporter2"          % "zipkin-reporter"                % zipkinVersion,
         "io.zipkin.reporter2"          % "zipkin-sender-okhttp3"          % zipkinVersion
       )
