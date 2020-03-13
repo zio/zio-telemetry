@@ -139,6 +139,7 @@ object OpenTracingTest extends DefaultRunnableSpec {
           val log = UIO.unit.log("message") *>
             TestClock.adjust(1000.micros) *>
             OpenTracing.log(Map("msg" -> "message", "size" -> 1))
+
           for {
             env    <- ZIO.environment[HasMockTracer]
             tracer = env.get[MockTracer]
