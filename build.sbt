@@ -31,6 +31,8 @@ inThisBuild(
   )
 )
 
+Global / onChangedBuildSource := ReloadOnSourceChanges
+
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
 
@@ -45,7 +47,7 @@ val jaegerVersion      = "1.1.0"
 val sttpVersion        = "2.0.0"
 val opentracingVersion = "0.33.0"
 val zipkinVersion      = "2.12.1"
-val zioVersion         = "1.0.0-RC17"
+val zioVersion         = "1.0.0-RC18-2"
 
 lazy val core =
   project
@@ -62,7 +64,7 @@ lazy val core =
       )
     )
 
-testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
+Global / testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
 
 lazy val example =
   project
