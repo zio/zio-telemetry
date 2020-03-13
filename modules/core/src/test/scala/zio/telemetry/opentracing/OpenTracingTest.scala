@@ -21,14 +21,10 @@ object OpenTracingTest extends DefaultRunnableSpec {
   val mockTracer: Layer[Nothing, HasMockTracer] =
     ZLayer.fromEffect(UIO(new MockTracer))
 
-  val testService: ZLayer[Clock with HasMockTracer, Nothing, OpenTracing] =
-    ZLayer.fromManaged(for {
-      env <- ZIO.environment[HasMockTracer].toManaged_
-      mt  = env.get[MockTracer]
-      ot  <- OpenTracing.managed(mt, "ROOT")
-    } yield ot)
+  val testService: URLayer[HasMockTracer with Clock, OpenTracing] =
+    ZLayer.fromServiceManaged(tracer => OpenTracing.managed(tracer, "ROOT"))
 
-  val customLayer = ((mockTracer ++ ZLayer.requires[Clock]) >>> testService) ++ mockTracer
+  val customLayer = mockTracer ++ ((mockTracer ++ Clock.any) >>> testService)
 
   def spec =
     suite("zio opentracing")(
@@ -136,9 +132,21 @@ object OpenTracingTest extends DefaultRunnableSpec {
           }
         },
         testM("logging") {
-          val log = UIO.unit.log("message") *>
-            TestClock.adjust(1000.micros) *>
-            OpenTracing.log(Map("msg" -> "message", "size" -> 1))
+          val duration = 1000.micros
+
+          /*
+           * TODO:
+           * Explicit sleep has been introduced due to the change in behavior of TestClock.adjust
+           * which made it affect only "wall" clock while leaving the fiber one intact. That being
+           * said, this piece of code should be replaced as soon as there's a better suited combinator
+           * available.
+           */
+          val log =
+            for {
+              _ <- UIO.unit.log("message")
+              _ <- TestClock.adjust(duration)
+              _ <- ZIO.sleep(duration).log(Map("msg" -> "message", "size" -> 1))
+            } yield ()
 
           for {
             env    <- ZIO.environment[HasMockTracer]
