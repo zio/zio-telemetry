@@ -1,8 +1,7 @@
-package zio.telemetry
+package zio
 
 import io.opentracing.Span
 import io.opentracing.propagation.Format
-import zio._
 import zio.clock.Clock
 
 package object opentracing {
@@ -17,8 +16,8 @@ package object opentracing {
     ): ZIO[R1, E, A] =
       for {
         service <- getService
-        root      <- service.root(opName)
-        r         <- span(service)(root, tagError, logError)
+        root    <- service.root(opName)
+        r       <- span(service)(root, tagError, logError)
       } yield r
 
     def span[R1 <: R with Clock with OpenTracing](
@@ -28,9 +27,9 @@ package object opentracing {
     ): ZIO[R1, E, A] =
       for {
         service <- getService
-        old       <- getSpan(service)
-        child     <- service.span(old, opName)
-        r         <- span(service)(child, tagError, logError)
+        old     <- getSpan(service)
+        child   <- service.span(old, opName)
+        r       <- span(service)(child, tagError, logError)
       } yield r
 
     def span[R1 <: R with Clock](service: OpenTracing.Service)(

@@ -1,4 +1,4 @@
-package zio.telemetry.opentracing
+package zio.opentracing
 
 import io.opentracing.propagation.Format
 import io.opentracing.Span

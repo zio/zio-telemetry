@@ -1,4 +1,4 @@
-package zio.telemetry.opentracing
+package zio.opentracing
 
 import io.opentracing.mock.MockSpan
 import io.opentracing.mock.MockTracer
