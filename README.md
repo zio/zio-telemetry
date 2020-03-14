@@ -21,7 +21,7 @@ import io.opentracing.mock.MockTracer
 import io.opentracing.propagation._
 import zio._
 import zio.clock.Clock
-import zio.telemetry.opentracing._
+import zio.opentracing._
 
 val tracer = new MockTracer
 
@@ -35,7 +35,7 @@ val managedEnvironment =
   }
 ```
 
-After importing `import zio.telemetry.opentracing._`, additional combinators
+After importing `import zio.opentracing._`, additional combinators
 on `ZIO`s are available to support starting child spans, tagging, logging and
 managing baggage.
 
@@ -147,11 +147,11 @@ Simultaneously, it will create trace that will be stored in Jaeger backend.
 [jaeger]: https://www.jaegertracing.io
 [zipkin]: https://www.zipkin.io
 [jaeger-docker]: https://www.jaegertracing.io/docs/1.6/getting-started/#all-in-one-docker-image
-[Badge-Circle]: https://circleci.com/gh/zio/interop-monix/tree/master.svg?style=svg
+[Badge-Circle]: https://circleci.com/gh/zio/zio-telemetry/tree/master.svg?style=svg
 [Badge-Discord]: https://img.shields.io/discord/629491597070827530?logo=discord 
-[Badge-SonatypeReleases]: https://img.shields.io/nexus/r/https/oss.sonatype.org/dev.zio/zio-interop-monix_2.12.svg "Sonatype Releases"
-[Badge-SonatypeSnapshots]: https://img.shields.io/nexus/s/https/oss.sonatype.org/dev.zio/zio-interop-monix_2.12.svg "Sonatype Snapshots"
+[Badge-SonatypeReleases]: https://img.shields.io/nexus/r/https/oss.sonatype.org/dev.zio/zio-telemetry_2.12.svg "Sonatype Releases"
+[Badge-SonatypeSnapshots]: https://img.shields.io/nexus/s/https/oss.sonatype.org/dev.zio/zio-telemetry_2.12.svg "Sonatype Snapshots"
 [Link-Discord]: https://discord.gg/2ccFBr4
-[Link-Circle]: https://circleci.com/gh/zio/interop-monix/tree/master
-[Link-SonatypeReleases]: https://oss.sonatype.org/content/repositories/releases/dev/zio/zio-interop-monix_2.12/ "Sonatype Releases"
-[Link-SonatypeSnapshots]: https://oss.sonatype.org/content/repositories/snapshots/dev/zio/zio-interop-monix_2.12/ "Sonatype Snapshots"
+[Link-Circle]: https://circleci.com/gh/zio/zio-telemetry/tree/master
+[Link-SonatypeReleases]: https://oss.sonatype.org/content/repositories/releases/dev/zio/zio-telemetry_2.12/ "Sonatype Releases"
+[Link-SonatypeSnapshots]: https://oss.sonatype.org/content/repositories/snapshots/dev/zio/zio-telemetry_2.12/ "Sonatype Snapshots"
