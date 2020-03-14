@@ -1,9 +1,9 @@
 package zio.telemetry
 
-import io.opentracing.propagation.Format
 import io.opentracing.Span
-import zio.clock.Clock
+import io.opentracing.propagation.Format
 import zio._
+import zio.clock.Clock
 
 package object opentracing {
   type OpenTracing = Has[OpenTracing.Service]

@@ -4,16 +4,10 @@ import io.opentracing.propagation.Format
 import io.opentracing.Span
 import io.opentracing.SpanContext
 import io.opentracing.Tracer
-import zio.URIO
-import zio.ZIO
-import zio.clock.Clock
-import zio.Task
 import java.util.concurrent.TimeUnit
-import zio.UIO
 import scala.jdk.CollectionConverters._
-import zio.FiberRef
-import zio.Cause
 import zio._
+import zio.clock.Clock
 
 object OpenTracing {
 

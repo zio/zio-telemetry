@@ -6,13 +6,12 @@ import io.opentracing.propagation.Format
 import io.opentracing.propagation.TextMapAdapter
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
+import zio._
+import zio.clock.Clock
 import zio.duration._
 import zio.test._
 import zio.test.Assertion._
-import zio.test.DefaultRunnableSpec
 import zio.test.environment.TestClock
-import zio._
-import zio.clock.Clock
 
 object OpenTracingTest extends DefaultRunnableSpec {
 
