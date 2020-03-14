@@ -40,7 +40,7 @@ lazy val root =
   project
     .in(file("."))
     .settings(skip in publish := true)
-    .aggregate(core, example)
+    .aggregate(openTracing, example)
 
 val http4sVersion      = "0.21.1"
 val jaegerVersion      = "1.2.0"
@@ -49,10 +49,10 @@ val opentracingVersion = "0.33.0"
 val zipkinVersion      = "2.12.1"
 val zioVersion         = "1.0.0-RC18-2"
 
-lazy val core =
+lazy val openTracing =
   project
-    .in(file("modules/core"))
-    .settings(stdSettings("zio-telemetry"))
+    .in(file("modules/open-tracing"))
+    .settings(stdSettings("zio-opentracing"))
     .settings(
       libraryDependencies := Seq(
         "dev.zio"                %% "zio"                     % zioVersion,
@@ -90,4 +90,4 @@ lazy val example =
         "io.zipkin.reporter2"          % "zipkin-sender-okhttp3"          % zipkinVersion
       )
     )
-    .dependsOn(core)
+    .dependsOn(openTracing)
