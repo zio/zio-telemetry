@@ -14,7 +14,7 @@ object BackendServer extends CatsApp {
 
   override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
     (for {
-      conf    <- config.load.provide(Configuration.Live)
+      conf    <- Configuration.load.provideLayer(Configuration.live)
       service = makeService(conf.tracer.host, "zio-backend")
       router  = Router[AppTask]("/" -> StatusService.status(service)).orNotFound
       result <- BlazeServerBuilder[AppTask]

@@ -157,12 +157,12 @@ object OpenTracingTest extends DefaultRunnableSpec {
               tracer
                 .finishedSpans()
                 .asScala
-                .toList
                 .collect {
                   case span if span.operationName == "foo" =>
                     span.logEntries().asScala.map(le => le.timestampMicros -> le.fields.asScala.toMap)
                 }
                 .flatten
+                .toList
 
             val expected = List(
               0L    -> Map("event"            -> "message"),

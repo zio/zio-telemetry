@@ -1,7 +1,9 @@
 package zio.telemetry.example
 
-import zio.RIO
+import zio.Has
 
-package object config extends Configuration.Service[Configuration] {
-  val load: RIO[Configuration, Config] = RIO.accessM(_.config.load)
+package object config {
+
+  type Configuration = Has[Configuration.Service]
+
 }

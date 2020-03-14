@@ -2,24 +2,22 @@ package zio.telemetry.example.config
 
 import pureconfig.ConfigSource
 import pureconfig.generic.auto._
-import zio.{ RIO, Task }
-
-trait Configuration extends Serializable {
-  val config: Configuration.Service[Any]
-}
+import zio.Task
+import zio.ZLayer
+import zio.ZIO
 
 object Configuration {
 
-  trait Service[R] {
-    val load: RIO[R, Config]
+  trait Service {
+    val load: Task[Config]
   }
 
-  trait Live extends Configuration {
-    override val config: Service[Any] = new Service[Any] {
-      val load: Task[Config] = Task.effect(ConfigSource.default.loadOrThrow[Config])
-    }
+  object Live extends Service {
+    val load: Task[Config] = Task.effect(ConfigSource.default.loadOrThrow[Config])
   }
 
-  object Live extends Live
+  val live: ZLayer[Any, Throwable, Configuration] = ZLayer.succeed(Live)
+
+  val load: ZIO[Configuration, Throwable, Config] = ZIO.accessM[Configuration] { _.get.load }
 
 }

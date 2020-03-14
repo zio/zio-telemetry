@@ -11,14 +11,16 @@ import sttp.model.Uri
 import zio.clock.Clock
 import zio.interop.catz._
 import zio.telemetry.opentracing.OpenTracing
-import zio.{ UIO, ZManaged }
+import zio.UIO
+import zio.ZIO
+import zio.ZLayer
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
 object StatusesService {
 
-  def statuses(backendUri: Uri, service: ZManaged[Clock, Throwable, Clock with OpenTracing]): HttpRoutes[AppTask] = {
+  def statuses(backendUri: Uri, service: ZLayer[Clock, Throwable, Clock with OpenTracing]): HttpRoutes[AppTask] = {
     val dsl: Http4sDsl[AppTask] = Http4sDsl[AppTask]
     import dsl._
 
@@ -26,9 +28,10 @@ object StatusesService {
 
     HttpRoutes.of[AppTask] {
       case GET -> Root / "statuses" =>
-        service.use { env =>
-          val zio = for {
-            _       <- env.telemetry.root("/statuses")
+        val zio =
+          for {
+            env     <- ZIO.environment[OpenTracing]
+            _       <- env.get.root("/statuses")
             _       <- OpenTracing.tag(Tags.SPAN_KIND.getKey, Tags.SPAN_KIND_CLIENT)
             _       <- OpenTracing.tag(Tags.HTTP_METHOD.getKey, GET.name)
             _       <- OpenTracing.setBaggageItem("proxy-baggage-item-key", "proxy-baggage-item-value")
@@ -45,8 +48,7 @@ object StatusesService {
                     }
           } yield res
 
-          zio.provideSomeManaged(service)
-        }
+        zio.provideLayer(service)
     }
   }
 
