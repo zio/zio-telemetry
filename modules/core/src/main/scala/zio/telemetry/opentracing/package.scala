@@ -1,57 +1,63 @@
 package zio.telemetry
 
-import java.util.concurrent.TimeUnit
-
 import io.opentracing.Span
-import io.opentracing.Tracer
 import io.opentracing.propagation.Format
-import zio.Cause
-import zio.FiberRef
-import zio.UIO
-import zio.URIO
-import zio.ZIO
-import zio.ZManaged
+import zio._
 import zio.clock.Clock
 
-import scala.jdk.CollectionConverters._
-
 package object opentracing {
-
-  def managed(tracer: Tracer, rootOpName: String = "ROOT"): ZManaged[Clock, Nothing, OpenTracing] =
-    ZManaged.make(
-      for {
-        span    <- UIO(tracer.buildSpan(rootOpName).start())
-        ref     <- FiberRef.make(span)
-        tracer_ = tracer
-      } yield new OpenTracing {
-
-        override val telemetry: OpenTracing.Service = new OpenTracing.Service {
-          override type A = Span
-
-          override val tracer: Tracer              = tracer_
-          override val currentSpan: FiberRef[Span] = ref
-
-          override def root(opName: String): URIO[Clock, Span] =
-            UIO(tracer.buildSpan(opName).start())
-
-          override def span(span: Span, opName: String): URIO[Clock, Span] =
-            for {
-              old   <- currentSpan.get
-              child <- UIO(tracer.buildSpan(opName).asChildOf(old).start())
-            } yield child
-
-          override def finish(span: Span): URIO[Clock, Unit] =
-            URIO.accessM(_.clock.currentTime(TimeUnit.MICROSECONDS).map(span.finish))
-
-          override def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit] =
-            UIO(span.setTag("error", true)).when(tagError) *>
-              UIO(span.log(Map("error.object" -> cause, "stack" -> cause.prettyPrint).asJava)).when(logError)
-
-        }
-      }
-    )(_.telemetry.currentSpan.get.flatMap(span => UIO(span.finish())))
+  type OpenTracing = Has[OpenTracing.Service]
 
   implicit final class OpenTracingZioOps[R, E, A](val zio: ZIO[R, E, A]) extends AnyVal {
+
+    def root[R1 <: R with Clock with OpenTracing](
+      opName: String,
+      tagError: Boolean = true,
+      logError: Boolean = true
+    ): ZIO[R1, E, A] =
+      for {
+        telemetry <- getTelemetry
+        root      <- telemetry.root(opName)
+        r         <- span(telemetry)(root, tagError, logError)
+      } yield r
+
+    def span[R1 <: R with Clock with OpenTracing](
+      opName: String,
+      tagError: Boolean = true,
+      logError: Boolean = true
+    ): ZIO[R1, E, A] =
+      for {
+        telemetry <- getTelemetry
+        old       <- getSpan(telemetry)
+        child     <- telemetry.span(old, opName)
+        r         <- span(telemetry)(child, tagError, logError)
+      } yield r
+
+    def span[R1 <: R with Clock](telemetry: OpenTracing.Service)(
+      span: Span,
+      tagError: Boolean,
+      logError: Boolean
+    ): ZIO[R1, E, A] =
+      for {
+        old <- getSpan(telemetry)
+        r <- (setSpan(telemetry)(span) *>
+              zio.catchAllCause { cause =>
+                telemetry.error(span, cause, tagError, logError) *>
+                  IO.done(Exit.Failure(cause))
+              }).ensuring(
+              telemetry.finish(span) *>
+                setSpan(telemetry)(old)
+            )
+      } yield r
+
+    private def setSpan(telemetry: OpenTracing.Service)(span: Span): UIO[Unit] =
+      telemetry.currentSpan.set(span)
+
+    private def getSpan(telemetry: OpenTracing.Service): UIO[Span] =
+      telemetry.currentSpan.get
+
+    private def getTelemetry: ZIO[OpenTracing, Nothing, OpenTracing.Service] =
+      ZIO.environment[OpenTracing].map(_.get[OpenTracing.Service])
 
     def spanFrom[R1 <: R with Clock with OpenTracing, C <: Object](
       format: Format[C],

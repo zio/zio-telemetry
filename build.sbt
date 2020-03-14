@@ -31,6 +31,8 @@ inThisBuild(
   )
 )
 
+Global / onChangedBuildSource := ReloadOnSourceChanges
+
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
 
@@ -41,11 +43,11 @@ lazy val root =
     .aggregate(core, example)
 
 val http4sVersion      = "0.21.1"
-val jaegerVersion      = "1.1.0"
-val sttpVersion        = "2.0.1"
+val jaegerVersion      = "1.2.0"
+val sttpVersion        = "2.0.5"
 val opentracingVersion = "0.33.0"
 val zipkinVersion      = "2.12.1"
-val zioVersion         = "1.0.0-RC17"
+val zioVersion         = "1.0.0-RC18-2"
 
 lazy val core =
   project
@@ -62,7 +64,7 @@ lazy val core =
       )
     )
 
-testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
+Global / testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
 
 lazy val example =
   project
@@ -83,7 +85,7 @@ lazy val example =
         "com.github.pureconfig"        %% "pureconfig"                    % "0.12.3",
         "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % sttpVersion,
         "com.softwaremill.sttp.client" %% "circe"                         % sttpVersion,
-        "dev.zio"                      %% "zio-interop-cats"              % "2.0.0.0-RC10",
+        "dev.zio"                      %% "zio-interop-cats"              % "2.0.0.0-RC12",
         "io.zipkin.reporter2"          % "zipkin-reporter"                % zipkinVersion,
         "io.zipkin.reporter2"          % "zipkin-sender-okhttp3"          % zipkinVersion
       )

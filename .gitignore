@@ -1,3 +1,5 @@
 **/.DS_Store
 project/metals.sbt
 target
+.bloop
+.metals
