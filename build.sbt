@@ -73,7 +73,7 @@ lazy val example =
     .settings(skip in publish := true)
     .settings(
       libraryDependencies := Seq(
-        "org.typelevel"                %% "cats-core"                     % "2.1.0",
+        "org.typelevel"                %% "cats-core"                     % "2.1.1",
         "io.circe"                     %% "circe-generic"                 % "0.13.0",
         "org.http4s"                   %% "http4s-core"                   % http4sVersion,
         "org.http4s"                   %% "http4s-blaze-server"           % http4sVersion,
@@ -82,7 +82,7 @@ lazy val example =
         "io.jaegertracing"             % "jaeger-core"                    % jaegerVersion,
         "io.jaegertracing"             % "jaeger-client"                  % jaegerVersion,
         "io.jaegertracing"             % "jaeger-zipkin"                  % jaegerVersion,
-        "com.github.pureconfig"        %% "pureconfig"                    % "0.12.2",
+        "com.github.pureconfig"        %% "pureconfig"                    % "0.12.3",
         "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % sttpVersion,
         "com.softwaremill.sttp.client" %% "circe"                         % sttpVersion,
         "dev.zio"                      %% "zio-interop-cats"              % "2.0.0.0-RC12",
