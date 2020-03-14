@@ -57,7 +57,7 @@ package object opentracing {
       telemetry.currentSpan.get
 
     private def getTelemetry: ZIO[OpenTracing, Nothing, OpenTracing.Service] =
-      ZIO.environment[OpenTracing].map(_.get[OpenTracing.Service])
+      ZIO.identity[OpenTracing].map(_.get)
 
     def spanFrom[R1 <: R with Clock with OpenTracing, C <: Object](
       format: Format[C],
