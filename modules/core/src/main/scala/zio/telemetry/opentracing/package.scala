@@ -16,9 +16,9 @@ package object opentracing {
       logError: Boolean = true
     ): ZIO[R1, E, A] =
       for {
-        telemetry <- getTelemetry
-        root      <- telemetry.root(opName)
-        r         <- span(telemetry)(root, tagError, logError)
+        service <- getService
+        root      <- service.root(opName)
+        r         <- span(service)(root, tagError, logError)
       } yield r
 
     def span[R1 <: R with Clock with OpenTracing](
@@ -27,36 +27,36 @@ package object opentracing {
       logError: Boolean = true
     ): ZIO[R1, E, A] =
       for {
-        telemetry <- getTelemetry
-        old       <- getSpan(telemetry)
-        child     <- telemetry.span(old, opName)
-        r         <- span(telemetry)(child, tagError, logError)
+        service <- getService
+        old       <- getSpan(service)
+        child     <- service.span(old, opName)
+        r         <- span(service)(child, tagError, logError)
       } yield r
 
-    def span[R1 <: R with Clock](telemetry: OpenTracing.Service)(
+    def span[R1 <: R with Clock](service: OpenTracing.Service)(
       span: Span,
       tagError: Boolean,
       logError: Boolean
     ): ZIO[R1, E, A] =
       for {
-        old <- getSpan(telemetry)
-        r <- (setSpan(telemetry)(span) *>
+        old <- getSpan(service)
+        r <- (setSpan(service)(span) *>
               zio.catchAllCause { cause =>
-                telemetry.error(span, cause, tagError, logError) *>
+                service.error(span, cause, tagError, logError) *>
                   IO.done(Exit.Failure(cause))
               }).ensuring(
-              telemetry.finish(span) *>
-                setSpan(telemetry)(old)
+              service.finish(span) *>
+                setSpan(service)(old)
             )
       } yield r
 
-    private def setSpan(telemetry: OpenTracing.Service)(span: Span): UIO[Unit] =
-      telemetry.currentSpan.set(span)
+    private def setSpan(service: OpenTracing.Service)(span: Span): UIO[Unit] =
+      service.currentSpan.set(span)
 
-    private def getSpan(telemetry: OpenTracing.Service): UIO[Span] =
-      telemetry.currentSpan.get
+    private def getSpan(service: OpenTracing.Service): UIO[Span] =
+      service.currentSpan.get
 
-    private def getTelemetry: ZIO[OpenTracing, Nothing, OpenTracing.Service] =
+    private def getService: ZIO[OpenTracing, Nothing, OpenTracing.Service] =
       ZIO.identity[OpenTracing].map(_.get)
 
     def spanFrom[R1 <: R with Clock with OpenTracing, C <: Object](

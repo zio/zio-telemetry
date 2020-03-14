@@ -62,14 +62,14 @@ object OpenTracing {
     logError: Boolean = true
   ): ZIO[R1, E, Span] =
     ZIO.accessM { env =>
-      val telemetry = env.get[OpenTracing.Service]
-      Task(telemetry.tracer.extract(format, carrier))
+      val service = env.get[OpenTracing.Service]
+      Task(service.tracer.extract(format, carrier))
         .fold(_ => None, Option.apply)
         .flatMap {
           case None => zio
           case Some(spanCtx) =>
-            zio.span(telemetry)(
-              telemetry.tracer.buildSpan(opName).asChildOf(spanCtx).start,
+            zio.span(service)(
+              service.tracer.buildSpan(opName).asChildOf(spanCtx).start,
               tagError,
               logError
             )
@@ -78,9 +78,9 @@ object OpenTracing {
 
   def inject[C <: Object](format: Format[C], carrier: C): ZIO[OpenTracing, Nothing, Unit] =
     ZIO.accessM { env =>
-      val telemetry = env.get[OpenTracing.Service]
-      telemetry.currentSpan.get.flatMap { span =>
-        ZIO.effectTotal(telemetry.tracer.inject(span.context(), format, carrier)).unit
+      val service = env.get[OpenTracing.Service]
+      service.currentSpan.get.flatMap { span =>
+        ZIO.effectTotal(service.tracer.inject(span.context(), format, carrier)).unit
       }
     }
 
