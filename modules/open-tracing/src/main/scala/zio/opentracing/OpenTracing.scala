@@ -1,13 +1,13 @@
 package zio.opentracing
 
-import io.opentracing.propagation.Format
-import io.opentracing.Span
-import io.opentracing.SpanContext
-import io.opentracing.Tracer
 import java.util.concurrent.TimeUnit
-import scala.jdk.CollectionConverters._
+
+import io.opentracing.propagation.Format
+import io.opentracing.{ Span, SpanContext, Tracer }
 import zio._
 import zio.clock.Clock
+
+import scala.jdk.CollectionConverters._
 
 object OpenTracing {
 
@@ -51,7 +51,7 @@ object OpenTracing {
       }
     )(_.currentSpan.get.flatMap(span => UIO(span.finish())))
 
-  def spanFrom[R, R1 <: R with Clock with OpenTracing, E, Span, C <: Object](
+  def spanFrom[R, R1 <: R with Clock with OpenTracing, E, Span, C <: AnyRef](
     format: Format[C],
     carrier: C,
     zio: ZIO[R, E, Span],
@@ -73,7 +73,7 @@ object OpenTracing {
         }
     }
 
-  def inject[C <: Object](format: Format[C], carrier: C): URIO[OpenTracing, Unit] =
+  def inject[C <: AnyRef](format: Format[C], carrier: C): URIO[OpenTracing, Unit] =
     ZIO.access[OpenTracing](_.get).flatMap { service =>
       service.currentSpan.get.flatMap { span =>
         ZIO.effectTotal(service.tracer.inject(span.context(), format, carrier)).unit

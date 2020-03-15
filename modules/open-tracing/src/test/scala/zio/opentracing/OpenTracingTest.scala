@@ -1,11 +1,7 @@
 package zio.opentracing
 
-import io.opentracing.mock.MockSpan
-import io.opentracing.mock.MockTracer
-import io.opentracing.propagation.Format
-import io.opentracing.propagation.TextMapAdapter
-import scala.collection.mutable
-import scala.jdk.CollectionConverters._
+import io.opentracing.mock.{ MockSpan, MockTracer }
+import io.opentracing.propagation.{ Format, TextMapAdapter }
 import zio._
 import zio.clock.Clock
 import zio.duration._
@@ -13,6 +9,8 @@ import zio.test._
 import zio.test.Assertion._
 import zio.test.environment.TestClock
 
+import scala.collection.mutable
+import scala.jdk.CollectionConverters._
 object OpenTracingTest extends DefaultRunnableSpec {
 
   type HasMockTracer = Has[MockTracer]
