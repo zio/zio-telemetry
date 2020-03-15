@@ -59,8 +59,7 @@ object OpenTracing {
     tagError: Boolean = true,
     logError: Boolean = true
   ): ZIO[R1, E, Span] =
-    ZIO.accessM { env =>
-      val service = env.get[OpenTracing.Service]
+    ZIO.access[OpenTracing](_.get).flatMap { service =>
       Task(service.tracer.extract(format, carrier))
         .fold(_ => None, Option.apply)
         .flatMap {
@@ -75,8 +74,7 @@ object OpenTracing {
     }
 
   def inject[C <: Object](format: Format[C], carrier: C): URIO[OpenTracing, Unit] =
-    ZIO.accessM { env =>
-      val service = env.get[OpenTracing.Service]
+    ZIO.access[OpenTracing](_.get).flatMap { service =>
       service.currentSpan.get.flatMap { span =>
         ZIO.effectTotal(service.tracer.inject(span.context(), format, carrier)).unit
       }
