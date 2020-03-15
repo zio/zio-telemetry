@@ -74,11 +74,11 @@ object OpenTracing {
     }
 
   def inject[C <: AnyRef](format: Format[C], carrier: C): URIO[OpenTracing, Unit] =
-    ZIO.access[OpenTracing](_.get).flatMap { service =>
-      service.currentSpan.get.flatMap { span =>
-        ZIO.effectTotal(service.tracer.inject(span.context(), format, carrier)).unit
-      }
-    }
+    for {
+      service <- ZIO.access[OpenTracing](_.get)
+      span    <- service.currentSpan.get
+      _       <- ZIO.effectTotal(service.tracer.inject(span.context(), format, carrier))
+    } yield ()
 
   def context: URIO[OpenTracing, SpanContext] =
     ZIO.accessM(_.get.currentSpan.get.map(_.context))
