@@ -52,8 +52,7 @@ object OpenTracingTest extends DefaultRunnableSpec {
       suite("spans")(
         testM("childSpan") {
           for {
-            env    <- ZIO.environment[HasMockTracer]
-            tracer = env.get[MockTracer]
+            tracer <- ZIO.access[HasMockTracer](_.get)
             _      <- UIO.unit.span("Child").span("ROOT")
           } yield {
             val spans = tracer.finishedSpans.asScala
@@ -73,8 +72,7 @@ object OpenTracingTest extends DefaultRunnableSpec {
         },
         testM("rootSpan") {
           for {
-            env    <- ZIO.environment[HasMockTracer]
-            tracer = env.get[MockTracer]
+            tracer <- ZIO.access[HasMockTracer](_.get)
             _      <- UIO.unit.root("ROOT2").root("ROOT")
           } yield {
             val spans = tracer.finishedSpans.asScala
@@ -99,8 +97,7 @@ object OpenTracingTest extends DefaultRunnableSpec {
               .spanFrom(Format.Builtin.TEXT_MAP, tm, UIO.unit, "baz")
               .span("bar")
           for {
-            env    <- ZIO.environment[HasMockTracer]
-            tracer = env.get[MockTracer]
+            tracer <- ZIO.access[HasMockTracer](_.get)
             _      <- injectExtract.span("ROOT")
           } yield {
             val spans = tracer.finishedSpans().asScala
@@ -119,8 +116,7 @@ object OpenTracingTest extends DefaultRunnableSpec {
         },
         testM("tagging") {
           for {
-            env    <- ZIO.environment[HasMockTracer]
-            tracer = env.get[MockTracer]
+            tracer <- ZIO.access[HasMockTracer](_.get)
             _ <- UIO.unit
                   .tag("boolean", true)
                   .tag("int", 1)
@@ -150,8 +146,7 @@ object OpenTracingTest extends DefaultRunnableSpec {
             } yield ()
 
           for {
-            env    <- ZIO.environment[HasMockTracer]
-            tracer = env.get[MockTracer]
+            tracer <- ZIO.access[HasMockTracer](_.get)
             _      <- log.span("foo")
           } yield {
             val tags =
