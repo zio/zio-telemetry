@@ -10,25 +10,25 @@ package object opentracing {
   implicit final class OpenTracingZioOps[R, E, A](val zio: ZIO[R, E, A]) extends AnyVal {
 
     def root[R1 <: R with Clock with OpenTracing](
-      opName: String,
+      operation: String,
       tagError: Boolean = true,
       logError: Boolean = true
     ): ZIO[R1, E, A] =
       for {
         service <- getService
-        root    <- service.root(opName)
+        root    <- service.root(operation)
         r       <- span(service)(root, tagError, logError)
       } yield r
 
     def span[R1 <: R with Clock with OpenTracing](
-      opName: String,
+      operation: String,
       tagError: Boolean = true,
       logError: Boolean = true
     ): ZIO[R1, E, A] =
       for {
         service <- getService
         old     <- getSpan(service)
-        child   <- service.span(old, opName)
+        child   <- service.span(old, operation)
         r       <- span(service)(child, tagError, logError)
       } yield r
 
@@ -61,11 +61,11 @@ package object opentracing {
     def spanFrom[R1 <: R with Clock with OpenTracing, C <: Object](
       format: Format[C],
       carrier: C,
-      opName: String,
+      operation: String,
       tagError: Boolean = true,
       logError: Boolean = true
     ): ZIO[R1, E, A] =
-      OpenTracing.spanFrom(format, carrier, zio, opName, tagError, logError)
+      OpenTracing.spanFrom(format, carrier, zio, operation, tagError, logError)
 
     def setBaggageItem(key: String, value: String): ZIO[R with OpenTracing, E, A] =
       zio <* OpenTracing.setBaggageItem(key, value)
