@@ -56,7 +56,7 @@ package object opentracing {
       service.currentSpan.get
 
     private def getService: URIO[OpenTracing, OpenTracing.Service] =
-      ZIO.identity[OpenTracing].map(_.get)
+      ZIO.access[OpenTracing](_.get)
 
     def spanFrom[R1 <: R with Clock with OpenTracing, C <: Object](
       format: Format[C],
