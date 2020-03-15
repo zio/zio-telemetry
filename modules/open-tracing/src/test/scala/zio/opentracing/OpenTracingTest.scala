@@ -29,10 +29,12 @@ object OpenTracingTest extends DefaultRunnableSpec {
     suite("zio opentracing")(
       testM("managedService") {
         val tracer = new MockTracer
+
         OpenTracing
-          .managed(tracer, "ROOT")
+          .live(tracer, "ROOT")
+          .build
           .use_(UIO.unit)
-          .map(_ =>
+          .as(
             assert(tracer.finishedSpans.asScala)(hasSize(equalTo(1))) && assert(tracer.finishedSpans().get(0))(
               hasField[MockSpan, String](
                 "operationName",
