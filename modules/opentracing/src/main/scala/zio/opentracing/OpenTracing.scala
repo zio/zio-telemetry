@@ -8,6 +8,10 @@ import zio._
 import zio.clock.Clock
 
 import scala.jdk.CollectionConverters._
+import scala.collection.mutable
+import io.opentracing.propagation.TextMap
+import java.{ util => ju }
+import java.util.Map.Entry
 
 object OpenTracing {
 
@@ -51,14 +55,14 @@ object OpenTracing {
       }
     )(_.currentSpan.get.flatMap(span => UIO(span.finish())))
 
-  def spanFrom[R, R1 <: R with Clock with OpenTracing, E, Span, C <: AnyRef](
+  def spanFrom[R, E, A, C <: AnyRef](
     format: Format[C],
     carrier: C,
-    zio: ZIO[R, E, Span],
+    zio: ZIO[R, E, A],
     operation: String,
-    tagError: Boolean = true,
-    logError: Boolean = true
-  ): ZIO[R1, E, Span] =
+    tagError: Boolean,
+    logError: Boolean
+  ): ZIO[R with OpenTracing, E, A] =
     ZIO.access[OpenTracing](_.get).flatMap { service =>
       Task(service.tracer.extract(format, carrier))
         .fold(_ => None, Option.apply)
@@ -73,12 +77,60 @@ object OpenTracing {
         }
     }
 
+  def spanFrom[R, E, A, C <: AnyRef](
+    format: Format[C],
+    carrier: C,
+    zio: ZIO[R, E, A],
+    operation: String
+  ): ZIO[R with OpenTracing, E, A] =
+    spanFrom(format, carrier, zio, operation, tagError = true, logError = true)
+
+  def spanFrom[R, E, A](
+    headers: Map[String, String],
+    zio: ZIO[R, E, A],
+    operation: String,
+    tagError: Boolean,
+    logError: Boolean
+  ): ZIO[R with OpenTracing, E, A] = {
+    val carrier = new TextMap {
+      override def put(x: String, y: String): Unit                = ()
+      override def iterator(): ju.Iterator[Entry[String, String]] = headers.asJava.entrySet.iterator
+    }
+    spanFrom(Format.Builtin.TEXT_MAP, carrier, zio, operation, tagError, logError)
+  }
+
+  def spanFrom[R, E, A](
+    headers: Map[String, String],
+    zio: ZIO[R, E, A],
+    operation: String
+  ): ZIO[R with OpenTracing, E, A] =
+    spanFrom(headers, zio, operation, tagError = true, logError = true)
+
+  def spanFrom[R, E, A](
+    context: String,
+    zio: ZIO[R, E, A],
+    operation: String,
+    tagError: Boolean = true,
+    logError: Boolean = true
+  ): ZIO[R with OpenTracing, E, A] =
+    spanFrom(Map("x-trace-id" -> context), zio, operation, tagError, logError)
+
   def inject[C <: AnyRef](format: Format[C], carrier: C): URIO[OpenTracing, Unit] =
     for {
       service <- ZIO.access[OpenTracing](_.get)
       span    <- service.currentSpan.get
       _       <- ZIO.effectTotal(service.tracer.inject(span.context(), format, carrier))
     } yield ()
+
+  def inject: URIO[OpenTracing, Map[String, String]] =
+    for {
+      underlying <- UIO.succeed(mutable.Map.empty[String, String])
+      carrier <- UIO.succeed(new TextMap {
+                  override def put(x: String, y: String): Unit                = underlying.update(x, y)
+                  override def iterator(): ju.Iterator[Entry[String, String]] = underlying.asJava.entrySet.iterator
+                })
+      r <- inject(Format.Builtin.TEXT_MAP, carrier).as(underlying.toMap)
+    } yield r
 
   def context: URIO[OpenTracing, SpanContext] =
     ZIO.accessM(_.get.currentSpan.get.map(_.context))

@@ -20,7 +20,7 @@ package object opentracing {
         r       <- span(service)(root, tagError, logError)
       } yield r
 
-    def span[R1 <: R with Clock with OpenTracing](
+    def span[R1 <: R with OpenTracing](
       operation: String,
       tagError: Boolean = true,
       logError: Boolean = true
@@ -32,7 +32,7 @@ package object opentracing {
         r       <- span(service)(child, tagError, logError)
       } yield r
 
-    def span[R1 <: R with Clock](service: OpenTracing.Service)(
+    def span[R1 <: R](service: OpenTracing.Service)(
       span: Span,
       tagError: Boolean,
       logError: Boolean
@@ -58,14 +58,55 @@ package object opentracing {
     private def getService: URIO[OpenTracing, OpenTracing.Service] =
       ZIO.access[OpenTracing](_.get)
 
-    def spanFrom[R1 <: R with Clock with OpenTracing, C <: Object](
+    def spanFrom[C <: AnyRef](
       format: Format[C],
       carrier: C,
       operation: String,
       tagError: Boolean = true,
       logError: Boolean = true
-    ): ZIO[R1, E, A] =
+    ): ZIO[R with OpenTracing, E, A] =
       OpenTracing.spanFrom(format, carrier, zio, operation, tagError, logError)
+
+    def spanFrom[C <: AnyRef](
+      format: Format[C],
+      carrier: C,
+      operation: String
+    ): ZIO[R with OpenTracing, E, A] =
+      OpenTracing.spanFrom(format, carrier, zio, operation, tagError = true, logError = true)
+
+    def spanFrom(
+      headers: Map[String, String],
+      operation: String,
+      tagError: Boolean,
+      logError: Boolean
+    ): ZIO[R with OpenTracing, E, A] =
+      OpenTracing.spanFrom(headers, zio, operation, tagError, logError)
+
+    def spanFrom(
+      headers: Map[String, String],
+      operation: String
+    ): ZIO[R with OpenTracing, E, A] =
+      OpenTracing.spanFrom(headers, zio, operation, tagError = true, logError = true)
+
+    def spanFrom(
+      context: String,
+      operation: String,
+      tagError: Boolean,
+      logError: Boolean
+    ): ZIO[R with OpenTracing, E, A] =
+      OpenTracing.spanFrom(context, zio, operation, tagError, logError)
+
+    def spanFrom(
+      context: String,
+      operation: String
+    ): ZIO[R with OpenTracing, E, A] =
+      OpenTracing.spanFrom(context, zio, operation, tagError = true, logError = true)
+
+    def inject[C <: AnyRef](format: Format[C], carrier: C): URIO[OpenTracing, Unit] =
+      OpenTracing.inject(format, carrier)
+
+    def inject: URIO[OpenTracing, Map[String, String]] =
+      OpenTracing.inject
 
     def setBaggageItem(key: String, value: String): ZIO[R with OpenTracing, E, A] =
       zio <* OpenTracing.setBaggageItem(key, value)
