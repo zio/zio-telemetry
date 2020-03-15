@@ -20,13 +20,13 @@ object OpenTracing {
     def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit]
   }
 
-  def live(tracer: Tracer, rootOpName: String = "ROOT"): URLayer[Clock, OpenTracing] =
-    ZLayer.fromManaged(managed(tracer, rootOpName))
+  def live(tracer: Tracer, rootOperation: String = "ROOT"): URLayer[Clock, OpenTracing] =
+    ZLayer.fromManaged(managed(tracer, rootOperation))
 
-  private[opentracing] def managed(tracer0: Tracer, rootOpName: String): URManaged[Clock, OpenTracing.Service] =
+  private[opentracing] def managed(tracer0: Tracer, rootOperation: String): URManaged[Clock, OpenTracing.Service] =
     ZManaged.make(
       for {
-        span  <- UIO(tracer0.buildSpan(rootOpName).start())
+        span  <- UIO(tracer0.buildSpan(rootOperation).start())
         ref   <- FiberRef.make(span)
         clock <- ZIO.access[Clock](_.get)
       } yield new OpenTracing.Service {
