@@ -88,7 +88,7 @@ test: &test
     - <<: *install_jdk
     - run:
         name: Run tests
-        command: ./sbt -Dfatal.warnings=true ++${SCALA_VERSION}! test
+        command: ./sbt ++${SCALA_VERSION}! test
     - <<: *clean_cache
     - <<: *save_cache
     - store_test_results:
@@ -122,7 +122,7 @@ release: &release
             $HOME/bin/gpg --version
             echo RELOADAGENT | gpg-connect-agent
             echo $PGP_SECRET | base64 -di | gpg2 --import --no-tty --batch --yes
-            PATH=$HOME/bin:$PATH ./sbt ++${SCALA_VERSION}! clean ci-release
+            PATH=$HOME/bin:$PATH ./sbt ++${SCALA_VERSION}! ci-release
 
 jobs:
   lint:

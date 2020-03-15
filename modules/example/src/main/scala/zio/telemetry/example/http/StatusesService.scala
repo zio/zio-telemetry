@@ -10,7 +10,7 @@ import org.http4s.{ EntityEncoder, HttpRoutes }
 import sttp.model.Uri
 import zio.clock.Clock
 import zio.interop.catz._
-import zio.telemetry.opentracing.OpenTracing
+import zio.opentracing.OpenTracing
 import zio.UIO
 import zio.ZIO
 import zio.ZLayer
