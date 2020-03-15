@@ -14,8 +14,8 @@ object OpenTracing {
   trait Service {
     private[opentracing] val tracer: Tracer
     def currentSpan: FiberRef[Span]
-    def root(opName: String): UIO[Span]
-    def span(span: Span, opName: String): UIO[Span]
+    def root(operation: String): UIO[Span]
+    def span(span: Span, operation: String): UIO[Span]
     def finish(span: Span): UIO[Unit]
     def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit]
   }
@@ -33,13 +33,13 @@ object OpenTracing {
         override val tracer: Tracer              = tracer0
         override val currentSpan: FiberRef[Span] = ref
 
-        override def root(opName: String): UIO[Span] =
-          UIO(tracer.buildSpan(opName).start())
+        override def root(operation: String): UIO[Span] =
+          UIO(tracer.buildSpan(operation).start())
 
-        override def span(span: Span, opName: String): UIO[Span] =
+        override def span(span: Span, operation: String): UIO[Span] =
           for {
             old   <- currentSpan.get
-            child <- UIO(tracer.buildSpan(opName).asChildOf(old).start())
+            child <- UIO(tracer.buildSpan(operation).asChildOf(old).start())
           } yield child
 
         override def finish(span: Span): UIO[Unit] =
@@ -55,7 +55,7 @@ object OpenTracing {
     format: Format[C],
     carrier: C,
     zio: ZIO[R, E, Span],
-    opName: String,
+    operation: String,
     tagError: Boolean = true,
     logError: Boolean = true
   ): ZIO[R1, E, Span] =
@@ -67,7 +67,7 @@ object OpenTracing {
           case None => zio
           case Some(spanCtx) =>
             zio.span(service)(
-              service.tracer.buildSpan(opName).asChildOf(spanCtx).start,
+              service.tracer.buildSpan(operation).asChildOf(spanCtx).start,
               tagError,
               logError
             )
