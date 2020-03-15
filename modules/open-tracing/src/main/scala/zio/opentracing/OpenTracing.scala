@@ -74,7 +74,7 @@ object OpenTracing {
         }
     }
 
-  def inject[C <: Object](format: Format[C], carrier: C): ZIO[OpenTracing, Nothing, Unit] =
+  def inject[C <: Object](format: Format[C], carrier: C): URIO[OpenTracing, Unit] =
     ZIO.accessM { env =>
       val service = env.get[OpenTracing.Service]
       service.currentSpan.get.flatMap { span =>
@@ -82,7 +82,7 @@ object OpenTracing {
       }
     }
 
-  def context: ZIO[OpenTracing, Nothing, SpanContext] =
+  def context: URIO[OpenTracing, SpanContext] =
     ZIO.accessM(_.get.currentSpan.get.map(_.context))
 
   def getBaggageItem(key: String): URIO[OpenTracing, Option[String]] =
@@ -100,14 +100,14 @@ object OpenTracing {
   def tag(key: String, value: Boolean): URIO[OpenTracing, Unit] =
     getSpan.map(_.setTag(key, value)).unit
 
-  def log(msg: String): ZIO[Clock with OpenTracing, Nothing, Unit] =
+  def log(msg: String): URIO[Clock with OpenTracing, Unit] =
     for {
       span <- getSpan
       now  <- getCurrentTimeMicros
       _    <- UIO(span.log(now, msg))
     } yield ()
 
-  def log(fields: Map[String, _]): ZIO[Clock with OpenTracing, Nothing, Unit] =
+  def log(fields: Map[String, _]): URIO[Clock with OpenTracing, Unit] =
     for {
       span <- getSpan
       now  <- getCurrentTimeMicros
@@ -117,6 +117,6 @@ object OpenTracing {
   private def getSpan: URIO[OpenTracing, Span] =
     ZIO.accessM(_.get.currentSpan.get)
 
-  private def getCurrentTimeMicros: ZIO[Clock, Nothing, Long] =
+  private def getCurrentTimeMicros: URIO[Clock, Long] =
     ZIO.accessM(_.get.currentTime(TimeUnit.MICROSECONDS))
 }
