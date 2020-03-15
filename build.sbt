@@ -51,7 +51,7 @@ val zioVersion         = "1.0.0-RC18-2"
 
 lazy val openTracing =
   project
-    .in(file("modules/open-tracing"))
+    .in(file("modules/opentracing"))
     .settings(stdSettings("zio-opentracing"))
     .settings(
       libraryDependencies := Seq(
