@@ -9,9 +9,7 @@ import zio.clock.Clock
 
 import scala.jdk.CollectionConverters._
 import scala.collection.mutable
-import io.opentracing.propagation.TextMap
-import java.{ util => ju }
-import java.util.Map.Entry
+import io.opentracing.propagation.TextMapAdapter
 
 object OpenTracing {
 
@@ -91,13 +89,8 @@ object OpenTracing {
     operation: String,
     tagError: Boolean,
     logError: Boolean
-  ): ZIO[R with OpenTracing, E, A] = {
-    val carrier = new TextMap {
-      override def put(x: String, y: String): Unit                = ()
-      override def iterator(): ju.Iterator[Entry[String, String]] = headers.asJava.entrySet.iterator
-    }
-    spanFrom(Format.Builtin.TEXT_MAP, carrier, zio, operation, tagError, logError)
-  }
+  ): ZIO[R with OpenTracing, E, A] =
+    spanFrom(Format.Builtin.TEXT_MAP, new TextMapAdapter(headers.asJava), zio, operation, tagError, logError)
 
   def spanFrom[R, E, A](
     headers: Map[String, String],
@@ -113,7 +106,7 @@ object OpenTracing {
     tagError: Boolean = true,
     logError: Boolean = true
   ): ZIO[R with OpenTracing, E, A] =
-    spanFrom(Map("x-trace-id" -> context), zio, operation, tagError, logError)
+    spanFrom(Map("uber-trace-id" -> context), zio, operation, tagError, logError)
 
   def inject[C <: AnyRef](format: Format[C], carrier: C): URIO[OpenTracing, Unit] =
     for {
@@ -125,11 +118,8 @@ object OpenTracing {
   def inject: URIO[OpenTracing, Map[String, String]] =
     for {
       underlying <- UIO.succeed(mutable.Map.empty[String, String])
-      carrier <- UIO.succeed(new TextMap {
-                  override def put(x: String, y: String): Unit                = underlying.update(x, y)
-                  override def iterator(): ju.Iterator[Entry[String, String]] = underlying.asJava.entrySet.iterator
-                })
-      r <- inject(Format.Builtin.TEXT_MAP, carrier).as(underlying.toMap)
+      carrier    <- UIO.succeed(new TextMapAdapter(underlying.asJava))
+      r          <- inject(Format.Builtin.HTTP_HEADERS, carrier).as(underlying.toMap)
     } yield r
 
   def context: URIO[OpenTracing, SpanContext] =

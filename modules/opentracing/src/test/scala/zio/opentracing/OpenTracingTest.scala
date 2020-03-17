@@ -88,12 +88,37 @@ object OpenTracingTest extends DefaultRunnableSpec {
             )
           }
         },
-        testM("inject - extract roundtrip") {
+        testM("inject - extract roundtrip java API") {
           val tm = new TextMapAdapter(mutable.Map.empty.asJava)
           val injectExtract = OpenTracing.inject(Format.Builtin.TEXT_MAP, tm).span("foo") *>
             OpenTracing
               .spanFrom(Format.Builtin.TEXT_MAP, tm, UIO.unit, "baz")
               .span("bar")
+          for {
+            tracer <- ZIO.access[HasMockTracer](_.get)
+            _      <- injectExtract.span("ROOT")
+          } yield {
+            val spans = tracer.finishedSpans().asScala
+            val root  = spans.find(_.operationName() == "ROOT")
+            val foo   = spans.find(_.operationName() == "foo")
+            val bar   = spans.find(_.operationName() == "bar")
+            val baz   = spans.find(_.operationName() == "baz")
+            assert(root)(isSome(anything)) &&
+            assert(foo)(isSome(anything)) &&
+            assert(bar)(isSome(anything)) &&
+            assert(baz)(isSome(anything)) &&
+            assert(foo.get.parentId())(equalTo(root.get.context().spanId())) &&
+            assert(bar.get.parentId())(equalTo(root.get.context().spanId())) &&
+            assert(baz.get.parentId())(equalTo(foo.get.context().spanId()))
+          }
+        },
+        testM("inject - extract roundtrip Scala Map API") {
+          val injectExtract = OpenTracing.inject.span("foo").flatMap { textMap =>
+            println(textMap)
+            OpenTracing
+              .spanFrom(textMap, UIO.unit, "baz")
+              .span("bar")
+          }
           for {
             tracer <- ZIO.access[HasMockTracer](_.get)
             _      <- injectExtract.span("ROOT")
