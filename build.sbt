@@ -42,7 +42,7 @@ lazy val root =
     .settings(skip in publish := true)
     .aggregate(openTracing, example)
 
-val http4sVersion      = "0.21.1"
+val http4sVersion      = "0.21.2"
 val jaegerVersion      = "1.2.0"
 val sttpVersion        = "2.0.6"
 val opentracingVersion = "0.33.0"
@@ -59,6 +59,7 @@ lazy val openTracing =
         "dev.zio"                %% "zio-test"                % zioVersion % Test,
         "dev.zio"                %% "zio-test-sbt"            % zioVersion % Test,
         "io.opentracing"         % "opentracing-api"          % opentracingVersion,
+        "io.opentracing"         % "opentracing-noop"         % opentracingVersion,
         "io.opentracing"         % "opentracing-mock"         % opentracingVersion % Test,
         "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.4"
       )

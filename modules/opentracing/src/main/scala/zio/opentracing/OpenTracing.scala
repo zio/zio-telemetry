@@ -4,6 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import io.opentracing.propagation.Format
 import io.opentracing.{ Span, SpanContext, Tracer }
+import io.opentracing.noop.NoopTracerFactory
 import zio._
 import zio.clock.Clock
 
@@ -19,6 +20,9 @@ object OpenTracing {
     def finish(span: Span): UIO[Unit]
     def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit]
   }
+
+  val noop: URLayer[Clock, OpenTracing] =
+    live(NoopTracerFactory.create())
 
   def live(tracer: Tracer, rootOperation: String = "ROOT"): URLayer[Clock, OpenTracing] =
     ZLayer.fromManaged(managed(tracer, rootOperation))
