@@ -44,7 +44,7 @@ lazy val root =
 
 val http4sVersion      = "0.21.3"
 val jaegerVersion      = "1.2.0"
-val sttpVersion        = "2.0.6"
+val sttpVersion        = "2.0.7"
 val opentracingVersion = "0.33.0"
 val zipkinVersion      = "2.12.2"
 val zioVersion         = "1.0.0-RC18-2"
