@@ -40,13 +40,14 @@ lazy val root =
   project
     .in(file("."))
     .settings(skip in publish := true)
-    .aggregate(openTracing, example)
+    .aggregate(openTracing, openTelemetry, example)
 
 val http4sVersion      = "0.21.3"
 val jaegerVersion      = "1.2.0"
 val sttpVersion        = "2.0.9"
 val opentracingVersion = "0.33.0"
 val zipkinVersion      = "2.12.3"
+val opentelemetryVersion = "0.3.0"
 val zioVersion         = "1.0.0-RC18-2"
 
 lazy val openTracing =
@@ -62,6 +63,21 @@ lazy val openTracing =
         "io.opentracing"         % "opentracing-noop"         % opentracingVersion,
         "io.opentracing"         % "opentracing-mock"         % opentracingVersion % Test,
         "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.6"
+      )
+    )
+
+lazy val openTelemetry =
+  project
+    .in(file("modules/opentelemetry"))
+    .settings(stdSettings("zio-opentelemetry"))
+    .settings(
+      libraryDependencies := Seq(
+        "dev.zio"                %% "zio"                     % zioVersion,
+        "dev.zio"                %% "zio-test"                % zioVersion % Test,
+        "dev.zio"                %% "zio-test-sbt"            % zioVersion % Test,
+        "io.opentelemetry"       % "opentelemetry-api"        % opentelemetryVersion,
+        "io.opentelemetry"       % "opentelemetry-exporters-inmemory" % opentelemetryVersion % Test,
+        "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.4"
       )
     )
 
@@ -88,7 +104,10 @@ lazy val example =
         "com.softwaremill.sttp.client" %% "circe"                         % sttpVersion,
         "dev.zio"                      %% "zio-interop-cats"              % "2.0.0.0-RC12",
         "io.zipkin.reporter2"          % "zipkin-reporter"                % zipkinVersion,
-        "io.zipkin.reporter2"          % "zipkin-sender-okhttp3"          % zipkinVersion
+        "io.zipkin.reporter2"          % "zipkin-sender-okhttp3"          % zipkinVersion,
+        "io.opentelemetry"             % "opentelemetry-exporters-jaeger" % opentelemetryVersion,
+        "io.opentelemetry"       % "opentelemetry-sdk"        % opentelemetryVersion,
+        "io.grpc" % "grpc-netty-shaded" % "1.28.0"
       )
     )
-    .dependsOn(openTracing)
+    .dependsOn(openTracing, openTelemetry)
