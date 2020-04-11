@@ -15,7 +15,7 @@ import zio.test.environment.TestClock
 import zio.test.{ assert, suite, testM, DefaultRunnableSpec }
 import zio.{ Has, UIO, ZIO, ZLayer }
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.mutable
 
 object OpenTelemetryTest extends DefaultRunnableSpec {
