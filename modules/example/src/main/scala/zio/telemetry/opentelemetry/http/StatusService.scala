@@ -3,17 +3,18 @@ package zio.telemetry.opentelemetry.http
 import io.circe.Encoder
 import io.circe.syntax._
 import io.opentelemetry.context.propagation.HttpTextFormat
+import io.opentelemetry.trace.Span
 import org.http4s._
 import org.http4s.circe.jsonEncoderOf
 import org.http4s.dsl.Http4sDsl
-import zio.ZLayer
 import zio.clock.Clock
 import zio.interop.catz._
-import zio.opentelemetry.{ CurrentSpan, OpenTelemetry }
+import zio.opentelemetry.OpenTelemetry
+import zio.opentelemetry.SpanSyntax._
 import zio.telemetry.example.http.{ Status => ServiceStatus }
+import zio.{ UIO, ULayer, ZIO }
 
 import scala.collection.mutable
-import io.opentelemetry.trace.Span
 
 object StatusService {
 
@@ -26,16 +27,19 @@ object StatusService {
   val getter: (mutable.Map[String, String], String) => Option[String] =
     (carrier: mutable.Map[String, String], key: String) => carrier.get(key)
 
-  def status(service: ZLayer[Clock, Throwable, Clock with OpenTelemetry]): HttpRoutes[AppTask] =
+  def status(service: ULayer[Clock with OpenTelemetry]): HttpRoutes[AppTask] =
     HttpRoutes.of[AppTask] {
       case request @ GET -> Root / "status" =>
         val headers = mutable.Map(request.headers.toList.map(h => h.name.value -> h.value): _*)
-        (for {
-          _      <- CurrentSpan.createChildFromExtracted(httpTextFormat, headers, getter, "/status", Span.Kind.SERVER)
-          _      <- CurrentSpan.addEvent("event from backend")
-          result <- Ok(ServiceStatus.up("backend").asJson)
-          _      <- CurrentSpan.endSpan
-        } yield result).provideLayer(service)
+
+        val response: ZIO[OpenTelemetry with Clock, Throwable, Response[AppTask]] = for {
+          _        <- UIO.unit.addEvent("event from backend before response")
+          response <- Ok(ServiceStatus.up("backend").asJson)
+          _        <- UIO.unit.addEvent("event from backend after response")
+        } yield response
+
+        response.spanFrom(httpTextFormat, headers, getter, "/status", Span.Kind.SERVER).provideLayer(service)
+
     }
 
 }

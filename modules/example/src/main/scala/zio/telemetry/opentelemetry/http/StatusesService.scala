@@ -29,7 +29,6 @@ object StatusesService {
       case GET -> Root / "statuses" =>
         val zio =
           for {
-            _              <- OpenTelemetry.createRoot("/statuses", Span.Kind.SERVER)
             _              <- CurrentSpan.setAttribute("http.method", "get")
             _              <- CurrentSpan.addEvent("proxy-event")
             httpTextFormat <- UIO(io.opentelemetry.OpenTelemetry.getPropagators.getHttpTextFormat)
@@ -46,7 +45,7 @@ object StatusesService {
                     }
           } yield res
 
-        zio.endSpan.provideLayer(service)
+        zio.rootSpan("/statuses", Span.Kind.SERVER).provideLayer(service)
     }
   }
 
