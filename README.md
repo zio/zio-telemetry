@@ -5,7 +5,7 @@
 [![Snapshots][Badge-SonatypeSnapshots]][Link-SonatypeSnapshots]
 [![Discord][Badge-Discord]][Link-Discord]
 
-ZIO telemetry is a purely-functional, type-safe [OpenTracing][open-tracing] client.
+ZIO telemetry is a purely-functional and type-safe. It provides clients for [OpenTracing][open-tracing] and [OpenTelemetry][open-telemetry]
 
 ### OpenTracing
 
@@ -142,7 +142,33 @@ should return following response:
 
 Simultaneously, it will create trace that will be stored in Jaeger backend.
 
+### OpenTelemetry
+
+First, start Jaeger by running
+```bash
+docker run --rm -it \
+  -p 16686:16686 \
+  -p 14250:14250 \
+  jaegertracing/all-in-one:1.16
+```
+
+Then start the proxy server
+```
+sbt "example/runMain zio.telemetry.opentelemetry.ProxyServer"
+```
+and the backend server
+
+```
+sbt "example/runMain zio.telemetry.opentelemetry.BackendServer"
+```
+Now perform the following request:
+```
+curl -X GET http://0.0.0.0:8080/statuses
+```
+and head over to [http://localhost:16686/](http://localhost:16686/) to see the result.
+
 [open-tracing]: https://opentracing.io/
+[open-telemetry]: https://opentelemetry.io/
 [otr-inject-extract]: https://opentracing.io/docs/overview/inject-extract/
 [jaeger]: https://www.jaegertracing.io
 [zipkin]: https://www.zipkin.io
