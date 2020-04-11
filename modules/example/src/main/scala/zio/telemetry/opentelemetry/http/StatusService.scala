@@ -31,10 +31,10 @@ object StatusService {
       case request @ GET -> Root / "status" =>
         val headers = mutable.Map(request.headers.toList.map(h => h.name.value -> h.value): _*)
         (for {
-          _ <- CurrentSpan.createChildFromExtracted(httpTextFormat, headers, getter, "/status", Span.Kind.SERVER)
-          _ <- CurrentSpan.addEvent("event from backend")
+          _      <- CurrentSpan.createChildFromExtracted(httpTextFormat, headers, getter, "/status", Span.Kind.SERVER)
+          _      <- CurrentSpan.addEvent("event from backend")
           result <- Ok(ServiceStatus.up("backend").asJson)
-          _ <- CurrentSpan.endSpan
+          _      <- CurrentSpan.endSpan
         } yield result).provideLayer(service)
     }
 
