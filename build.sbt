@@ -72,12 +72,12 @@ lazy val openTelemetry =
     .settings(stdSettings("zio-opentelemetry"))
     .settings(
       libraryDependencies := Seq(
-        "dev.zio"                %% "zio"                     % zioVersion,
-        "dev.zio"                %% "zio-test"                % zioVersion % Test,
-        "dev.zio"                %% "zio-test-sbt"            % zioVersion % Test,
-        "io.opentelemetry"       % "opentelemetry-api"        % opentelemetryVersion,
+        "dev.zio"                %% "zio"                             % zioVersion,
+        "dev.zio"                %% "zio-test"                        % zioVersion % Test,
+        "dev.zio"                %% "zio-test-sbt"                    % zioVersion % Test,
+        "io.opentelemetry"       % "opentelemetry-api"                % opentelemetryVersion,
         "io.opentelemetry"       % "opentelemetry-exporters-inmemory" % opentelemetryVersion % Test,
-        "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.4"
+        "org.scala-lang.modules" %% "scala-collection-compat"         % "2.1.4"
       )
     )
 
@@ -106,8 +106,8 @@ lazy val example =
         "io.zipkin.reporter2"          % "zipkin-reporter"                % zipkinVersion,
         "io.zipkin.reporter2"          % "zipkin-sender-okhttp3"          % zipkinVersion,
         "io.opentelemetry"             % "opentelemetry-exporters-jaeger" % opentelemetryVersion,
-        "io.opentelemetry"       % "opentelemetry-sdk"        % opentelemetryVersion,
-        "io.grpc" % "grpc-netty-shaded" % "1.28.0"
+        "io.opentelemetry"             % "opentelemetry-sdk"              % opentelemetryVersion,
+        "io.grpc"                      % "grpc-netty-shaded"              % "1.28.0"
       )
     )
     .dependsOn(openTracing, openTelemetry)
