@@ -33,6 +33,9 @@ private[opentelemetry] object ContextPropagation {
   //  Thus we can use a 'dummy' context to play the role of medium: `Context.Root`, which doesn't have any thread local storage.
   //  However, given there is only a single instance of `Context.Root`, we prevent any synchronization issues by
   //  permitting access only to a single fiber at a time.
+  //
+  // See https://github.com/open-telemetry/opentelemetry-java/issues/575, and
+  // https://github.com/open-telemetry/opentelemetry-java/issues/1104
 
   private val semaphore: UIO[Semaphore] = Semaphore.make(1)
 
