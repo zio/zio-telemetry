@@ -1,6 +1,7 @@
 package zio.telemetry.opentelemetry.http
 
 import io.circe.Encoder
+import io.opentelemetry.OpenTelemetry
 import io.opentelemetry.trace.Span
 import org.http4s.circe.jsonEncoderOf
 import org.http4s.dsl.Http4sDsl
@@ -9,7 +10,7 @@ import sttp.model.Uri
 import zio.{ UIO, ULayer }
 import zio.clock.Clock
 import zio.opentelemetry.tracing.Tracing
-import zio.opentelemetry.tracing.TracingSyntax._
+import zio.opentelemetry.tracing.Tracing.rootSpan
 import zio.interop.catz._
 import zio.opentelemetry.tracing.attributevalue.AttributeValueConverterInstances._
 
@@ -27,11 +28,11 @@ object StatusesService {
 
     HttpRoutes.of[AppTask] {
       case GET -> Root / "statuses" =>
-        val zio =
+        rootSpan("/statuses", Span.Kind.SERVER) {
           for {
             _              <- Tracing.setAttribute("http.method", "get")
             _              <- Tracing.addEvent("proxy-event")
-            httpTextFormat <- UIO(io.opentelemetry.OpenTelemetry.getPropagators.getHttpTextFormat)
+            httpTextFormat <- UIO(OpenTelemetry.getPropagators.getHttpTextFormat)
             carrier        <- UIO(mutable.Map[String, String]().empty)
             _              <- Tracing.injectCurrentSpan(httpTextFormat, carrier, setter)
             headers        <- UIO(carrier.toMap)
@@ -44,8 +45,7 @@ object StatusesService {
                       case _        => Ok(Statuses(List(Status.down("backend"), up)))
                     }
           } yield res
-
-        zio.rootSpan("/statuses", Span.Kind.SERVER).provideLayer(service)
+        }.provideLayer(service)
     }
   }
 

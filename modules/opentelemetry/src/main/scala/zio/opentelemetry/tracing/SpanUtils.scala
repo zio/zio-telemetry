@@ -7,10 +7,10 @@ import zio.{ Cause, UIO, URIO }
 private[opentelemetry] object SpanUtils {
 
   /**
-   * Determines whether the span is invalid.
+   * Determines whether the span is valid.
    */
-  def isInvalid(span: Span): Boolean =
-    span.getContext.getSpanId == SpanId.getInvalid && span.getContext.getTraceId == TraceId.getInvalid
+  def isValid(span: Span): Boolean =
+    span.getContext.getSpanId.isValid && span.getContext.getTraceId.isValid
 
   /**
    * Sets the status of `span` to `UNKNOWN` error with description being the pretty-printed cause.

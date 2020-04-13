@@ -12,7 +12,7 @@ import zio.interop.catz._
 import zio.opentelemetry.tracing.TracingSyntax._
 import zio.opentelemetry.tracing.Tracing
 import zio.telemetry.example.http.{ Status => ServiceStatus }
-import zio.{ RIO, UIO, ULayer }
+import zio.{ RIO, ULayer }
 
 import scala.collection.mutable
 
@@ -33,9 +33,9 @@ object StatusService {
         val headers = mutable.Map(request.headers.toList.map(h => h.name.value -> h.value): _*)
 
         val response: RIO[Tracing with Clock, Response[AppTask]] = for {
-          _        <- UIO.unit.addEvent("event from backend before response")
+          _        <- Tracing.addEvent("event from backend before response")
           response <- Ok(ServiceStatus.up("backend").asJson)
-          _        <- UIO.unit.addEvent("event from backend after response")
+          _        <- Tracing.addEvent("event from backend after response")
         } yield response
 
         response.spanFrom(httpTextFormat, headers, getter, "/status", Span.Kind.SERVER).provideLayer(service)
