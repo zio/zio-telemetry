@@ -8,16 +8,16 @@ import org.http4s.{ EntityEncoder, HttpRoutes }
 import sttp.model.Uri
 import zio.{ UIO, ULayer }
 import zio.clock.Clock
-import zio.opentelemetry.{ CurrentSpan, OpenTelemetry }
-import zio.opentelemetry.SpanSyntax._
+import zio.opentelemetry.tracing.Tracing
+import zio.opentelemetry.tracing.TracingSyntax._
 import zio.interop.catz._
-import zio.opentelemetry.attributevalue.AttributeValueConverterInstances._
+import zio.opentelemetry.tracing.attributevalue.AttributeValueConverterInstances._
 
 import scala.collection.mutable
 
 object StatusesService {
 
-  def statuses(backendUri: Uri, service: ULayer[Clock with OpenTelemetry]): HttpRoutes[AppTask] = {
+  def statuses(backendUri: Uri, service: ULayer[Clock with Tracing]): HttpRoutes[AppTask] = {
     val dsl: Http4sDsl[AppTask] = Http4sDsl[AppTask]
     import dsl._
 
@@ -29,11 +29,11 @@ object StatusesService {
       case GET -> Root / "statuses" =>
         val zio =
           for {
-            _              <- CurrentSpan.setAttribute("http.method", "get")
-            _              <- CurrentSpan.addEvent("proxy-event")
+            _              <- Tracing.setAttribute("http.method", "get")
+            _              <- Tracing.addEvent("proxy-event")
             httpTextFormat <- UIO(io.opentelemetry.OpenTelemetry.getPropagators.getHttpTextFormat)
             carrier        <- UIO(mutable.Map[String, String]().empty)
-            _              <- CurrentSpan.injectCurrentSpan(httpTextFormat, carrier, setter)
+            _              <- Tracing.injectCurrentSpan(httpTextFormat, carrier, setter)
             headers        <- UIO(carrier.toMap)
             up             = Status.up("proxy")
             res <- Client

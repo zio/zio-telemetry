@@ -1,4 +1,4 @@
-package zio.opentelemetry
+package zio.opentelemetry.tracing
 
 import io.grpc.Context
 import io.opentelemetry.context.propagation.HttpTextFormat
@@ -6,9 +6,11 @@ import io.opentelemetry.context.propagation.HttpTextFormat.{ Getter, Setter }
 import io.opentelemetry.trace.{ Span, TracingContextUtils }
 import zio.{ RIO, Semaphore, UIO }
 
-object ContextPropagation {
+private[opentelemetry] object ContextPropagation {
+
   private def getter[C](read: PropagationFormat.Reader[C]): Getter[C] =
     (carrier: C, key: PropagationFormat.Key) => read(carrier, key).orNull
+
   private def setter[C](write: PropagationFormat.Writer[C]): Setter[C] =
     (carrier: C, key: PropagationFormat.Key, value: PropagationFormat.Value) => write(carrier, key, value)
 
@@ -54,7 +56,7 @@ object ContextPropagation {
     httpTextFormat: HttpTextFormat,
     carrier: C,
     writer: PropagationFormat.Writer[C]
-  ): RIO[OpenTelemetry, Unit] =
+  ): RIO[Tracing, Unit] =
     semaphore.flatMap(_.withPermit {
       for {
         context <- UIO(TracingContextUtils.withSpan(span, Context.ROOT))

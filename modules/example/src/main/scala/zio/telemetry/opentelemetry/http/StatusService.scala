@@ -9,10 +9,10 @@ import org.http4s.circe.jsonEncoderOf
 import org.http4s.dsl.Http4sDsl
 import zio.clock.Clock
 import zio.interop.catz._
-import zio.opentelemetry.OpenTelemetry
-import zio.opentelemetry.SpanSyntax._
+import zio.opentelemetry.tracing.TracingSyntax._
+import zio.opentelemetry.tracing.Tracing
 import zio.telemetry.example.http.{ Status => ServiceStatus }
-import zio.{ UIO, ULayer, ZIO }
+import zio.{ RIO, UIO, ULayer }
 
 import scala.collection.mutable
 
@@ -27,12 +27,12 @@ object StatusService {
   val getter: (mutable.Map[String, String], String) => Option[String] =
     (carrier: mutable.Map[String, String], key: String) => carrier.get(key)
 
-  def status(service: ULayer[Clock with OpenTelemetry]): HttpRoutes[AppTask] =
+  def status(service: ULayer[Clock with Tracing]): HttpRoutes[AppTask] =
     HttpRoutes.of[AppTask] {
       case request @ GET -> Root / "status" =>
         val headers = mutable.Map(request.headers.toList.map(h => h.name.value -> h.value): _*)
 
-        val response: ZIO[OpenTelemetry with Clock, Throwable, Response[AppTask]] = for {
+        val response: RIO[Tracing with Clock, Response[AppTask]] = for {
           _        <- UIO.unit.addEvent("event from backend before response")
           response <- Ok(ServiceStatus.up("backend").asJson)
           _        <- UIO.unit.addEvent("event from backend after response")

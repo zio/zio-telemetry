@@ -1,11 +1,12 @@
-package zio
+package zio.opentelemetry
 
 import java.util.concurrent.TimeUnit
 
+import zio.{ clock, Has, ZIO }
 import zio.clock.Clock
 
-package object opentelemetry {
-  type OpenTelemetry = Has[OpenTelemetry.Service]
+package object tracing {
+  type Tracing = Has[Tracing.Service]
 
   object PropagationFormat {
     type Key       = String

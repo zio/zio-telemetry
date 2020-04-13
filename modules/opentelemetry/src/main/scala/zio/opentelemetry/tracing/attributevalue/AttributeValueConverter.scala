@@ -1,4 +1,4 @@
-package zio.opentelemetry.attributevalue
+package zio.opentelemetry.tracing.attributevalue
 
 import io.opentelemetry.common.AttributeValue
 

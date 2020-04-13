@@ -1,4 +1,4 @@
-package zio.opentelemetry
+package zio.opentelemetry.tracing
 
 import io.opentelemetry.common.AttributeValue
 import io.opentelemetry.exporters.inmemory.InMemoryTracing
@@ -7,18 +7,18 @@ import io.opentelemetry.sdk.trace.data.SpanData
 import io.opentelemetry.trace.{ SpanId, Tracer }
 import zio.clock.Clock
 import zio.duration._
-import zio.opentelemetry.SpanSyntax._
-import zio.opentelemetry.CurrentSpan.injectCurrentSpan
-import zio.opentelemetry.attributevalue.AttributeValueConverterInstances._
+import zio.opentelemetry.tracing.Tracing.injectCurrentSpan
+import zio.opentelemetry.tracing.TracingSyntax._
+import zio.opentelemetry.tracing.attributevalue.AttributeValueConverterInstances._
 import zio.test.Assertion._
 import zio.test.environment.TestClock
 import zio.test.{ assert, suite, testM, DefaultRunnableSpec }
-import zio.{ Has, UIO, ZIO, ZLayer }
+import zio.{ Has, UIO, URLayer, ZIO, ZLayer }
 
-import scala.jdk.CollectionConverters._
 import scala.collection.mutable
+import scala.jdk.CollectionConverters._
 
-object OpenTelemetryTest extends DefaultRunnableSpec {
+object TracingTest extends DefaultRunnableSpec {
 
   def createMockTracer: (InMemoryTracing, Tracer) = {
     val tracerProvider: TracerSdkProvider = TracerSdkProvider.builder().build()
@@ -31,9 +31,9 @@ object OpenTelemetryTest extends DefaultRunnableSpec {
   def getFinishedSpans(inMemoryTracing: InMemoryTracing): List[SpanData] =
     inMemoryTracing.getSpanExporter.getFinishedSpanItems.asScala.toList
 
-  def createMockLayer: ZLayer[Clock, Nothing, Has[InMemoryTracing] with OpenTelemetry] = {
+  def createMockLayer: URLayer[Clock, Has[InMemoryTracing] with Tracing] = {
     val (inMemoryTracing, tracer) = createMockTracer
-    ZLayer.succeed(inMemoryTracing) ++ OpenTelemetry.live(tracer)
+    ZLayer.succeed(inMemoryTracing) ++ Tracing.live(tracer)
   }
 
   def spec =
@@ -42,7 +42,7 @@ object OpenTelemetryTest extends DefaultRunnableSpec {
         val (inMemoryTracing, tracer) = createMockTracer
         lazy val finishedSpans        = getFinishedSpans(inMemoryTracing)
 
-        OpenTelemetry
+        Tracing
           .live(tracer)
           .build
           .use_(UIO.unit)
