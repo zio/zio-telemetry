@@ -61,7 +61,7 @@ object Tracing {
   ): ZIO[R with Clock with Tracing, E, A] =
     effect
       .tapCause(setErrorStatus(newSpan, _))
-      .ensuring(endSpan(newSpan) *> (if (isInvalid(oldSpan)) UIO.unit else setCurrentSpan(oldSpan)))
+      .ensuring(endSpan(newSpan) *> setCurrentSpan(oldSpan))
 
   /**
    * Extracts the span from carrier `C` and set its child span with name 'spanName' as the current span.
@@ -167,8 +167,16 @@ object Tracing {
 
       def createChildOf(parent: Span, spanName: String, spanKind: Span.Kind): UIO[Span] =
         for {
-          span <- UIO(tracer.spanBuilder(spanName).setParent(parent).setSpanKind(spanKind).startSpan())
-          _    <- currentSpan.set(span)
+          nanoSeconds <- clock.currentTime(TimeUnit.NANOSECONDS)
+          span <- UIO(
+                   tracer
+                     .spanBuilder(spanName)
+                     .setParent(parent)
+                     .setSpanKind(spanKind)
+                     .setStartTimestamp(nanoSeconds)
+                     .startSpan()
+                 )
+          _ <- currentSpan.set(span)
         } yield span
 
       val currentSpan: FiberRef[Span] = defaultSpan
@@ -180,6 +188,8 @@ object Tracing {
         defaultSpan <- FiberRef.make[Span](DefaultSpan.getInvalid)
       } yield new Live(defaultSpan, clock)
 
-    ZLayer.fromAcquireRelease(tracing)(_.currentSpan.get.flatMap(endSpan))
+    ZLayer.fromAcquireRelease(tracing)(
+      _.currentSpan.get.flatMap(span => if (isInvalid(span)) UIO.unit else endSpan(span))
+    )
   }
 }
