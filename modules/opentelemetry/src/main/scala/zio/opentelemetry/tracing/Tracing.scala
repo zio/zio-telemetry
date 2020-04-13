@@ -28,13 +28,13 @@ object Tracing {
     ZIO.access[Tracing](_.get.currentSpan)
 
   /**
-   * Creates a new root span and sets it to be the current span.
+   * Creates a new root span.
    */
   private def createRoot(spanName: String, spanKind: Span.Kind): URIO[Tracing, Span] =
     ZIO.accessM[Tracing](_.get.createRoot(spanName, spanKind))
 
   /**
-   * Creates a new child span from the parent span, and sets it to be the current span.
+   * Creates a new child span from the parent span.
    */
   private def createChildOf(parent: Span, spanName: String, spanKind: Span.Kind): URIO[Tracing, Span] =
     ZIO.accessM[Tracing](_.get.createChildOf(parent, spanName, spanKind))
@@ -45,7 +45,7 @@ object Tracing {
   private def getCurrentSpan: URIO[Tracing, Span] = currentSpan.flatMap(_.get)
 
   /**
-   * Sets the `currentSpan` to `newSpan` while only while `effect` runs.
+   * Sets the `currentSpan` to `newSpan` only while `effect` runs.
    * Then ends the span `newSpan` according to the result of `effect`.
    */
   private def finalizeSpanUsingEffect[R, E, A](
