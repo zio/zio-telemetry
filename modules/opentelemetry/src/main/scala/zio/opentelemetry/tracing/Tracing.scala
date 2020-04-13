@@ -45,23 +45,20 @@ object Tracing {
   private def getCurrentSpan: URIO[Tracing, Span] = currentSpan.flatMap(_.get)
 
   /**
-   * Sets the current span.
-   */
-  private def setCurrentSpan(span: Span): URIO[Tracing, Unit] =
-    currentSpan.flatMap(_.set(span))
-
-  /**
-   * Ends the span `newSpan` according to the result of `effect`.
-   * Reverts the current span to `oldSpan` after ending the span.
+   * Sets the `currentSpan` to `newSpan` while only while `effect` runs.
+   * Then ends the span `newSpan` according to the result of `effect`.
    */
   private def finalizeSpanUsingEffect[R, E, A](
     effect: ZIO[R, E, A],
-    oldSpan: Span,
     newSpan: Span
   ): ZIO[R with Clock with Tracing, E, A] =
-    effect
-      .tapCause(setErrorStatus(newSpan, _))
-      .ensuring(endSpan(newSpan) *> setCurrentSpan(oldSpan))
+    for {
+      current <- currentSpan
+      r <- current
+            .locally(newSpan)(effect)
+            .tapCause(setErrorStatus(newSpan, _))
+            .ensuring(endSpan(newSpan))
+    } yield r
 
   /**
    * Extracts the span from carrier `C` and set its child span with name 'spanName' as the current span.
@@ -75,10 +72,9 @@ object Tracing {
     spanKind: Span.Kind = Span.Kind.INTERNAL
   )(effect: ZIO[R, E, A]): ZIO[R with Clock with Tracing, E, A] =
     for {
-      old            <- getCurrentSpan
       extractedSpan  <- extractSpan(httpTextFormat, carrier, reader)
       extractedChild <- createChildOf(extractedSpan, spanName, spanKind)
-      r              <- finalizeSpanUsingEffect(effect, old, extractedChild)
+      r              <- finalizeSpanUsingEffect(effect, extractedChild)
     } yield r
 
   /**
@@ -90,9 +86,8 @@ object Tracing {
     spanKind: Span.Kind = Span.Kind.INTERNAL
   )(effect: ZIO[R, E, A]): ZIO[R with Clock with Tracing, E, A] =
     for {
-      old  <- getCurrentSpan
       root <- createRoot(spanName, spanKind)
-      r    <- finalizeSpanUsingEffect(effect, old, root)
+      r    <- finalizeSpanUsingEffect(effect, root)
     } yield r
 
   /**
@@ -106,7 +101,7 @@ object Tracing {
     for {
       old   <- getCurrentSpan
       child <- createChildOf(old, spanName, spanKind)
-      r     <- finalizeSpanUsingEffect(effect, old, child)
+      r     <- finalizeSpanUsingEffect(effect, child)
     } yield r
 
   /**
@@ -162,7 +157,6 @@ object Tracing {
                      .setStartTimestamp(nanoSeconds)
                      .startSpan()
                  )
-          _ <- currentSpan.set(span)
         } yield span
 
       def createChildOf(parent: Span, spanName: String, spanKind: Span.Kind): UIO[Span] =
@@ -176,7 +170,6 @@ object Tracing {
                      .setStartTimestamp(nanoSeconds)
                      .startSpan()
                  )
-          _ <- currentSpan.set(span)
         } yield span
 
       val currentSpan: FiberRef[Span] = defaultSpan
