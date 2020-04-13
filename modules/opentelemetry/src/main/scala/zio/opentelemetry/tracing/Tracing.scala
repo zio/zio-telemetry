@@ -150,7 +150,7 @@ object Tracing {
     getCurrentSpan.map(_.setAttribute(name, toAttributeValue(value)))
 
   def live(tracer: Tracer): URLayer[Clock, Tracing] = {
-    class Live(tracer: Tracer, rootSpan: FiberRef[Span], clock: Clock.Service) extends Service {
+    class Live(defaultSpan: FiberRef[Span], clock: Clock.Service) extends Service {
       def createRoot(spanName: String, spanKind: Span.Kind): UIO[Span] =
         for {
           nanoSeconds <- clock.currentTime(TimeUnit.NANOSECONDS)
@@ -171,15 +171,15 @@ object Tracing {
           _    <- currentSpan.set(span)
         } yield span
 
-      val currentSpan: FiberRef[Span] = rootSpan
+      val currentSpan: FiberRef[Span] = defaultSpan
     }
 
-    def createTracing(tracer: Tracer): URIO[Clock, Service] =
+    val tracing: URIO[Clock, Service] =
       for {
-        clock    <- ZIO.access[Clock](_.get)
-        rootSpan <- FiberRef.make[Span](DefaultSpan.getInvalid)
-      } yield new Live(tracer, rootSpan, clock)
+        clock       <- ZIO.access[Clock](_.get)
+        defaultSpan <- FiberRef.make[Span](DefaultSpan.getInvalid)
+      } yield new Live(defaultSpan, clock)
 
-    ZLayer.fromAcquireRelease(createTracing(tracer))(_.currentSpan.get.flatMap(endSpan))
+    ZLayer.fromAcquireRelease(tracing)(_.currentSpan.get.flatMap(endSpan))
   }
 }
