@@ -18,7 +18,7 @@ object Tracing {
   trait Service {
     private[opentelemetry] val currentSpan: FiberRef[Span]
     private[opentelemetry] def createRoot(spanName: String, spanKind: Span.Kind): UIO[Span]
-    private[opentelemetry] def createChildOf(spanName: String, parent: Span, spanKind: Span.Kind): UIO[Span]
+    private[opentelemetry] def createChildOf(parent: Span, spanName: String, spanKind: Span.Kind): UIO[Span]
   }
 
   /**
@@ -36,8 +36,8 @@ object Tracing {
   /**
    * Creates a new child span from the parent span, and sets it to be the current span.
    */
-  private def createChildOf(spanName: String, parent: Span, spanKind: Span.Kind): URIO[Tracing, Span] =
-    ZIO.accessM[Tracing](_.get.createChildOf(spanName, parent, spanKind))
+  private def createChildOf(parent: Span, spanName: String, spanKind: Span.Kind): URIO[Tracing, Span] =
+    ZIO.accessM[Tracing](_.get.createChildOf(parent, spanName, spanKind))
 
   /**
    * Gets the current span.
@@ -77,7 +77,7 @@ object Tracing {
     for {
       old            <- getCurrentSpan
       extractedSpan  <- extractSpan(httpTextFormat, carrier, reader)
-      extractedChild <- createChildOf(spanName, extractedSpan, spanKind)
+      extractedChild <- createChildOf(extractedSpan, spanName, spanKind)
       r              <- finalizeSpanUsingEffect(effect, old, extractedChild)
     } yield r
 
@@ -105,7 +105,7 @@ object Tracing {
   )(effect: ZIO[R, E, A]): ZIO[R with Clock with Tracing, E, A] =
     for {
       old   <- getCurrentSpan
-      child <- createChildOf(spanName, old, spanKind)
+      child <- createChildOf(old, spanName, spanKind)
       r     <- finalizeSpanUsingEffect(effect, old, child)
     } yield r
 
@@ -165,7 +165,7 @@ object Tracing {
           _ <- currentSpan.set(span)
         } yield span
 
-      def createChildOf(spanName: String, parent: Span, spanKind: Span.Kind): UIO[Span] =
+      def createChildOf(parent: Span, spanName: String, spanKind: Span.Kind): UIO[Span] =
         for {
           span <- UIO(tracer.spanBuilder(spanName).setParent(parent).setSpanKind(spanKind).startSpan())
           _    <- currentSpan.set(span)
