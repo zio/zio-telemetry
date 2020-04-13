@@ -2,7 +2,7 @@ package zio.opentelemetry
 
 import java.util.concurrent.TimeUnit
 
-import zio.{ clock, Has, ZIO }
+import zio.{ clock, Has, URIO }
 import zio.clock.Clock
 
 package object tracing {
@@ -15,5 +15,5 @@ package object tracing {
     type Writer[C] = (C, Key, Value) => Unit
   }
 
-  private[opentelemetry] def currentNanos: ZIO[Clock, Nothing, Long] = clock.currentTime(TimeUnit.NANOSECONDS)
+  private[opentelemetry] def currentNanos: URIO[Clock, Long] = clock.currentTime(TimeUnit.NANOSECONDS)
 }

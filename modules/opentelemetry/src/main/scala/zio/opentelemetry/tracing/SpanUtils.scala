@@ -9,8 +9,7 @@ private[opentelemetry] object SpanUtils {
   /**
    * Determines whether the span is valid.
    */
-  def isValid(span: Span): Boolean =
-    span.getContext.getSpanId.isValid && span.getContext.getTraceId.isValid
+  def isValid(span: Span): Boolean = span.getContext.isValid
 
   /**
    * Sets the status of `span` to `UNKNOWN` error with description being the pretty-printed cause.
