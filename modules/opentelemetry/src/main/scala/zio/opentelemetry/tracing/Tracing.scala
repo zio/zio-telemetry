@@ -9,7 +9,7 @@ import zio.clock.Clock
 import zio.opentelemetry.tracing.attributevalue.AttributeValueConverter
 import zio.opentelemetry.tracing.attributevalue.AttributeValueConverter.toAttributeValue
 import zio.opentelemetry.tracing.ContextPropagation.{ extractSpan, injectSpan }
-import zio.opentelemetry.tracing.SpanUtils.{ endSpan, isValid, setErrorStatus }
+import zio.opentelemetry.tracing.SpanUtils.{ endSpan, setErrorStatus }
 import zio._
 
 import scala.jdk.CollectionConverters._
@@ -188,8 +188,6 @@ object Tracing {
         defaultSpan <- FiberRef.make[Span](DefaultSpan.getInvalid)
       } yield new Live(defaultSpan, clock)
 
-    ZLayer.fromAcquireRelease(tracing)(
-      _.currentSpan.get.flatMap(span => if (isValid(span)) endSpan(span) else UIO.unit)
-    )
+    ZLayer.fromAcquireRelease(tracing)(_.currentSpan.get.flatMap(endSpan))
   }
 }
