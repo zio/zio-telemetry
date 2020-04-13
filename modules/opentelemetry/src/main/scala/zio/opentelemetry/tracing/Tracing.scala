@@ -42,12 +42,12 @@ object Tracing {
   /**
    * Gets the current span.
    */
-  private def getCurrentSpan: ZIO[Tracing, Nothing, Span] = currentSpan.flatMap(_.get)
+  private def getCurrentSpan: URIO[Tracing, Span] = currentSpan.flatMap(_.get)
 
   /**
    * Sets the current span.
    */
-  private def setCurrentSpan(span: Span): ZIO[Tracing, Nothing, Unit] =
+  private def setCurrentSpan(span: Span): URIO[Tracing, Unit] =
     currentSpan.flatMap(_.set(span))
 
   /**
@@ -174,12 +174,12 @@ object Tracing {
       val currentSpan: FiberRef[Span] = rootSpan
     }
 
-    def createOpenTelemetry(tracer: Tracer): URIO[Clock, Service] =
+    def createTracing(tracer: Tracer): URIO[Clock, Service] =
       for {
         clock    <- ZIO.access[Clock](_.get)
         rootSpan <- FiberRef.make[Span](DefaultSpan.getInvalid)
       } yield new Live(tracer, rootSpan, clock)
 
-    ZLayer.fromAcquireRelease(createOpenTelemetry(tracer))(_.currentSpan.get.flatMap(endSpan))
+    ZLayer.fromAcquireRelease(createTracing(tracer))(_.currentSpan.get.flatMap(endSpan))
   }
 }

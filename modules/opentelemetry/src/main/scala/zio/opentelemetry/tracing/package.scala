@@ -15,5 +15,5 @@ package object tracing {
     type Writer[C] = (C, Key, Value) => Unit
   }
 
-  def currentNanos: ZIO[Clock, Nothing, Long] = clock.currentTime(TimeUnit.NANOSECONDS)
+  private[opentelemetry] def currentNanos: ZIO[Clock, Nothing, Long] = clock.currentTime(TimeUnit.NANOSECONDS)
 }
