@@ -2,29 +2,28 @@ package zio
 
 import io.opentracing.Span
 import io.opentracing.propagation.Format
-import zio.clock.Clock
 
 package object opentracing {
   type OpenTracing = Has[OpenTracing.Service]
 
   implicit final class OpenTracingZioOps[R, E, A](val zio: ZIO[R, E, A]) extends AnyVal {
 
-    def root[R1 <: R with Clock with OpenTracing](
+    def root(
       operation: String,
       tagError: Boolean = true,
       logError: Boolean = true
-    ): ZIO[R1, E, A] =
+    ): ZIO[R with OpenTracing, E, A] =
       for {
         service <- getService
         root    <- service.root(operation)
         r       <- span(service)(root, tagError, logError)
       } yield r
 
-    def span[R1 <: R with Clock with OpenTracing](
+    def span(
       operation: String,
       tagError: Boolean = true,
       logError: Boolean = true
-    ): ZIO[R1, E, A] =
+    ): ZIO[R with OpenTracing, E, A] =
       for {
         service <- getService
         old     <- getSpan(service)
@@ -32,11 +31,11 @@ package object opentracing {
         r       <- span(service)(child, tagError, logError)
       } yield r
 
-    def span[R1 <: R with Clock](service: OpenTracing.Service)(
+    def span(service: OpenTracing.Service)(
       span: Span,
       tagError: Boolean,
       logError: Boolean
-    ): ZIO[R1, E, A] =
+    ): ZIO[R, E, A] =
       for {
         old <- getSpan(service)
         r <- (setSpan(service)(span) *>
@@ -58,7 +57,7 @@ package object opentracing {
     private def getService: URIO[OpenTracing, OpenTracing.Service] =
       ZIO.access[OpenTracing](_.get)
 
-    def spanFrom[R1 <: R with Clock with OpenTracing, C <: Object](
+    def spanFrom[R1 <: R with OpenTracing, C <: Object](
       format: Format[C],
       carrier: C,
       operation: String,
@@ -79,10 +78,10 @@ package object opentracing {
     def tag(key: String, value: Boolean): ZIO[R with OpenTracing, E, A] =
       zio <* OpenTracing.tag(key, value)
 
-    def log(msg: String): ZIO[R with Clock with OpenTracing, E, A] =
+    def log(msg: String): ZIO[R with OpenTracing, E, A] =
       zio <* OpenTracing.log(msg)
 
-    def log(fields: Map[String, _]): ZIO[R with Clock with OpenTracing, E, A] =
+    def log(fields: Map[String, _]): ZIO[R with OpenTracing, E, A] =
       zio <* OpenTracing.log(fields)
 
   }
