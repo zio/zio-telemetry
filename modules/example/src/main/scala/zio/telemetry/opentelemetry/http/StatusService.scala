@@ -12,8 +12,8 @@ import zio.clock.Clock
 import zio.interop.catz._
 import zio.opentelemetry.tracing.TracingSyntax._
 import zio.opentelemetry.tracing.Tracing
-import zio.telemetry.example.http.{Status => ServiceStatus}
-import zio.{RIO, ULayer}
+import zio.telemetry.example.http.{ Status => ServiceStatus }
+import zio.{ RIO, ULayer }
 
 import scala.collection.mutable
 
@@ -24,7 +24,7 @@ object StatusService {
 
   implicit def encoder[A: Encoder]: EntityEncoder[AppTask, A] = jsonEncoderOf[AppTask, A]
 
-  val httpTextFormat: HttpTextFormat = io.opentelemetry.OpenTelemetry.getPropagators.getHttpTextFormat
+  val httpTextFormat: HttpTextFormat              = io.opentelemetry.OpenTelemetry.getPropagators.getHttpTextFormat
   val getter: Getter[mutable.Map[String, String]] = (carrier, key) => carrier.get(key).orNull
 
   def status(service: ULayer[Clock with Tracing]): HttpRoutes[AppTask] =

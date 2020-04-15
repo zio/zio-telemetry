@@ -2,8 +2,8 @@ package zio.opentelemetry.tracing
 
 import io.grpc.Context
 import io.opentelemetry.context.propagation.HttpTextFormat
-import io.opentelemetry.trace.{Span, TracingContextUtils}
-import zio.{UIO, URIO, ZIO}
+import io.opentelemetry.trace.{ Span, TracingContextUtils }
+import zio.{ UIO, URIO, ZIO }
 
 private[opentelemetry] object ContextPropagation {
   //  The OpenTelemetry Java API forces us to deal with `Context` when extracting and injecting Spans.
@@ -38,7 +38,6 @@ private[opentelemetry] object ContextPropagation {
     ZIO.uninterruptible {
       UIO(httpTextFormat.extract(Context.ROOT, carrier, getter)).map(TracingContextUtils.getSpan)
     }
-
 
   /**
    * Injects the span into carrier `C`.

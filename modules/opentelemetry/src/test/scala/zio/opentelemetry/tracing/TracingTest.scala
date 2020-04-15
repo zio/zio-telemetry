@@ -1,11 +1,11 @@
 package zio.opentelemetry.tracing
 
 import io.opentelemetry.common.AttributeValue
-import io.opentelemetry.context.propagation.HttpTextFormat.{Getter, Setter}
+import io.opentelemetry.context.propagation.HttpTextFormat.{ Getter, Setter }
 import io.opentelemetry.exporters.inmemory.InMemoryTracing
 import io.opentelemetry.sdk.trace.TracerSdkProvider
 import io.opentelemetry.sdk.trace.data.SpanData
-import io.opentelemetry.trace.{SpanId, Tracer}
+import io.opentelemetry.trace.{ SpanId, Tracer }
 import zio.clock.Clock
 import zio.duration._
 import zio.opentelemetry.tracing.Tracing.injectCurrentSpan
@@ -13,8 +13,8 @@ import zio.opentelemetry.tracing.TracingSyntax._
 import zio.opentelemetry.tracing.attributevalue.AttributeValueConverterInstances._
 import zio.test.Assertion._
 import zio.test.environment.TestClock
-import zio.test.{DefaultRunnableSpec, assert, suite, testM}
-import zio.{Has, UIO, URLayer, ZIO, ZLayer}
+import zio.test.{ assert, suite, testM, DefaultRunnableSpec }
+import zio.{ Has, UIO, URLayer, ZIO, ZLayer }
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
@@ -90,7 +90,6 @@ object TracingTest extends DefaultRunnableSpec {
 
           val httpTextFormat                       = io.opentelemetry.OpenTelemetry.getPropagators.getHttpTextFormat
           val carrier: mutable.Map[String, String] = mutable.Map().empty
-
 
           val getter: Getter[mutable.Map[String, String]] =
             (carrier, key) => carrier.get(key).orNull
