@@ -5,7 +5,7 @@
 [![Snapshots][Badge-SonatypeSnapshots]][Link-SonatypeSnapshots]
 [![Discord][Badge-Discord]][Link-Discord]
 
-ZIO telemetry is a purely-functional and type-safe. It provides clients for [OpenTracing][open-tracing] and [OpenTelemetry][open-telemetry]
+ZIO telemetry is purely-functional and type-safe. It provides clients for [OpenTracing][open-tracing] and [OpenTelemetry][open-telemetry]
 
 ### OpenTracing
 
