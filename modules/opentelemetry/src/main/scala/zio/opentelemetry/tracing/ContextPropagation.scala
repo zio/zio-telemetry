@@ -2,9 +2,9 @@ package zio.opentelemetry.tracing
 
 import io.grpc.Context
 import io.opentelemetry.context.propagation.HttpTextFormat
-import io.opentelemetry.context.propagation.HttpTextFormat.{ Getter, Setter }
-import io.opentelemetry.trace.{ Span, TracingContextUtils }
-import zio.{ RIO, Semaphore, UIO }
+import io.opentelemetry.context.propagation.HttpTextFormat.{Getter, Setter}
+import io.opentelemetry.trace.{Span, TracingContextUtils}
+import zio.{UIO, URIO, ZIO}
 
 private[opentelemetry] object ContextPropagation {
 
@@ -31,13 +31,9 @@ private[opentelemetry] object ContextPropagation {
   //  2) then does the actual injection of the retrieved span into the carrier, without needing any context
   //
   //  Thus we can use a 'dummy' context to play the role of medium: `Context.Root`, which doesn't have any thread local storage.
-  //  However, given there is only a single instance of `Context.Root`, we prevent any synchronization issues by
-  //  permitting access only to a single fiber at a time.
   //
   // See https://github.com/open-telemetry/opentelemetry-java/issues/575, and
   // https://github.com/open-telemetry/opentelemetry-java/issues/1104
-
-  private val semaphore: UIO[Semaphore] = Semaphore.make(1)
 
   /**
    * Extract and returns the span from carrier `C`.
@@ -47,9 +43,10 @@ private[opentelemetry] object ContextPropagation {
     carrier: C,
     reader: PropagationFormat.Reader[C]
   ): UIO[Span] =
-    semaphore.flatMap(_.withPermit {
+    ZIO.uninterruptible {
       UIO(httpTextFormat.extract(Context.ROOT, carrier, getter(reader))).map(TracingContextUtils.getSpan)
-    })
+    }
+
 
   /**
    * Injects the span into carrier `C`.
@@ -59,12 +56,12 @@ private[opentelemetry] object ContextPropagation {
     httpTextFormat: HttpTextFormat,
     carrier: C,
     writer: PropagationFormat.Writer[C]
-  ): RIO[Tracing, Unit] =
-    semaphore.flatMap(_.withPermit {
+  ): URIO[Tracing, Unit] =
+    ZIO.uninterruptible {
       for {
         context <- UIO(TracingContextUtils.withSpan(span, Context.ROOT))
         _       <- UIO(httpTextFormat.inject(context, carrier, setter(writer)))
       } yield ()
-    })
+    }
 
 }
