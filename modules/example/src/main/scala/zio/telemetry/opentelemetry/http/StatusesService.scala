@@ -8,8 +8,8 @@ import org.http4s.circe.jsonEncoderOf
 import org.http4s.dsl.Http4sDsl
 import org.http4s.{ EntityEncoder, HttpRoutes }
 import sttp.model.Uri
-import zio.{ UIO, ULayer }
-import zio.clock.Clock
+import zio.{ Task, UIO, ULayer }
+import zio.interop.catz._
 import zio.opentelemetry.tracing.Tracing
 import zio.opentelemetry.tracing.Tracing.rootSpan
 import zio.interop.catz._
@@ -19,15 +19,15 @@ import scala.collection.mutable
 
 object StatusesService {
 
-  def statuses(backendUri: Uri, service: ULayer[Clock with Tracing]): HttpRoutes[AppTask] = {
-    val dsl: Http4sDsl[AppTask] = Http4sDsl[AppTask]
+  def statuses(backendUri: Uri, service: ULayer[Tracing]): HttpRoutes[Task] = {
+    val dsl: Http4sDsl[Task] = Http4sDsl[Task]
     import dsl._
 
-    implicit def encoder[A: Encoder]: EntityEncoder[AppTask, A] = jsonEncoderOf[AppTask, A]
+    implicit def encoder[A: Encoder]: EntityEncoder[Task, A] = jsonEncoderOf[Task, A]
 
     val setter: Setter[mutable.Map[String, String]] = (carrier, key, value) => carrier.update(key, value)
 
-    HttpRoutes.of[AppTask] {
+    HttpRoutes.of[Task] {
       case GET -> Root / "statuses" =>
         rootSpan("/statuses", Span.Kind.SERVER) {
           for {

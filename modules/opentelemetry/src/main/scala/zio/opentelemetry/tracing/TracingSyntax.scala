@@ -20,7 +20,7 @@ object TracingSyntax {
       getter: HttpTextFormat.Getter[C],
       spanName: String,
       spanKind: Span.Kind = Span.Kind.INTERNAL
-    ): ZIO[R with Clock with Tracing, E, A] =
+    ): ZIO[R with Tracing, E, A] =
       Tracing.spanFrom(httpTextFormat, carrier, getter, spanName, spanKind)(effect)
 
     /**
@@ -29,7 +29,7 @@ object TracingSyntax {
     def rootSpan(
       spanName: String,
       spanKind: Span.Kind = Span.Kind.INTERNAL
-    ): ZIO[R with Clock with Tracing, E, A] = Tracing.rootSpan(spanName, spanKind)(effect)
+    ): ZIO[R with Tracing, E, A] = Tracing.rootSpan(spanName, spanKind)(effect)
 
     /**
      * @see [[Tracing.childSpan]]
@@ -37,7 +37,7 @@ object TracingSyntax {
     def childSpan(
       spanName: String,
       spanKind: Span.Kind = Span.Kind.INTERNAL
-    ): ZIO[R with Clock with Tracing, E, A] = Tracing.childSpan(spanName, spanKind)(effect)
+    ): ZIO[R with Tracing, E, A] = Tracing.childSpan(spanName, spanKind)(effect)
 
     /**
      * @see [[Tracing.addEvent]]
@@ -51,13 +51,13 @@ object TracingSyntax {
     def addEventWithAttributes(
       name: String,
       attributes: Map[String, AttributeValue]
-    ): ZIO[Tracing with Clock with R, E, A] =
+    ): ZIO[Tracing with R, E, A] =
       effect <* Tracing.addEventWithAttributes(name, attributes)
 
     /**
      * @see [[Tracing.setAttribute]]
      */
-    def setAttribute[V: AttributeValueConverter](name: String, value: V): ZIO[Tracing with Clock with R, E, A] =
+    def setAttribute[V: AttributeValueConverter](name: String, value: V): ZIO[Tracing with R, E, A] =
       effect <* Tracing.setAttribute(name, value)
 
   }

@@ -6,10 +6,11 @@ import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.syntax.kleisli._
 import sttp.model.Uri
 import zio.interop.catz._
+import zio.interop.catz.implicits._
 import zio.telemetry.opentelemetry.JaegerTracer.makeService
 import zio.telemetry.opentelemetry.config.Configuration
-import zio.telemetry.opentelemetry.http.{ AppTask, StatusesService }
-import zio.{ ZEnv, ZIO }
+import zio.telemetry.opentelemetry.http.StatusesService
+import zio.{ Task, ZEnv, ZIO }
 
 object ProxyServer extends CatsApp {
 
@@ -18,12 +19,12 @@ object ProxyServer extends CatsApp {
       conf       <- Configuration.load.provideLayer(Configuration.live)
       service    = makeService(conf.tracer.host, "zio-proxy")
       backendUrl <- ZIO.fromEither(Uri.safeApply(conf.backend.host, conf.backend.port))
-      router     = Router[AppTask]("/" -> StatusesService.statuses(backendUrl, service)).orNotFound
-      result <- BlazeServerBuilder[AppTask]
+      router     = Router[Task]("/" -> StatusesService.statuses(backendUrl, service)).orNotFound
+      result <- BlazeServerBuilder[Task]
                  .bindHttp(conf.proxy.port, conf.proxy.host)
                  .withHttpApp(router)
                  .serve
-                 .compile[AppTask, AppTask, ExitCode]
+                 .compile[Task, Task, ExitCode]
                  .drain
                  .as(0)
     } yield result) orElse ZIO.succeed(1)

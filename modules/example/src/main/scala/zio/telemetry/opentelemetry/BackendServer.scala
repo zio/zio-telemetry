@@ -5,10 +5,11 @@ import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.syntax.kleisli._
 import zio.interop.catz._
+import zio.interop.catz.implicits._
 import zio.telemetry.opentelemetry.JaegerTracer.makeService
 import zio.telemetry.opentelemetry.config.Configuration
-import zio.telemetry.opentelemetry.http.{ AppTask, StatusService }
-import zio.{ ZEnv, ZIO }
+import zio.telemetry.opentelemetry.http.StatusService
+import zio.{ Task, ZEnv, ZIO }
 
 object BackendServer extends CatsApp {
 
@@ -16,12 +17,12 @@ object BackendServer extends CatsApp {
     (for {
       conf    <- Configuration.load.provideLayer(Configuration.live)
       service = makeService(conf.tracer.host, "zio-backend")
-      router  = Router[AppTask]("/" -> StatusService.status(service)).orNotFound
-      result <- BlazeServerBuilder[AppTask]
+      router  = Router[Task]("/" -> StatusService.status(service)).orNotFound
+      result <- BlazeServerBuilder[Task]
                  .bindHttp(conf.backend.port, conf.backend.host)
                  .withHttpApp(router)
                  .serve
-                 .compile[AppTask, AppTask, ExitCode]
+                 .compile[Task, Task, ExitCode]
                  .drain
                  .as(0)
     } yield result).orElse(ZIO.succeed(1))

@@ -10,7 +10,7 @@ import zio.opentelemetry.tracing.Tracing
 
 object JaegerTracer {
 
-  def makeService(host: String, serviceName: String): ULayer[Tracing with Clock] = {
+  def makeService(host: String, serviceName: String): ULayer[Tracing] = {
     val tracer: TracerSdk = OpenTelemetrySdk.getTracerProvider.get("zio.telemetry.opentelemetry.JaegerTracer")
 
     val managedChannel: ManagedChannel = ManagedChannelBuilder.forTarget(host).usePlaintext().build()
@@ -20,6 +20,6 @@ object JaegerTracer {
       .setChannel(managedChannel)
       .install(OpenTelemetrySdk.getTracerProvider)
 
-    Clock.live ++ (Clock.live >>> Tracing.live(tracer))
+    Clock.live >>> Tracing.live(tracer)
   }
 }
