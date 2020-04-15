@@ -194,8 +194,11 @@ object Tracing {
       val currentSpan: FiberRef[Span] = defaultSpan
     }
 
-    def end(span: Span): URIO[Clock, Unit] =
-      clock.currentTime(TimeUnit.NANOSECONDS).map(toEndTimestamp _ andThen span.end)
+    def end(tracing: Tracing.Service): UIO[Unit] =
+      for {
+        nanos <- tracing.currentNanos
+        span  <- tracing.currentSpan.get
+      } yield span.end(toEndTimestamp(nanos))
 
     val tracing: URIO[Clock, Service] =
       for {
@@ -203,6 +206,6 @@ object Tracing {
         defaultSpan <- FiberRef.make[Span](DefaultSpan.getInvalid)
       } yield new Live(defaultSpan, clock)
 
-    ZLayer.fromAcquireRelease(tracing)(_.currentSpan.get.flatMap(end))
+    ZLayer.fromAcquireRelease(tracing)(end)
   }
 }
