@@ -19,6 +19,8 @@ object OpenTracing {
     def span(span: Span, operation: String): UIO[Span]
     def finish(span: Span): UIO[Unit]
     def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit]
+    def log(msg: String): UIO[Unit]
+    def log(fields: Map[String, _]): UIO[Unit]
   }
 
   val noop: URLayer[Clock, OpenTracing] =
@@ -52,10 +54,27 @@ object OpenTracing {
         override def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit] =
           UIO(span.setTag("error", true)).when(tagError) *>
             UIO(span.log(Map("error.object" -> cause, "stack" -> cause.prettyPrint).asJava)).when(logError)
+
+        override def log(msg: String): UIO[Unit] =
+          currentSpan.get
+            .zipWith(getCurrentTimeMicros) { (span, now) =>
+              span.log(now, msg)
+            }
+            .unit
+
+        override def log(fields: Map[String, _]): UIO[Unit] =
+          currentSpan.get
+            .zipWith(getCurrentTimeMicros) { (span, now) =>
+              span.log(now, fields.asJava)
+            }
+            .unit
+
+        private def getCurrentTimeMicros: UIO[Long] =
+          clock.currentTime(TimeUnit.MICROSECONDS)
       }
     )(_.currentSpan.get.flatMap(span => UIO(span.finish())))
 
-  def spanFrom[R, R1 <: R with Clock with OpenTracing, E, Span, C <: AnyRef](
+  def spanFrom[R, R1 <: R with OpenTracing, E, Span, C <: AnyRef](
     format: Format[C],
     carrier: C,
     zio: ZIO[R, E, Span],
@@ -102,23 +121,13 @@ object OpenTracing {
   def tag(key: String, value: Boolean): URIO[OpenTracing, Unit] =
     getSpan.map(_.setTag(key, value)).unit
 
-  def log(msg: String): URIO[Clock with OpenTracing, Unit] =
-    for {
-      span <- getSpan
-      now  <- getCurrentTimeMicros
-      _    <- UIO(span.log(now, msg))
-    } yield ()
+  def log(msg: String): URIO[OpenTracing, Unit] =
+    ZIO.accessM(_.get.log(msg))
 
-  def log(fields: Map[String, _]): URIO[Clock with OpenTracing, Unit] =
-    for {
-      span <- getSpan
-      now  <- getCurrentTimeMicros
-      _    <- UIO(span.log(now, fields.asJava))
-    } yield ()
+  def log(fields: Map[String, _]): URIO[OpenTracing, Unit] =
+    ZIO.accessM(_.get.log(fields))
 
   private def getSpan: URIO[OpenTracing, Span] =
     ZIO.accessM(_.get.currentSpan.get)
 
-  private def getCurrentTimeMicros: URIO[Clock, Long] =
-    ZIO.accessM(_.get.currentTime(TimeUnit.MICROSECONDS))
 }
