@@ -67,12 +67,12 @@ object Tracing {
   def spanFrom[C, R, E, A](
     httpTextFormat: HttpTextFormat,
     carrier: C,
-    reader: PropagationFormat.Reader[C],
+    getter: HttpTextFormat.Getter[C],
     spanName: String,
     spanKind: Span.Kind = Span.Kind.INTERNAL
   )(effect: ZIO[R, E, A]): ZIO[R with Clock with Tracing, E, A] =
     for {
-      extractedSpan  <- extractSpan(httpTextFormat, carrier, reader)
+      extractedSpan  <- extractSpan(httpTextFormat, carrier, getter)
       extractedChild <- createChildOf(extractedSpan, spanName, spanKind)
       r              <- finalizeSpanUsingEffect(effect, extractedChild)
     } yield r
@@ -110,11 +110,11 @@ object Tracing {
   def injectCurrentSpan[C](
     httpTextFormat: HttpTextFormat,
     carrier: C,
-    writer: PropagationFormat.Writer[C]
+    setter: HttpTextFormat.Setter[C]
   ): RIO[Tracing, Unit] =
     for {
       current <- getCurrentSpan
-      _       <- injectSpan(current, httpTextFormat, carrier, writer)
+      _       <- injectSpan(current, httpTextFormat, carrier, setter)
     } yield ()
 
   /**

@@ -2,12 +2,13 @@ package zio.telemetry.opentelemetry.http
 
 import io.circe.Encoder
 import io.opentelemetry.OpenTelemetry
+import io.opentelemetry.context.propagation.HttpTextFormat.Setter
 import io.opentelemetry.trace.Span
 import org.http4s.circe.jsonEncoderOf
 import org.http4s.dsl.Http4sDsl
-import org.http4s.{ EntityEncoder, HttpRoutes }
+import org.http4s.{EntityEncoder, HttpRoutes}
 import sttp.model.Uri
-import zio.{ UIO, ULayer }
+import zio.{UIO, ULayer}
 import zio.clock.Clock
 import zio.opentelemetry.tracing.Tracing
 import zio.opentelemetry.tracing.Tracing.rootSpan
@@ -24,7 +25,8 @@ object StatusesService {
 
     implicit def encoder[A: Encoder]: EntityEncoder[AppTask, A] = jsonEncoderOf[AppTask, A]
 
-    val setter = (carrier: mutable.Map[String, String], key: String, value: String) => carrier.update(key, value)
+    val setter: Setter[mutable.Map[String, String]] = (carrier, key, value) =>
+        carrier.update(key, value)
 
     HttpRoutes.of[AppTask] {
       case GET -> Root / "statuses" =>

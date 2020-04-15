@@ -17,11 +17,11 @@ object TracingSyntax {
     def spanFrom[C](
       httpTextFormat: HttpTextFormat,
       carrier: C,
-      reader: PropagationFormat.Reader[C],
+      getter: HttpTextFormat.Getter[C],
       spanName: String,
       spanKind: Span.Kind = Span.Kind.INTERNAL
     ): ZIO[R with Clock with Tracing, E, A] =
-      Tracing.spanFrom(httpTextFormat, carrier, reader, spanName, spanKind)(effect)
+      Tracing.spanFrom(httpTextFormat, carrier, getter, spanName, spanKind)(effect)
 
     /**
      * @see [[Tracing.rootSpan]]

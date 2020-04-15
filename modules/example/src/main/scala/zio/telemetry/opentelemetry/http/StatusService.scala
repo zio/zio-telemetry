@@ -3,6 +3,7 @@ package zio.telemetry.opentelemetry.http
 import io.circe.Encoder
 import io.circe.syntax._
 import io.opentelemetry.context.propagation.HttpTextFormat
+import io.opentelemetry.context.propagation.HttpTextFormat.Getter
 import io.opentelemetry.trace.Span
 import org.http4s._
 import org.http4s.circe.jsonEncoderOf
@@ -11,8 +12,8 @@ import zio.clock.Clock
 import zio.interop.catz._
 import zio.opentelemetry.tracing.TracingSyntax._
 import zio.opentelemetry.tracing.Tracing
-import zio.telemetry.example.http.{ Status => ServiceStatus }
-import zio.{ RIO, ULayer }
+import zio.telemetry.example.http.{Status => ServiceStatus}
+import zio.{RIO, ULayer}
 
 import scala.collection.mutable
 
@@ -24,8 +25,7 @@ object StatusService {
   implicit def encoder[A: Encoder]: EntityEncoder[AppTask, A] = jsonEncoderOf[AppTask, A]
 
   val httpTextFormat: HttpTextFormat = io.opentelemetry.OpenTelemetry.getPropagators.getHttpTextFormat
-  val getter: (mutable.Map[String, String], String) => Option[String] =
-    (carrier: mutable.Map[String, String], key: String) => carrier.get(key)
+  val getter: Getter[mutable.Map[String, String]] = (carrier, key) => carrier.get(key).orNull
 
   def status(service: ULayer[Clock with Tracing]): HttpRoutes[AppTask] =
     HttpRoutes.of[AppTask] {

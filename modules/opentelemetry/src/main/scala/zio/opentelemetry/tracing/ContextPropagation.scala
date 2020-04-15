@@ -2,18 +2,10 @@ package zio.opentelemetry.tracing
 
 import io.grpc.Context
 import io.opentelemetry.context.propagation.HttpTextFormat
-import io.opentelemetry.context.propagation.HttpTextFormat.{Getter, Setter}
 import io.opentelemetry.trace.{Span, TracingContextUtils}
 import zio.{UIO, URIO, ZIO}
 
 private[opentelemetry] object ContextPropagation {
-
-  private def getter[C](read: PropagationFormat.Reader[C]): Getter[C] =
-    (carrier: C, key: PropagationFormat.Key) => read(carrier, key).orNull
-
-  private def setter[C](write: PropagationFormat.Writer[C]): Setter[C] =
-    (carrier: C, key: PropagationFormat.Key, value: PropagationFormat.Value) => write(carrier, key, value)
-
   //  The OpenTelemetry Java API forces us to deal with `Context` when extracting and injecting Spans.
   //  The context is normally retrieved through `Context.current()`.
   //  This creates and uses a ThreadLocalStorage to store the span and poses a complication,
@@ -41,10 +33,10 @@ private[opentelemetry] object ContextPropagation {
   def extractSpan[C](
     httpTextFormat: HttpTextFormat,
     carrier: C,
-    reader: PropagationFormat.Reader[C]
+    getter: HttpTextFormat.Getter[C]
   ): UIO[Span] =
     ZIO.uninterruptible {
-      UIO(httpTextFormat.extract(Context.ROOT, carrier, getter(reader))).map(TracingContextUtils.getSpan)
+      UIO(httpTextFormat.extract(Context.ROOT, carrier, getter)).map(TracingContextUtils.getSpan)
     }
 
 
@@ -55,12 +47,12 @@ private[opentelemetry] object ContextPropagation {
     span: Span,
     httpTextFormat: HttpTextFormat,
     carrier: C,
-    writer: PropagationFormat.Writer[C]
+    setter: HttpTextFormat.Setter[C]
   ): URIO[Tracing, Unit] =
     ZIO.uninterruptible {
       for {
         context <- UIO(TracingContextUtils.withSpan(span, Context.ROOT))
-        _       <- UIO(httpTextFormat.inject(context, carrier, setter(writer)))
+        _       <- UIO(httpTextFormat.inject(context, carrier, setter))
       } yield ()
     }
 
