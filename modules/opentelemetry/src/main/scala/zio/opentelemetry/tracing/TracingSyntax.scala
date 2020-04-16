@@ -2,7 +2,7 @@ package zio.opentelemetry.tracing
 
 import io.opentelemetry.common.AttributeValue
 import io.opentelemetry.context.propagation.HttpTextFormat
-import io.opentelemetry.trace.Span
+import io.opentelemetry.trace.{ Span, Status }
 import zio.ZIO
 import zio.clock.Clock
 import zio.opentelemetry.tracing.attributevalue.AttributeValueConverter
@@ -19,25 +19,28 @@ object TracingSyntax {
       carrier: C,
       getter: HttpTextFormat.Getter[C],
       spanName: String,
-      spanKind: Span.Kind = Span.Kind.INTERNAL
+      spanKind: Span.Kind = Span.Kind.INTERNAL,
+      toErrorStatus: PartialFunction[E, Status] = Map.empty
     ): ZIO[R with Tracing, E, A] =
-      Tracing.spanFrom(httpTextFormat, carrier, getter, spanName, spanKind)(effect)
+      Tracing.spanFrom(httpTextFormat, carrier, getter, spanName, spanKind, toErrorStatus)(effect)
 
     /**
      * @see [[Tracing.rootSpan]]
      */
     def rootSpan(
       spanName: String,
-      spanKind: Span.Kind = Span.Kind.INTERNAL
-    ): ZIO[R with Tracing, E, A] = Tracing.rootSpan(spanName, spanKind)(effect)
+      spanKind: Span.Kind = Span.Kind.INTERNAL,
+      toErrorStatus: PartialFunction[E, Status] = Map.empty
+    ): ZIO[R with Tracing, E, A] = Tracing.rootSpan(spanName, spanKind, toErrorStatus)(effect)
 
     /**
      * @see [[Tracing.childSpan]]
      */
     def childSpan(
       spanName: String,
-      spanKind: Span.Kind = Span.Kind.INTERNAL
-    ): ZIO[R with Tracing, E, A] = Tracing.childSpan(spanName, spanKind)(effect)
+      spanKind: Span.Kind = Span.Kind.INTERNAL,
+      toErrorStatus: PartialFunction[E, Status] = Map.empty
+    ): ZIO[R with Tracing, E, A] = Tracing.childSpan(spanName, spanKind, toErrorStatus)(effect)
 
     /**
      * @see [[Tracing.addEvent]]

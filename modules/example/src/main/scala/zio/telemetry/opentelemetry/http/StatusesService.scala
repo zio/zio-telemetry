@@ -3,17 +3,16 @@ package zio.telemetry.opentelemetry.http
 import io.circe.Encoder
 import io.opentelemetry.OpenTelemetry
 import io.opentelemetry.context.propagation.HttpTextFormat.Setter
-import io.opentelemetry.trace.Span
+import io.opentelemetry.trace.{ Span, Status => TraceStatus }
 import org.http4s.circe.jsonEncoderOf
 import org.http4s.dsl.Http4sDsl
 import org.http4s.{ EntityEncoder, HttpRoutes }
 import sttp.model.Uri
-import zio.{ Task, UIO, ULayer }
 import zio.interop.catz._
 import zio.opentelemetry.tracing.Tracing
 import zio.opentelemetry.tracing.Tracing.rootSpan
-import zio.interop.catz._
 import zio.opentelemetry.tracing.attributevalue.AttributeValueConverterInstances._
+import zio.{ Task, UIO, ULayer }
 
 import scala.collection.mutable
 
@@ -27,9 +26,11 @@ object StatusesService {
 
     val setter: Setter[mutable.Map[String, String]] = (carrier, key, value) => carrier.update(key, value)
 
+    val errorMapper: PartialFunction[Throwable, TraceStatus] = { case _ => TraceStatus.UNKNOWN }
+
     HttpRoutes.of[Task] {
       case GET -> Root / "statuses" =>
-        rootSpan("/statuses", Span.Kind.SERVER) {
+        rootSpan("/statuses", Span.Kind.SERVER, errorMapper) {
           for {
             _              <- Tracing.setAttribute("http.method", "get")
             _              <- Tracing.addEvent("proxy-event")
@@ -48,6 +49,7 @@ object StatusesService {
           } yield res
         }.provideLayer(service)
     }
+
   }
 
 }

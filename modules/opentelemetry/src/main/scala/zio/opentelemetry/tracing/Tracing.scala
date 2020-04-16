@@ -58,8 +58,10 @@ object Tracing {
   /**
    * Sets the status of `span` to `UNKNOWN` error with description being the pretty-printed cause.
    */
-  private def setErrorStatus(span: Span, cause: Cause[_]): UIO[Unit] =
-    UIO(span.setStatus(Status.UNKNOWN.withDescription(cause.prettyPrint)))
+  private def setErrorStatus[E](span: Span, cause: Cause[E], toErrorStatus: PartialFunction[E, Status]): UIO[Unit] = {
+    val errorStatus: Status = cause.failureOption.flatMap(toErrorStatus.lift).getOrElse(Status.UNKNOWN)
+    UIO(span.setStatus(errorStatus.withDescription(cause.prettyPrint)))
+  }
 
   /**
    * Sets the `currentSpan` to `newSpan` only while `effect` runs.
@@ -67,14 +69,15 @@ object Tracing {
    */
   private def finalizeSpanUsingEffect[R, E, A](
     effect: ZIO[R, E, A],
-    newSpan: Span
+    span: Span,
+    toErrorStatus: PartialFunction[E, Status]
   ): ZIO[R with Tracing, E, A] =
     for {
       current <- currentSpan
       r <- current
-            .locally(newSpan)(effect)
-            .tapCause(setErrorStatus(newSpan, _))
-            .ensuring(endSpan(newSpan))
+            .locally(span)(effect)
+            .tapCause(setErrorStatus(span, _, toErrorStatus))
+            .ensuring(endSpan(span))
     } yield r
 
   /**
@@ -86,12 +89,13 @@ object Tracing {
     carrier: C,
     getter: HttpTextFormat.Getter[C],
     spanName: String,
-    spanKind: Span.Kind = Span.Kind.INTERNAL
+    spanKind: Span.Kind,
+    toErrorStatus: PartialFunction[E, Status]
   )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
     for {
       extractedSpan  <- extractSpan(httpTextFormat, carrier, getter)
       extractedChild <- createChildOf(extractedSpan, spanName, spanKind)
-      r              <- finalizeSpanUsingEffect(effect, extractedChild)
+      r              <- finalizeSpanUsingEffect(effect, extractedChild, toErrorStatus)
     } yield r
 
   /**
@@ -100,11 +104,12 @@ object Tracing {
    */
   def rootSpan[R, E, A](
     spanName: String,
-    spanKind: Span.Kind = Span.Kind.INTERNAL
+    spanKind: Span.Kind,
+    toErrorStatus: PartialFunction[E, Status]
   )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
     for {
       root <- createRoot(spanName, spanKind)
-      r    <- finalizeSpanUsingEffect(effect, root)
+      r    <- finalizeSpanUsingEffect(effect, root, toErrorStatus)
     } yield r
 
   /**
@@ -113,12 +118,13 @@ object Tracing {
    */
   def childSpan[R, E, A](
     spanName: String,
-    spanKind: Span.Kind = Span.Kind.INTERNAL
+    spanKind: Span.Kind,
+    toErrorStatus: PartialFunction[E, Status]
   )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
     for {
       old   <- getCurrentSpan
       child <- createChildOf(old, spanName, spanKind)
-      r     <- finalizeSpanUsingEffect(effect, child)
+      r     <- finalizeSpanUsingEffect(effect, child, toErrorStatus)
     } yield r
 
   /**
