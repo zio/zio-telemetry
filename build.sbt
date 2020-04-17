@@ -46,7 +46,7 @@ val http4sVersion      = "0.21.3"
 val jaegerVersion      = "1.2.0"
 val sttpVersion        = "2.0.8"
 val opentracingVersion = "0.33.0"
-val zipkinVersion      = "2.12.2"
+val zipkinVersion      = "2.12.3"
 val zioVersion         = "1.0.0-RC18-2"
 
 lazy val openTracing =
@@ -61,7 +61,7 @@ lazy val openTracing =
         "io.opentracing"         % "opentracing-api"          % opentracingVersion,
         "io.opentracing"         % "opentracing-noop"         % opentracingVersion,
         "io.opentracing"         % "opentracing-mock"         % opentracingVersion % Test,
-        "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.4"
+        "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.5"
       )
     )
 
