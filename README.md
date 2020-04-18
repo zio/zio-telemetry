@@ -99,7 +99,7 @@ Represents entry point to example distributed system. It exposes `/statuses` end
 
 In order to start service run:
 ```bash
-sbt "example/runMain zio.telemetry.example.ProxyServer"
+sbt "opentracingExample/runMain zio.telemetry.opentracing.example.ProxyServer"
 ```
 
 If it's start properly it should be available on `http://0.0.0.0:8080/statuses`.
@@ -111,7 +111,7 @@ Represents "internal" service of the system. It exposes `/status` endpoint which
 
 In order to start service run:
 ```bash
-sbt "example/runMain zio.telemetry.example.BackendServer"
+sbt "opentracingExample/runMain zio.telemetry.opentracing.example.BackendServer"
 ```
 
 If it's start properly it should be available on `http://0.0.0.0:9000/status`.
@@ -153,16 +153,16 @@ docker run --rm -it \
 ```
 
 Then start the proxy server
-```
-sbt "example/runMain zio.telemetry.opentelemetry.ProxyServer"
+```bash
+sbt "opentelemetryExample/runMain zio.telemetry.opentelemetry.tracing.example.ProxyServer"
 ```
 and the backend server
 
-```
-sbt "example/runMain zio.telemetry.opentelemetry.BackendServer"
+```bash
+sbt "opentelemetryExample/runMain zio.telemetry.opentelemetry.tracing.example.BackendServer"
 ```
 Now perform the following request:
-```
+```bash
 curl -X GET http://0.0.0.0:8080/statuses
 ```
 and head over to [http://localhost:16686/](http://localhost:16686/) to see the result.
