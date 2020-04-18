@@ -24,34 +24,19 @@ object Tracing {
   private def currentNanos: URIO[Tracing, Long] =
     ZIO.accessM[Tracing](_.get.currentNanos)
 
-  /**
-   * Reference to the current span of the fiber.
-   */
   private def currentSpan: URIO[Tracing, FiberRef[Span]] =
     ZIO.access[Tracing](_.get.currentSpan)
 
-  /**
-   * Creates a new root span.
-   */
   private def createRoot(spanName: String, spanKind: Span.Kind): URIO[Tracing, Span] =
     ZIO.accessM[Tracing](_.get.createRoot(spanName, spanKind))
 
-  /**
-   * Creates a new child span from the parent span.
-   */
   private def createChildOf(parent: Span, spanName: String, spanKind: Span.Kind): URIO[Tracing, Span] =
     ZIO.accessM[Tracing](_.get.createChildOf(parent, spanName, spanKind))
 
-  /**
-   * Gets the current span.
-   */
   private def getCurrentSpan: URIO[Tracing, Span] = currentSpan.flatMap(_.get)
 
   private def toEndTimestamp(time: Long): EndSpanOptions = EndSpanOptions.builder().setEndTimestamp(time).build()
 
-  /**
-   * Ends the span with the current time.
-   */
   private def endSpan(span: Span): URIO[Tracing, Unit] =
     currentNanos.map(toEndTimestamp _ andThen span.end)
 
@@ -64,8 +49,8 @@ object Tracing {
   }
 
   /**
-   * Sets the `currentSpan` to `newSpan` only while `effect` runs.
-   * Then ends the span `newSpan` according to the result of `effect`.
+   * Sets the `currentSpan` to `span` only while `effect` runs.
+   * Then ends `span` according to the result of `effect`.
    */
   private def finalizeSpanUsingEffect[R, E, A](
     effect: ZIO[R, E, A],
