@@ -75,9 +75,9 @@ object Tracing {
     toErrorStatus: PartialFunction[E, Status]
   )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
     for {
-      extractedSpan  <- extractSpan(httpTextFormat, carrier, getter)
-      extractedChild <- createChildOf(extractedSpan, spanName, spanKind)
-      r              <- finalizeSpanUsingEffect(effect, extractedChild, toErrorStatus)
+      extractedSpan <- extractSpan(httpTextFormat, carrier, getter)
+      child         <- createChildOf(extractedSpan, spanName, spanKind)
+      r             <- finalizeSpanUsingEffect(effect, child, toErrorStatus)
     } yield r
 
   /**
