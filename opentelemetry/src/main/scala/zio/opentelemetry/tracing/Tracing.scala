@@ -102,7 +102,7 @@ object Tracing {
    * Sets the current span to be the new root span with name 'spanName'
    * Ends the span when the effect finishes.
    */
-  def rootSpan[R, E, A](
+  def root[R, E, A](
     spanName: String,
     spanKind: Span.Kind,
     toErrorStatus: PartialFunction[E, Status]
@@ -116,7 +116,7 @@ object Tracing {
    * Sets the current span to be the child of the current span with name 'spanName'
    * Ends the span when the effect finishes.
    */
-  def childSpan[R, E, A](
+  def span[R, E, A](
     spanName: String,
     spanKind: Span.Kind,
     toErrorStatus: PartialFunction[E, Status]
@@ -130,7 +130,7 @@ object Tracing {
   /**
    * Injects the current span into carrier `C`
    */
-  def injectCurrentSpan[C](
+  def inject[C](
     httpTextFormat: HttpTextFormat,
     carrier: C,
     setter: HttpTextFormat.Setter[C]

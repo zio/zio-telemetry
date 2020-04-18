@@ -25,22 +25,22 @@ object TracingSyntax {
       Tracing.spanFrom(httpTextFormat, carrier, getter, spanName, spanKind, toErrorStatus)(effect)
 
     /**
-     * @see [[Tracing.rootSpan]]
+     * @see [[Tracing.root]]
      */
-    def rootSpan(
+    def root(
       spanName: String,
       spanKind: Span.Kind = Span.Kind.INTERNAL,
       toErrorStatus: PartialFunction[E, Status] = Map.empty
-    ): ZIO[R with Tracing, E, A] = Tracing.rootSpan(spanName, spanKind, toErrorStatus)(effect)
+    ): ZIO[R with Tracing, E, A] = Tracing.root(spanName, spanKind, toErrorStatus)(effect)
 
     /**
-     * @see [[Tracing.childSpan]]
+     * @see [[Tracing.span]]
      */
-    def childSpan(
+    def span(
       spanName: String,
       spanKind: Span.Kind = Span.Kind.INTERNAL,
       toErrorStatus: PartialFunction[E, Status] = Map.empty
-    ): ZIO[R with Tracing, E, A] = Tracing.childSpan(spanName, spanKind, toErrorStatus)(effect)
+    ): ZIO[R with Tracing, E, A] = Tracing.span(spanName, spanKind, toErrorStatus)(effect)
 
     /**
      * @see [[Tracing.addEvent]]

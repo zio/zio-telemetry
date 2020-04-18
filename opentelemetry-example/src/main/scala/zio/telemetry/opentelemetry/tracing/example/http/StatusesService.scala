@@ -10,7 +10,7 @@ import org.http4s.{ EntityEncoder, HttpRoutes }
 import sttp.model.Uri
 import zio.interop.catz._
 import zio.opentelemetry.tracing.Tracing
-import zio.opentelemetry.tracing.Tracing.rootSpan
+import zio.opentelemetry.tracing.Tracing.root
 import zio.opentelemetry.tracing.attributevalue.AttributeValueConverterInstances._
 import zio.{ Task, UIO, ULayer }
 
@@ -30,13 +30,13 @@ object StatusesService {
 
     HttpRoutes.of[Task] {
       case GET -> Root / "statuses" =>
-        rootSpan("/statuses", Span.Kind.SERVER, errorMapper) {
+        root("/statuses", Span.Kind.SERVER, errorMapper) {
           for {
             _              <- Tracing.setAttribute("http.method", "get")
             _              <- Tracing.addEvent("proxy-event")
             httpTextFormat <- UIO(OpenTelemetry.getPropagators.getHttpTextFormat)
             carrier        <- UIO(mutable.Map[String, String]().empty)
-            _              <- Tracing.injectCurrentSpan(httpTextFormat, carrier, setter)
+            _              <- Tracing.inject(httpTextFormat, carrier, setter)
             headers        <- UIO(carrier.toMap)
             up             = Status.up("proxy")
             res <- Client

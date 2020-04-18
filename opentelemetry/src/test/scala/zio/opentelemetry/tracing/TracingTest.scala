@@ -8,7 +8,7 @@ import io.opentelemetry.sdk.trace.data.SpanData
 import io.opentelemetry.trace.{ SpanId, Tracer }
 import zio.clock.Clock
 import zio.duration._
-import zio.opentelemetry.tracing.Tracing.injectCurrentSpan
+import zio.opentelemetry.tracing.Tracing.inject
 import zio.opentelemetry.tracing.TracingSyntax._
 import zio.opentelemetry.tracing.attributevalue.AttributeValueConverterInstances._
 import zio.test.Assertion._
@@ -53,7 +53,7 @@ object TracingTest extends DefaultRunnableSpec {
         testM("childSpan") {
           for {
             inMemoryTracing <- ZIO.access[Has[InMemoryTracing]](_.get)
-            _               <- UIO.unit.childSpan("Child").childSpan("Root")
+            _               <- UIO.unit.span("Child").span("Root")
             spans           = getFinishedSpans(inMemoryTracing)
             root            = spans.find(_.getName == "Root")
             child           = spans.find(_.getName == "Child")
@@ -71,7 +71,7 @@ object TracingTest extends DefaultRunnableSpec {
         testM("rootSpan") {
           for {
             inMemoryTracing <- ZIO.access[Has[InMemoryTracing]](_.get)
-            _               <- UIO.unit.rootSpan("ROOT2").rootSpan("ROOT")
+            _               <- UIO.unit.root("ROOT2").root("ROOT")
             spans           = getFinishedSpans(inMemoryTracing)
             root            = spans.find(_.getName == "ROOT")
             child           = spans.find(_.getName == "ROOT2")
@@ -98,17 +98,17 @@ object TracingTest extends DefaultRunnableSpec {
             (carrier, key, value) => carrier.update(key, value)
 
           val injectExtract =
-            injectCurrentSpan(
+            inject(
               httpTextFormat,
               carrier,
               setter
-            ).childSpan("foo") *> UIO.unit
+            ).span("foo") *> UIO.unit
               .spanFrom(httpTextFormat, carrier, getter, "baz")
-              .childSpan("bar")
+              .span("bar")
 
           for {
             inMemoryTracing <- ZIO.access[Has[InMemoryTracing]](_.get)
-            _               <- injectExtract.childSpan("ROOT")
+            _               <- injectExtract.span("ROOT")
             spans           = getFinishedSpans(inMemoryTracing)
             root            = spans.find(_.getName == "ROOT")
             foo             = spans.find(_.getName == "foo")
@@ -129,7 +129,7 @@ object TracingTest extends DefaultRunnableSpec {
                   .setAttribute("boolean", true)
                   .setAttribute("int", 1)
                   .setAttribute("string", "foo")
-                  .childSpan("foo")
+                  .span("foo")
             spans = getFinishedSpans(inMemoryTracing)
             tags  = spans.head.getAttributes.asScala.toMap
           } yield assert(tags)(
@@ -169,7 +169,7 @@ object TracingTest extends DefaultRunnableSpec {
 
           for {
             inMemoryTracing <- ZIO.access[Has[InMemoryTracing]](_.get)
-            _               <- log.childSpan("foo")
+            _               <- log.span("foo")
             spans           = getFinishedSpans(inMemoryTracing)
             tags = spans.collect {
               case span if span.getName == "foo" =>
