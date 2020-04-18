@@ -40,9 +40,6 @@ object Tracing {
   private def endSpan(span: Span): URIO[Tracing, Unit] =
     currentNanos.map(toEndTimestamp _ andThen span.end)
 
-  /**
-   * Sets the status of `span` to `UNKNOWN` error with description being the pretty-printed cause.
-   */
   private def setErrorStatus[E](span: Span, cause: Cause[E], toErrorStatus: PartialFunction[E, Status]): UIO[Unit] = {
     val errorStatus: Status = cause.failureOption.flatMap(toErrorStatus.lift).getOrElse(Status.UNKNOWN)
     UIO(span.setStatus(errorStatus.withDescription(cause.prettyPrint)))
@@ -119,7 +116,7 @@ object Tracing {
     httpTextFormat: HttpTextFormat,
     carrier: C,
     setter: HttpTextFormat.Setter[C]
-  ): RIO[Tracing, Unit] =
+  ): URIO[Tracing, Unit] =
     for {
       current <- getCurrentSpan
       _       <- injectSpan(current, httpTextFormat, carrier, setter)
