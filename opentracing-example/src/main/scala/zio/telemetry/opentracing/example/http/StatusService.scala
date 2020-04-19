@@ -10,7 +10,7 @@ import org.http4s.dsl.Http4sDsl
 import zio.clock.Clock
 import zio.interop.catz._
 import zio.telemetry.opentracing.example.http.{ Status => ServiceStatus }
-import zio.opentracing._
+import zio.telemetry.opentracing._
 import zio.ZIO
 import zio.ZLayer
 

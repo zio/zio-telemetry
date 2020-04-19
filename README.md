@@ -154,12 +154,12 @@ docker run --rm -it \
 
 Then start the proxy server
 ```bash
-sbt "opentelemetryExample/runMain zio.telemetry.opentelemetry.tracing.example.ProxyServer"
+sbt "opentelemetryExample/runMain zio.telemetry.opentelemetry.example.ProxyServer"
 ```
 and the backend server
 
 ```bash
-sbt "opentelemetryExample/runMain zio.telemetry.opentelemetry.tracing.example.BackendServer"
+sbt "opentelemetryExample/runMain zio.telemetry.opentelemetry.example.BackendServer"
 ```
 Now perform the following request:
 ```bash

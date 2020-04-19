@@ -6,7 +6,7 @@ import io.jaegertracing.zipkin.ZipkinV2Reporter
 import org.apache.http.client.utils.URIBuilder
 import zio.ZLayer
 import zio.clock.Clock
-import zio.opentracing.OpenTracing
+import zio.telemetry.opentracing.OpenTracing
 import zipkin2.reporter.AsyncReporter
 import zipkin2.reporter.okhttp3.OkHttpSender
 
