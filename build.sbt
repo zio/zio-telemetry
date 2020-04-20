@@ -61,7 +61,7 @@ lazy val openTracing =
         "io.opentracing"         % "opentracing-api"          % opentracingVersion,
         "io.opentracing"         % "opentracing-noop"         % opentracingVersion,
         "io.opentracing"         % "opentracing-mock"         % opentracingVersion % Test,
-        "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.5"
+        "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.6"
       )
     )
 
