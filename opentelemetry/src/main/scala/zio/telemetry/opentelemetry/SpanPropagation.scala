@@ -5,7 +5,7 @@ import io.opentelemetry.context.propagation.HttpTextFormat
 import io.opentelemetry.trace.{ Span, TracingContextUtils }
 import zio.{ UIO, URIO, ZIO }
 
-private[opentelemetry] object ContextPropagation {
+private[opentelemetry] object SpanPropagation {
   //  The OpenTelemetry Java API forces us to deal with `Context` when extracting and injecting Spans.
   //  The context is normally retrieved through `Context.current()`.
   //  This creates and uses a ThreadLocalStorage to store the span and poses a complication,

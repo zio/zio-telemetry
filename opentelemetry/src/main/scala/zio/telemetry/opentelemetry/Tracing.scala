@@ -7,7 +7,7 @@ import io.opentelemetry.context.propagation.HttpTextFormat
 import io.opentelemetry.trace.{ DefaultSpan, EndSpanOptions, Span, Status, Tracer }
 import zio.clock.Clock
 import zio.telemetry.opentelemetry.attributevalue.AttributeValueConverter.toAttributeValue
-import zio.telemetry.opentelemetry.ContextPropagation.{ extractSpan, injectSpan }
+import zio.telemetry.opentelemetry.SpanPropagation.{ extractSpan, injectSpan }
 import zio._
 import zio.telemetry.opentelemetry.attributevalue.AttributeValueConverter
 
