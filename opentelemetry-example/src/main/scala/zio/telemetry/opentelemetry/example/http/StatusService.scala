@@ -13,8 +13,6 @@ import zio.telemetry.opentelemetry.Tracing
 import zio.telemetry.opentelemetry.TracingSyntax._
 import zio.telemetry.opentelemetry.example.http.{ Status => ServiceStatus }
 
-import scala.collection.mutable
-
 object StatusService {
 
   val dsl: Http4sDsl[AppTask] = Http4sDsl[AppTask]
@@ -22,12 +20,12 @@ object StatusService {
 
   implicit def encoder[A: Encoder]: EntityEncoder[AppTask, A] = jsonEncoderOf[AppTask, A]
 
-  val httpTextFormat: HttpTextFormat              = io.opentelemetry.OpenTelemetry.getPropagators.getHttpTextFormat
-  val getter: Getter[mutable.Map[String, String]] = (carrier, key) => carrier.get(key).orNull
+  val httpTextFormat: HttpTextFormat      = io.opentelemetry.OpenTelemetry.getPropagators.getHttpTextFormat
+  val getter: Getter[Map[String, String]] = (carrier, key) => carrier.get(key).orNull
 
   val routes: HttpRoutes[AppTask] = HttpRoutes.of[AppTask] {
     case request @ GET -> Root / "status" =>
-      val headers = mutable.Map(request.headers.toList.map(h => h.name.value -> h.value): _*)
+      val headers = Map(request.headers.toList.map(h => h.name.value -> h.value): _*)
 
       val response = for {
         _        <- Tracing.addEvent("event from backend before response")
