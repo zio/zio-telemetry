@@ -149,7 +149,7 @@ object Tracing {
   def setAttribute[A: AttributeValueConverter](name: String, value: A): URIO[Tracing, Unit] =
     getCurrentSpan.map(_.setAttribute(name, toAttributeValue(value)))
 
-  def live(tracer: Tracer): URLayer[Clock, Tracing] = {
+  def managed(tracer: Tracer): URManaged[Clock, Service] = {
     class Live(defaultSpan: FiberRef[Span], clock: Clock.Service) extends Service {
       def currentNanos: UIO[Long] = clock.currentTime(TimeUnit.NANOSECONDS)
 
@@ -194,6 +194,10 @@ object Tracing {
         defaultSpan <- FiberRef.make[Span](DefaultSpan.getInvalid)
       } yield new Live(defaultSpan, clock)
 
-    ZLayer.fromAcquireRelease(tracing)(end)
+    ZManaged.make(tracing)(end)
   }
+
+  def live: URLayer[Clock with Has[Tracer], Tracing] = ZLayer.fromManaged(
+    ZIO.access[Has[Tracer]](_.get).toManaged_.flatMap(managed)
+  )
 }

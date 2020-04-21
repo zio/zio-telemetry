@@ -1,11 +1,11 @@
 package zio.telemetry.opentelemetry
 
 import io.opentelemetry.common.AttributeValue
-import io.opentelemetry.context.propagation.HttpTextFormat.{ Getter, Setter }
+import io.opentelemetry.context.propagation.HttpTextFormat.{Getter, Setter}
 import io.opentelemetry.exporters.inmemory.InMemoryTracing
 import io.opentelemetry.sdk.trace.TracerSdkProvider
 import io.opentelemetry.sdk.trace.data.SpanData
-import io.opentelemetry.trace.{ SpanId, Tracer }
+import io.opentelemetry.trace.{SpanId, Tracer}
 import zio.clock.Clock
 import zio.duration._
 import zio.telemetry.opentelemetry.Tracing.inject
@@ -13,42 +13,42 @@ import zio.telemetry.opentelemetry.TracingSyntax._
 import zio.telemetry.opentelemetry.attributevalue.AttributeValueConverterInstances._
 import zio.test.Assertion._
 import zio.test.environment.TestClock
-import zio.test.{ assert, suite, testM, DefaultRunnableSpec }
-import zio.{ Has, UIO, URLayer, ZIO, ZLayer }
+import zio.test.{DefaultRunnableSpec, assert, suite, testM}
+import zio._
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
 object TracingTest extends DefaultRunnableSpec {
 
-  def createMockTracer: (InMemoryTracing, Tracer) = {
-    val tracerProvider: TracerSdkProvider = TracerSdkProvider.builder().build()
-    val inMemoryTracing                   = InMemoryTracing.builder().setTracerProvider(tracerProvider).build()
-    val tracer                            = tracerProvider.get("InMemoryTracing")
+  val inMemoryTracer: UIO[(InMemoryTracing, Tracer)] = for {
+    tracerProvider  <- UIO(TracerSdkProvider.builder().build())
+    inMemoryTracing <- UIO(InMemoryTracing.builder().setTracerProvider(tracerProvider).build())
+    tracer          = tracerProvider.get("TracingTest")
+  } yield (inMemoryTracing, tracer)
 
-    (inMemoryTracing, tracer)
-  }
+  val inMemoryTracerLayer: ULayer[Has[InMemoryTracing] with Has[Tracer]] = ZLayer.fromEffectMany(
+    inMemoryTracer.map {
+      case (inMemoryTracing, tracer) => Has(inMemoryTracing).add(tracer)
+    }
+  )
+
+  val tracingMockLayer: URLayer[Clock, Has[InMemoryTracing] with Tracing] =
+    (inMemoryTracerLayer ++ Clock.any) >>> (Tracing.live ++ inMemoryTracerLayer)
 
   def getFinishedSpans(inMemoryTracing: InMemoryTracing): List[SpanData] =
     inMemoryTracing.getSpanExporter.getFinishedSpanItems.asScala.toList
 
-  def createMockLayer: URLayer[Clock, Has[InMemoryTracing] with Tracing] = {
-    val (inMemoryTracing, tracer) = createMockTracer
-    ZLayer.succeed(inMemoryTracing) ++ Tracing.live(tracer)
-  }
-
   def spec =
     suite("zio opentelemetry")(
       testM("acquire/release the service") {
-        val (inMemoryTracing, tracer) = createMockTracer
-        lazy val finishedSpans        = getFinishedSpans(inMemoryTracing)
-
-        Tracing
-          .live(tracer)
-          .build
-          .use_(UIO.unit)
-          .as(assert(finishedSpans)(hasSize(equalTo(0))))
-      },
+        for {
+          inMemoryTracing <- ZIO.access[Has[InMemoryTracing]](_.get)
+          _ <- Tracing.live.build
+                .use_(UIO.unit)
+          finishedSpans = getFinishedSpans(inMemoryTracing)
+        } yield assert(finishedSpans)(hasSize(equalTo(0)))
+      }.provideCustomLayer(inMemoryTracerLayer),
       suite("spans")(
         testM("childSpan") {
           for {
@@ -67,7 +67,7 @@ object TracingTest extends DefaultRunnableSpec {
                 )
               )
             )
-        }.provideCustomLayer(createMockLayer),
+        },
         testM("rootSpan") {
           for {
             inMemoryTracing <- ZIO.access[Has[InMemoryTracing]](_.get)
@@ -85,7 +85,7 @@ object TracingTest extends DefaultRunnableSpec {
                 )
               )
             )
-        }.provideCustomLayer(createMockLayer),
+        },
         testM("inject - extract roundtrip") {
 
           val httpTextFormat                       = io.opentelemetry.OpenTelemetry.getPropagators.getHttpTextFormat
@@ -121,7 +121,7 @@ object TracingTest extends DefaultRunnableSpec {
             assert(foo.get.getParentSpanId)(equalTo(root.get.getSpanId)) &&
             assert(bar.get.getParentSpanId)(equalTo(root.get.getSpanId)) &&
             assert(baz.get.getParentSpanId)(equalTo(foo.get.getSpanId))
-        }.provideCustomLayer(createMockLayer),
+        },
         testM("tagging") {
           for {
             inMemoryTracing <- ZIO.access[Has[InMemoryTracing]](_.get)
@@ -141,7 +141,7 @@ object TracingTest extends DefaultRunnableSpec {
               )
             )
           )
-        }.provideCustomLayer(createMockLayer),
+        },
         testM("logging") {
           val duration = 1000.micros
 
@@ -191,7 +191,7 @@ object TracingTest extends DefaultRunnableSpec {
             )
             assert(tags)(equalTo(expected))
           }
-        }.provideCustomLayer(createMockLayer)
-      )
+        }
+      ).provideCustomLayer(tracingMockLayer)
     )
 }
