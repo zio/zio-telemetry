@@ -35,10 +35,7 @@ object StatusesService {
           _       <- Tracing.setAttribute("http.method", "get")
           _       <- Tracing.addEvent("proxy-event")
           _       <- Tracing.inject(httpTextFormat, carrier, setter)
-          headers = carrier.toMap
-
-          res <- Client.status(headers).flatMap(Ok(_))
-
+          res     <- Client.status(carrier.toMap).flatMap(Ok(_))
         } yield res
       }
   }

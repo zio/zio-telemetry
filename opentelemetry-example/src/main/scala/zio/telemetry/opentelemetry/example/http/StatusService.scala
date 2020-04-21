@@ -8,6 +8,7 @@ import io.opentelemetry.trace.Span
 import org.http4s._
 import org.http4s.circe.jsonEncoderOf
 import org.http4s.dsl.Http4sDsl
+import org.http4s.util.CaseInsensitiveString
 import zio.interop.catz._
 import zio.telemetry.opentelemetry.Tracing
 import zio.telemetry.opentelemetry.TracingSyntax._
@@ -20,20 +21,18 @@ object StatusService {
 
   implicit def encoder[A: Encoder]: EntityEncoder[AppTask, A] = jsonEncoderOf[AppTask, A]
 
-  val httpTextFormat: HttpTextFormat      = io.opentelemetry.OpenTelemetry.getPropagators.getHttpTextFormat
-  val getter: Getter[Map[String, String]] = (carrier, key) => carrier.get(key).orNull
+  val httpTextFormat: HttpTextFormat = io.opentelemetry.OpenTelemetry.getPropagators.getHttpTextFormat
+  val getter: Getter[Headers]        = (carrier, key) => carrier.get(CaseInsensitiveString(key)).map(_.value).orNull
 
   val routes: HttpRoutes[AppTask] = HttpRoutes.of[AppTask] {
     case request @ GET -> Root / "status" =>
-      val headers = Map(request.headers.toList.map(h => h.name.value -> h.value): _*)
-
       val response = for {
         _        <- Tracing.addEvent("event from backend before response")
         response <- Ok(ServiceStatus.up("backend").asJson)
         _        <- Tracing.addEvent("event from backend after response")
       } yield response
 
-      response.spanFrom(httpTextFormat, headers, getter, "/status", Span.Kind.SERVER)
+      response.spanFrom(httpTextFormat, request.headers, getter, "/status", Span.Kind.SERVER)
 
   }
 
