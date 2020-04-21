@@ -1,32 +1,39 @@
 package zio.telemetry.opentelemetry.example
 
-import cats.effect.ExitCode
-import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
-import org.http4s.syntax.kleisli._
-import sttp.model.Uri
+import org.http4s.server.{ defaults, Router }
+import zio.clock.Clock
 import zio.interop.catz._
-import zio.interop.catz.implicits._
-import zio.telemetry.opentelemetry.example.config.Configuration
-import zio.telemetry.opentelemetry.example.http.StatusesService
-import JaegerTracer.makeService
-import zio.{ Task, ZEnv, ZIO }
+import zio.telemetry.opentelemetry.Tracing
+import zio.telemetry.opentelemetry.example.config.{ Config, Configuration }
+import zio.telemetry.opentelemetry.example.http.{ AppEnv, AppTask, Client, StatusesService }
+import zio.{ Managed, ZIO, ZLayer }
+import org.http4s.syntax.kleisli._
+import sttp.client.asynchttpclient.zio.AsyncHttpClientZioBackend
 
-object ProxyServer extends CatsApp {
+object ProxyServer extends zio.App {
 
-  override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
-    (for {
-      conf       <- Configuration.load.provideLayer(Configuration.live)
-      service    = makeService(conf.tracer.host, "zio-proxy")
-      backendUrl <- ZIO.fromEither(Uri.safeApply(conf.backend.host, conf.backend.port))
-      router     = Router[Task]("/" -> StatusesService.statuses(backendUrl, service)).orNotFound
-      result <- BlazeServerBuilder[Task]
-                 .bindHttp(conf.proxy.port, conf.proxy.host)
-                 .withHttpApp(router)
-                 .serve
-                 .compile[Task, Task, ExitCode]
-                 .drain
-                 .as(0)
-    } yield result) orElse ZIO.succeed(1)
+  val router = Router[AppTask]("/" -> StatusesService.routes).orNotFound
 
+  val server =
+    ZIO
+      .runtime[AppEnv]
+      .flatMap(implicit runtime =>
+        BlazeServerBuilder[AppTask]
+          .bindHttp(
+            runtime.environment.get[Config].proxy.host.port.getOrElse(defaults.HttpPort),
+            runtime.environment.get[Config].proxy.host.host
+          )
+          .withHttpApp(router)
+          .serve
+          .compile
+          .drain
+      )
+
+  val httpBackend = ZLayer.fromManaged(Managed.make(AsyncHttpClientZioBackend())(_.close.ignore))
+  val client      = Configuration.live ++ httpBackend >>> Client.live
+  val tracer      = Configuration.live >>> JaegerTracer.live("zio-proxy")
+  val envLayer    = tracer ++ Clock.live >>> Tracing.live ++ Configuration.live ++ client
+
+  override def run(args: List[String]) = server.provideCustomLayer(envLayer).fold(_ => 1, _ => 0)
 }

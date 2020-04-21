@@ -1,11 +1,11 @@
 package zio.telemetry.opentelemetry
 
 import io.opentelemetry.common.AttributeValue
-import io.opentelemetry.context.propagation.HttpTextFormat.{Getter, Setter}
+import io.opentelemetry.context.propagation.HttpTextFormat.{ Getter, Setter }
 import io.opentelemetry.exporters.inmemory.InMemoryTracing
 import io.opentelemetry.sdk.trace.TracerSdkProvider
 import io.opentelemetry.sdk.trace.data.SpanData
-import io.opentelemetry.trace.{SpanId, Tracer}
+import io.opentelemetry.trace.{ SpanId, Tracer }
 import zio.clock.Clock
 import zio.duration._
 import zio.telemetry.opentelemetry.Tracing.inject
@@ -13,7 +13,7 @@ import zio.telemetry.opentelemetry.TracingSyntax._
 import zio.telemetry.opentelemetry.attributevalue.AttributeValueConverterInstances._
 import zio.test.Assertion._
 import zio.test.environment.TestClock
-import zio.test.{DefaultRunnableSpec, assert, suite, testM}
+import zio.test.{ assert, suite, testM, DefaultRunnableSpec }
 import zio._
 
 import scala.collection.mutable

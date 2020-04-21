@@ -1,16 +1,15 @@
 package zio.telemetry.opentelemetry.example.config
 
 import Config._
+import sttp.model.Uri
 
 final case class Config(proxy: ProxyConfig, backend: BackendConfig, tracer: TracerHost)
 
 object Config {
 
-  final case class ProxyConfig(host: String, port: Int)
+  final case class ProxyConfig(host: Uri)
 
-  final case class BackendUrl(url: String) extends AnyVal
-
-  final case class BackendConfig(host: String, port: Int)
+  final case class BackendConfig(host: Uri)
 
   final case class TracerHost(host: String) extends AnyVal
 

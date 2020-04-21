@@ -1,24 +1,16 @@
 package zio.telemetry.opentelemetry.example.config
 
-import pureconfig.ConfigSource
+import pureconfig.{ ConfigReader, ConfigSource }
+import pureconfig.error.CannotConvert
 import pureconfig.generic.auto._
-import zio.Task
-import zio.ZLayer
-import zio.ZIO
+import sttp.model.Uri
+import zio.{ Task, TaskLayer, URIO, ZIO, ZLayer }
 
 object Configuration {
+  implicit val uriReader =
+    ConfigReader.fromString(str => Uri.parse(str).left.map(CannotConvert(str, "Uri", _)))
 
-  trait Service {
-    val load: Task[Config]
-  }
+  val live: TaskLayer[Configuration] = ZLayer.fromEffect(Task(ConfigSource.default.loadOrThrow[Config]))
 
-  object Live extends Service {
-    val load: Task[Config] =
-      Task.effect(ConfigSource.default.loadOrThrow[Config])
-  }
-
-  val live: ZLayer[Any, Throwable, Configuration] = ZLayer.succeed(Live)
-
-  val load: ZIO[Configuration, Throwable, Config] = ZIO.accessM[Configuration] { _.get.load }
-
+  def get: URIO[Configuration, Config] = ZIO.access[Configuration](_.get)
 }

@@ -1,25 +1,27 @@
 package zio.telemetry.opentelemetry.example
 
-import io.grpc.{ ManagedChannel, ManagedChannelBuilder }
+import io.grpc.ManagedChannelBuilder
 import io.opentelemetry.exporters.jaeger.JaegerGrpcSpanExporter
 import io.opentelemetry.sdk.OpenTelemetrySdk
-import io.opentelemetry.sdk.trace.TracerSdk
-import zio.ULayer
-import zio.clock.Clock
-import zio.telemetry.opentelemetry.Tracing
+import io.opentelemetry.trace.Tracer
+import zio._
+import zio.telemetry.opentelemetry.example.config.{ Config, Configuration }
 
 object JaegerTracer {
 
-  def makeService(host: String, serviceName: String): ULayer[Tracing] = {
-    val tracer: TracerSdk = OpenTelemetrySdk.getTracerProvider.get("zio.telemetry.opentelemetry.JaegerTracer")
+  def live(serviceName: String): RLayer[Configuration, Has[Tracer]] =
+    ZLayer.fromServiceM((conf: Config) =>
+      for {
+        tracer         <- UIO(OpenTelemetrySdk.getTracerProvider.get("zio.telemetry.opentelemetry.example.JaegerTracer"))
+        managedChannel <- Task(ManagedChannelBuilder.forTarget(conf.tracer.host).usePlaintext().build())
+        _ <- UIO(
+              JaegerGrpcSpanExporter
+                .newBuilder()
+                .setServiceName(serviceName)
+                .setChannel(managedChannel)
+                .install(OpenTelemetrySdk.getTracerProvider)
+            )
+      } yield tracer
+    )
 
-    val managedChannel: ManagedChannel = ManagedChannelBuilder.forTarget(host).usePlaintext().build()
-    JaegerGrpcSpanExporter
-      .newBuilder()
-      .setServiceName(serviceName)
-      .setChannel(managedChannel)
-      .install(OpenTelemetrySdk.getTracerProvider)
-
-    Clock.live >>> Tracing.live(tracer)
-  }
 }
