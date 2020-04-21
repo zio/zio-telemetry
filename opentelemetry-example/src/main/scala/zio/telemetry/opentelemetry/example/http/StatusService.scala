@@ -2,6 +2,7 @@ package zio.telemetry.opentelemetry.example.http
 
 import io.circe.Encoder
 import io.circe.syntax._
+import io.opentelemetry.OpenTelemetry
 import io.opentelemetry.context.propagation.HttpTextFormat
 import io.opentelemetry.context.propagation.HttpTextFormat.Getter
 import io.opentelemetry.trace.Span
@@ -21,7 +22,7 @@ object StatusService {
 
   implicit def encoder[A: Encoder]: EntityEncoder[AppTask, A] = jsonEncoderOf[AppTask, A]
 
-  val httpTextFormat: HttpTextFormat = io.opentelemetry.OpenTelemetry.getPropagators.getHttpTextFormat
+  val httpTextFormat: HttpTextFormat = OpenTelemetry.getPropagators.getHttpTextFormat
   val getter: Getter[Headers]        = (carrier, key) => carrier.get(CaseInsensitiveString(key)).map(_.value).orNull
 
   val routes: HttpRoutes[AppTask] = HttpRoutes.of[AppTask] {
