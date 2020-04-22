@@ -29,7 +29,7 @@ object OpenTracing {
   def live(tracer: Tracer, rootOperation: String = "ROOT"): URLayer[Clock, OpenTracing] =
     ZLayer.fromManaged(managed(tracer, rootOperation))
 
-  private[opentracing] def managed(tracer0: Tracer, rootOperation: String): URManaged[Clock, OpenTracing.Service] =
+  def managed(tracer0: Tracer, rootOperation: String): URManaged[Clock, OpenTracing.Service] =
     ZManaged.make(
       for {
         span  <- UIO(tracer0.buildSpan(rootOperation).start())
