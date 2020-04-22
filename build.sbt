@@ -32,6 +32,7 @@ inThisBuild(
 )
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
+Global / testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
@@ -40,55 +41,32 @@ lazy val root =
   project
     .in(file("."))
     .settings(skip in publish := true)
-    .aggregate(openTracing, example)
+    .aggregate(opentracing, opentelemetry, opentracingExample, opentelemetryExample)
 
-val http4sVersion      = "0.21.3"
-val jaegerVersion      = "1.2.0"
-val sttpVersion        = "2.0.9"
-val opentracingVersion = "0.33.0"
-val zipkinVersion      = "2.12.3"
-val zioVersion         = "1.0.0-RC18-2"
-
-lazy val openTracing =
+lazy val opentracing =
   project
-    .in(file("modules/opentracing"))
+    .in(file("opentracing"))
     .settings(stdSettings("zio-opentracing"))
-    .settings(
-      libraryDependencies := Seq(
-        "dev.zio"                %% "zio"                     % zioVersion,
-        "dev.zio"                %% "zio-test"                % zioVersion % Test,
-        "dev.zio"                %% "zio-test-sbt"            % zioVersion % Test,
-        "io.opentracing"         % "opentracing-api"          % opentracingVersion,
-        "io.opentracing"         % "opentracing-noop"         % opentracingVersion,
-        "io.opentracing"         % "opentracing-mock"         % opentracingVersion % Test,
-        "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.6"
-      )
-    )
+    .settings(libraryDependencies := Dependencies.opentracing)
 
-Global / testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
-
-lazy val example =
+lazy val opentelemetry =
   project
-    .in(file("modules/example"))
-    .settings(stdSettings("example"))
+    .in(file("opentelemetry"))
+    .settings(stdSettings("zio-opentelemetry"))
+    .settings(libraryDependencies := Dependencies.opentelemetry)
+
+lazy val opentracingExample =
+  project
+    .in(file("opentracing-example"))
+    .settings(stdSettings("opentracing-example"))
     .settings(skip in publish := true)
-    .settings(
-      libraryDependencies := Seq(
-        "org.typelevel"                %% "cats-core"                     % "2.1.1",
-        "io.circe"                     %% "circe-generic"                 % "0.13.0",
-        "org.http4s"                   %% "http4s-core"                   % http4sVersion,
-        "org.http4s"                   %% "http4s-blaze-server"           % http4sVersion,
-        "org.http4s"                   %% "http4s-dsl"                    % http4sVersion,
-        "org.http4s"                   %% "http4s-circe"                  % http4sVersion,
-        "io.jaegertracing"             % "jaeger-core"                    % jaegerVersion,
-        "io.jaegertracing"             % "jaeger-client"                  % jaegerVersion,
-        "io.jaegertracing"             % "jaeger-zipkin"                  % jaegerVersion,
-        "com.github.pureconfig"        %% "pureconfig"                    % "0.12.3",
-        "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % sttpVersion,
-        "com.softwaremill.sttp.client" %% "circe"                         % sttpVersion,
-        "dev.zio"                      %% "zio-interop-cats"              % "2.0.0.0-RC12",
-        "io.zipkin.reporter2"          % "zipkin-reporter"                % zipkinVersion,
-        "io.zipkin.reporter2"          % "zipkin-sender-okhttp3"          % zipkinVersion
-      )
-    )
-    .dependsOn(openTracing)
+    .settings(libraryDependencies := Dependencies.opentracingExample)
+    .dependsOn(opentracing)
+
+lazy val opentelemetryExample =
+  project
+    .in(file("opentelemetry-example"))
+    .settings(stdSettings("opentelemetry-example"))
+    .settings(skip in publish := true)
+    .settings(libraryDependencies := Dependencies.opentelemetryExample)
+    .dependsOn(opentelemetry)

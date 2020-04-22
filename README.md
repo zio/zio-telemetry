@@ -5,7 +5,7 @@
 [![Snapshots][Badge-SonatypeSnapshots]][Link-SonatypeSnapshots]
 [![Discord][Badge-Discord]][Link-Discord]
 
-ZIO telemetry is a purely-functional, type-safe [OpenTracing][open-tracing] client.
+ZIO telemetry is purely-functional and type-safe. It provides clients for [OpenTracing][open-tracing] and [OpenTelemetry][open-telemetry]
 
 ### OpenTracing
 
@@ -99,7 +99,7 @@ Represents entry point to example distributed system. It exposes `/statuses` end
 
 In order to start service run:
 ```bash
-sbt "example/runMain zio.telemetry.example.ProxyServer"
+sbt "opentracingExample/runMain zio.telemetry.opentracing.example.ProxyServer"
 ```
 
 If it's start properly it should be available on `http://0.0.0.0:8080/statuses`.
@@ -111,7 +111,7 @@ Represents "internal" service of the system. It exposes `/status` endpoint which
 
 In order to start service run:
 ```bash
-sbt "example/runMain zio.telemetry.example.BackendServer"
+sbt "opentracingExample/runMain zio.telemetry.opentracing.example.BackendServer"
 ```
 
 If it's start properly it should be available on `http://0.0.0.0:9000/status`.
@@ -142,7 +142,33 @@ should return following response:
 
 Simultaneously, it will create trace that will be stored in Jaeger backend.
 
+### OpenTelemetry
+
+First, start Jaeger by running
+```bash
+docker run --rm -it \
+  -p 16686:16686 \
+  -p 14250:14250 \
+  jaegertracing/all-in-one:1.16
+```
+
+Then start the proxy server
+```bash
+sbt "opentelemetryExample/runMain zio.telemetry.opentelemetry.example.ProxyServer"
+```
+and the backend server
+
+```bash
+sbt "opentelemetryExample/runMain zio.telemetry.opentelemetry.example.BackendServer"
+```
+Now perform the following request:
+```bash
+curl -X GET http://0.0.0.0:8080/statuses
+```
+and head over to [http://localhost:16686/](http://localhost:16686/) to see the result.
+
 [open-tracing]: https://opentracing.io/
+[open-telemetry]: https://opentelemetry.io/
 [otr-inject-extract]: https://opentracing.io/docs/overview/inject-extract/
 [jaeger]: https://www.jaegertracing.io
 [zipkin]: https://www.zipkin.io
