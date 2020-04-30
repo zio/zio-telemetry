@@ -43,7 +43,7 @@ object Dependencies {
     "com.github.pureconfig"        %% "pureconfig"                    % "0.12.3",
     "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % Versions.sttp,
     "com.softwaremill.sttp.client" %% "circe"                         % Versions.sttp,
-    "dev.zio"                      %% "zio-interop-cats"              % "2.0.0.0-RC12"
+    "dev.zio"                      %% "zio-interop-cats"              % "2.0.0.0-RC13"
   )
 
   lazy val opentracingExample = example ++ Seq(
