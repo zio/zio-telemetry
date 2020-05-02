@@ -9,6 +9,7 @@ import zio.clock.Clock
 import zio.telemetry.opentelemetry.attributevalue.AttributeValueConverter.toAttributeValue
 import zio.telemetry.opentelemetry.SpanPropagation.{ extractSpan, injectSpan }
 import zio._
+import zio.UManaged
 import zio.telemetry.opentelemetry.attributevalue.AttributeValueConverter
 
 import scala.jdk.CollectionConverters._
@@ -17,8 +18,9 @@ object Tracing {
   trait Service {
     private[opentelemetry] def currentNanos: UIO[Long]
     private[opentelemetry] val currentSpan: FiberRef[Span]
-    private[opentelemetry] def createRoot(spanName: String, spanKind: Span.Kind): UIO[Span]
-    private[opentelemetry] def createChildOf(parent: Span, spanName: String, spanKind: Span.Kind): UIO[Span]
+    private[opentelemetry] def createRoot(spanName: String, spanKind: Span.Kind): UManaged[Span]
+    private[opentelemetry] def createChildOf(parent: Span, spanName: String, spanKind: Span.Kind): UManaged[Span]
+    private[opentelemetry] def end(span: Span): UIO[Unit]
   }
 
   private def currentNanos: URIO[Tracing, Long] =
@@ -27,18 +29,15 @@ object Tracing {
   private def currentSpan: URIO[Tracing, FiberRef[Span]] =
     ZIO.access[Tracing](_.get.currentSpan)
 
-  private def createRoot(spanName: String, spanKind: Span.Kind): URIO[Tracing, Span] =
-    ZIO.accessM[Tracing](_.get.createRoot(spanName, spanKind))
+  private def createRoot(spanName: String, spanKind: Span.Kind): URManaged[Tracing, Span] =
+    ZIO.access[Tracing](_.get.createRoot(spanName, spanKind)).toManaged_.flatten
 
-  private def createChildOf(parent: Span, spanName: String, spanKind: Span.Kind): URIO[Tracing, Span] =
-    ZIO.accessM[Tracing](_.get.createChildOf(parent, spanName, spanKind))
+  private def createChildOf(parent: Span, spanName: String, spanKind: Span.Kind): URManaged[Tracing, Span] =
+    ZIO.access[Tracing](_.get.createChildOf(parent, spanName, spanKind)).toManaged_.flatten
 
   private def getCurrentSpan: URIO[Tracing, Span] = currentSpan.flatMap(_.get)
 
   private def toEndTimestamp(time: Long): EndSpanOptions = EndSpanOptions.builder().setEndTimestamp(time).build()
-
-  private def endSpan(span: Span): URIO[Tracing, Unit] =
-    currentNanos.map(toEndTimestamp _ andThen span.end)
 
   private def setErrorStatus[E](span: Span, cause: Cause[E], toErrorStatus: PartialFunction[E, Status]): UIO[Unit] = {
     val errorStatus: Status = cause.failureOption.flatMap(toErrorStatus.lift).getOrElse(Status.UNKNOWN)
@@ -46,10 +45,10 @@ object Tracing {
   }
 
   /**
-   * Sets the `currentSpan` to `span` only while `effect` runs.
-   * Then ends `span` according to the result of `effect`.
+   * Sets the `currentSpan` to `span` only while `effect` runs,
+   * and error status of `span` according to any potential failure of effect.
    */
-  private def finalizeSpanUsingEffect[R, E, A](
+  private def setSpanError[R, E, A](
     effect: ZIO[R, E, A],
     span: Span,
     toErrorStatus: PartialFunction[E, Status]
@@ -59,7 +58,6 @@ object Tracing {
       r <- current
             .locally(span)(effect)
             .tapCause(setErrorStatus(span, _, toErrorStatus))
-            .ensuring(endSpan(span))
     } yield r
 
   /**
@@ -76,8 +74,7 @@ object Tracing {
   )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
     for {
       extractedSpan <- extractSpan(httpTextFormat, carrier, getter)
-      child         <- createChildOf(extractedSpan, spanName, spanKind)
-      r             <- finalizeSpanUsingEffect(effect, child, toErrorStatus)
+      r             <- createChildOf(extractedSpan, spanName, spanKind).use(setSpanError(effect, _, toErrorStatus))
     } yield r
 
   /**
@@ -89,10 +86,7 @@ object Tracing {
     spanKind: Span.Kind,
     toErrorStatus: PartialFunction[E, Status]
   )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
-    for {
-      root <- createRoot(spanName, spanKind)
-      r    <- finalizeSpanUsingEffect(effect, root, toErrorStatus)
-    } yield r
+    createRoot(spanName, spanKind).use(setSpanError(effect, _, toErrorStatus))
 
   /**
    * Sets the current span to be the child of the current span with name 'spanName'
@@ -104,9 +98,8 @@ object Tracing {
     toErrorStatus: PartialFunction[E, Status]
   )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
     for {
-      old   <- getCurrentSpan
-      child <- createChildOf(old, spanName, spanKind)
-      r     <- finalizeSpanUsingEffect(effect, child, toErrorStatus)
+      old <- getCurrentSpan
+      r   <- createChildOf(old, spanName, spanKind).use(setSpanError(effect, _, toErrorStatus))
     } yield r
 
   /**
@@ -151,32 +144,38 @@ object Tracing {
 
   def managed(tracer: Tracer): URManaged[Clock, Service] = {
     class Live(defaultSpan: FiberRef[Span], clock: Clock.Service) extends Service {
+      def end(span: Span): UIO[Unit] = currentNanos.map(toEndTimestamp _ andThen span.end)
+
       def currentNanos: UIO[Long] = clock.currentTime(TimeUnit.NANOSECONDS)
 
-      def createRoot(spanName: String, spanKind: Span.Kind): UIO[Span] =
+      def createRoot(spanName: String, spanKind: Span.Kind): UManaged[Span] =
         for {
-          nanoSeconds <- currentNanos
-          span <- UIO(
-                   tracer
-                     .spanBuilder(spanName)
-                     .setNoParent()
-                     .setSpanKind(spanKind)
-                     .setStartTimestamp(nanoSeconds)
-                     .startSpan()
-                 )
+          nanoSeconds <- currentNanos.toManaged_
+          span <- ZManaged.make(
+                   UIO(
+                     tracer
+                       .spanBuilder(spanName)
+                       .setNoParent()
+                       .setSpanKind(spanKind)
+                       .setStartTimestamp(nanoSeconds)
+                       .startSpan()
+                   )
+                 )(end)
         } yield span
 
-      def createChildOf(parent: Span, spanName: String, spanKind: Span.Kind): UIO[Span] =
+      def createChildOf(parent: Span, spanName: String, spanKind: Span.Kind): UManaged[Span] =
         for {
-          nanoSeconds <- currentNanos
-          span <- UIO(
-                   tracer
-                     .spanBuilder(spanName)
-                     .setParent(parent)
-                     .setSpanKind(spanKind)
-                     .setStartTimestamp(nanoSeconds)
-                     .startSpan()
-                 )
+          nanoSeconds <- currentNanos.toManaged_
+          span <- ZManaged.make(
+                   UIO(
+                     tracer
+                       .spanBuilder(spanName)
+                       .setParent(parent)
+                       .setSpanKind(spanKind)
+                       .setStartTimestamp(nanoSeconds)
+                       .startSpan()
+                   )
+                 )(end)
         } yield span
 
       val currentSpan: FiberRef[Span] = defaultSpan
@@ -184,9 +183,9 @@ object Tracing {
 
     def end(tracing: Tracing.Service): UIO[Unit] =
       for {
-        nanos <- tracing.currentNanos
-        span  <- tracing.currentSpan.get
-      } yield span.end(toEndTimestamp(nanos))
+        span <- tracing.currentSpan.get
+        _    <- tracing.end(span)
+      } yield ()
 
     val tracing: URIO[Clock, Service] =
       for {
