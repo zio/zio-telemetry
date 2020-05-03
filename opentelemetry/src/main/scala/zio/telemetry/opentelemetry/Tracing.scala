@@ -30,10 +30,10 @@ object Tracing {
     ZIO.access[Tracing](_.get.currentSpan)
 
   private def createRoot(spanName: String, spanKind: Span.Kind): URManaged[Tracing, Span] =
-    ZIO.access[Tracing](_.get.createRoot(spanName, spanKind)).toManaged_.flatten
+    ZManaged.accessManaged[Tracing](_.get.createRoot(spanName, spanKind))
 
   private def createChildOf(parent: Span, spanName: String, spanKind: Span.Kind): URManaged[Tracing, Span] =
-    ZIO.access[Tracing](_.get.createChildOf(parent, spanName, spanKind)).toManaged_.flatten
+    ZManaged.accessManaged[Tracing](_.get.createChildOf(parent, spanName, spanKind))
 
   private def getCurrentSpan: URIO[Tracing, Span] = currentSpan.flatMap(_.get)
 
