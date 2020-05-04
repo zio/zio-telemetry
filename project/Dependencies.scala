@@ -4,7 +4,7 @@ object Dependencies {
   object Versions {
     val http4s        = "0.21.3"
     val jaeger        = "1.2.0"
-    val sttp          = "2.0.9"
+    val sttp          = "2.1.0"
     val opentracing   = "0.33.0"
     val opentelemetry = "0.3.0"
     val zipkin        = "2.12.3"
@@ -43,7 +43,7 @@ object Dependencies {
     "com.github.pureconfig"        %% "pureconfig"                    % "0.12.3",
     "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % Versions.sttp,
     "com.softwaremill.sttp.client" %% "circe"                         % Versions.sttp,
-    "dev.zio"                      %% "zio-interop-cats"              % "2.0.0.0-RC12"
+    "dev.zio"                      %% "zio-interop-cats"              % "2.0.0.0-RC13"
   )
 
   lazy val opentracingExample = example ++ Seq(
