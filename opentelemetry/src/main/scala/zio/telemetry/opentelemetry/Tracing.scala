@@ -9,7 +9,6 @@ import zio.clock.Clock
 import zio.telemetry.opentelemetry.attributevalue.AttributeValueConverter.toAttributeValue
 import zio.telemetry.opentelemetry.SpanPropagation.{ extractSpan, injectSpan }
 import zio._
-import zio.UManaged
 import zio.telemetry.opentelemetry.attributevalue.AttributeValueConverter
 
 import scala.jdk.CollectionConverters._
@@ -184,8 +183,7 @@ object Tracing {
       for {
         nanos <- tracing.currentNanos
         span  <- tracing.currentSpan.get
-        _     <- UIO(span.end(toEndTimestamp(nanos)))
-      } yield ()
+      } yield span.end(toEndTimestamp(nanos))
 
     val tracing: URIO[Clock, Service] =
       for {
