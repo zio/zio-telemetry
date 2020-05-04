@@ -47,7 +47,7 @@ object Tracing {
    * Sets the `currentSpan` to `span` only while `effect` runs,
    * and error status of `span` according to any potential failure of effect.
    */
-  private def setSpanError[R, E, A](
+  private def finalizeSpanUsingEffect[R, E, A](
     effect: ZIO[R, E, A],
     span: Span,
     toErrorStatus: PartialFunction[E, Status]
@@ -73,7 +73,7 @@ object Tracing {
   )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
     for {
       extractedSpan <- extractSpan(httpTextFormat, carrier, getter)
-      r             <- createChildOf(extractedSpan, spanName, spanKind).use(setSpanError(effect, _, toErrorStatus))
+      r             <- createChildOf(extractedSpan, spanName, spanKind).use(finalizeSpanUsingEffect(effect, _, toErrorStatus))
     } yield r
 
   /**
@@ -85,7 +85,7 @@ object Tracing {
     spanKind: Span.Kind,
     toErrorStatus: PartialFunction[E, Status]
   )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
-    createRoot(spanName, spanKind).use(setSpanError(effect, _, toErrorStatus))
+    createRoot(spanName, spanKind).use(finalizeSpanUsingEffect(effect, _, toErrorStatus))
 
   /**
    * Sets the current span to be the child of the current span with name 'spanName'
@@ -98,7 +98,7 @@ object Tracing {
   )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
     for {
       old <- getCurrentSpan
-      r   <- createChildOf(old, spanName, spanKind).use(setSpanError(effect, _, toErrorStatus))
+      r   <- createChildOf(old, spanName, spanKind).use(finalizeSpanUsingEffect(effect, _, toErrorStatus))
     } yield r
 
   /**
