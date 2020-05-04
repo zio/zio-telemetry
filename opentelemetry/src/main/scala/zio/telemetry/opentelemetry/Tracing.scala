@@ -20,7 +20,6 @@ object Tracing {
     private[opentelemetry] val currentSpan: FiberRef[Span]
     private[opentelemetry] def createRoot(spanName: String, spanKind: Span.Kind): UManaged[Span]
     private[opentelemetry] def createChildOf(parent: Span, spanName: String, spanKind: Span.Kind): UManaged[Span]
-    private[opentelemetry] def end(span: Span): UIO[Unit]
   }
 
   private def currentNanos: URIO[Tracing, Long] =
@@ -183,8 +182,9 @@ object Tracing {
 
     def end(tracing: Tracing.Service): UIO[Unit] =
       for {
-        span <- tracing.currentSpan.get
-        _    <- tracing.end(span)
+        nanos <- tracing.currentNanos
+        span  <- tracing.currentSpan.get
+        _     <- UIO(span.end(toEndTimestamp(nanos)))
       } yield ()
 
     val tracing: URIO[Clock, Service] =
