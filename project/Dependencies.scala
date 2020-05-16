@@ -8,7 +8,7 @@ object Dependencies {
     val opentracing   = "0.33.0"
     val opentelemetry = "0.3.0"
     val zipkin        = "2.12.3"
-    val zio           = "1.0.0-RC18-2"
+    val zio           = "1.0.0-RC19"
   }
 
   lazy val zio = Seq(
