@@ -7,7 +7,7 @@ object Dependencies {
     val sttp          = "2.1.1"
     val opentracing   = "0.33.0"
     val opentelemetry = "0.3.0"
-    val zipkin        = "2.12.3"
+    val zipkin        = "2.15.0"
     val zio           = "1.0.0-RC19"
   }
 
@@ -54,6 +54,6 @@ object Dependencies {
   lazy val opentelemetryExample = example ++ Seq(
     "io.opentelemetry" % "opentelemetry-exporters-jaeger" % Versions.opentelemetry,
     "io.opentelemetry" % "opentelemetry-sdk"              % Versions.opentelemetry,
-    "io.grpc"          % "grpc-netty-shaded"              % "1.28.0"
+    "io.grpc"          % "grpc-netty-shaded"              % "1.28.1"
   )
 }
