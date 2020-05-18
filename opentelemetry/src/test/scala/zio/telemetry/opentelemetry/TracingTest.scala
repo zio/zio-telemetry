@@ -155,16 +155,18 @@ object TracingTest extends DefaultRunnableSpec {
           val log =
             for {
               _ <- UIO.unit.addEvent("message")
+              fiber <- ZIO
+                        .sleep(duration)
+                        .addEventWithAttributes(
+                          "message2",
+                          Map(
+                            "msg"  -> AttributeValue.stringAttributeValue("message"),
+                            "size" -> AttributeValue.longAttributeValue(1)
+                          )
+                        )
+                        .fork
               _ <- TestClock.adjust(duration)
-              _ <- ZIO
-                    .sleep(duration)
-                    .addEventWithAttributes(
-                      "message2",
-                      Map(
-                        "msg"  -> AttributeValue.stringAttributeValue("message"),
-                        "size" -> AttributeValue.longAttributeValue(1)
-                      )
-                    )
+              _ <- fiber.join
             } yield ()
 
           for {

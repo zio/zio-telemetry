@@ -139,9 +139,10 @@ object OpenTracingTest extends DefaultRunnableSpec {
            */
           val log =
             for {
-              _ <- UIO.unit.log("message")
-              _ <- TestClock.adjust(duration)
-              _ <- ZIO.sleep(duration).log(Map("msg" -> "message", "size" -> 1))
+              _     <- UIO.unit.log("message")
+              fiber <- ZIO.sleep(duration).log(Map("msg" -> "message", "size" -> 1)).fork
+              _     <- TestClock.adjust(duration)
+              _     <- fiber.join
             } yield ()
 
           for {
