@@ -43,7 +43,7 @@ object Tracing {
       attrs: Map[String, AttributeValue]
     ): ZIO[Any, Nothing, Unit]
 
-    private[opencensus] def end(): UIO[Unit]
+    private[opencensus] def end: UIO[Unit]
   }
 
   def span[R, E, A](

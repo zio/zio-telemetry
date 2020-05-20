@@ -11,32 +11,18 @@ import io.opencensus.trace.propagation.TextFormat
 import io.opencensus.trace.Tracer
 
 object Live {
-  private def managed(tracer: Tracer, root: Span): ZManaged[
-    Any,
-    Nothing,
-    Live
-  ] = {
-    def end(tracing: Tracing.Service): UIO[Unit] =
-      tracing.end()
-
-    val tracing = for {
-      rootRef <- FiberRef.make[Span](root)
-    } yield new Live(tracer, rootRef)
-
-    ZManaged.make(tracing)(end)
-  }
-
-  val live: ZLayer[Has[Tracer], Nothing, Tracing] =
+  val live: URLayer[Has[Tracer], Tracing] =
     ZLayer.fromManaged(for {
       tracer  <- ZIO.access[Has[Tracer]](_.get).toManaged_
-      service <- managed(tracer, BlankSpan.INSTANCE)
-    } yield service)
+      tracing = FiberRef.make[Span](BlankSpan.INSTANCE).map(new Live(tracer, _))
+      managed <- ZManaged.make(tracing)(_.end)
+    } yield managed)
 }
 
 class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
   val currentSpan_ = root
 
-  def currentSpan: ZIO[Any, Nothing, Span] = currentSpan_.get
+  def currentSpan: UIO[Span] = currentSpan_.get
 
   def span[R, E, A](
     name: String,
