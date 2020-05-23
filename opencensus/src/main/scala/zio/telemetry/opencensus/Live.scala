@@ -35,7 +35,6 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
       res <- createSpan(parent, name, kind).use(
               finalizeSpanUsingEffect(
                 putAttributes(attributes) *> effect,
-                _,
                 toErrorStatus
               )
             )
@@ -51,7 +50,6 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
       res <- createSpan(BlankSpan.INSTANCE, name, kind).use(
               finalizeSpanUsingEffect(
                 putAttributes(attributes) *> effect,
-                _,
                 toErrorStatus
               )
             )
@@ -68,7 +66,6 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
       res <- createSpanFromRemote(remote, name, kind).use(
               finalizeSpanUsingEffect(
                 putAttributes(attributes) *> effect,
-                _,
                 toErrorStatus
               )
             )
@@ -114,9 +111,8 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
 
   private def finalizeSpanUsingEffect[R, E, A](
     effect: ZIO[R, E, A],
-    span: Span,
     toErrorStatus: ErrorMapper[E]
-  ): ZIO[R, E, A] =
+  )(span: Span): ZIO[R, E, A] =
     for {
       r <- currentSpan_
             .locally(span)(effect)
