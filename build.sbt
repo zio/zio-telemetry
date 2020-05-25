@@ -55,6 +55,11 @@ lazy val opentelemetry =
     .settings(stdSettings("zio-opentelemetry"))
     .settings(libraryDependencies := Dependencies.opentelemetry)
 
+lazy val opencensus = project
+  .in(file("opencensus"))
+  .settings(stdSettings("zio-opencensus"))
+  .settings(libraryDependencies := Dependencies.opencensus)
+
 lazy val opentracingExample =
   project
     .in(file("opentracing-example"))

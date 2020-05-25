@@ -130,19 +130,9 @@ object OpenTracingTest extends DefaultRunnableSpec {
         testM("logging") {
           val duration = 1000.micros
 
-          /*
-           * TODO:
-           * Explicit sleep has been introduced due to the change in behavior of TestClock.adjust
-           * which made it affect only "wall" clock while leaving the fiber one intact. That being
-           * said, this piece of code should be replaced as soon as there's a better suited combinator
-           * available.
-           */
           val log =
-            for {
-              _ <- UIO.unit.log("message")
-              _ <- TestClock.adjust(duration)
-              _ <- ZIO.sleep(duration).log(Map("msg" -> "message", "size" -> 1))
-            } yield ()
+            UIO.unit.log("message") *>
+              TestClock.adjust(duration).log(Map("msg" -> "message", "size" -> 1))
 
           for {
             tracer <- ZIO.access[HasMockTracer](_.get)
