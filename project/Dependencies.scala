@@ -7,6 +7,7 @@ object Dependencies {
     val sttp          = "2.1.4"
     val opentracing   = "0.33.0"
     val opentelemetry = "0.3.0"
+    val opencensus    = "0.26.0"
     val zipkin        = "2.15.0"
     val zio           = "1.0.0-RC19-2"
   }
@@ -28,6 +29,12 @@ object Dependencies {
     "io.opentelemetry"       % "opentelemetry-api"                % Versions.opentelemetry,
     "io.opentelemetry"       % "opentelemetry-exporters-inmemory" % Versions.opentelemetry % Test,
     "org.scala-lang.modules" %% "scala-collection-compat"         % "2.1.6"
+  )
+
+  lazy val opencensus = zio ++ Seq(
+    "io.opencensus" % "opencensus-api"               % Versions.opencensus,
+    "io.opencensus" % "opencensus-impl"              % Versions.opencensus,
+    "io.opencensus" % "opencensus-contrib-http-util" % Versions.opencensus
   )
 
   lazy val example = Seq(
