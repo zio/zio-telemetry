@@ -7,7 +7,7 @@ import zio.interop.catz._
 import zio.telemetry.opentelemetry.Tracing
 import zio.telemetry.opentelemetry.example.config.{ Config, Configuration }
 import zio.telemetry.opentelemetry.example.http.{ AppEnv, AppTask, Client, StatusService }
-import zio.{ Managed, ZIO, ZLayer }
+import zio.{ ExitCode, Managed, ZIO, ZLayer }
 import org.http4s.syntax.kleisli._
 import sttp.client.asynchttpclient.zio.AsyncHttpClientZioBackend
 
@@ -34,5 +34,6 @@ object BackendServer extends zio.App {
   val tracer      = Configuration.live >>> JaegerTracer.live("zio-backend")
   val envLayer    = tracer ++ Clock.live >>> Tracing.live ++ Configuration.live ++ client
 
-  override def run(args: List[String]) = server.provideCustomLayer(envLayer).fold(_ => 1, _ => 0)
+  override def run(args: List[String]) =
+    server.provideCustomLayer(envLayer).fold(_ => ExitCode.failure, _ => ExitCode.success)
 }
