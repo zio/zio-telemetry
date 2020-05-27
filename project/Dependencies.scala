@@ -7,8 +7,9 @@ object Dependencies {
     val sttp          = "2.1.1"
     val opentracing   = "0.33.0"
     val opentelemetry = "0.3.0"
-    val zipkin        = "2.12.3"
-    val zio           = "1.0.0-RC18-2"
+    val opencensus    = "0.26.0"
+    val zipkin        = "2.15.0"
+    val zio           = "1.0.0-RC19-2"
   }
 
   lazy val zio = Seq(
@@ -30,6 +31,12 @@ object Dependencies {
     "org.scala-lang.modules" %% "scala-collection-compat"         % "2.1.6"
   )
 
+  lazy val opencensus = zio ++ Seq(
+    "io.opencensus" % "opencensus-api"               % Versions.opencensus,
+    "io.opencensus" % "opencensus-impl"              % Versions.opencensus,
+    "io.opencensus" % "opencensus-contrib-http-util" % Versions.opencensus
+  )
+
   lazy val example = Seq(
     "org.typelevel"                %% "cats-core"                     % "2.1.1",
     "io.circe"                     %% "circe-generic"                 % "0.13.0",
@@ -43,7 +50,7 @@ object Dependencies {
     "com.github.pureconfig"        %% "pureconfig"                    % "0.12.3",
     "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % Versions.sttp,
     "com.softwaremill.sttp.client" %% "circe"                         % Versions.sttp,
-    "dev.zio"                      %% "zio-interop-cats"              % "2.0.0.0-RC13"
+    "dev.zio"                      %% "zio-interop-cats"              % "2.0.0.0-RC14"
   )
 
   lazy val opentracingExample = example ++ Seq(
@@ -54,6 +61,6 @@ object Dependencies {
   lazy val opentelemetryExample = example ++ Seq(
     "io.opentelemetry" % "opentelemetry-exporters-jaeger" % Versions.opentelemetry,
     "io.opentelemetry" % "opentelemetry-sdk"              % Versions.opentelemetry,
-    "io.grpc"          % "grpc-netty-shaded"              % "1.28.0"
+    "io.grpc"          % "grpc-netty-shaded"              % "1.28.1"
   )
 }

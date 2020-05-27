@@ -145,27 +145,17 @@ object TracingTest extends DefaultRunnableSpec {
         testM("logging") {
           val duration = 1000.micros
 
-          /*
-           * TODO:
-           * Explicit sleep has been introduced due to the change in behavior of TestClock.adjust
-           * which made it affect only "wall" clock while leaving the fiber one intact. That being
-           * said, this piece of code should be replaced as soon as there's a better suited combinator
-           * available.
-           */
           val log =
-            for {
-              _ <- UIO.unit.addEvent("message")
-              _ <- TestClock.adjust(duration)
-              _ <- ZIO
-                    .sleep(duration)
-                    .addEventWithAttributes(
-                      "message2",
-                      Map(
-                        "msg"  -> AttributeValue.stringAttributeValue("message"),
-                        "size" -> AttributeValue.longAttributeValue(1)
-                      )
-                    )
-            } yield ()
+            UIO.unit.addEvent("message") *>
+              TestClock
+                .adjust(duration)
+                .addEventWithAttributes(
+                  "message2",
+                  Map(
+                    "msg"  -> AttributeValue.stringAttributeValue("message"),
+                    "size" -> AttributeValue.longAttributeValue(1)
+                  )
+                )
 
           for {
             inMemoryTracing <- ZIO.access[Has[InMemoryTracing]](_.get)
