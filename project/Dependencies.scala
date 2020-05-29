@@ -4,12 +4,12 @@ object Dependencies {
   object Versions {
     val http4s        = "0.21.3"
     val jaeger        = "1.2.0"
-    val sttp          = "2.1.1"
+    val sttp          = "2.1.5"
     val opentracing   = "0.33.0"
     val opentelemetry = "0.4.1"
     val opencensus    = "0.26.0"
     val zipkin        = "2.15.0"
-    val zio           = "1.0.0-RC19-2"
+    val zio           = "1.0.0-RC20"
   }
 
   lazy val zio = Seq(
