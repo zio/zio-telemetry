@@ -13,6 +13,11 @@ OpenTracing is a standard and API for distributed tracing, i.e. collecting timin
 and logs across process boundaries. Well known implementations are [Jaeger][jaeger]
 and [Zipkin][zipkin].
 
+First, add the following dependency to your build.sbt:
+```
+"dev.zio" %% "zio-opentracing" % <version>
+```
+
 To use ZIO telemetry, you will need a `Clock` and a `OpenTelemetry` service in your
 environment:
 
@@ -144,6 +149,11 @@ Simultaneously, it will create trace that will be stored in Jaeger backend.
 
 ### OpenTelemetry
 
+Use this dependency instead:
+```
+"dev.zio" %% "zio-opentelemetry" % <version>
+```
+
 First, start Jaeger by running
 ```bash
 docker run --rm -it \
@@ -175,9 +185,9 @@ and head over to [http://localhost:16686/](http://localhost:16686/) to see the r
 [jaeger-docker]: https://www.jaegertracing.io/docs/1.6/getting-started/#all-in-one-docker-image
 [Badge-Circle]: https://circleci.com/gh/zio/zio-telemetry/tree/master.svg?style=svg
 [Badge-Discord]: https://img.shields.io/discord/629491597070827530?logo=discord 
-[Badge-SonatypeReleases]: https://img.shields.io/nexus/r/https/oss.sonatype.org/dev.zio/zio-telemetry_2.12.svg "Sonatype Releases"
-[Badge-SonatypeSnapshots]: https://img.shields.io/nexus/s/https/oss.sonatype.org/dev.zio/zio-telemetry_2.12.svg "Sonatype Snapshots"
+[Badge-SonatypeReleases]: https://img.shields.io/nexus/r/https/oss.sonatype.org/dev.zio/zio-opentracing_2.12.svg "Sonatype Releases"
+[Badge-SonatypeSnapshots]: https://img.shields.io/nexus/s/https/oss.sonatype.org/dev.zio/zio-opentracing_2.12.svg "Sonatype Snapshots"
 [Link-Discord]: https://discord.gg/2ccFBr4
 [Link-Circle]: https://circleci.com/gh/zio/zio-telemetry/tree/master
-[Link-SonatypeReleases]: https://oss.sonatype.org/content/repositories/releases/dev/zio/zio-telemetry_2.12/ "Sonatype Releases"
-[Link-SonatypeSnapshots]: https://oss.sonatype.org/content/repositories/snapshots/dev/zio/zio-telemetry_2.12/ "Sonatype Snapshots"
+[Link-SonatypeReleases]: https://oss.sonatype.org/content/repositories/releases/dev/zio/zio-opentracing_2.12/ "Sonatype Releases"
+[Link-SonatypeSnapshots]: https://oss.sonatype.org/content/repositories/snapshots/dev/zio/zio-opentracing_2.12/ "Sonatype Snapshots"
