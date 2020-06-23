@@ -4,7 +4,7 @@ object Dependencies {
   object Versions {
     val http4s        = "0.21.3"
     val jaeger        = "1.2.0"
-    val sttp          = "2.1.5"
+    val sttp          = "2.2.1"
     val opentracing   = "0.33.0"
     val opentelemetry = "0.3.0"
     val opencensus    = "0.26.0"
