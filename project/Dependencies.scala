@@ -3,13 +3,13 @@ import sbt._
 object Dependencies {
   object Versions {
     val http4s        = "0.21.3"
-    val jaeger        = "1.2.0"
-    val sttp          = "2.2.1"
+    val jaeger        = "1.3.1"
+    val sttp          = "2.1.5"
     val opentracing   = "0.33.0"
     val opentelemetry = "0.3.0"
     val opencensus    = "0.26.0"
     val zipkin        = "2.15.0"
-    val zio           = "1.0.0-RC21"
+    val zio           = "1.0.0-RC21-1"
   }
 
   lazy val zio = Seq(
@@ -47,7 +47,7 @@ object Dependencies {
     "io.jaegertracing"             % "jaeger-core"                    % Versions.jaeger,
     "io.jaegertracing"             % "jaeger-client"                  % Versions.jaeger,
     "io.jaegertracing"             % "jaeger-zipkin"                  % Versions.jaeger,
-    "com.github.pureconfig"        %% "pureconfig"                    % "0.12.3",
+    "com.github.pureconfig"        %% "pureconfig"                    % "0.13.0",
     "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % Versions.sttp,
     "com.softwaremill.sttp.client" %% "circe"                         % Versions.sttp,
     "dev.zio"                      %% "zio-interop-cats"              % "2.0.0.0-RC14"
@@ -61,6 +61,6 @@ object Dependencies {
   lazy val opentelemetryExample = example ++ Seq(
     "io.opentelemetry" % "opentelemetry-exporters-jaeger" % Versions.opentelemetry,
     "io.opentelemetry" % "opentelemetry-sdk"              % Versions.opentelemetry,
-    "io.grpc"          % "grpc-netty-shaded"              % "1.30.1"
+    "io.grpc"          % "grpc-netty-shaded"              % "1.30.2"
   )
 }
