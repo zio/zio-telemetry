@@ -6,7 +6,7 @@ object Dependencies {
     val jaeger        = "1.3.1"
     val sttp          = "2.1.5"
     val opentracing   = "0.33.0"
-    val opentelemetry = "0.3.0"
+    val opentelemetry = "0.6.0"
     val opencensus    = "0.26.0"
     val zipkin        = "2.15.0"
     val zio           = "1.0.0-RC21-2"
