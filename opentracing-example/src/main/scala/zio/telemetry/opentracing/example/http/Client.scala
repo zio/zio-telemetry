@@ -1,17 +1,29 @@
 package zio.telemetry.opentracing.example.http
 
-import io.circe.Error
 import sttp.client._
-import sttp.client.asynchttpclient.zio._
 import sttp.client.circe.asJson
 import sttp.model.Uri
-import zio.Task
+import zio._
+import zio.telemetry.opentracing._
 
 object Client {
-  private val backend = AsyncHttpClientZioBackend()
 
-  def status(uri: Uri, headers: Map[String, String]): Task[Response[Either[ResponseError[Error], Status]]] =
-    backend.flatMap { implicit backend =>
-      basicRequest.get(uri).headers(headers).response(asJson[Status]).send()
+  trait Service {
+    def status(uri: Uri): RIO[OpenTracing, Statuses]
+  }
+
+  def status(uri: Uri): RIO[OpenTracing with Client, Statuses] =
+    ZIO.accessM(_.get[Client.Service].status(uri))
+
+  val live: ZLayer[TracedBackend, Nothing, Client] = ZLayer.fromService { implicit backend =>
+    new Service {
+      val up = Status.up("proxy")
+
+      def status(uri: Uri): RIO[OpenTracing, Statuses] =
+        basicRequest.get(uri).response(asJson[Status]).send().map(_.body).map {
+          case Right(s) => Statuses(List(s, up))
+          case _        => Statuses(List(Status.down("backend"), up))
+        }
     }
+  }
 }

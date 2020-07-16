@@ -66,6 +66,7 @@ lazy val opentracingExample =
     .settings(stdSettings("opentracing-example"))
     .settings(skip in publish := true)
     .settings(libraryDependencies := Dependencies.opentracingExample)
+    .settings(addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.0" cross CrossVersion.full))
     .dependsOn(opentracing)
 
 lazy val opentelemetryExample =
