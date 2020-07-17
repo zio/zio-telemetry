@@ -48,6 +48,23 @@ object OpenTracingTest extends DefaultRunnableSpec {
             )
           )
       },
+      testM("fromEntrypoint") {
+        val tracer = new MockTracer
+
+        for {
+          ref <- FiberRef.make(Context("ROOT"))
+          layer = OpenTracing.fromEntrypoint(tracer, ref, Context.entrypointExtractor)
+          _ <- ref.locally(Context("operation")) {
+            OpenTracing.tag("test", "test").provideLayer(layer)
+          }
+        } yield assert(tracer.finishedSpans.asScala)(hasSize(equalTo(1))) && assert(tracer.finishedSpans().get(0))(
+          hasField[MockSpan, String](
+            "operationName",
+            _.operationName(),
+            equalTo("operation")
+          )
+        )
+      },
       suite("spans")(
         testM("childSpan") {
           for {

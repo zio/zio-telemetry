@@ -26,20 +26,44 @@ object OpenTracing {
   val noop: URLayer[Clock, OpenTracing] =
     live(NoopTracerFactory.create())
 
-  def liveContextual[A](tracer: Tracer, fiberRefContext: FiberRef[A], contextExtractor: ContextExtractor[A]): URLayer[Clock, OpenTracing] =
-    ZLayer.fromManaged(managedContextual(tracer, fiberRefContext, contextExtractor)).fresh
+  /**
+   * Creates a OpenTracing layer which will be constructed each time it's provided by provideLayer (fresh)
+   *
+   * On each construction the current value of the `FiberRef[A]` is extracted to a `Entrypoint` which contains
+   * a name plus a SpanContext. Therefore if you use `FiberRef.locally` and provide a local context and inside
+   * locally you use `provideLayer` the OpenTracing layer will be scoped to that `Entrypoint`.
+   *
+   * This can be plugged at points in your application where messages come in from a async boundary like a http server,
+   * kafka consumer, etc.
+   *
+   * @param tracer A instance of a OpenTracing tracer
+   * @param refEntrypoint A FiberRef with the context
+   * @param entrypointExtractor A `EntrypointExtractor` which extracts a `Entrypoint` from `A`
+   * @tparam A The generic context
+   * @return OpenTracing layer
+   */
+  def fromEntrypoint[A](
+    tracer: Tracer,
+    refEntrypoint: FiberRef[A],
+    entrypointExtractor: EntrypointExtractor[A]
+  ): URLayer[Clock, OpenTracing] =
+    ZLayer.fromManaged(managedFromEntrypoint(tracer, refEntrypoint, entrypointExtractor)).fresh
 
   def live(tracer: Tracer, rootOperation: String = "ROOT"): URLayer[Clock, OpenTracing] =
     ZLayer.fromManaged(managed(tracer, rootOperation))
 
-  def managedContextual[A](tracer0: Tracer, fiberRefContext: FiberRef[A], contextExtractor: ContextExtractor[A]): URManaged[Clock, OpenTracing.Service] =
+  def managedFromEntrypoint[A](
+    tracer0: Tracer,
+    refEntrypoint: FiberRef[A],
+    entrypointExtractor: EntrypointExtractor[A]
+  ): URManaged[Clock, OpenTracing.Service] =
     ZManaged.make(
       for {
-        current <- fiberRefContext.get
-        context = contextExtractor.extract(tracer0, current)
-        span  <- UIO(tracer0.buildSpan(context.name).asChildOf(context.spanContext).start())
-        ref   <- FiberRef.make(span)
-        clock <- ZIO.access[Clock](_.get)
+        current    <- refEntrypoint.get
+        entrypoint = entrypointExtractor.extract(tracer0, current)
+        span       <- UIO(tracer0.buildSpan(entrypoint.name).asChildOf(entrypoint.spanContext).start())
+        ref        <- FiberRef.make(span)
+        clock      <- ZIO.access[Clock](_.get)
       } yield mkService(tracer0, ref, clock)
     )(_.currentSpan.get.flatMap(span => UIO(span.finish())))
 
@@ -52,43 +76,44 @@ object OpenTracing {
       } yield mkService(tracer0, ref, clock)
     )(_.currentSpan.get.flatMap(span => UIO(span.finish())))
 
-  private def mkService(tracer0: Tracer, ref: FiberRef[Span], clock: Clock.Service): OpenTracing.Service = new OpenTracing.Service {
-    override val tracer: Tracer              = tracer0
-    override val currentSpan: FiberRef[Span] = ref
+  private def mkService(tracer0: Tracer, ref: FiberRef[Span], clock: Clock.Service): OpenTracing.Service =
+    new OpenTracing.Service {
+      override val tracer: Tracer              = tracer0
+      override val currentSpan: FiberRef[Span] = ref
 
-    override def root(operation: String): UIO[Span] =
-      UIO(tracer.buildSpan(operation).start())
+      override def root(operation: String): UIO[Span] =
+        UIO(tracer.buildSpan(operation).start())
 
-    override def span(span: Span, operation: String): UIO[Span] =
-      for {
-        old   <- currentSpan.get
-        child <- UIO(tracer.buildSpan(operation).asChildOf(old).start())
-      } yield child
+      override def span(span: Span, operation: String): UIO[Span] =
+        for {
+          old   <- currentSpan.get
+          child <- UIO(tracer.buildSpan(operation).asChildOf(old).start())
+        } yield child
 
-    override def finish(span: Span): UIO[Unit] =
-      clock.currentTime(TimeUnit.MICROSECONDS).map(span.finish)
+      override def finish(span: Span): UIO[Unit] =
+        clock.currentTime(TimeUnit.MICROSECONDS).map(span.finish)
 
-    override def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit] =
-      UIO(span.setTag("error", true)).when(tagError) *>
-        UIO(span.log(Map("error.object" -> cause, "stack" -> cause.prettyPrint).asJava)).when(logError)
+      override def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit] =
+        UIO(span.setTag("error", true)).when(tagError) *>
+          UIO(span.log(Map("error.object" -> cause, "stack" -> cause.prettyPrint).asJava)).when(logError)
 
-    override def log(msg: String): UIO[Unit] =
-      currentSpan.get
-        .zipWith(getCurrentTimeMicros) { (span, now) =>
-          span.log(now, msg)
-        }
-        .unit
+      override def log(msg: String): UIO[Unit] =
+        currentSpan.get
+          .zipWith(getCurrentTimeMicros) { (span, now) =>
+            span.log(now, msg)
+          }
+          .unit
 
-    override def log(fields: Map[String, _]): UIO[Unit] =
-      currentSpan.get
-        .zipWith(getCurrentTimeMicros) { (span, now) =>
-          span.log(now, fields.asJava)
-        }
-        .unit
+      override def log(fields: Map[String, _]): UIO[Unit] =
+        currentSpan.get
+          .zipWith(getCurrentTimeMicros) { (span, now) =>
+            span.log(now, fields.asJava)
+          }
+          .unit
 
-    private def getCurrentTimeMicros: UIO[Long] =
-      clock.currentTime(TimeUnit.MICROSECONDS)
-  }
+      private def getCurrentTimeMicros: UIO[Long] =
+        clock.currentTime(TimeUnit.MICROSECONDS)
+    }
 
   def spanFrom[R, R1 <: R with OpenTracing, E, Span, C <: AnyRef](
     format: Format[C],
@@ -148,8 +173,8 @@ object OpenTracing {
 
 }
 
-final case class Context(name: String, spanContext: SpanContext)
+final case class Entrypoint(name: String, spanContext: SpanContext)
 
-trait ContextExtractor[A] {
-  def extract(tracer: Tracer, context: A): Context
+trait EntrypointExtractor[A] {
+  def extract(tracer: Tracer, context: A): Entrypoint
 }
