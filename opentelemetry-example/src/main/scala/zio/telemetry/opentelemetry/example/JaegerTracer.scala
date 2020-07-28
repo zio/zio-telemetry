@@ -3,7 +3,6 @@ package zio.telemetry.opentelemetry.example
 import io.grpc.ManagedChannelBuilder
 import io.opentelemetry.OpenTelemetry
 import io.opentelemetry.exporters.jaeger.JaegerGrpcSpanExporter
-import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.trace.Tracer
 import zio._
 import zio.telemetry.opentelemetry.example.config.{ Config, Configuration }
@@ -20,7 +19,7 @@ object JaegerTracer {
                 .newBuilder()
                 .setServiceName(serviceName)
                 .setChannel(managedChannel)
-                .install(OpenTelemetrySdk.getTracerProvider)
+                .build()
             )
       } yield tracer
     )

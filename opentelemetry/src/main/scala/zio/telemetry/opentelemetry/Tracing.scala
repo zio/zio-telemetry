@@ -2,7 +2,7 @@ package zio.telemetry.opentelemetry
 
 import java.util.concurrent.TimeUnit
 
-import io.opentelemetry.common.{ AttributeValue, Attributes }
+import io.opentelemetry.common.Attributes
 import io.opentelemetry.context.propagation.HttpTextFormat
 import io.opentelemetry.trace.{ DefaultSpan, EndSpanOptions, Span, Status, Tracer }
 import zio.clock.Clock
@@ -120,23 +120,17 @@ object Tracing {
       span        <- getCurrentSpan
     } yield span.addEvent(name, nanoSeconds)
 
-  def buildAttributes(attrs: Map[String, AttributeValue]): Attributes = {
-    val builder = Attributes.newBuilder()
-    attrs.foreach { case (s, a) => builder.setAttribute(s, a) }
-    builder.build()
-  }
-
   /**
    * Adds an event with attributes to the current span.
    */
   def addEventWithAttributes(
     name: String,
-    attributes: Map[String, AttributeValue]
+    attributes: Attributes
   ): URIO[Tracing, Unit] =
     for {
       nanoSeconds <- currentNanos
       span        <- getCurrentSpan
-    } yield span.addEvent(name, buildAttributes(attributes), nanoSeconds)
+    } yield span.addEvent(name, attributes, nanoSeconds)
 
   /**
    * Sets an attribute of the current span.
