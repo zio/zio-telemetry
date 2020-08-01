@@ -52,7 +52,6 @@ object Dependencies {
     "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % Versions.sttp,
     "com.softwaremill.sttp.client" %% "circe"                         % Versions.sttp,
     "dev.zio"                      %% "zio-interop-cats"              % Versions.zioInteropCats
-    "dev.zio"                      %% "zio-streams"                   % Versions.zio
   )
 
   lazy val opentracingExample = example ++ Seq(
