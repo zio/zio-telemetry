@@ -2,14 +2,15 @@ import sbt._
 
 object Dependencies {
   object Versions {
-    val http4s        = "0.21.3"
-    val jaeger        = "1.3.1"
-    val sttp          = "2.1.5"
-    val opentracing   = "0.33.0"
-    val opentelemetry = "0.3.0"
-    val opencensus    = "0.26.0"
-    val zipkin        = "2.15.0"
-    val zio           = "1.0.0-RC21-2"
+    val http4s         = "0.21.6"
+    val jaeger         = "1.3.2"
+    val sttp           = "2.2.3"
+    val opentracing    = "0.33.0"
+    val opentelemetry  = "0.3.0"
+    val opencensus     = "0.26.0"
+    val zipkin         = "2.15.0"
+    val zio            = "1.0.0"
+    val zioInteropCats = "2.1.4.0"
   }
 
   lazy val zio = Seq(
@@ -50,7 +51,7 @@ object Dependencies {
     "com.github.pureconfig"        %% "pureconfig"                    % "0.13.0",
     "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % Versions.sttp,
     "com.softwaremill.sttp.client" %% "circe"                         % Versions.sttp,
-    "dev.zio"                      %% "zio-interop-cats"              % "2.0.0.0-RC14"
+    "dev.zio"                      %% "zio-interop-cats"              % Versions.zioInteropCats
   )
 
   lazy val opentracingExample = example ++ Seq(

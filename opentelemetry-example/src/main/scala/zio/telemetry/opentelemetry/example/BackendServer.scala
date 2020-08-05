@@ -17,8 +17,9 @@ object BackendServer extends zio.App {
   val server =
     ZIO
       .runtime[AppEnv]
-      .flatMap(implicit runtime =>
-        BlazeServerBuilder[AppTask]
+      .flatMap { implicit runtime =>
+        implicit val ec = runtime.platform.executor.asEC
+        BlazeServerBuilder[AppTask](ec)
           .bindHttp(
             runtime.environment.get[Config].backend.host.port.getOrElse(defaults.HttpPort),
             runtime.environment.get[Config].backend.host.host
@@ -27,7 +28,7 @@ object BackendServer extends zio.App {
           .serve
           .compile
           .drain
-      )
+      }
 
   val httpBackend = ZLayer.fromManaged(Managed.make(AsyncHttpClientZioBackend())(_.close.ignore))
   val client      = Configuration.live ++ httpBackend >>> Client.live

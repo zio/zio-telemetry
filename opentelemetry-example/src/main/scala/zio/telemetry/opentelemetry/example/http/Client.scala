@@ -5,9 +5,10 @@ import sttp.client.asynchttpclient.WebSocketHandler
 import sttp.client.circe.asJson
 import zio.telemetry.opentelemetry.example.config.Config
 import zio.{ Task, ZIO, ZLayer }
+import zio.stream.ZStream
 
 object Client {
-  type Backend = SttpBackend[Task, Nothing, WebSocketHandler]
+  type Backend = SttpBackend[Task, ZStream[Any, Throwable, Byte], WebSocketHandler]
 
   trait Service {
     def status(headers: Map[String, String]): Task[Statuses]
