@@ -2,7 +2,7 @@ package zio.telemetry.opentelemetry
 
 import java.util.concurrent.TimeUnit
 
-import io.opentelemetry.common.AttributeValue
+import io.opentelemetry.common.Attributes
 import io.opentelemetry.context.propagation.HttpTextFormat
 import io.opentelemetry.trace.{ DefaultSpan, EndSpanOptions, Span, Status, Tracer }
 import zio.clock.Clock
@@ -10,8 +10,6 @@ import zio.telemetry.opentelemetry.attributevalue.AttributeValueConverter.toAttr
 import zio.telemetry.opentelemetry.SpanPropagation.{ extractSpan, injectSpan }
 import zio._
 import zio.telemetry.opentelemetry.attributevalue.AttributeValueConverter
-
-import scala.jdk.CollectionConverters._
 
 object Tracing {
   trait Service {
@@ -127,12 +125,12 @@ object Tracing {
    */
   def addEventWithAttributes(
     name: String,
-    attributes: Map[String, AttributeValue]
+    attributes: Attributes
   ): URIO[Tracing, Unit] =
     for {
       nanoSeconds <- currentNanos
       span        <- getCurrentSpan
-    } yield span.addEvent(name, attributes.asJava, nanoSeconds)
+    } yield span.addEvent(name, attributes, nanoSeconds)
 
   /**
    * Sets an attribute of the current span.

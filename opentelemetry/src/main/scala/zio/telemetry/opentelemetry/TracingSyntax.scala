@@ -1,6 +1,6 @@
 package zio.telemetry.opentelemetry
 
-import io.opentelemetry.common.AttributeValue
+import io.opentelemetry.common.Attributes
 import io.opentelemetry.context.propagation.HttpTextFormat
 import io.opentelemetry.trace.{ Span, Status }
 import zio.ZIO
@@ -53,7 +53,7 @@ object TracingSyntax {
      */
     def addEventWithAttributes(
       name: String,
-      attributes: Map[String, AttributeValue]
+      attributes: Attributes
     ): ZIO[Tracing with R, E, A] =
       effect <* Tracing.addEventWithAttributes(name, attributes)
 
