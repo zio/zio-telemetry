@@ -18,13 +18,18 @@ import zio._
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
+import io.opentelemetry.common.Attributes
 
 object TracingTest extends DefaultRunnableSpec {
 
   val inMemoryTracer: UIO[(InMemoryTracing, Tracer)] = for {
     tracerProvider  <- UIO(TracerSdkProvider.builder().build())
     inMemoryTracing <- UIO(InMemoryTracing.builder().setTracerProvider(tracerProvider).build())
-    tracer          = tracerProvider.get("TracingTest")
+    // Without this cast, a runtime exception occurs on this particular line:
+    // failed to access class io.opentelemetry.sdk.trace.TracerSdk from class zio.telemetry.opentelemetry.TracingTest
+    // which could not be resolved, even by adding an explicit dependency on the opentelemetry-sdk package
+    // (on which we implicitly depend through the opentelemetry-exporters-inmemory package)
+    tracer = tracerProvider.get("TracingTest").asInstanceOf[Tracer]
   } yield (inMemoryTracing, tracer)
 
   val inMemoryTracerLayer: ULayer[Has[InMemoryTracing] with Has[Tracer]] = ZLayer.fromEffectMany(
@@ -36,27 +41,27 @@ object TracingTest extends DefaultRunnableSpec {
   val tracingMockLayer: URLayer[Clock, Has[InMemoryTracing] with Tracing] =
     (inMemoryTracerLayer ++ Clock.any) >>> (Tracing.live ++ inMemoryTracerLayer)
 
-  def getFinishedSpans(inMemoryTracing: InMemoryTracing): List[SpanData] =
-    inMemoryTracing.getSpanExporter.getFinishedSpanItems.asScala.toList
+  def getFinishedSpans =
+    ZIO
+      .access[Has[InMemoryTracing]](_.get)
+      .map(_.getSpanExporter.getFinishedSpanItems.asScala.toList)
 
   def spec =
     suite("zio opentelemetry")(
       testM("acquire/release the service") {
         for {
-          inMemoryTracing <- ZIO.access[Has[InMemoryTracing]](_.get)
           _ <- Tracing.live.build
                 .use_(UIO.unit)
-          finishedSpans = getFinishedSpans(inMemoryTracing)
+          finishedSpans <- getFinishedSpans
         } yield assert(finishedSpans)(hasSize(equalTo(0)))
       }.provideCustomLayer(inMemoryTracerLayer),
       suite("spans")(
         testM("childSpan") {
           for {
-            inMemoryTracing <- ZIO.access[Has[InMemoryTracing]](_.get)
-            _               <- UIO.unit.span("Child").span("Root")
-            spans           = getFinishedSpans(inMemoryTracing)
-            root            = spans.find(_.getName == "Root")
-            child           = spans.find(_.getName == "Child")
+            _     <- UIO.unit.span("Child").span("Root")
+            spans <- getFinishedSpans
+            root  = spans.find(_.getName == "Root")
+            child = spans.find(_.getName == "Child")
           } yield assert(root)(isSome(anything)) &&
             assert(child)(
               isSome(
@@ -70,11 +75,10 @@ object TracingTest extends DefaultRunnableSpec {
         },
         testM("rootSpan") {
           for {
-            inMemoryTracing <- ZIO.access[Has[InMemoryTracing]](_.get)
-            _               <- UIO.unit.root("ROOT2").root("ROOT")
-            spans           = getFinishedSpans(inMemoryTracing)
-            root            = spans.find(_.getName == "ROOT")
-            child           = spans.find(_.getName == "ROOT2")
+            _     <- UIO.unit.root("ROOT2").root("ROOT")
+            spans <- getFinishedSpans
+            root  = spans.find(_.getName == "ROOT")
+            child = spans.find(_.getName == "ROOT2")
           } yield assert(root)(isSome(anything)) &&
             assert(child)(
               isSome(
@@ -87,7 +91,6 @@ object TracingTest extends DefaultRunnableSpec {
             )
         },
         testM("inject - extract roundtrip") {
-
           val httpTextFormat                       = io.opentelemetry.OpenTelemetry.getPropagators.getHttpTextFormat
           val carrier: mutable.Map[String, String] = mutable.Map().empty
 
@@ -107,13 +110,12 @@ object TracingTest extends DefaultRunnableSpec {
               .span("bar")
 
           for {
-            inMemoryTracing <- ZIO.access[Has[InMemoryTracing]](_.get)
-            _               <- injectExtract.span("ROOT")
-            spans           = getFinishedSpans(inMemoryTracing)
-            root            = spans.find(_.getName == "ROOT")
-            foo             = spans.find(_.getName == "foo")
-            bar             = spans.find(_.getName == "bar")
-            baz             = spans.find(_.getName == "baz")
+            _     <- injectExtract.span("ROOT")
+            spans <- getFinishedSpans
+            root  = spans.find(_.getName == "ROOT")
+            foo   = spans.find(_.getName == "foo")
+            bar   = spans.find(_.getName == "bar")
+            baz   = spans.find(_.getName == "baz")
           } yield assert(root)(isSome(anything)) &&
             assert(foo)(isSome(anything)) &&
             assert(bar)(isSome(anything)) &&
@@ -124,23 +126,16 @@ object TracingTest extends DefaultRunnableSpec {
         },
         testM("tagging") {
           for {
-            inMemoryTracing <- ZIO.access[Has[InMemoryTracing]](_.get)
             _ <- UIO.unit
                   .setAttribute("boolean", true)
                   .setAttribute("int", 1)
                   .setAttribute("string", "foo")
                   .span("foo")
-            spans = getFinishedSpans(inMemoryTracing)
-            tags  = spans.head.getAttributes.asScala.toMap
-          } yield assert(tags)(
-            equalTo(
-              Map(
-                "boolean" -> AttributeValue.booleanAttributeValue(true),
-                "int"     -> AttributeValue.longAttributeValue(1),
-                "string"  -> AttributeValue.stringAttributeValue("foo")
-              )
-            )
-          )
+            spans <- getFinishedSpans
+            tags  = spans.head.getAttributes
+          } yield assert(tags.get("boolean"))(equalTo(AttributeValue.booleanAttributeValue(true))) &&
+            assert(tags.get("int"))(equalTo(AttributeValue.longAttributeValue(1))) &&
+            assert(tags.get("string"))(equalTo(AttributeValue.stringAttributeValue("foo")))
         },
         testM("logging") {
           val duration = 1000.micros
@@ -151,31 +146,33 @@ object TracingTest extends DefaultRunnableSpec {
                 .adjust(duration)
                 .addEventWithAttributes(
                   "message2",
-                  Map(
-                    "msg"  -> AttributeValue.stringAttributeValue("message"),
-                    "size" -> AttributeValue.longAttributeValue(1)
+                  Attributes.of(
+                    "msg",
+                    AttributeValue.stringAttributeValue("message"),
+                    "size",
+                    AttributeValue.longAttributeValue(1)
                   )
                 )
 
           for {
-            inMemoryTracing <- ZIO.access[Has[InMemoryTracing]](_.get)
-            _               <- log.span("foo")
-            spans           = getFinishedSpans(inMemoryTracing)
+            _     <- log.span("foo")
+            _     <- UIO.unit.span("Child").span("Root")
+            spans <- getFinishedSpans
             tags = spans.collect {
               case span if span.getName == "foo" =>
-                span.getTimedEvents.asScala.toList.map(le =>
-                  (le.getEpochNanos, le.getName, le.getAttributes.asScala.toMap)
-                )
+                span.getEvents.asScala.toList.map(le => (le.getEpochNanos, le.getName, le.getAttributes))
             }.flatten
           } yield {
             val expected = List(
-              (0L, "message", Map.empty),
+              (0L, "message", Attributes.empty()),
               (
                 1000000L,
                 "message2",
-                Map(
-                  "msg"  -> AttributeValue.stringAttributeValue("message"),
-                  "size" -> AttributeValue.longAttributeValue(1)
+                Attributes.of(
+                  "msg",
+                  AttributeValue.stringAttributeValue("message"),
+                  "size",
+                  AttributeValue.longAttributeValue(1)
                 )
               )
             )
