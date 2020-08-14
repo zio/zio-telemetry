@@ -14,6 +14,7 @@ object OpenTracing {
 
   trait Service {
     private[opentracing] val tracer: Tracer
+
     def currentSpan: FiberRef[Span]
     def root(operation: String): UIO[Span]
     def span(span: Span, operation: String): UIO[Span]
@@ -42,69 +43,67 @@ object OpenTracing {
         ref   <- FiberRef.make(span)
         clock <- ZIO.service[Clock.Service]
       } yield new OpenTracing.Service { self =>
-        override val tracer: Tracer              = tracer0
-        override val currentSpan: FiberRef[Span] = ref
+        val tracer: Tracer              = tracer0
+        val currentSpan: FiberRef[Span] = ref
 
-        override def root(operation: String): UIO[Span] =
+        def root(operation: String): UIO[Span] =
           UIO(tracer.buildSpan(operation).start())
 
-        override def span(span: Span, operation: String): UIO[Span] =
+        def span(span: Span, operation: String): UIO[Span] =
           for {
             old   <- currentSpan.get
             child <- UIO(tracer.buildSpan(operation).asChildOf(old).start())
           } yield child
 
-        override def finish(span: Span): UIO[Unit] =
-          getCurrentTimeMicros.map(span.finish)
+        def finish(span: Span): UIO[Unit] = getCurrentTimeMicros.map(span.finish)
 
-        override def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit] =
+        def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit] =
           UIO(span.setTag("error", true)).when(tagError) *>
             UIO(span.log(Map("error.object" -> cause, "stack" -> cause.prettyPrint).asJava)).when(logError)
 
-        override def log(msg: String): UIO[Unit] =
+        def log(msg: String): UIO[Unit] =
           currentSpan.get
             .zipWith(getCurrentTimeMicros) { (span, now) =>
               span.log(now, msg)
             }
             .unit
 
-        override def log(fields: Map[String, _]): UIO[Unit] =
+        def log(fields: Map[String, _]): UIO[Unit] =
           currentSpan.get
             .zipWith(getCurrentTimeMicros) { (span, now) =>
               span.log(now, fields.asJava)
             }
             .unit
 
-        override def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A] =
+        def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A] =
           for {
             res  <- zio
             span <- currentSpan.get
             _    <- UIO(span.setTag(key, value))
           } yield res
 
-        override def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Int): ZIO[R, E, A] =
+        def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Int): ZIO[R, E, A] =
           for {
             res  <- zio
             span <- currentSpan.get
             _    <- UIO(span.setTag(key, value))
           } yield res
 
-        override def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Boolean): ZIO[R, E, A] =
+        def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Boolean): ZIO[R, E, A] =
           for {
             res  <- zio
             span <- currentSpan.get
             _    <- UIO(span.setTag(key, value))
           } yield res
 
-        override def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A] =
+        def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A] =
           for {
             res  <- zio
             span <- currentSpan.get
             _    <- UIO(span.setBaggageItem(key, value))
           } yield res
 
-        private def getCurrentTimeMicros: UIO[Long] =
-          clock.currentTime(TimeUnit.MICROSECONDS)
+        def getCurrentTimeMicros: UIO[Long] = clock.currentTime(TimeUnit.MICROSECONDS)
       }
     )(_.currentSpan.get.flatMap(span => UIO(span.finish())))
 
