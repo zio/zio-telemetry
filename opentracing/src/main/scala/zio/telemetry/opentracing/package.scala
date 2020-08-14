@@ -80,10 +80,10 @@ package object opentracing {
       OpenTracing.tag(zio, key, value)
 
     def log(msg: String): ZIO[R with OpenTracing, E, A] =
-      zio <* OpenTracing.log(msg)
+      OpenTracing.log(zio, msg)
 
     def log(fields: Map[String, _]): ZIO[R with OpenTracing, E, A] =
-      zio <* OpenTracing.log(fields)
+      OpenTracing.log(zio, fields)
 
   }
 }

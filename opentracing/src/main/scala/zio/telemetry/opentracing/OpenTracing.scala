@@ -20,6 +20,8 @@ object OpenTracing {
     def finish(span: Span): UIO[Unit]
     def log(fields: Map[String, _]): UIO[Unit]
     def log(msg: String): UIO[Unit]
+    def log[R, E, A](zio: ZIO[R, E, A], fields: Map[String, _]): ZIO[R, E, A]
+    def log[R, E, A](zio: ZIO[R, E, A], msg: String): ZIO[R, E, A]
     def root(operation: String): UIO[Span]
     def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A]
     def span(span: Span, operation: String): UIO[Span]
@@ -53,11 +55,15 @@ object OpenTracing {
 
         def finish(span: Span): UIO[Unit] = micros.map(span.finish)
 
-        def log(msg: String): UIO[Unit] =
-          currentSpan.get.zipWith(micros)((span, now) => span.log(now, msg)).unit
+        def log(msg: String): UIO[Unit] = log(ZIO.unit, msg)
 
-        def log(fields: Map[String, _]): UIO[Unit] =
-          currentSpan.get.zipWith(micros)((span, now) => span.log(now, fields.asJava)).unit
+        def log(fields: Map[String, _]): UIO[Unit] = log(ZIO.unit, fields)
+
+        def log[R, E, A](zio: ZIO[R, E, A], fields: Map[String, _]): ZIO[R, E, A] =
+          zio <* currentSpan.get.zipWith(micros)((span, now) => span.log(now, fields.asJava))
+
+        def log[R, E, A](zio: ZIO[R, E, A], msg: String): ZIO[R, E, A] =
+          zio <* currentSpan.get.zipWith(micros)((span, now) => span.log(now, msg))
 
         def root(operation: String): UIO[Span] = UIO(tracer.buildSpan(operation).start())
 
@@ -121,6 +127,12 @@ object OpenTracing {
 
   def log(fields: Map[String, _]): URIO[OpenTracing, Unit] =
     ZIO.accessM(_.get.log(fields))
+
+  def log[R, E, A](zio: ZIO[R, E, A], fields: Map[String, _]): ZIO[R with OpenTracing, E, A] = 
+    ZIO.accessM(_.get.log(zio, fields))
+
+  def log[R, E, A](zio: ZIO[R, E, A], msg: String): ZIO[R with OpenTracing, E, A] =
+    ZIO.accessM(_.get.log(zio, msg))
 
   def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R with OpenTracing, E, A] =
     ZIO.accessM(_.get.setBaggageItem(zio, key, value))
