@@ -82,6 +82,31 @@ object OpenTracing {
       }
     )(_.currentSpan.get.flatMap(span => UIO(span.finish())))
 
+  def context: URIO[OpenTracing, SpanContext] =
+    ZIO.accessM(_.get.currentSpan.get.map(_.context))
+
+  def getBaggageItem(key: String): URIO[OpenTracing, Option[String]] =
+    getSpan.map(_.getBaggageItem(key)).map(Option(_))
+
+  def inject[C <: AnyRef](format: Format[C], carrier: C): URIO[OpenTracing, Unit] =
+    for {
+      service <- ZIO.service[OpenTracing.Service]
+      span    <- service.currentSpan.get
+      _       <- ZIO.effectTotal(service.tracer.inject(span.context(), format, carrier))
+    } yield ()
+
+  def log(msg: String): URIO[OpenTracing, Unit] =
+    ZIO.accessM(_.get.log(msg))
+
+  def log(fields: Map[String, _]): URIO[OpenTracing, Unit] =
+    ZIO.accessM(_.get.log(fields))
+
+  def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R with OpenTracing, E, A] =
+    ZIO.accessM(_.get.setBaggageItem(zio, key, value))
+
+  def setBaggageItem(key: String, value: String): URIO[OpenTracing, Unit] =
+    getSpan.map(_.setBaggageItem(key, value)).unit
+
   def spanFrom[R, R1 <: R with OpenTracing, E, Span, C <: AnyRef](
     format: Format[C],
     carrier: C,
@@ -104,22 +129,6 @@ object OpenTracing {
         }
     }
 
-  def inject[C <: AnyRef](format: Format[C], carrier: C): URIO[OpenTracing, Unit] =
-    for {
-      service <- ZIO.service[OpenTracing.Service]
-      span    <- service.currentSpan.get
-      _       <- ZIO.effectTotal(service.tracer.inject(span.context(), format, carrier))
-    } yield ()
-
-  def context: URIO[OpenTracing, SpanContext] =
-    ZIO.accessM(_.get.currentSpan.get.map(_.context))
-
-  def getBaggageItem(key: String): URIO[OpenTracing, Option[String]] =
-    getSpan.map(_.getBaggageItem(key)).map(Option(_))
-
-  def setBaggageItem(key: String, value: String): URIO[OpenTracing, Unit] =
-    getSpan.map(_.setBaggageItem(key, value)).unit
-
   def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R with OpenTracing, E, A] =
     ZIO.accessM(_.get.tag(zio, key, value))
 
@@ -137,15 +146,6 @@ object OpenTracing {
 
   def tag(key: String, value: Boolean): URIO[OpenTracing, Unit] =
     getSpan.map(_.setTag(key, value)).unit
-
-  def log(msg: String): URIO[OpenTracing, Unit] =
-    ZIO.accessM(_.get.log(msg))
-
-  def log(fields: Map[String, _]): URIO[OpenTracing, Unit] =
-    ZIO.accessM(_.get.log(fields))
-
-  def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R with OpenTracing, E, A] =
-    ZIO.accessM(_.get.setBaggageItem(zio, key, value))
 
   private def getSpan: URIO[OpenTracing, Span] =
     ZIO.accessM(_.get.currentSpan.get)
