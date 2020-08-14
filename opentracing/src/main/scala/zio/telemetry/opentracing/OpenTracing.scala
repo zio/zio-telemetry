@@ -34,7 +34,7 @@ object OpenTracing {
       for {
         span  <- UIO(tracer0.buildSpan(rootOperation).start())
         ref   <- FiberRef.make(span)
-        clock <- ZIO.access[Clock](_.get)
+        clock <- ZIO.service[Clock.Service]
       } yield new OpenTracing.Service {
         override val tracer: Tracer              = tracer0
         override val currentSpan: FiberRef[Span] = ref
@@ -82,7 +82,7 @@ object OpenTracing {
     tagError: Boolean = true,
     logError: Boolean = true
   ): ZIO[R1, E, Span] =
-    ZIO.access[OpenTracing](_.get).flatMap { service =>
+    ZIO.service[OpenTracing.Service].flatMap { service =>
       Task(service.tracer.extract(format, carrier))
         .fold(_ => None, Option.apply)
         .flatMap {
@@ -98,7 +98,7 @@ object OpenTracing {
 
   def inject[C <: AnyRef](format: Format[C], carrier: C): URIO[OpenTracing, Unit] =
     for {
-      service <- ZIO.access[OpenTracing](_.get)
+      service <- ZIO.service[OpenTracing.Service]
       span    <- service.currentSpan.get
       _       <- ZIO.effectTotal(service.tracer.inject(span.context(), format, carrier))
     } yield ()
