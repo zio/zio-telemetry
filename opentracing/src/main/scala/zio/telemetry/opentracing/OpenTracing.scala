@@ -21,6 +21,10 @@ object OpenTracing {
     def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit]
     def log(msg: String): UIO[Unit]
     def log(fields: Map[String, _]): UIO[Unit]
+
+    def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A]
+    def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Int): ZIO[R, E, A]
+    def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Boolean): ZIO[R, E, A]
   }
 
   val noop: URLayer[Clock, OpenTracing] =
@@ -35,7 +39,7 @@ object OpenTracing {
         span  <- UIO(tracer0.buildSpan(rootOperation).start())
         ref   <- FiberRef.make(span)
         clock <- ZIO.service[Clock.Service]
-      } yield new OpenTracing.Service {
+      } yield new OpenTracing.Service { self =>
         override val tracer: Tracer              = tracer0
         override val currentSpan: FiberRef[Span] = ref
 
@@ -68,6 +72,27 @@ object OpenTracing {
               span.log(now, fields.asJava)
             }
             .unit
+
+        override def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A] =
+          for {
+            res  <- zio
+            span <- currentSpan.get
+            _    <- UIO(span.setTag(key, value))
+          } yield res
+
+        override def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Int): ZIO[R, E, A] =
+          for {
+            res  <- zio
+            span <- currentSpan.get
+            _    <- UIO(span.setTag(key, value))
+          } yield res
+
+        override def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Boolean): ZIO[R, E, A] =
+          for {
+            res  <- zio
+            span <- currentSpan.get
+            _    <- UIO(span.setTag(key, value))
+          } yield res
 
         private def getCurrentTimeMicros: UIO[Long] =
           clock.currentTime(TimeUnit.MICROSECONDS)
@@ -111,6 +136,15 @@ object OpenTracing {
 
   def setBaggageItem(key: String, value: String): URIO[OpenTracing, Unit] =
     getSpan.map(_.setBaggageItem(key, value)).unit
+
+  def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R with OpenTracing, E, A] =
+    ZIO.accessM(_.get.tag(zio, key, value))
+
+  def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Int): ZIO[R with OpenTracing, E, A] =
+    ZIO.accessM(_.get.tag(zio, key, value))
+
+  def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Boolean): ZIO[R with OpenTracing, E, A] =
+    ZIO.accessM(_.get.tag(zio, key, value))
 
   def tag(key: String, value: String): URIO[OpenTracing, Unit] =
     getSpan.map(_.setTag(key, value)).unit

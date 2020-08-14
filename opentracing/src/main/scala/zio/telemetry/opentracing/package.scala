@@ -71,13 +71,13 @@ package object opentracing {
       zio <* OpenTracing.setBaggageItem(key, value)
 
     def tag(key: String, value: String): ZIO[R with OpenTracing, E, A] =
-      zio <* OpenTracing.tag(key, value)
+      OpenTracing.tag(zio, key, value)
 
     def tag(key: String, value: Int): ZIO[R with OpenTracing, E, A] =
-      zio <* OpenTracing.tag(key, value)
+      OpenTracing.tag(zio, key, value)
 
     def tag(key: String, value: Boolean): ZIO[R with OpenTracing, E, A] =
-      zio <* OpenTracing.tag(key, value)
+      OpenTracing.tag(zio, key, value)
 
     def log(msg: String): ZIO[R with OpenTracing, E, A] =
       zio <* OpenTracing.log(msg)
