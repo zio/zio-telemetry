@@ -16,18 +16,16 @@ object OpenTracing {
     private[opentracing] val tracer: Tracer
 
     def currentSpan: FiberRef[Span]
-    def root(operation: String): UIO[Span]
-    def span(span: Span, operation: String): UIO[Span]
-    def finish(span: Span): UIO[Unit]
     def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit]
-    def log(msg: String): UIO[Unit]
+    def finish(span: Span): UIO[Unit]
     def log(fields: Map[String, _]): UIO[Unit]
-
+    def log(msg: String): UIO[Unit]
+    def root(operation: String): UIO[Span]
+    def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A]
+    def span(span: Span, operation: String): UIO[Span]
     def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A]
     def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Int): ZIO[R, E, A]
     def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Boolean): ZIO[R, E, A]
-
-    def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A]
   }
 
   val noop: URLayer[Clock, OpenTracing] =
@@ -43,23 +41,15 @@ object OpenTracing {
         ref   <- FiberRef.make(span)
         clock <- ZIO.service[Clock.Service]
       } yield new OpenTracing.Service { self =>
-        val tracer: Tracer              = tracer0
+        val tracer: Tracer = tracer0
+
         val currentSpan: FiberRef[Span] = ref
-
-        def root(operation: String): UIO[Span] =
-          UIO(tracer.buildSpan(operation).start())
-
-        def span(span: Span, operation: String): UIO[Span] =
-          for {
-            old   <- currentSpan.get
-            child <- UIO(tracer.buildSpan(operation).asChildOf(old).start())
-          } yield child
-
-        def finish(span: Span): UIO[Unit] = getCurrentTimeMicros.map(span.finish)
 
         def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit] =
           UIO(span.setTag("error", true)).when(tagError) *>
             UIO(span.log(Map("error.object" -> cause, "stack" -> cause.prettyPrint).asJava)).when(logError)
+
+        def finish(span: Span): UIO[Unit] = getCurrentTimeMicros.map(span.finish)
 
         def log(msg: String): UIO[Unit] =
           currentSpan.get
@@ -74,6 +64,21 @@ object OpenTracing {
               span.log(now, fields.asJava)
             }
             .unit
+
+        def root(operation: String): UIO[Span] = UIO(tracer.buildSpan(operation).start())
+
+        def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A] =
+          for {
+            res  <- zio
+            span <- currentSpan.get
+            _    <- UIO(span.setBaggageItem(key, value))
+          } yield res
+
+        def span(span: Span, operation: String): UIO[Span] =
+          for {
+            old   <- currentSpan.get
+            child <- UIO(tracer.buildSpan(operation).asChildOf(old).start())
+          } yield child
 
         def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A] =
           for {
@@ -94,13 +99,6 @@ object OpenTracing {
             res  <- zio
             span <- currentSpan.get
             _    <- UIO(span.setTag(key, value))
-          } yield res
-
-        def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A] =
-          for {
-            res  <- zio
-            span <- currentSpan.get
-            _    <- UIO(span.setBaggageItem(key, value))
           } yield res
 
         def getCurrentTimeMicros: UIO[Long] = clock.currentTime(TimeUnit.MICROSECONDS)
