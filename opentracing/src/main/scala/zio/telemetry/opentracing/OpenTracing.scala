@@ -49,7 +49,7 @@ object OpenTracing {
           } yield child
 
         override def finish(span: Span): UIO[Unit] =
-          clock.currentTime(TimeUnit.MICROSECONDS).map(span.finish)
+          getCurrentTimeMicros.map(span.finish)
 
         override def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit] =
           UIO(span.setTag("error", true)).when(tagError) *>
