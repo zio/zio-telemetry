@@ -28,8 +28,7 @@ object OpenTracing {
     def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Boolean): ZIO[R, E, A]
   }
 
-  val noop: URLayer[Clock, OpenTracing] =
-    live(NoopTracerFactory.create())
+  lazy val noop: URLayer[Clock, OpenTracing] = live(NoopTracerFactory.create())
 
   def live(tracer: Tracer, rootOperation: String = "ROOT"): URLayer[Clock, OpenTracing] =
     ZLayer.fromManaged(managed(tracer, rootOperation))
