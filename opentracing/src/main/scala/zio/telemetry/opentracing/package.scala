@@ -68,7 +68,7 @@ package object opentracing {
       OpenTracing.spanFrom(format, carrier, zio, operation, tagError, logError)
 
     def setBaggageItem(key: String, value: String): ZIO[R with OpenTracing, E, A] =
-      zio <* OpenTracing.setBaggageItem(key, value)
+      OpenTracing.setBaggageItem(zio, key, value)
 
     def tag(key: String, value: String): ZIO[R with OpenTracing, E, A] =
       OpenTracing.tag(zio, key, value)

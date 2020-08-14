@@ -25,6 +25,8 @@ object OpenTracing {
     def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A]
     def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Int): ZIO[R, E, A]
     def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Boolean): ZIO[R, E, A]
+
+    def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A]
   }
 
   val noop: URLayer[Clock, OpenTracing] =
@@ -94,6 +96,13 @@ object OpenTracing {
             _    <- UIO(span.setTag(key, value))
           } yield res
 
+        override def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A] =
+          for {
+            res  <- zio
+            span <- currentSpan.get
+            _    <- UIO(span.setBaggageItem(key, value))
+          } yield res
+
         private def getCurrentTimeMicros: UIO[Long] =
           clock.currentTime(TimeUnit.MICROSECONDS)
       }
@@ -160,6 +169,9 @@ object OpenTracing {
 
   def log(fields: Map[String, _]): URIO[OpenTracing, Unit] =
     ZIO.accessM(_.get.log(fields))
+
+  def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R with OpenTracing, E, A] =
+    ZIO.accessM(_.get.setBaggageItem(zio, key, value))
 
   private def getSpan: URIO[OpenTracing, Span] =
     ZIO.accessM(_.get.currentSpan.get)
