@@ -47,8 +47,10 @@ object OpenTracing {
         val currentSpan: FiberRef[Span] = ref
 
         def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit] =
-          UIO(span.setTag("error", true)).when(tagError) *>
-            UIO(span.log(Map("error.object" -> cause, "stack" -> cause.prettyPrint).asJava)).when(logError)
+          for {
+            _ <- UIO(span.setTag("error", true)).when(tagError)
+            _ <- UIO(span.log(Map("error.object" -> cause, "stack" -> cause.prettyPrint).asJava)).when(logError)
+          } yield ()
 
         def finish(span: Span): UIO[Unit] = micros.map(span.finish)
 
