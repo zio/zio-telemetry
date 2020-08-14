@@ -63,11 +63,7 @@ object OpenTracing {
         def root(operation: String): UIO[Span] = UIO(tracer.buildSpan(operation).start())
 
         def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A] =
-          for {
-            res  <- zio
-            span <- currentSpan.get
-            _    <- UIO(span.setBaggageItem(key, value))
-          } yield res
+          zio <* currentSpan.get.map(_.setBaggageItem(key, value))
 
         def span(span: Span, operation: String): UIO[Span] =
           for {
@@ -76,25 +72,13 @@ object OpenTracing {
           } yield child
 
         def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A] =
-          for {
-            res  <- zio
-            span <- currentSpan.get
-            _    <- UIO(span.setTag(key, value))
-          } yield res
+          zio <* currentSpan.get.map(_.setTag(key, value))
 
         def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Int): ZIO[R, E, A] =
-          for {
-            res  <- zio
-            span <- currentSpan.get
-            _    <- UIO(span.setTag(key, value))
-          } yield res
+          zio <* currentSpan.get.map(_.setTag(key, value))
 
         def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Boolean): ZIO[R, E, A] =
-          for {
-            res  <- zio
-            span <- currentSpan.get
-            _    <- UIO(span.setTag(key, value))
-          } yield res
+          zio <* currentSpan.get.map(_.setTag(key, value))
       }
     )(_.currentSpan.get.flatMap(span => UIO(span.finish())))
 
