@@ -18,8 +18,6 @@ object OpenTracing {
     def currentSpan: FiberRef[Span]
     def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit]
     def finish(span: Span): UIO[Unit]
-    def log(fields: Map[String, _]): UIO[Unit]
-    def log(msg: String): UIO[Unit]
     def log[R, E, A](zio: ZIO[R, E, A], fields: Map[String, _]): ZIO[R, E, A]
     def log[R, E, A](zio: ZIO[R, E, A], msg: String): ZIO[R, E, A]
     def root(operation: String): UIO[Span]
@@ -54,10 +52,6 @@ object OpenTracing {
           } yield ()
 
         def finish(span: Span): UIO[Unit] = micros.map(span.finish)
-
-        def log(msg: String): UIO[Unit] = log(ZIO.unit, msg)
-
-        def log(fields: Map[String, _]): UIO[Unit] = log(ZIO.unit, fields)
 
         def log[R, E, A](zio: ZIO[R, E, A], fields: Map[String, _]): ZIO[R, E, A] =
           zio <* currentSpan.get.zipWith(micros)((span, now) => span.log(now, fields.asJava))
@@ -122,11 +116,9 @@ object OpenTracing {
       _       <- ZIO.effectTotal(service.tracer.inject(span.context(), format, carrier))
     } yield ()
 
-  def log(msg: String): URIO[OpenTracing, Unit] =
-    ZIO.accessM(_.get.log(msg))
+  def log(msg: String): URIO[OpenTracing, Unit] = log(ZIO.unit, msg)
 
-  def log(fields: Map[String, _]): URIO[OpenTracing, Unit] =
-    ZIO.accessM(_.get.log(fields))
+  def log(fields: Map[String, _]): URIO[OpenTracing, Unit] = log(ZIO.unit, fields)
 
   def log[R, E, A](zio: ZIO[R, E, A], fields: Map[String, _]): ZIO[R with OpenTracing, E, A] = 
     ZIO.accessM(_.get.log(zio, fields))
