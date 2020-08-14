@@ -37,9 +37,10 @@ object OpenTracing {
   def managed(tracer0: Tracer, rootOperation: String): URManaged[Clock, OpenTracing.Service] =
     ZManaged.make(
       for {
-        span  <- UIO(tracer0.buildSpan(rootOperation).start())
-        ref   <- FiberRef.make(span)
-        clock <- ZIO.service[Clock.Service]
+        span   <- UIO(tracer0.buildSpan(rootOperation).start())
+        ref    <- FiberRef.make(span)
+        clock  <- ZIO.service[Clock.Service]
+        micros = clock.currentTime(TimeUnit.MICROSECONDS)
       } yield new OpenTracing.Service { self =>
         val tracer: Tracer = tracer0
 
@@ -49,21 +50,13 @@ object OpenTracing {
           UIO(span.setTag("error", true)).when(tagError) *>
             UIO(span.log(Map("error.object" -> cause, "stack" -> cause.prettyPrint).asJava)).when(logError)
 
-        def finish(span: Span): UIO[Unit] = getCurrentTimeMicros.map(span.finish)
+        def finish(span: Span): UIO[Unit] = micros.map(span.finish)
 
         def log(msg: String): UIO[Unit] =
-          currentSpan.get
-            .zipWith(getCurrentTimeMicros) { (span, now) =>
-              span.log(now, msg)
-            }
-            .unit
+          currentSpan.get.zipWith(micros)((span, now) => span.log(now, msg)).unit
 
         def log(fields: Map[String, _]): UIO[Unit] =
-          currentSpan.get
-            .zipWith(getCurrentTimeMicros) { (span, now) =>
-              span.log(now, fields.asJava)
-            }
-            .unit
+          currentSpan.get.zipWith(micros)((span, now) => span.log(now, fields.asJava)).unit
 
         def root(operation: String): UIO[Span] = UIO(tracer.buildSpan(operation).start())
 
@@ -100,8 +93,6 @@ object OpenTracing {
             span <- currentSpan.get
             _    <- UIO(span.setTag(key, value))
           } yield res
-
-        def getCurrentTimeMicros: UIO[Long] = clock.currentTime(TimeUnit.MICROSECONDS)
       }
     )(_.currentSpan.get.flatMap(span => UIO(span.finish())))
 
