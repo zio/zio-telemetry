@@ -120,7 +120,7 @@ object OpenTracing {
 
   def log(fields: Map[String, _]): URIO[OpenTracing, Unit] = log(ZIO.unit, fields)
 
-  def log[R, E, A](zio: ZIO[R, E, A], fields: Map[String, _]): ZIO[R with OpenTracing, E, A] = 
+  def log[R, E, A](zio: ZIO[R, E, A], fields: Map[String, _]): ZIO[R with OpenTracing, E, A] =
     ZIO.accessM(_.get.log(zio, fields))
 
   def log[R, E, A](zio: ZIO[R, E, A], msg: String): ZIO[R with OpenTracing, E, A] =
