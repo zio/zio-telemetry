@@ -25,12 +25,7 @@ package object opentracing {
       tagError: Boolean = true,
       logError: Boolean = true
     ): ZIO[R with OpenTracing, E, A] =
-      for {
-        service <- getService
-        old     <- getSpan(service)
-        child   <- service.span(old, operation)
-        r       <- span(service)(child, tagError, logError)
-      } yield r
+      OpenTracing.span(zio, operation, tagError, logError)
 
     def span(service: OpenTracing.Service)(
       span: Span,

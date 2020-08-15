@@ -22,7 +22,7 @@ object OpenTracing {
     def log[R, E, A](zio: ZIO[R, E, A], msg: String): ZIO[R, E, A]
     def root(operation: String): UIO[Span]
     def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A]
-    def span(span: Span, operation: String): UIO[Span]
+    def span[R, E, A](zio: ZIO[R, E, A], operation: String, tagError: Boolean, logError: Boolean): ZIO[R, E, A]
     def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A]
     def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Int): ZIO[R, E, A]
     def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Boolean): ZIO[R, E, A]
@@ -64,11 +64,15 @@ object OpenTracing {
         def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A] =
           zio <* currentSpan.get.map(_.setBaggageItem(key, value))
 
-        def span(span: Span, operation: String): UIO[Span] =
+        def span[R, E, A](zio: ZIO[R, E, A], operation: String, tagError: Boolean, logError: Boolean): ZIO[R, E, A] =
           for {
-            old   <- currentSpan.get
-            child <- UIO(tracer.buildSpan(operation).asChildOf(old).start())
-          } yield child
+            current <- currentSpan.get
+            child   <- UIO(tracer.buildSpan(operation).asChildOf(current).start())
+            _       <- currentSpan.set(child)
+            res <- zio
+                    .catchAllCause(c => error(child, c, tagError, logError) *> IO.done(Exit.Failure(c)))
+                    .ensuring(finish(child) *> currentSpan.set(current))
+          } yield res
 
         def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A] =
           zio <* currentSpan.get.map(_.setTag(key, value))
@@ -130,6 +134,14 @@ object OpenTracing {
     ZIO.accessM(_.get.setBaggageItem(zio, key, value))
 
   def setBaggageItem(key: String, value: String): URIO[OpenTracing, Unit] = setBaggageItem(ZIO.unit, key, value)
+
+  def span[R, E, A](
+    zio: ZIO[R, E, A],
+    operation: String,
+    tagError: Boolean = false,
+    logError: Boolean = false
+  ): ZIO[R with OpenTracing, E, A] =
+    ZIO.accessM(_.get.span(zio, operation, tagError, logError))
 
   def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R with OpenTracing, E, A] =
     ZIO.accessM(_.get.tag(zio, key, value))
