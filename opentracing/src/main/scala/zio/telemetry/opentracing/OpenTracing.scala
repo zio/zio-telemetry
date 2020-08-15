@@ -21,6 +21,7 @@ object OpenTracing {
     def log[R, E, A](zio: ZIO[R, E, A], fields: Map[String, _]): ZIO[R, E, A]
     def log[R, E, A](zio: ZIO[R, E, A], msg: String): ZIO[R, E, A]
     def root(operation: String): UIO[Span]
+    def root[R, E, A](zio: ZIO[R, E, A], operation: String, tagError: Boolean, logError: Boolean): ZIO[R, E, A]
     def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A]
     def span[R, E, A](zio: ZIO[R, E, A], operation: String, tagError: Boolean, logError: Boolean): ZIO[R, E, A]
     def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A]
@@ -60,6 +61,16 @@ object OpenTracing {
           zio <* currentSpan.get.zipWith(micros)((span, now) => span.log(now, msg))
 
         def root(operation: String): UIO[Span] = UIO(tracer.buildSpan(operation).start())
+
+        def root[R, E, A](zio: ZIO[R, E, A], operation: String, tagError: Boolean, logError: Boolean): ZIO[R, E, A] =
+          for {
+            root    <- UIO(tracer.buildSpan(operation).start())
+            current <- currentSpan.get
+            _       <- currentSpan.set(root)
+            res <- zio
+                    .catchAllCause(c => error(root, c, tagError, logError) *> IO.done(Exit.Failure(c)))
+                    .ensuring(finish(root) *> currentSpan.set(current))
+          } yield res
 
         def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A] =
           zio <* currentSpan.get.map(_.setBaggageItem(key, value))
@@ -129,6 +140,9 @@ object OpenTracing {
 
   def log[R, E, A](zio: ZIO[R, E, A], msg: String): ZIO[R with OpenTracing, E, A] =
     ZIO.accessM(_.get.log(zio, msg))
+
+  def root[R, E, A](zio: ZIO[R, E, A], operation: String, tagError: Boolean = false, logError: Boolean = false): ZIO[R with OpenTracing, E, A] =
+    ZIO.accessM(_.get.root(zio, operation, tagError, logError))
 
   def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R with OpenTracing, E, A] =
     ZIO.accessM(_.get.setBaggageItem(zio, key, value))

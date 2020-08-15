@@ -2,7 +2,7 @@ package zio.telemetry
 
 import io.opentracing.Span
 import io.opentracing.propagation.Format
-import zio.{ Exit, Has, IO, UIO, URIO, ZIO }
+import zio.{ Exit, Has, IO, UIO, ZIO }
 
 package object opentracing {
   type OpenTracing = Has[OpenTracing.Service]
@@ -14,11 +14,7 @@ package object opentracing {
       tagError: Boolean = true,
       logError: Boolean = true
     ): ZIO[R with OpenTracing, E, A] =
-      for {
-        service <- getService
-        root    <- service.root(operation)
-        r       <- span(service)(root, tagError, logError)
-      } yield r
+      OpenTracing.root(zio, operation, tagError, logError)
 
     def span(
       operation: String,
@@ -49,9 +45,6 @@ package object opentracing {
 
     private def getSpan(service: OpenTracing.Service): UIO[Span] =
       service.currentSpan.get
-
-    private def getService: URIO[OpenTracing, OpenTracing.Service] =
-      ZIO.service[OpenTracing.Service]
 
     def spanFrom[R1 <: R with OpenTracing, C <: Object](
       format: Format[C],
