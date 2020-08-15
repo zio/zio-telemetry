@@ -105,7 +105,7 @@ object OpenTracing {
       Task(service.tracer.extract(format, carrier))
         .fold(_ => None, Option.apply)
         .flatMap {
-          case None          => zio
+          case None => zio
           case Some(spanCtx) =>
             for {
               current <- service.currentSpan.get
