@@ -105,13 +105,16 @@ object OpenTracing {
       Task(service.tracer.extract(format, carrier))
         .fold(_ => None, Option.apply)
         .flatMap {
-          case None => zio
+          case None          => zio
           case Some(spanCtx) =>
-            zio.span(service)(
-              service.tracer.buildSpan(operation).asChildOf(spanCtx).start,
-              tagError,
-              logError
-            )
+            for {
+              current <- service.currentSpan.get
+              span    <- UIO(service.tracer.buildSpan(operation).asChildOf(spanCtx).start())
+              _       <- service.currentSpan.set(span)
+              res <- zio
+                      .catchAllCause(c => service.error(span, c, tagError, logError) *> IO.done(Exit.Failure(c)))
+                      .ensuring(service.finish(span) *> service.currentSpan.set(current))
+            } yield res
         }
     }
 
@@ -138,7 +141,12 @@ object OpenTracing {
   def log[R, E, A](zio: ZIO[R, E, A], msg: String): ZIO[R with OpenTracing, E, A] =
     ZIO.accessM(_.get.log(zio, msg))
 
-  def root[R, E, A](zio: ZIO[R, E, A], operation: String, tagError: Boolean = false, logError: Boolean = false): ZIO[R with OpenTracing, E, A] =
+  def root[R, E, A](
+    zio: ZIO[R, E, A],
+    operation: String,
+    tagError: Boolean = false,
+    logError: Boolean = false
+  ): ZIO[R with OpenTracing, E, A] =
     ZIO.accessM(_.get.root(zio, operation, tagError, logError))
 
   def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R with OpenTracing, E, A] =
