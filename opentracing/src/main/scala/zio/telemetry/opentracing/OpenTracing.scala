@@ -20,7 +20,6 @@ object OpenTracing {
     def finish(span: Span): UIO[Unit]
     def log[R, E, A](zio: ZIO[R, E, A], fields: Map[String, _]): ZIO[R, E, A]
     def log[R, E, A](zio: ZIO[R, E, A], msg: String): ZIO[R, E, A]
-    def root(operation: String): UIO[Span]
     def root[R, E, A](zio: ZIO[R, E, A], operation: String, tagError: Boolean, logError: Boolean): ZIO[R, E, A]
     def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A]
     def span[R, E, A](zio: ZIO[R, E, A], operation: String, tagError: Boolean, logError: Boolean): ZIO[R, E, A]
@@ -59,8 +58,6 @@ object OpenTracing {
 
         def log[R, E, A](zio: ZIO[R, E, A], msg: String): ZIO[R, E, A] =
           zio <* currentSpan.get.zipWith(micros)((span, now) => span.log(now, msg))
-
-        def root(operation: String): UIO[Span] = UIO(tracer.buildSpan(operation).start())
 
         def root[R, E, A](zio: ZIO[R, E, A], operation: String, tagError: Boolean, logError: Boolean): ZIO[R, E, A] =
           for {

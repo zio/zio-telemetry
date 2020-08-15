@@ -30,8 +30,7 @@ object StatusesService {
       case GET -> Root / "statuses" =>
         val zio =
           for {
-            env     <- ZIO.environment[OpenTracing]
-            _       <- env.get.root("/statuses")
+            _       <- ZIO.environment[OpenTracing].root("/statuses")
             _       <- OpenTracing.tag(Tags.SPAN_KIND.getKey, Tags.SPAN_KIND_CLIENT)
             _       <- OpenTracing.tag(Tags.HTTP_METHOD.getKey, GET.name)
             _       <- OpenTracing.setBaggageItem("proxy-baggage-item-key", "proxy-baggage-item-value")
