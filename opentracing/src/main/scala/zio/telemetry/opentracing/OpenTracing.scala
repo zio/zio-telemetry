@@ -121,8 +121,13 @@ object OpenTracing {
   def context: URIO[OpenTracing, SpanContext] =
     ZIO.accessM(_.get.currentSpan.get.map(_.context))
 
-  def getBaggageItem(key: String): URIO[OpenTracing, Option[String]] =
-    getSpan.map(_.getBaggageItem(key)).map(Option(_))
+  def getBaggageItem(key: String): URIO[OpenTracing, Option[String]] = {
+    for {
+      service <- ZIO.service[OpenTracing.Service]
+      span    <- service.currentSpan.get
+      res     <- ZIO.effectTotal(span.getBaggageItem(key)).map(Option(_))
+    } yield res
+  }
 
   def inject[C <: AnyRef](format: Format[C], carrier: C): URIO[OpenTracing, Unit] =
     for {
@@ -176,8 +181,4 @@ object OpenTracing {
   def tag(key: String, value: Int): URIO[OpenTracing, Unit] = tag(ZIO.unit, key, value)
 
   def tag(key: String, value: Boolean): URIO[OpenTracing, Unit] = tag(ZIO.unit, key, value)
-
-  private def getSpan: URIO[OpenTracing, Span] =
-    ZIO.accessM(_.get.currentSpan.get)
-
 }
