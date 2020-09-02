@@ -10,6 +10,7 @@ import zio.telemetry.opentelemetry.attributevalue.AttributeValueConverter.toAttr
 import zio.telemetry.opentelemetry.SpanPropagation.{ extractSpan, injectSpan }
 import zio._
 import zio.telemetry.opentelemetry.attributevalue.AttributeValueConverter
+import io.opentelemetry.trace.SpanContext
 
 object Tracing {
   trait Service {
@@ -39,6 +40,8 @@ object Tracing {
     val errorStatus: Status = cause.failureOption.flatMap(toErrorStatus.lift).getOrElse(Status.UNKNOWN)
     UIO(span.setStatus(errorStatus.withDescription(cause.prettyPrint)))
   }
+
+  def spanContext: URIO[Tracing, SpanContext] = getCurrentSpan.map(_.getContext())
 
   /**
    * Sets the `currentSpan` to `span` only while `effect` runs,
