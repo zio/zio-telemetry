@@ -3,12 +3,12 @@ import sbt._
 object Dependencies {
   object Versions {
     val http4s         = "0.21.7"
-    val jaeger         = "1.4.0"
-    val sttp           = "2.2.5"
+    val jaeger         = "1.3.2"
+    val sttp           = "2.2.8"
     val opentracing    = "0.33.0"
     val opentelemetry  = "0.7.1"
     val opencensus     = "0.26.0"
-    val zipkin         = "2.15.1"
+    val zipkin         = "2.15.2"
     val zio            = "1.0.1"
     val zioInteropCats = "2.1.4.0"
   }
@@ -39,7 +39,7 @@ object Dependencies {
   )
 
   lazy val example = Seq(
-    "org.typelevel"                %% "cats-core"                     % "2.1.1",
+    "org.typelevel"                %% "cats-core"                     % "2.2.0",
     "io.circe"                     %% "circe-generic"                 % "0.13.0",
     "org.http4s"                   %% "http4s-core"                   % Versions.http4s,
     "org.http4s"                   %% "http4s-blaze-server"           % Versions.http4s,
@@ -62,6 +62,6 @@ object Dependencies {
   lazy val opentelemetryExample = example ++ Seq(
     "io.opentelemetry" % "opentelemetry-exporters-jaeger" % Versions.opentelemetry,
     "io.opentelemetry" % "opentelemetry-sdk"              % Versions.opentelemetry,
-    "io.grpc"          % "grpc-netty-shaded"              % "1.31.1"
+    "io.grpc"          % "grpc-netty-shaded"              % "1.32.1"
   )
 }
