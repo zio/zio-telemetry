@@ -4,13 +4,13 @@ object Dependencies {
   object Versions {
     val http4s         = "0.21.8"
     val jaeger         = "1.4.0"
-    val sttp           = "2.2.8"
+    val sttp           = "2.2.9"
     val opentracing    = "0.33.0"
     val opentelemetry  = "0.7.1"
     val opencensus     = "0.26.0"
     val zipkin         = "2.16.0"
     val zio            = "1.0.3"
-    val zioInteropCats = "2.1.4.0"
+    val zioInteropCats = "2.1.4.1"
   }
 
   lazy val zio = Seq(
@@ -48,7 +48,7 @@ object Dependencies {
     "io.jaegertracing"             % "jaeger-core"                    % Versions.jaeger,
     "io.jaegertracing"             % "jaeger-client"                  % Versions.jaeger,
     "io.jaegertracing"             % "jaeger-zipkin"                  % Versions.jaeger,
-    "com.github.pureconfig"        %% "pureconfig"                    % "0.13.0",
+    "com.github.pureconfig"        %% "pureconfig"                    % "0.14.0",
     "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % Versions.sttp,
     "com.softwaremill.sttp.client" %% "circe"                         % Versions.sttp,
     "dev.zio"                      %% "zio-interop-cats"              % Versions.zioInteropCats
