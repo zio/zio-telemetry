@@ -2,6 +2,8 @@ package zio.telemetry.opentelemetry
 
 import java.util.concurrent.TimeUnit
 
+import scala.concurrent.{ ExecutionContext }
+
 import io.opentelemetry.common.Attributes
 import io.opentelemetry.context.propagation.HttpTextFormat
 import io.opentelemetry.trace.{ DefaultSpan, EndSpanOptions, Span, Status, Tracer }
@@ -10,6 +12,7 @@ import zio.telemetry.opentelemetry.attributevalue.AttributeValueConverter.toAttr
 import zio.telemetry.opentelemetry.SpanPropagation.{ extractSpan, injectSpan }
 import zio._
 import zio.telemetry.opentelemetry.attributevalue.AttributeValueConverter
+import io.opentelemetry.trace.SpanContext
 
 object Tracing {
   trait Service {
@@ -17,6 +20,7 @@ object Tracing {
     private[opentelemetry] val currentSpan: FiberRef[Span]
     private[opentelemetry] def createRoot(spanName: String, spanKind: Span.Kind): UManaged[Span]
     private[opentelemetry] def createChildOf(parent: Span, spanName: String, spanKind: Span.Kind): UManaged[Span]
+    private[opentelemetry] def getTracer: UIO[Tracer]
   }
 
   private def currentNanos: URIO[Tracing, Long] =
@@ -33,12 +37,17 @@ object Tracing {
 
   private def getCurrentSpan: URIO[Tracing, Span] = currentSpan.flatMap(_.get)
 
+  private def getTracer: URIO[Tracing, Tracer] =
+    ZIO.access[Tracing](_.get).flatMap(_.getTracer)
+
   private def toEndTimestamp(time: Long): EndSpanOptions = EndSpanOptions.builder().setEndTimestamp(time).build()
 
   private def setErrorStatus[E](span: Span, cause: Cause[E], toErrorStatus: PartialFunction[E, Status]): UIO[Unit] = {
     val errorStatus: Status = cause.failureOption.flatMap(toErrorStatus.lift).getOrElse(Status.UNKNOWN)
     UIO(span.setStatus(errorStatus.withDescription(cause.prettyPrint)))
   }
+
+  def spanContext: URIO[Tracing, SpanContext] = getCurrentSpan.map(_.getContext())
 
   /**
    * Sets the `currentSpan` to `span` only while `effect` runs,
@@ -97,6 +106,62 @@ object Tracing {
       old <- getCurrentSpan
       r   <- createChildOf(old, spanName, spanKind).use(finalizeSpanUsingEffect(effect, _, toErrorStatus))
     } yield r
+
+  /*
+   * Introduces a thread-local scope during the execution allowing
+   * for non-zio context propagation.
+   *
+   * Closes the scope when the effect finishes.
+   */
+  def scopedEffect[R, A](effect: => A): ZIO[Tracing, Throwable, A] =
+    for {
+      currentSpan <- getCurrentSpan
+      tracer      <- getTracer
+      eff <- Task.effect {
+              val scope = tracer.withSpan(currentSpan)
+              try effect
+              finally scope.close()
+            }
+    } yield eff
+
+  /*
+   * Introduces a thread-local scope during the execution allowing
+   * for non-zio context propagation.
+   *
+   * Closes the scope when the effect finishes.
+   */
+  def scopedEffectTotal[R, A](effect: => A): ZIO[Tracing, Nothing, A] =
+    for {
+      currentSpan <- getCurrentSpan
+      tracer      <- getTracer
+      eff <- Task.effectTotal {
+              val scope = tracer.withSpan(currentSpan)
+              try effect
+              finally scope.close()
+            }
+    } yield eff
+
+  /*
+   * Introduces a thread-local scope from the currently active zio span
+   * allowing for non-zio context propagation. This scope will only be
+   * active during Future creation, so another mechanism must be used to
+   * ensure that the scope is passed into the Future callbacks.
+   *
+   * The java auto instrumentation package provides such a mechanism out of
+   * the box, so one is not provided as a part of this method.
+   *
+   * CLoses the scope when the effect finishes
+   */
+  def scopedEffectFromFuture[R, A](make: ExecutionContext => scala.concurrent.Future[A]): ZIO[Tracing, Throwable, A] =
+    for {
+      currentSpan <- getCurrentSpan
+      tracer      <- getTracer
+      eff <- ZIO.fromFuture { implicit ec =>
+              val scope = tracer.withSpan(currentSpan)
+              try make(ec)
+              finally scope.close()
+            }
+    } yield eff
 
   /**
    * Injects the current span into carrier `C`
@@ -173,6 +238,9 @@ object Tracing {
                    )
                  )(end)
         } yield span
+
+      override private[opentelemetry] def getTracer: UIO[Tracer] =
+        UIO.succeed(tracer)
 
       val currentSpan: FiberRef[Span] = defaultSpan
     }
