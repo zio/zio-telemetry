@@ -15,9 +15,11 @@ import zio.test.Assertion._
 import zio.test.environment.TestClock
 import zio.test.{ assert, suite, testM, DefaultRunnableSpec }
 import zio._
-
 import scala.collection.mutable
+import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
+
+import io.grpc.Context
 import io.opentelemetry.common.Attributes
 
 object TracingTest extends DefaultRunnableSpec {
@@ -32,13 +34,11 @@ object TracingTest extends DefaultRunnableSpec {
     tracer = tracerProvider.get("TracingTest").asInstanceOf[Tracer]
   } yield (inMemoryTracing, tracer)
 
-  val inMemoryTracerLayer: ULayer[Has[InMemoryTracing] with Has[Tracer]] = ZLayer.fromEffectMany(
-    inMemoryTracer.map {
-      case (inMemoryTracing, tracer) => Has(inMemoryTracing).add(tracer)
-    }
-  )
+  val inMemoryTracerLayer: ULayer[Has[InMemoryTracing] with Has[Tracer]] = ZLayer.fromEffectMany(inMemoryTracer.map {
+    case (inMemoryTracing, tracer) => Has(inMemoryTracing).add(tracer)
+  })
 
-  val tracingMockLayer: URLayer[Clock, Has[InMemoryTracing] with Tracing] =
+  val tracingMockLayer: URLayer[Clock, Has[InMemoryTracing] with Tracing with Has[Tracer]] =
     (inMemoryTracerLayer ++ Clock.any) >>> (Tracing.live ++ inMemoryTracerLayer)
 
   def getFinishedSpans =
@@ -72,6 +72,93 @@ object TracingTest extends DefaultRunnableSpec {
                 )
               )
             )
+        },
+        testM("scopedEffect") {
+          for {
+            tracer <- ZIO.service[Tracer]
+            _ <- Tracing.scopedEffect {
+                  val span = tracer.getCurrentSpan
+                  span.addEvent("In legacy code")
+                  if (Context.current() == Context.ROOT) throw new RuntimeException("Current context is root!")
+                  span.addEvent("Finishing legacy code")
+                }.span("Scoped")
+                  .span("Root")
+            spans  <- getFinishedSpans
+            root   = spans.find(_.getName == "Root")
+            scoped = spans.find(_.getName == "Scoped")
+            tags   = scoped.get.getEvents.asScala.toList.map(_.getName)
+          } yield assert(root)(isSome(anything)) &&
+            assert(scoped)(
+              isSome(
+                hasField[SpanData, SpanId](
+                  "parentSpanId",
+                  _.getParentSpanId,
+                  equalTo(root.get.getSpanId)
+                )
+              )
+            ) && assert(tags)(
+            equalTo(List("In legacy code", "Finishing legacy code"))
+          )
+        },
+        testM("scopedEffectTotal") {
+          for {
+            tracer <- ZIO.service[Tracer]
+            _ <- Tracing.scopedEffectTotal {
+                  val span = tracer.getCurrentSpan
+                  span.addEvent("In legacy code")
+                  if (Context.current() == Context.ROOT) throw new RuntimeException("Current context is root!")
+                  Thread.sleep(10)
+                  if (Context.current() == Context.ROOT) throw new RuntimeException("Current context is root!")
+                  span.addEvent("Finishing legacy code")
+                }.span("Scoped")
+                  .span("Root")
+            spans  <- getFinishedSpans
+            root   = spans.find(_.getName == "Root")
+            scoped = spans.find(_.getName == "Scoped")
+            tags   = scoped.get.getEvents.asScala.toList.map(_.getName)
+          } yield assert(root)(isSome(anything)) &&
+            assert(scoped)(
+              isSome(
+                hasField[SpanData, SpanId](
+                  "parentSpanId",
+                  _.getParentSpanId,
+                  equalTo(root.get.getSpanId)
+                )
+              )
+            ) && assert(tags)(
+            equalTo(List("In legacy code", "Finishing legacy code"))
+          )
+        },
+        testM("scopedEffectFromFuture") {
+          for {
+            tracer <- ZIO.service[Tracer]
+            result <- Tracing.scopedEffectFromFuture { _ =>
+                       Future.successful {
+                         val span = tracer.getCurrentSpan
+                         span.addEvent("In legacy code")
+                         if (Context.current() == Context.ROOT)
+                           throw new RuntimeException("Current context is root!")
+                         span.addEvent("Finishing legacy code")
+                         1
+                       }
+                     }.span("Scoped").span("Root")
+            spans  <- getFinishedSpans
+            root   = spans.find(_.getName == "Root")
+            scoped = spans.find(_.getName == "Scoped")
+            tags   = scoped.get.getEvents.asScala.toList.map(_.getName)
+          } yield assert(result)(equalTo(1)) &&
+            assert(root)(isSome(anything)) &&
+            assert(scoped)(
+              isSome(
+                hasField[SpanData, SpanId](
+                  "parentSpanId",
+                  _.getParentSpanId,
+                  equalTo(root.get.getSpanId)
+                )
+              )
+            ) && assert(tags)(
+            equalTo(List("In legacy code", "Finishing legacy code"))
+          )
         },
         testM("rootSpan") {
           for {
