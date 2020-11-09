@@ -12,7 +12,6 @@ import zio.clock.Clock
 import zio.interop.catz._
 import zio.telemetry.opentracing.OpenTracing
 import zio.UIO
-import zio.ZIO
 import zio.ZLayer
 
 import scala.collection.mutable
@@ -30,7 +29,6 @@ object StatusesService {
       case GET -> Root / "statuses" =>
         val zio =
           for {
-            _       <- ZIO.environment[OpenTracing].root("/statuses")
             _       <- OpenTracing.tag(Tags.SPAN_KIND.getKey, Tags.SPAN_KIND_CLIENT)
             _       <- OpenTracing.tag(Tags.HTTP_METHOD.getKey, GET.name)
             _       <- OpenTracing.setBaggageItem("proxy-baggage-item-key", "proxy-baggage-item-value")
@@ -47,7 +45,9 @@ object StatusesService {
                     }
           } yield res
 
-        zio.provideLayer(service)
+        zio
+          .root("/statuses")
+          .provideLayer(service)
     }
   }
 
