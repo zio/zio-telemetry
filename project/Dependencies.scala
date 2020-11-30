@@ -2,13 +2,13 @@ import sbt._
 
 object Dependencies {
   object Versions {
-    val http4s         = "0.21.9"
+    val http4s         = "0.21.13"
     val jaeger         = "1.5.0"
     val sttp           = "2.2.9"
     val opentracing    = "0.33.0"
     val opentelemetry  = "0.7.1"
     val opencensus     = "0.26.0"
-    val zipkin         = "2.16.0"
+    val zipkin         = "2.16.1"
     val zio            = "1.0.3"
     val zioInteropCats = "2.2.0.1"
   }
@@ -23,13 +23,13 @@ object Dependencies {
     "io.opentracing"         % "opentracing-api"          % Versions.opentracing,
     "io.opentracing"         % "opentracing-noop"         % Versions.opentracing,
     "io.opentracing"         % "opentracing-mock"         % Versions.opentracing % Test,
-    "org.scala-lang.modules" %% "scala-collection-compat" % "2.2.0"
+    "org.scala-lang.modules" %% "scala-collection-compat" % "2.3.1"
   )
 
   lazy val opentelemetry = zio ++ Seq(
     "io.opentelemetry"       % "opentelemetry-api"                % Versions.opentelemetry,
     "io.opentelemetry"       % "opentelemetry-exporters-inmemory" % Versions.opentelemetry % Test,
-    "org.scala-lang.modules" %% "scala-collection-compat"         % "2.2.0"
+    "org.scala-lang.modules" %% "scala-collection-compat"         % "2.3.1"
   )
 
   lazy val opencensus = zio ++ Seq(
