@@ -39,7 +39,7 @@ object Dependencies {
   )
 
   lazy val example = Seq(
-    "org.typelevel"                %% "cats-core"                     % "2.3.0",
+    "org.typelevel"                %% "cats-core"                     % "2.3.1",
     "io.circe"                     %% "circe-generic"                 % "0.13.0",
     "org.http4s"                   %% "http4s-core"                   % Versions.http4s,
     "org.http4s"                   %% "http4s-blaze-server"           % Versions.http4s,
