@@ -23,13 +23,13 @@ object Dependencies {
     "io.opentracing"         % "opentracing-api"          % Versions.opentracing,
     "io.opentracing"         % "opentracing-noop"         % Versions.opentracing,
     "io.opentracing"         % "opentracing-mock"         % Versions.opentracing % Test,
-    "org.scala-lang.modules" %% "scala-collection-compat" % "2.3.1"
+    "org.scala-lang.modules" %% "scala-collection-compat" % "2.3.2"
   )
 
   lazy val opentelemetry = zio ++ Seq(
     "io.opentelemetry"       % "opentelemetry-api"                % Versions.opentelemetry,
     "io.opentelemetry"       % "opentelemetry-exporters-inmemory" % Versions.opentelemetry % Test,
-    "org.scala-lang.modules" %% "scala-collection-compat"         % "2.3.1"
+    "org.scala-lang.modules" %% "scala-collection-compat"         % "2.3.2"
   )
 
   lazy val opencensus = zio ++ Seq(
