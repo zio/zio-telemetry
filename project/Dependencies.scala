@@ -2,13 +2,13 @@ import sbt._
 
 object Dependencies {
   object Versions {
-    val http4s         = "0.21.13"
+    val http4s         = "0.21.14"
     val jaeger         = "1.5.0"
     val sttp           = "2.2.9"
     val opentracing    = "0.33.0"
     val opentelemetry  = "0.7.1"
     val opencensus     = "0.26.0"
-    val zipkin         = "2.16.1"
+    val zipkin         = "2.16.3"
     val zio            = "1.0.3"
     val zioInteropCats = "2.2.0.1"
   }
@@ -29,7 +29,7 @@ object Dependencies {
   lazy val opentelemetry = zio ++ Seq(
     "io.opentelemetry"       % "opentelemetry-api"                % Versions.opentelemetry,
     "io.opentelemetry"       % "opentelemetry-exporters-inmemory" % Versions.opentelemetry % Test,
-    "org.scala-lang.modules" %% "scala-collection-compat"         % "2.3.1"
+    "org.scala-lang.modules" %% "scala-collection-compat"         % "2.3.2"
   )
 
   lazy val opencensus = zio ++ Seq(
@@ -39,7 +39,7 @@ object Dependencies {
   )
 
   lazy val example = Seq(
-    "org.typelevel"                %% "cats-core"                     % "2.3.0",
+    "org.typelevel"                %% "cats-core"                     % "2.3.1",
     "io.circe"                     %% "circe-generic"                 % "0.13.0",
     "org.http4s"                   %% "http4s-core"                   % Versions.http4s,
     "org.http4s"                   %% "http4s-blaze-server"           % Versions.http4s,
@@ -62,6 +62,6 @@ object Dependencies {
   lazy val opentelemetryExample = example ++ Seq(
     "io.opentelemetry" % "opentelemetry-exporters-jaeger" % Versions.opentelemetry,
     "io.opentelemetry" % "opentelemetry-sdk"              % Versions.opentelemetry,
-    "io.grpc"          % "grpc-netty-shaded"              % "1.33.1"
+    "io.grpc"          % "grpc-netty-shaded"              % "1.34.1"
   )
 }
