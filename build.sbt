@@ -41,7 +41,7 @@ lazy val root =
   project
     .in(file("."))
     .settings(skip in publish := true)
-    .aggregate(opentracing, opentelemetry, opentracingExample, opentelemetryExample)
+    .aggregate(opentracing, opentelemetry, opencensus, opentracingExample, opentelemetryExample)
 
 lazy val opentracing =
   project
