@@ -1,6 +1,6 @@
 # ZIO telemetry
 
-[![CircleCI][Badge-Circle]][Link-Circle]
+![CI][Badge-CI]
 [![Releases][Badge-SonatypeReleases]][Link-SonatypeReleases]
 [![Snapshots][Badge-SonatypeSnapshots]][Link-SonatypeSnapshots]
 [![Discord][Badge-Discord]][Link-Discord]
@@ -183,7 +183,7 @@ and head over to [http://localhost:16686/](http://localhost:16686/) to see the r
 [jaeger]: https://www.jaegertracing.io
 [zipkin]: https://www.zipkin.io
 [jaeger-docker]: https://www.jaegertracing.io/docs/1.6/getting-started/#all-in-one-docker-image
-[Badge-Circle]: https://circleci.com/gh/zio/zio-telemetry/tree/master.svg?style=svg
+[Badge-CI]: https://github.com/zio/zio-telemetry/workflows/CI/badge.svg
 [Badge-Discord]: https://img.shields.io/discord/629491597070827530?logo=discord 
 [Badge-SonatypeReleases]: https://img.shields.io/nexus/r/https/oss.sonatype.org/dev.zio/zio-opentracing_2.12.svg "Sonatype Releases"
 [Badge-SonatypeSnapshots]: https://img.shields.io/nexus/s/https/oss.sonatype.org/dev.zio/zio-opentracing_2.12.svg "Sonatype Snapshots"
