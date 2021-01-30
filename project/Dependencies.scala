@@ -29,7 +29,7 @@ object Dependencies {
   lazy val opentelemetry = zio ++ Seq(
     "io.opentelemetry"       % "opentelemetry-api"                % Versions.opentelemetry,
     "io.opentelemetry"       % "opentelemetry-exporters-inmemory" % Versions.opentelemetry % Test,
-    "org.scala-lang.modules" %% "scala-collection-compat"         % "2.4.0"
+    "org.scala-lang.modules" %% "scala-collection-compat"         % "2.4.1"
   )
 
   lazy val opencensus = zio ++ Seq(
