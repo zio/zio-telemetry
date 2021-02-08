@@ -16,7 +16,7 @@ import zio.telemetry.opentelemetry.TracingSyntax._
 import zio.telemetry.opentelemetry.example.http.{ Status => ServiceStatus }
 
 import java.lang
-import scala.jdk.CollectionConverters.asJavaIterableConverter
+import scala.jdk.CollectionConverters._
 
 object StatusService {
 
