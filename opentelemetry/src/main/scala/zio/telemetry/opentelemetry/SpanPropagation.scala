@@ -3,7 +3,7 @@ package zio.telemetry.opentelemetry
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.context.Context
 import io.opentelemetry.context.propagation.TextMapPropagator
-import zio.{UIO, URIO, ZIO}
+import zio.{ UIO, URIO, ZIO }
 
 private[opentelemetry] object SpanPropagation {
   //  The OpenTelemetry Java API forces us to deal with `Context` when extracting and injecting Spans.

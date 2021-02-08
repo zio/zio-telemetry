@@ -3,11 +3,11 @@ package zio.telemetry.opentelemetry
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
 import io.opentelemetry.api.common.Attributes
-import io.opentelemetry.api.trace.{Span, StatusCode, Tracer}
+import io.opentelemetry.api.trace.{ Span, StatusCode, Tracer }
 import io.opentelemetry.context.Context
 import io.opentelemetry.context.propagation.TextMapPropagator
 import zio.clock.Clock
-import zio.telemetry.opentelemetry.SpanPropagation.{extractSpan, injectSpan}
+import zio.telemetry.opentelemetry.SpanPropagation.{ extractSpan, injectSpan }
 import zio._
 
 object Tracing {
@@ -33,7 +33,11 @@ object Tracing {
 
   private def getCurrentSpan: URIO[Tracing, Span] = currentSpan.flatMap(_.get)
 
-  private def setErrorStatus[E](span: Span, cause: Cause[E], toErrorStatus: PartialFunction[E, StatusCode]): UIO[Span] = {
+  private def setErrorStatus[E](
+    span: Span,
+    cause: Cause[E],
+    toErrorStatus: PartialFunction[E, StatusCode]
+  ): UIO[Span] = {
     val errorStatus: StatusCode = cause.failureOption.flatMap(toErrorStatus.lift).getOrElse(StatusCode.UNSET)
     UIO(span.setStatus(errorStatus, cause.prettyPrint))
   }
@@ -109,7 +113,7 @@ object Tracing {
               val scope = currentSpan.makeCurrent()
               try effect
               finally scope.close()
-      }
+            }
     } yield eff
 
   /*
@@ -231,7 +235,7 @@ object Tracing {
       def createChildOf(parent: Span, spanName: String, spanKind: Span.Kind): UManaged[Span] =
         for {
           nanoSeconds <- currentNanos.toManaged_
-          context = parent.storeInContext(Context.root())
+          context     = parent.storeInContext(Context.root())
           span <- ZManaged.make(
                    UIO(
                      tracer

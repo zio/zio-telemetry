@@ -1,9 +1,9 @@
 package zio.telemetry.opentelemetry
 
-import io.opentelemetry.api.common.{AttributeKey, Attributes}
+import io.opentelemetry.api.common.{ AttributeKey, Attributes }
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
-import io.opentelemetry.api.trace.{Span, SpanId, Tracer}
-import io.opentelemetry.context.propagation.TextMapPropagator.{Getter, Setter}
+import io.opentelemetry.api.trace.{ Span, SpanId, Tracer }
+import io.opentelemetry.context.propagation.TextMapPropagator.{ Getter, Setter }
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.data.SpanData
 import zio.clock.Clock
@@ -12,7 +12,7 @@ import zio.telemetry.opentelemetry.Tracing.inject
 import zio.telemetry.opentelemetry.TracingSyntax._
 import zio.test.Assertion._
 import zio.test.environment.TestClock
-import zio.test.{DefaultRunnableSpec, assert, suite, testM}
+import zio.test.{ assert, suite, testM, DefaultRunnableSpec }
 import zio._
 
 import scala.collection.mutable
@@ -27,9 +27,9 @@ import java.lang
 object TracingTest extends DefaultRunnableSpec {
 
   val inMemoryTracer: UIO[(InMemorySpanExporter, Tracer)] = for {
-    spanExporter    <- UIO(InMemorySpanExporter.create())
-    spanProcessor   <- UIO(SimpleSpanProcessor.create(spanExporter))
-    tracerProvider  <- UIO(SdkTracerProvider.builder().addSpanProcessor(spanProcessor).build())
+    spanExporter   <- UIO(InMemorySpanExporter.create())
+    spanProcessor  <- UIO(SimpleSpanProcessor.create(spanExporter))
+    tracerProvider <- UIO(SdkTracerProvider.builder().addSpanProcessor(spanProcessor).build())
     // Without this cast, a runtime exception occurs on this particular line:
     // failed to access class io.opentelemetry.sdk.trace.TracerSdk from class zio.telemetry.opentelemetry.TracingTest
     // which could not be resolved, even by adding an explicit dependency on the opentelemetry-sdk package
@@ -37,9 +37,10 @@ object TracingTest extends DefaultRunnableSpec {
     tracer = tracerProvider.get("TracingTest").asInstanceOf[Tracer]
   } yield (spanExporter, tracer)
 
-  val inMemoryTracerLayer: ULayer[Has[InMemorySpanExporter] with Has[Tracer]] = ZLayer.fromEffectMany(inMemoryTracer.map {
-    case (inMemoryTracing, tracer) => Has(inMemoryTracing).add(tracer)
-  })
+  val inMemoryTracerLayer: ULayer[Has[InMemorySpanExporter] with Has[Tracer]] =
+    ZLayer.fromEffectMany(inMemoryTracer.map {
+      case (inMemoryTracing, tracer) => Has(inMemoryTracing).add(tracer)
+    })
 
   val tracingMockLayer: URLayer[Clock, Has[InMemorySpanExporter] with Tracing with Has[Tracer]] =
     (inMemoryTracerLayer ++ Clock.any) >>> (Tracing.live ++ inMemoryTracerLayer)

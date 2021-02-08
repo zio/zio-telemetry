@@ -2,7 +2,7 @@ package zio.telemetry.opentelemetry
 
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.context.propagation.TextMapPropagator
-import io.opentelemetry.api.trace.{ Span, StatusCode}
+import io.opentelemetry.api.trace.{ Span, StatusCode }
 import zio.ZIO
 import zio.clock.Clock
 

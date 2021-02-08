@@ -2,12 +2,12 @@ package zio.telemetry.opentelemetry.example.http
 
 import io.circe.Encoder
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
-import io.opentelemetry.api.trace.{Span, StatusCode}
+import io.opentelemetry.api.trace.{ Span, StatusCode }
 import io.opentelemetry.context.propagation.TextMapPropagator
 import io.opentelemetry.context.propagation.TextMapPropagator.Setter
 import org.http4s.circe.jsonEncoderOf
 import org.http4s.dsl.Http4sDsl
-import org.http4s.{EntityEncoder, HttpRoutes}
+import org.http4s.{ EntityEncoder, HttpRoutes }
 import zio.UIO
 import zio.interop.catz._
 import zio.telemetry.opentelemetry.Tracing.root

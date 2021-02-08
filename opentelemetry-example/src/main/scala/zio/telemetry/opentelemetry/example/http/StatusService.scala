@@ -13,7 +13,7 @@ import org.http4s.util.CaseInsensitiveString
 import zio.interop.catz._
 import zio.telemetry.opentelemetry.Tracing
 import zio.telemetry.opentelemetry.TracingSyntax._
-import zio.telemetry.opentelemetry.example.http.{Status => ServiceStatus}
+import zio.telemetry.opentelemetry.example.http.{ Status => ServiceStatus }
 
 import java.lang
 import scala.jdk.CollectionConverters.asJavaIterableConverter
@@ -26,7 +26,7 @@ object StatusService {
   implicit def encoder[A: Encoder]: EntityEncoder[AppTask, A] = jsonEncoderOf[AppTask, A]
 
   val propagator: TextMapPropagator = W3CTraceContextPropagator.getInstance()
-  val getter: Getter[Headers]       = new Getter[Headers] {
+  val getter: Getter[Headers] = new Getter[Headers] {
     override def keys(carrier: Headers): lang.Iterable[String] =
       carrier.toList.map(_.name.value).asJava
 
