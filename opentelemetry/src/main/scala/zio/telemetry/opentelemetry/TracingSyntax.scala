@@ -1,11 +1,10 @@
 package zio.telemetry.opentelemetry
 
-import io.opentelemetry.common.Attributes
-import io.opentelemetry.context.propagation.HttpTextFormat
-import io.opentelemetry.trace.{ Span, Status }
+import io.opentelemetry.api.common.Attributes
+import io.opentelemetry.context.propagation.TextMapPropagator
+import io.opentelemetry.api.trace.{ Span, StatusCode}
 import zio.ZIO
 import zio.clock.Clock
-import zio.telemetry.opentelemetry.attributevalue.AttributeValueConverter
 
 object TracingSyntax {
 
@@ -15,14 +14,14 @@ object TracingSyntax {
      * @see [[Tracing.spanFrom]]
      */
     def spanFrom[C](
-      httpTextFormat: HttpTextFormat,
+      propagator: TextMapPropagator,
       carrier: C,
-      getter: HttpTextFormat.Getter[C],
+      getter: TextMapPropagator.Getter[C],
       spanName: String,
       spanKind: Span.Kind = Span.Kind.INTERNAL,
-      toErrorStatus: PartialFunction[E, Status] = Map.empty
+      toErrorStatus: PartialFunction[E, StatusCode] = Map.empty
     ): ZIO[R with Tracing, E, A] =
-      Tracing.spanFrom(httpTextFormat, carrier, getter, spanName, spanKind, toErrorStatus)(effect)
+      Tracing.spanFrom(propagator, carrier, getter, spanName, spanKind, toErrorStatus)(effect)
 
     /**
      * @see [[Tracing.root]]
@@ -30,7 +29,7 @@ object TracingSyntax {
     def root(
       spanName: String,
       spanKind: Span.Kind = Span.Kind.INTERNAL,
-      toErrorStatus: PartialFunction[E, Status] = Map.empty
+      toErrorStatus: PartialFunction[E, StatusCode] = Map.empty
     ): ZIO[R with Tracing, E, A] = Tracing.root(spanName, spanKind, toErrorStatus)(effect)
 
     /**
@@ -39,7 +38,7 @@ object TracingSyntax {
     def span(
       spanName: String,
       spanKind: Span.Kind = Span.Kind.INTERNAL,
-      toErrorStatus: PartialFunction[E, Status] = Map.empty
+      toErrorStatus: PartialFunction[E, StatusCode] = Map.empty
     ): ZIO[R with Tracing, E, A] = Tracing.span(spanName, spanKind, toErrorStatus)(effect)
 
     /**
@@ -60,7 +59,25 @@ object TracingSyntax {
     /**
      * @see [[Tracing.setAttribute]]
      */
-    def setAttribute[V: AttributeValueConverter](name: String, value: V): ZIO[Tracing with R, E, A] =
+    def setAttribute(name: String, value: Boolean): ZIO[Tracing with R, E, A] =
+      effect <* Tracing.setAttribute(name, value)
+
+    /**
+     * @see [[Tracing.setAttribute]]
+     */
+    def setAttribute(name: String, value: Double): ZIO[Tracing with R, E, A] =
+      effect <* Tracing.setAttribute(name, value)
+
+    /**
+     * @see [[Tracing.setAttribute]]
+     */
+    def setAttribute(name: String, value: Long): ZIO[Tracing with R, E, A] =
+      effect <* Tracing.setAttribute(name, value)
+
+    /**
+     * @see [[Tracing.setAttribute]]
+     */
+    def setAttribute(name: String, value: String): ZIO[Tracing with R, E, A] =
       effect <* Tracing.setAttribute(name, value)
 
   }

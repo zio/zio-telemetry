@@ -1,9 +1,9 @@
 package zio.telemetry.opentelemetry
 
-import io.grpc.Context
-import io.opentelemetry.context.propagation.HttpTextFormat
-import io.opentelemetry.trace.{ Span, TracingContextUtils }
-import zio.{ UIO, URIO, ZIO }
+import io.opentelemetry.api.trace.Span
+import io.opentelemetry.context.Context
+import io.opentelemetry.context.propagation.TextMapPropagator
+import zio.{UIO, URIO, ZIO}
 
 private[opentelemetry] object SpanPropagation {
   //  The OpenTelemetry Java API forces us to deal with `Context` when extracting and injecting Spans.
@@ -31,12 +31,12 @@ private[opentelemetry] object SpanPropagation {
    * Extract and returns the span from carrier `C`.
    */
   def extractSpan[C](
-    httpTextFormat: HttpTextFormat,
+    propagator: TextMapPropagator,
     carrier: C,
-    getter: HttpTextFormat.Getter[C]
+    getter: TextMapPropagator.Getter[C]
   ): UIO[Span] =
     ZIO.uninterruptible {
-      UIO(httpTextFormat.extract(Context.ROOT, carrier, getter)).map(TracingContextUtils.getSpan)
+      UIO(Span.fromContext(propagator.extract(Context.root(), carrier, getter)))
     }
 
   /**
@@ -44,10 +44,12 @@ private[opentelemetry] object SpanPropagation {
    */
   def injectSpan[C](
     span: Span,
-    httpTextFormat: HttpTextFormat,
+    propagator: TextMapPropagator,
     carrier: C,
-    setter: HttpTextFormat.Setter[C]
-  ): URIO[Tracing, Unit] =
-    UIO(TracingContextUtils.withSpan(span, Context.ROOT)).map(httpTextFormat.inject(_, carrier, setter))
+    setter: TextMapPropagator.Setter[C]
+  ): URIO[Tracing, Unit] = {
+    val context = span.storeInContext(Context.root())
+    UIO(propagator.inject(context, carrier, setter))
+  }
 
 }

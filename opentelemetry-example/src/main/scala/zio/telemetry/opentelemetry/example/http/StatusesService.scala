@@ -1,16 +1,16 @@
 package zio.telemetry.opentelemetry.example.http
 
 import io.circe.Encoder
-import io.opentelemetry.OpenTelemetry
-import io.opentelemetry.context.propagation.HttpTextFormat.Setter
-import io.opentelemetry.trace.{ Span, Status => TraceStatus }
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
+import io.opentelemetry.api.trace.{Span, StatusCode}
+import io.opentelemetry.context.propagation.TextMapPropagator
+import io.opentelemetry.context.propagation.TextMapPropagator.Setter
 import org.http4s.circe.jsonEncoderOf
 import org.http4s.dsl.Http4sDsl
-import org.http4s.{ EntityEncoder, HttpRoutes }
+import org.http4s.{EntityEncoder, HttpRoutes}
 import zio.UIO
 import zio.interop.catz._
 import zio.telemetry.opentelemetry.Tracing.root
-import zio.telemetry.opentelemetry.attributevalue.AttributeValueConverterInstances._
 import zio.telemetry.opentelemetry.Tracing
 
 import scala.collection.mutable
@@ -22,10 +22,10 @@ object StatusesService {
 
   implicit def encoder[A: Encoder]: EntityEncoder[AppTask, A] = jsonEncoderOf[AppTask, A]
 
-  val httpTextFormat                              = OpenTelemetry.getPropagators.getHttpTextFormat
+  val propagator: TextMapPropagator               = W3CTraceContextPropagator.getInstance()
   val setter: Setter[mutable.Map[String, String]] = (carrier, key, value) => carrier.update(key, value)
 
-  val errorMapper: PartialFunction[Throwable, TraceStatus] = { case _ => TraceStatus.UNKNOWN }
+  val errorMapper: PartialFunction[Throwable, StatusCode] = { case _ => StatusCode.UNSET }
 
   val routes: HttpRoutes[AppTask] = HttpRoutes.of[AppTask] {
     case GET -> Root / "statuses" =>
@@ -34,7 +34,7 @@ object StatusesService {
           carrier <- UIO(mutable.Map[String, String]().empty)
           _       <- Tracing.setAttribute("http.method", "get")
           _       <- Tracing.addEvent("proxy-event")
-          _       <- Tracing.inject(httpTextFormat, carrier, setter)
+          _       <- Tracing.inject(propagator, carrier, setter)
           res     <- Client.status(carrier.toMap).flatMap(Ok(_))
         } yield res
       }
