@@ -30,11 +30,7 @@ object TracingTest extends DefaultRunnableSpec {
     spanExporter   <- UIO(InMemorySpanExporter.create())
     spanProcessor  <- UIO(SimpleSpanProcessor.create(spanExporter))
     tracerProvider <- UIO(SdkTracerProvider.builder().addSpanProcessor(spanProcessor).build())
-    // Without this cast, a runtime exception occurs on this particular line:
-    // failed to access class io.opentelemetry.sdk.trace.TracerSdk from class zio.telemetry.opentelemetry.TracingTest
-    // which could not be resolved, even by adding an explicit dependency on the opentelemetry-sdk package
-    // (on which we implicitly depend through the opentelemetry-exporters-inmemory package)
-    tracer = tracerProvider.get("TracingTest").asInstanceOf[Tracer]
+    tracer          = tracerProvider.get("TracingTest")
   } yield (spanExporter, tracer)
 
   val inMemoryTracerLayer: ULayer[Has[InMemorySpanExporter] with Has[Tracer]] =

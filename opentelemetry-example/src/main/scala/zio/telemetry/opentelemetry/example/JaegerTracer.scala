@@ -13,7 +13,7 @@ object JaegerTracer {
   def live: RLayer[Configuration, Has[Tracer]] =
     ZLayer.fromServiceM((conf: Config) =>
       for {
-        spanExporter   <- UIO(JaegerGrpcSpanExporter.builder().setEndpoint(conf.tracer.host).build())
+        spanExporter   <- Task(JaegerGrpcSpanExporter.builder().setEndpoint(conf.tracer.host).build())
         spanProcessor  <- UIO(SimpleSpanProcessor.create(spanExporter))
         tracerProvider <- UIO(SdkTracerProvider.builder().addSpanProcessor(spanProcessor).build())
         openTelemetry  <- UIO(OpenTelemetrySdk.builder().setTracerProvider(tracerProvider).build())
