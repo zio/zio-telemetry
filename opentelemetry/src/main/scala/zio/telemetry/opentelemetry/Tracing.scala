@@ -3,7 +3,7 @@ package zio.telemetry.opentelemetry
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
 import io.opentelemetry.api.common.Attributes
-import io.opentelemetry.api.trace.{ Span, StatusCode, Tracer }
+import io.opentelemetry.api.trace.{ Span, SpanKind, StatusCode, Tracer }
 import io.opentelemetry.context.Context
 import io.opentelemetry.context.propagation.TextMapPropagator
 import zio.clock.Clock
@@ -14,8 +14,8 @@ object Tracing {
   trait Service {
     private[opentelemetry] def currentNanos: UIO[Long]
     private[opentelemetry] val currentSpan: FiberRef[Span]
-    private[opentelemetry] def createRoot(spanName: String, spanKind: Span.Kind): UManaged[Span]
-    private[opentelemetry] def createChildOf(parent: Span, spanName: String, spanKind: Span.Kind): UManaged[Span]
+    private[opentelemetry] def createRoot(spanName: String, spanKind: SpanKind): UManaged[Span]
+    private[opentelemetry] def createChildOf(parent: Span, spanName: String, spanKind: SpanKind): UManaged[Span]
     private[opentelemetry] def getTracer: UIO[Tracer]
   }
 
@@ -25,10 +25,10 @@ object Tracing {
   private def currentSpan: URIO[Tracing, FiberRef[Span]] =
     ZIO.access[Tracing](_.get.currentSpan)
 
-  private def createRoot(spanName: String, spanKind: Span.Kind): URManaged[Tracing, Span] =
+  private def createRoot(spanName: String, spanKind: SpanKind): URManaged[Tracing, Span] =
     ZManaged.accessManaged[Tracing](_.get.createRoot(spanName, spanKind))
 
-  private def createChildOf(parent: Span, spanName: String, spanKind: Span.Kind): URManaged[Tracing, Span] =
+  private def createChildOf(parent: Span, spanName: String, spanKind: SpanKind): URManaged[Tracing, Span] =
     ZManaged.accessManaged[Tracing](_.get.createChildOf(parent, spanName, spanKind))
 
   private def getCurrentSpan: URIO[Tracing, Span] = currentSpan.flatMap(_.get)
@@ -67,7 +67,7 @@ object Tracing {
     carrier: C,
     getter: TextMapPropagator.Getter[C],
     spanName: String,
-    spanKind: Span.Kind,
+    spanKind: SpanKind,
     toErrorStatus: PartialFunction[E, StatusCode]
   )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
     for {
@@ -81,7 +81,7 @@ object Tracing {
    */
   def root[R, E, A](
     spanName: String,
-    spanKind: Span.Kind,
+    spanKind: SpanKind,
     toErrorStatus: PartialFunction[E, StatusCode]
   )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
     createRoot(spanName, spanKind).use(finalizeSpanUsingEffect(effect, _, toErrorStatus))
@@ -92,7 +92,7 @@ object Tracing {
    */
   def span[R, E, A](
     spanName: String,
-    spanKind: Span.Kind,
+    spanKind: SpanKind,
     toErrorStatus: PartialFunction[E, StatusCode]
   )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
     for {
@@ -217,7 +217,7 @@ object Tracing {
 
       def currentNanos: UIO[Long] = clock.currentTime(TimeUnit.NANOSECONDS)
 
-      def createRoot(spanName: String, spanKind: Span.Kind): UManaged[Span] =
+      def createRoot(spanName: String, spanKind: SpanKind): UManaged[Span] =
         for {
           nanoSeconds <- currentNanos.toManaged_
           span <- ZManaged.make(
@@ -232,7 +232,7 @@ object Tracing {
                  )(end)
         } yield span
 
-      def createChildOf(parent: Span, spanName: String, spanKind: Span.Kind): UManaged[Span] =
+      def createChildOf(parent: Span, spanName: String, spanKind: SpanKind): UManaged[Span] =
         for {
           nanoSeconds <- currentNanos.toManaged_
           context     = parent.storeInContext(Context.root())

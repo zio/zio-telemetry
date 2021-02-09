@@ -2,7 +2,7 @@ package zio.telemetry.opentelemetry.example.http
 
 import io.circe.Encoder
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
-import io.opentelemetry.api.trace.{ Span, StatusCode }
+import io.opentelemetry.api.trace.{ SpanKind, StatusCode }
 import io.opentelemetry.context.propagation.TextMapPropagator
 import io.opentelemetry.context.propagation.TextMapPropagator.Setter
 import org.http4s.circe.jsonEncoderOf
@@ -29,7 +29,7 @@ object StatusesService {
 
   val routes: HttpRoutes[AppTask] = HttpRoutes.of[AppTask] {
     case GET -> Root / "statuses" =>
-      root("/statuses", Span.Kind.SERVER, errorMapper) {
+      root("/statuses", SpanKind.SERVER, errorMapper) {
         for {
           carrier <- UIO(mutable.Map[String, String]().empty)
           _       <- Tracing.setAttribute("http.method", "get")

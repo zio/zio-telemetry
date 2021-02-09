@@ -2,7 +2,7 @@ package zio.telemetry.opentelemetry.example.http
 
 import io.circe.Encoder
 import io.circe.syntax._
-import io.opentelemetry.api.trace.Span
+import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.propagation.TextMapPropagator
 import io.opentelemetry.context.propagation.TextMapPropagator.Getter
@@ -42,7 +42,7 @@ object StatusService {
         _        <- Tracing.addEvent("event from backend after response")
       } yield response
 
-      response.spanFrom(propagator, request.headers, getter, "/status", Span.Kind.SERVER)
+      response.spanFrom(propagator, request.headers, getter, "/status", SpanKind.SERVER)
 
   }
 
