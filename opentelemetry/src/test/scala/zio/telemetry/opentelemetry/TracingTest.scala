@@ -13,7 +13,7 @@ import zio.telemetry.opentelemetry.TracingSyntax._
 import zio.telemetry.opentelemetry.attributevalue.AttributeValueConverterInstances._
 import zio.test.Assertion._
 import zio.test.environment.TestClock
-import zio.test.{ assert, suite, testM, DefaultRunnableSpec }
+import zio.test.{ assert, DefaultRunnableSpec }
 import zio._
 import scala.collection.mutable
 import scala.concurrent.Future
