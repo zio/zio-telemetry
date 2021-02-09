@@ -12,7 +12,7 @@ import zio.telemetry.opentelemetry.Tracing.inject
 import zio.telemetry.opentelemetry.TracingSyntax._
 import zio.test.Assertion._
 import zio.test.environment.TestClock
-import zio.test.{ assert, suite, testM, DefaultRunnableSpec }
+import zio.test.{ assert, DefaultRunnableSpec }
 import zio._
 
 import scala.collection.mutable
@@ -30,7 +30,7 @@ object TracingTest extends DefaultRunnableSpec {
     spanExporter   <- UIO(InMemorySpanExporter.create())
     spanProcessor  <- UIO(SimpleSpanProcessor.create(spanExporter))
     tracerProvider <- UIO(SdkTracerProvider.builder().addSpanProcessor(spanProcessor).build())
-    tracer          = tracerProvider.get("TracingTest")
+    tracer         = tracerProvider.get("TracingTest")
   } yield (spanExporter, tracer)
 
   val inMemoryTracerLayer: ULayer[Has[InMemorySpanExporter] with Has[Tracer]] =
