@@ -24,12 +24,11 @@ object StatusService {
   implicit def encoder[A: Encoder]: EntityEncoder[AppTask, A] = jsonEncoderOf[AppTask, A]
 
   def status(service: ZLayer[Clock, Throwable, Clock with OpenTracing]): HttpRoutes[AppTask] =
-    HttpRoutes.of[AppTask] {
-      case request @ GET -> Root / "status" =>
-        val headers = request.headers.toList.map(h => h.name.value -> h.value).toMap
-        ZIO.unit
-          .spanFrom(HttpHeadersFormat, new TextMapAdapter(headers.asJava), "/status")
-          .provideLayer(service) *> Ok(ServiceStatus.up("backend").asJson)
+    HttpRoutes.of[AppTask] { case request @ GET -> Root / "status" =>
+      val headers = request.headers.toList.map(h => h.name.value -> h.value).toMap
+      ZIO.unit
+        .spanFrom(HttpHeadersFormat, new TextMapAdapter(headers.asJava), "/status")
+        .provideLayer(service) *> Ok(ServiceStatus.up("backend").asJson)
     }
 
 }

@@ -18,16 +18,16 @@ object BackendServer extends CatsApp {
       ZIO.runtime[Clock].flatMap { implicit runtime =>
         implicit val ec = runtime.platform.executor.asEC
         for {
-          conf    <- Configuration.load.provideLayer(Configuration.live)
+          conf   <- Configuration.load.provideLayer(Configuration.live)
           service = makeService(conf.tracer.host, "zio-backend")
           router  = Router[AppTask]("/" -> StatusService.status(service)).orNotFound
           result <- BlazeServerBuilder[AppTask](ec)
-                     .bindHttp(conf.backend.port, conf.backend.host)
-                     .withHttpApp(router)
-                     .serve
-                     .compile[AppTask, AppTask, catsExitCode]
-                     .drain
-                     .as(ExitCode.success)
+                      .bindHttp(conf.backend.port, conf.backend.host)
+                      .withHttpApp(router)
+                      .serve
+                      .compile[AppTask, AppTask, catsExitCode]
+                      .drain
+                      .as(ExitCode.success)
         } yield result
       }
     exit.orElse(ZIO.succeed(ExitCode.failure))

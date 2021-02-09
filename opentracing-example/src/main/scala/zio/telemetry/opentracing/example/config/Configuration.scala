@@ -18,6 +18,6 @@ object Configuration {
 
   val live: ZLayer[Any, Throwable, Configuration] = ZLayer.succeed(Live)
 
-  val load: ZIO[Configuration, Throwable, Config] = ZIO.accessM[Configuration] { _.get.load }
+  val load: ZIO[Configuration, Throwable, Config] = ZIO.accessM[Configuration](_.get.load)
 
 }

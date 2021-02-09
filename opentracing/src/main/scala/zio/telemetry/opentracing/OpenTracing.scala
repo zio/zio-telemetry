@@ -36,9 +36,9 @@ object OpenTracing {
   def managed(tracer0: Tracer, rootOperation: String): URManaged[Clock, OpenTracing.Service] =
     ZManaged.make(
       for {
-        span   <- UIO(tracer0.buildSpan(rootOperation).start())
-        ref    <- FiberRef.make(span)
-        clock  <- ZIO.service[Clock.Service]
+        span  <- UIO(tracer0.buildSpan(rootOperation).start())
+        ref   <- FiberRef.make(span)
+        clock <- ZIO.service[Clock.Service]
         micros = clock.currentTime(TimeUnit.MICROSECONDS)
       } yield new OpenTracing.Service { self =>
         val tracer: Tracer = tracer0
@@ -64,9 +64,9 @@ object OpenTracing {
             root    <- UIO(tracer.buildSpan(operation).start())
             current <- currentSpan.get
             _       <- currentSpan.set(root)
-            res <- zio
-                    .catchAllCause(c => error(root, c, tagError, logError) *> IO.done(Exit.Failure(c)))
-                    .ensuring(finish(root) *> currentSpan.set(current))
+            res     <- zio
+                         .catchAllCause(c => error(root, c, tagError, logError) *> IO.done(Exit.Failure(c)))
+                         .ensuring(finish(root) *> currentSpan.set(current))
           } yield res
 
         def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A] =
@@ -77,9 +77,9 @@ object OpenTracing {
             current <- currentSpan.get
             child   <- UIO(tracer.buildSpan(operation).asChildOf(current).start())
             _       <- currentSpan.set(child)
-            res <- zio
-                    .catchAllCause(c => error(child, c, tagError, logError) *> IO.done(Exit.Failure(c)))
-                    .ensuring(finish(child) *> currentSpan.set(current))
+            res     <- zio
+                         .catchAllCause(c => error(child, c, tagError, logError) *> IO.done(Exit.Failure(c)))
+                         .ensuring(finish(child) *> currentSpan.set(current))
           } yield res
 
         def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A] =
@@ -105,15 +105,15 @@ object OpenTracing {
       Task(service.tracer.extract(format, carrier))
         .fold(_ => None, Option.apply)
         .flatMap {
-          case None => zio
+          case None          => zio
           case Some(spanCtx) =>
             for {
               current <- service.currentSpan.get
               span    <- UIO(service.tracer.buildSpan(operation).asChildOf(spanCtx).start())
               _       <- service.currentSpan.set(span)
-              res <- zio
-                      .catchAllCause(c => service.error(span, c, tagError, logError) *> IO.done(Exit.Failure(c)))
-                      .ensuring(service.finish(span) *> service.currentSpan.set(current))
+              res     <- zio
+                           .catchAllCause(c => service.error(span, c, tagError, logError) *> IO.done(Exit.Failure(c)))
+                           .ensuring(service.finish(span) *> service.currentSpan.set(current))
             } yield res
         }
     }

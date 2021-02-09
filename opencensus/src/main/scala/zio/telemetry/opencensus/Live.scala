@@ -14,7 +14,7 @@ object Live {
   val live: URLayer[Has[Tracer], Tracing] =
     ZLayer.fromManaged(for {
       tracer  <- ZIO.access[Has[Tracer]](_.get).toManaged_
-      tracing = FiberRef.make[Span](BlankSpan.INSTANCE).map(new Live(tracer, _))
+      tracing  = FiberRef.make[Span](BlankSpan.INSTANCE).map(new Live(tracer, _))
       managed <- ZManaged.make(tracing)(_.end)
     } yield managed)
 }
@@ -32,12 +32,12 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
   )(effect: ZIO[R, E, A]): ZIO[R, E, A] =
     for {
       parent <- currentSpan_.get
-      res <- createSpan(parent, name, kind).use(
-              finalizeSpanUsingEffect(
-                putAttributes(attributes) *> effect,
-                toErrorStatus
-              )
-            )
+      res    <- createSpan(parent, name, kind).use(
+                  finalizeSpanUsingEffect(
+                    putAttributes(attributes) *> effect,
+                    toErrorStatus
+                  )
+                )
     } yield res
 
   def root[R, E, A](
@@ -48,11 +48,11 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
   )(effect: ZIO[R, E, A]): ZIO[R, E, A] =
     for {
       res <- createSpan(BlankSpan.INSTANCE, name, kind).use(
-              finalizeSpanUsingEffect(
-                putAttributes(attributes) *> effect,
-                toErrorStatus
-              )
-            )
+               finalizeSpanUsingEffect(
+                 putAttributes(attributes) *> effect,
+                 toErrorStatus
+               )
+             )
     } yield res
 
   def fromRemoteSpan[R, E, A](
@@ -64,11 +64,11 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
   )(effect: ZIO[R, E, A]): ZIO[R, E, A] =
     for {
       res <- createSpanFromRemote(remote, name, kind).use(
-              finalizeSpanUsingEffect(
-                putAttributes(attributes) *> effect,
-                toErrorStatus
-              )
-            )
+               finalizeSpanUsingEffect(
+                 putAttributes(attributes) *> effect,
+                 toErrorStatus
+               )
+             )
     } yield res
 
   def putAttributes(
@@ -76,9 +76,9 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
   ): ZIO[Any, Nothing, Unit] =
     for {
       current <- currentSpan_.get
-      _ <- UIO(attributes.foreach({
-            case ((k, v)) => current.putAttribute(k, v)
-          }))
+      _       <- UIO(attributes.foreach({ case ((k, v)) =>
+                   current.putAttribute(k, v)
+                 }))
     } yield ()
 
   private def createSpan(
@@ -115,8 +115,8 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
   )(span: Span): ZIO[R, E, A] =
     for {
       r <- currentSpan_
-            .locally(span)(effect)
-            .tapCause(setErrorStatus(span, _, toErrorStatus))
+             .locally(span)(effect)
+             .tapCause(setErrorStatus(span, _, toErrorStatus))
     } yield r
 
   def inject[C, R, E, A](

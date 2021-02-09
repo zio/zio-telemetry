@@ -25,15 +25,14 @@ object StatusService {
   val httpTextFormat: HttpTextFormat = OpenTelemetry.getPropagators.getHttpTextFormat
   val getter: Getter[Headers]        = (carrier, key) => carrier.get(CaseInsensitiveString(key)).map(_.value).orNull
 
-  val routes: HttpRoutes[AppTask] = HttpRoutes.of[AppTask] {
-    case request @ GET -> Root / "status" =>
-      val response = for {
-        _        <- Tracing.addEvent("event from backend before response")
-        response <- Ok(ServiceStatus.up("backend").asJson)
-        _        <- Tracing.addEvent("event from backend after response")
-      } yield response
+  val routes: HttpRoutes[AppTask] = HttpRoutes.of[AppTask] { case request @ GET -> Root / "status" =>
+    val response = for {
+      _        <- Tracing.addEvent("event from backend before response")
+      response <- Ok(ServiceStatus.up("backend").asJson)
+      _        <- Tracing.addEvent("event from backend after response")
+    } yield response
 
-      response.spanFrom(httpTextFormat, request.headers, getter, "/status", Span.Kind.SERVER)
+    response.spanFrom(httpTextFormat, request.headers, getter, "/status", Span.Kind.SERVER)
 
   }
 

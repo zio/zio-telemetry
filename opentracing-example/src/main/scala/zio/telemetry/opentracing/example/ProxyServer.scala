@@ -20,16 +20,16 @@ object ProxyServer extends CatsApp {
         implicit val ec = runtime.platform.executor.asEC
         for {
           conf       <- Configuration.load.provideLayer(Configuration.live)
-          service    = makeService(conf.tracer.host, "zio-proxy")
+          service     = makeService(conf.tracer.host, "zio-proxy")
           backendUrl <- ZIO.fromEither(Uri.safeApply(conf.backend.host, conf.backend.port))
-          router     = Router[AppTask]("/" -> StatusesService.statuses(backendUrl, service)).orNotFound
-          result <- BlazeServerBuilder[AppTask](ec)
-                     .bindHttp(conf.proxy.port, conf.proxy.host)
-                     .withHttpApp(router)
-                     .serve
-                     .compile[AppTask, AppTask, catsExitCode]
-                     .drain
-                     .as(ExitCode.success)
+          router      = Router[AppTask]("/" -> StatusesService.statuses(backendUrl, service)).orNotFound
+          result     <- BlazeServerBuilder[AppTask](ec)
+                          .bindHttp(conf.proxy.port, conf.proxy.host)
+                          .withHttpApp(router)
+                          .serve
+                          .compile[AppTask, AppTask, catsExitCode]
+                          .drain
+                          .as(ExitCode.success)
         } yield result
       }
     exit orElse ZIO.succeed(ExitCode.failure)

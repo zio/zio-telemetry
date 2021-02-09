@@ -16,16 +16,16 @@ object JaegerTracer {
       for {
         tracer         <- UIO(OpenTelemetry.getTracer("zio.telemetry.opentelemetry.example.JaegerTracer"))
         managedChannel <- Task(ManagedChannelBuilder.forTarget(conf.tracer.host).usePlaintext().build())
-        exporter <- UIO(
-                     JaegerGrpcSpanExporter
-                       .newBuilder()
-                       .setServiceName(serviceName)
-                       .setChannel(managedChannel)
-                       .build()
-                   )
-        _ <- Task(
-              OpenTelemetrySdk.getTracerProvider().addSpanProcessor(SimpleSpanProcessor.newBuilder(exporter).build())
-            )
+        exporter       <- UIO(
+                            JaegerGrpcSpanExporter
+                              .newBuilder()
+                              .setServiceName(serviceName)
+                              .setChannel(managedChannel)
+                              .build()
+                          )
+        _              <- Task(
+                            OpenTelemetrySdk.getTracerProvider().addSpanProcessor(SimpleSpanProcessor.newBuilder(exporter).build())
+                          )
       } yield tracer
     )
 
