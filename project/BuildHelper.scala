@@ -67,7 +67,7 @@ object BuildHelper {
           "-opt:l:inline",
           "-opt-inline-from:<source>"
         ) ++ stdOptsUpto212
-      case _ =>
+      case _             =>
         Seq("-Xexperimental") ++ stdOptsUpto212
     }
 }

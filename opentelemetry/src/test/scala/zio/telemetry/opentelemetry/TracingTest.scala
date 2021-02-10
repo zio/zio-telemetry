@@ -30,12 +30,12 @@ object TracingTest extends DefaultRunnableSpec {
     spanExporter   <- UIO(InMemorySpanExporter.create())
     spanProcessor  <- UIO(SimpleSpanProcessor.create(spanExporter))
     tracerProvider <- UIO(SdkTracerProvider.builder().addSpanProcessor(spanProcessor).build())
-    tracer         = tracerProvider.get("TracingTest")
+    tracer          = tracerProvider.get("TracingTest")
   } yield (spanExporter, tracer)
 
   val inMemoryTracerLayer: ULayer[Has[InMemorySpanExporter] with Has[Tracer]] =
-    ZLayer.fromEffectMany(inMemoryTracer.map {
-      case (inMemoryTracing, tracer) => Has(inMemoryTracing).add(tracer)
+    ZLayer.fromEffectMany(inMemoryTracer.map { case (inMemoryTracing, tracer) =>
+      Has(inMemoryTracing).add(tracer)
     })
 
   val tracingMockLayer: URLayer[Clock, Has[InMemorySpanExporter] with Tracing with Has[Tracer]] =
@@ -50,8 +50,8 @@ object TracingTest extends DefaultRunnableSpec {
     suite("zio opentelemetry")(
       testM("acquire/release the service") {
         for {
-          _ <- Tracing.live.build
-                .use_(UIO.unit)
+          _             <- Tracing.live.build
+                             .use_(UIO.unit)
           finishedSpans <- getFinishedSpans
         } yield assert(finishedSpans)(hasSize(equalTo(0)))
       }.provideCustomLayer(inMemoryTracerLayer),
@@ -60,8 +60,8 @@ object TracingTest extends DefaultRunnableSpec {
           for {
             _     <- UIO.unit.span("Child").span("Root")
             spans <- getFinishedSpans
-            root  = spans.find(_.getName == "Root")
-            child = spans.find(_.getName == "Child")
+            root   = spans.find(_.getName == "Root")
+            child  = spans.find(_.getName == "Child")
           } yield assert(root)(isSome(anything)) &&
             assert(child)(
               isSome(
@@ -75,14 +75,14 @@ object TracingTest extends DefaultRunnableSpec {
         },
         testM("scopedEffect") {
           for {
-            _ <- Tracing.scopedEffect {
-                  val span = Span.current()
-                  span.addEvent("In legacy code")
-                  if (Context.current() == Context.root()) throw new RuntimeException("Current context is root!")
-                  span.addEvent("Finishing legacy code")
-                }.span("Scoped")
-                  .span("Root")
-            spans  <- getFinishedSpans
+            _     <- Tracing.scopedEffect {
+                       val span = Span.current()
+                       span.addEvent("In legacy code")
+                       if (Context.current() == Context.root()) throw new RuntimeException("Current context is root!")
+                       span.addEvent("Finishing legacy code")
+                     }.span("Scoped")
+                       .span("Root")
+            spans <- getFinishedSpans
             root   = spans.find(_.getName == "Root")
             scoped = spans.find(_.getName == "Scoped")
             tags   = scoped.get.getEvents.asScala.toList.map(_.getName)
@@ -96,21 +96,21 @@ object TracingTest extends DefaultRunnableSpec {
                 )
               )
             ) && assert(tags)(
-            equalTo(List("In legacy code", "Finishing legacy code"))
-          )
+              equalTo(List("In legacy code", "Finishing legacy code"))
+            )
         },
         testM("scopedEffectTotal") {
           for {
-            _ <- Tracing.scopedEffectTotal {
-                  val span = Span.current()
-                  span.addEvent("In legacy code")
-                  if (Context.current() == Context.root()) throw new RuntimeException("Current context is root!")
-                  Thread.sleep(10)
-                  if (Context.current() == Context.root()) throw new RuntimeException("Current context is root!")
-                  span.addEvent("Finishing legacy code")
-                }.span("Scoped")
-                  .span("Root")
-            spans  <- getFinishedSpans
+            _     <- Tracing.scopedEffectTotal {
+                       val span = Span.current()
+                       span.addEvent("In legacy code")
+                       if (Context.current() == Context.root()) throw new RuntimeException("Current context is root!")
+                       Thread.sleep(10)
+                       if (Context.current() == Context.root()) throw new RuntimeException("Current context is root!")
+                       span.addEvent("Finishing legacy code")
+                     }.span("Scoped")
+                       .span("Root")
+            spans <- getFinishedSpans
             root   = spans.find(_.getName == "Root")
             scoped = spans.find(_.getName == "Scoped")
             tags   = scoped.get.getEvents.asScala.toList.map(_.getName)
@@ -124,25 +124,25 @@ object TracingTest extends DefaultRunnableSpec {
                 )
               )
             ) && assert(tags)(
-            equalTo(List("In legacy code", "Finishing legacy code"))
-          )
+              equalTo(List("In legacy code", "Finishing legacy code"))
+            )
         },
         testM("scopedEffectFromFuture") {
           for {
             result <- Tracing.scopedEffectFromFuture { _ =>
-                       Future.successful {
-                         val span = Span.current()
-                         span.addEvent("In legacy code")
-                         if (Context.current() == Context.root())
-                           throw new RuntimeException("Current context is root!")
-                         span.addEvent("Finishing legacy code")
-                         1
-                       }
-                     }.span("Scoped").span("Root")
+                        Future.successful {
+                          val span = Span.current()
+                          span.addEvent("In legacy code")
+                          if (Context.current() == Context.root())
+                            throw new RuntimeException("Current context is root!")
+                          span.addEvent("Finishing legacy code")
+                          1
+                        }
+                      }.span("Scoped").span("Root")
             spans  <- getFinishedSpans
-            root   = spans.find(_.getName == "Root")
-            scoped = spans.find(_.getName == "Scoped")
-            tags   = scoped.get.getEvents.asScala.toList.map(_.getName)
+            root    = spans.find(_.getName == "Root")
+            scoped  = spans.find(_.getName == "Scoped")
+            tags    = scoped.get.getEvents.asScala.toList.map(_.getName)
           } yield assert(result)(equalTo(1)) &&
             assert(root)(isSome(anything)) &&
             assert(scoped)(
@@ -154,15 +154,15 @@ object TracingTest extends DefaultRunnableSpec {
                 )
               )
             ) && assert(tags)(
-            equalTo(List("In legacy code", "Finishing legacy code"))
-          )
+              equalTo(List("In legacy code", "Finishing legacy code"))
+            )
         },
         testM("rootSpan") {
           for {
             _     <- UIO.unit.root("ROOT2").root("ROOT")
             spans <- getFinishedSpans
-            root  = spans.find(_.getName == "ROOT")
-            child = spans.find(_.getName == "ROOT2")
+            root   = spans.find(_.getName == "ROOT")
+            child  = spans.find(_.getName == "ROOT2")
           } yield assert(root)(isSome(anything)) &&
             assert(child)(
               isSome(
@@ -201,10 +201,10 @@ object TracingTest extends DefaultRunnableSpec {
           for {
             _     <- injectExtract.span("ROOT")
             spans <- getFinishedSpans
-            root  = spans.find(_.getName == "ROOT")
-            foo   = spans.find(_.getName == "foo")
-            bar   = spans.find(_.getName == "bar")
-            baz   = spans.find(_.getName == "baz")
+            root   = spans.find(_.getName == "ROOT")
+            foo    = spans.find(_.getName == "foo")
+            bar    = spans.find(_.getName == "bar")
+            baz    = spans.find(_.getName == "baz")
           } yield assert(root)(isSome(anything)) &&
             assert(foo)(isSome(anything)) &&
             assert(bar)(isSome(anything)) &&
@@ -215,13 +215,13 @@ object TracingTest extends DefaultRunnableSpec {
         },
         testM("tagging") {
           for {
-            _ <- UIO.unit
-                  .setAttribute("boolean", true)
-                  .setAttribute("int", 1)
-                  .setAttribute("string", "foo")
-                  .span("foo")
+            _     <- UIO.unit
+                       .setAttribute("boolean", true)
+                       .setAttribute("int", 1)
+                       .setAttribute("string", "foo")
+                       .span("foo")
             spans <- getFinishedSpans
-            tags  = spans.head.getAttributes
+            tags   = spans.head.getAttributes
           } yield assert(tags.get(AttributeKey.booleanKey("boolean")))(equalTo(Boolean.box(true))) &&
             assert(tags.get(AttributeKey.longKey("int")))(equalTo(Long.box(1))) &&
             assert(tags.get(AttributeKey.stringKey("string")))(equalTo("foo"))
@@ -247,10 +247,10 @@ object TracingTest extends DefaultRunnableSpec {
             _     <- log.span("foo")
             _     <- UIO.unit.span("Child").span("Root")
             spans <- getFinishedSpans
-            tags = spans.collect {
-              case span if span.getName == "foo" =>
-                span.getEvents.asScala.toList.map(le => (le.getEpochNanos, le.getName, le.getAttributes))
-            }.flatten
+            tags   = spans.collect {
+                       case span if span.getName == "foo" =>
+                         span.getEvents.asScala.toList.map(le => (le.getEpochNanos, le.getName, le.getAttributes))
+                     }.flatten
           } yield {
             val expected = List(
               (0L, "message", Attributes.empty()),

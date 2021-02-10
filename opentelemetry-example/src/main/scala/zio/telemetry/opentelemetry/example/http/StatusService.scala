@@ -26,7 +26,7 @@ object StatusService {
   implicit def encoder[A: Encoder]: EntityEncoder[AppTask, A] = jsonEncoderOf[AppTask, A]
 
   val propagator: TextMapPropagator = W3CTraceContextPropagator.getInstance()
-  val getter: Getter[Headers] = new Getter[Headers] {
+  val getter: Getter[Headers]       = new Getter[Headers] {
     override def keys(carrier: Headers): lang.Iterable[String] =
       carrier.toList.map(_.name.value).asJava
 
@@ -34,15 +34,14 @@ object StatusService {
       carrier.get(CaseInsensitiveString(key)).map(_.value).orNull
   }
 
-  val routes: HttpRoutes[AppTask] = HttpRoutes.of[AppTask] {
-    case request @ GET -> Root / "status" =>
-      val response = for {
-        _        <- Tracing.addEvent("event from backend before response")
-        response <- Ok(ServiceStatus.up("backend").asJson)
-        _        <- Tracing.addEvent("event from backend after response")
-      } yield response
+  val routes: HttpRoutes[AppTask] = HttpRoutes.of[AppTask] { case request @ GET -> Root / "status" =>
+    val response = for {
+      _        <- Tracing.addEvent("event from backend before response")
+      response <- Ok(ServiceStatus.up("backend").asJson)
+      _        <- Tracing.addEvent("event from backend after response")
+    } yield response
 
-      response.spanFrom(propagator, request.headers, getter, "/status", SpanKind.SERVER)
+    response.spanFrom(propagator, request.headers, getter, "/status", SpanKind.SERVER)
 
   }
 

@@ -53,9 +53,9 @@ object Tracing {
   ): ZIO[R with Tracing, E, A] =
     for {
       current <- currentSpan
-      r <- current
-            .locally(span)(effect)
-            .tapCause(setErrorStatus(span, _, toErrorStatus))
+      r       <- current
+                   .locally(span)(effect)
+                   .tapCause(setErrorStatus(span, _, toErrorStatus))
     } yield r
 
   /**
@@ -109,11 +109,11 @@ object Tracing {
   def scopedEffect[R, A](effect: => A): ZIO[Tracing, Throwable, A] =
     for {
       currentSpan <- getCurrentSpan
-      eff <- Task.effect {
-              val scope = currentSpan.makeCurrent()
-              try effect
-              finally scope.close()
-            }
+      eff         <- Task.effect {
+                       val scope = currentSpan.makeCurrent()
+                       try effect
+                       finally scope.close()
+                     }
     } yield eff
 
   /*
@@ -125,11 +125,11 @@ object Tracing {
   def scopedEffectTotal[R, A](effect: => A): ZIO[Tracing, Nothing, A] =
     for {
       currentSpan <- getCurrentSpan
-      eff <- Task.effectTotal {
-              val scope = currentSpan.makeCurrent()
-              try effect
-              finally scope.close()
-            }
+      eff         <- Task.effectTotal {
+                       val scope = currentSpan.makeCurrent()
+                       try effect
+                       finally scope.close()
+                     }
     } yield eff
 
   /*
@@ -146,11 +146,11 @@ object Tracing {
   def scopedEffectFromFuture[R, A](make: ExecutionContext => scala.concurrent.Future[A]): ZIO[Tracing, Throwable, A] =
     for {
       currentSpan <- getCurrentSpan
-      eff <- ZIO.fromFuture { implicit ec =>
-              val scope = currentSpan.makeCurrent()
-              try make(ec)
-              finally scope.close()
-            }
+      eff         <- ZIO.fromFuture { implicit ec =>
+                       val scope = currentSpan.makeCurrent()
+                       try make(ec)
+                       finally scope.close()
+                     }
     } yield eff
 
   /**
@@ -220,32 +220,32 @@ object Tracing {
       def createRoot(spanName: String, spanKind: SpanKind): UManaged[Span] =
         for {
           nanoSeconds <- currentNanos.toManaged_
-          span <- ZManaged.make(
-                   UIO(
-                     tracer
-                       .spanBuilder(spanName)
-                       .setNoParent()
-                       .setSpanKind(spanKind)
-                       .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
-                       .startSpan()
-                   )
-                 )(end)
+          span        <- ZManaged.make(
+                           UIO(
+                             tracer
+                               .spanBuilder(spanName)
+                               .setNoParent()
+                               .setSpanKind(spanKind)
+                               .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
+                               .startSpan()
+                           )
+                         )(end)
         } yield span
 
       def createChildOf(parent: Span, spanName: String, spanKind: SpanKind): UManaged[Span] =
         for {
           nanoSeconds <- currentNanos.toManaged_
-          context     = parent.storeInContext(Context.root())
-          span <- ZManaged.make(
-                   UIO(
-                     tracer
-                       .spanBuilder(spanName)
-                       .setParent(context)
-                       .setSpanKind(spanKind)
-                       .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
-                       .startSpan()
-                   )
-                 )(end)
+          context      = parent.storeInContext(Context.root())
+          span        <- ZManaged.make(
+                           UIO(
+                             tracer
+                               .spanBuilder(spanName)
+                               .setParent(context)
+                               .setSpanKind(spanKind)
+                               .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
+                               .startSpan()
+                           )
+                         )(end)
         } yield span
 
       override private[opentelemetry] def getTracer: UIO[Tracer] =

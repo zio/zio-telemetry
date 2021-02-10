@@ -90,7 +90,7 @@ object OpenTracingTest extends DefaultRunnableSpec {
           }
         },
         testM("inject - extract roundtrip") {
-          val tm = new TextMapAdapter(mutable.Map.empty.asJava)
+          val tm            = new TextMapAdapter(mutable.Map.empty.asJava)
           val injectExtract = OpenTracing.inject(Format.Builtin.TEXT_MAP, tm).span("foo") *>
             OpenTracing
               .spanFrom(Format.Builtin.TEXT_MAP, tm, UIO.unit, "baz")
@@ -116,11 +116,11 @@ object OpenTracingTest extends DefaultRunnableSpec {
         testM("tagging") {
           for {
             tracer <- ZIO.access[HasMockTracer](_.get)
-            _ <- UIO.unit
-                  .tag("boolean", true)
-                  .tag("int", 1)
-                  .tag("string", "foo")
-                  .span("foo")
+            _      <- UIO.unit
+                        .tag("boolean", true)
+                        .tag("int", 1)
+                        .tag("string", "foo")
+                        .span("foo")
           } yield {
             val tags     = tracer.finishedSpans().asScala.head.tags.asScala.toMap
             val expected = Map[String, Any]("boolean" -> true, "int" -> 1, "string" -> "foo")
@@ -150,7 +150,7 @@ object OpenTracingTest extends DefaultRunnableSpec {
                 .toList
 
             val expected = List(
-              0L    -> Map("event"            -> "message"),
+              0L    -> Map("event" -> "message"),
               1000L -> Map[String, Any]("msg" -> "message", "size" -> 1)
             )
             assert(tags)(equalTo(expected))

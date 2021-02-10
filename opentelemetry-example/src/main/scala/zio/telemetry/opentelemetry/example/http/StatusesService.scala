@@ -27,17 +27,16 @@ object StatusesService {
 
   val errorMapper: PartialFunction[Throwable, StatusCode] = { case _ => StatusCode.UNSET }
 
-  val routes: HttpRoutes[AppTask] = HttpRoutes.of[AppTask] {
-    case GET -> Root / "statuses" =>
-      root("/statuses", SpanKind.SERVER, errorMapper) {
-        for {
-          carrier <- UIO(mutable.Map[String, String]().empty)
-          _       <- Tracing.setAttribute("http.method", "get")
-          _       <- Tracing.addEvent("proxy-event")
-          _       <- Tracing.inject(propagator, carrier, setter)
-          res     <- Client.status(carrier.toMap).flatMap(Ok(_))
-        } yield res
-      }
+  val routes: HttpRoutes[AppTask] = HttpRoutes.of[AppTask] { case GET -> Root / "statuses" =>
+    root("/statuses", SpanKind.SERVER, errorMapper) {
+      for {
+        carrier <- UIO(mutable.Map[String, String]().empty)
+        _       <- Tracing.setAttribute("http.method", "get")
+        _       <- Tracing.addEvent("proxy-event")
+        _       <- Tracing.inject(propagator, carrier, setter)
+        res     <- Client.status(carrier.toMap).flatMap(Ok(_))
+      } yield res
+    }
   }
 
 }

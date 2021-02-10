@@ -20,17 +20,17 @@ object Dependencies {
   )
 
   lazy val opentracing = zio ++ Seq(
-    "io.opentracing"         % "opentracing-api"          % Versions.opentracing,
-    "io.opentracing"         % "opentracing-noop"         % Versions.opentracing,
-    "io.opentracing"         % "opentracing-mock"         % Versions.opentracing % Test,
+    "io.opentracing"          % "opentracing-api"         % Versions.opentracing,
+    "io.opentracing"          % "opentracing-noop"        % Versions.opentracing,
+    "io.opentracing"          % "opentracing-mock"        % Versions.opentracing % Test,
     "org.scala-lang.modules" %% "scala-collection-compat" % "2.3.1"
   )
 
   lazy val opentelemetry = zio ++ Seq(
-    "io.opentelemetry"       % "opentelemetry-api"         % Versions.opentelemetry,
-    "io.opentelemetry"       % "opentelemetry-context"     % Versions.opentelemetry,
-    "io.opentelemetry"       % "opentelemetry-sdk-testing" % Versions.opentelemetry % Test,
-    "org.scala-lang.modules" %% "scala-collection-compat"  % "2.4.1"
+    "io.opentelemetry"        % "opentelemetry-api"         % Versions.opentelemetry,
+    "io.opentelemetry"        % "opentelemetry-context"     % Versions.opentelemetry,
+    "io.opentelemetry"        % "opentelemetry-sdk-testing" % Versions.opentelemetry % Test,
+    "org.scala-lang.modules" %% "scala-collection-compat"   % "2.4.1"
   )
 
   lazy val opencensus = zio ++ Seq(
@@ -46,9 +46,9 @@ object Dependencies {
     "org.http4s"                   %% "http4s-blaze-server"           % Versions.http4s,
     "org.http4s"                   %% "http4s-dsl"                    % Versions.http4s,
     "org.http4s"                   %% "http4s-circe"                  % Versions.http4s,
-    "io.jaegertracing"             % "jaeger-core"                    % Versions.jaeger,
-    "io.jaegertracing"             % "jaeger-client"                  % Versions.jaeger,
-    "io.jaegertracing"             % "jaeger-zipkin"                  % Versions.jaeger,
+    "io.jaegertracing"              % "jaeger-core"                   % Versions.jaeger,
+    "io.jaegertracing"              % "jaeger-client"                 % Versions.jaeger,
+    "io.jaegertracing"              % "jaeger-zipkin"                 % Versions.jaeger,
     "com.github.pureconfig"        %% "pureconfig"                    % "0.14.0",
     "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % Versions.sttp,
     "com.softwaremill.sttp.client" %% "circe"                         % Versions.sttp,
