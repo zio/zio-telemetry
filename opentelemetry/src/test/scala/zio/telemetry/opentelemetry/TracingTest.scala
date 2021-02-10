@@ -1,50 +1,50 @@
 package zio.telemetry.opentelemetry
 
-import io.opentelemetry.common.AttributeValue
-import io.opentelemetry.context.propagation.HttpTextFormat.{ Getter, Setter }
-import io.opentelemetry.exporters.inmemory.InMemoryTracing
-import io.opentelemetry.sdk.trace.TracerSdkProvider
+import io.opentelemetry.api.common.{ AttributeKey, Attributes }
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
+import io.opentelemetry.api.trace.{ Span, SpanId, Tracer }
+import io.opentelemetry.context.propagation.TextMapPropagator.{ Getter, Setter }
+import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.data.SpanData
-import io.opentelemetry.trace.{ SpanId, Tracer }
 import zio.clock.Clock
 import zio.duration._
 import zio.telemetry.opentelemetry.Tracing.inject
 import zio.telemetry.opentelemetry.TracingSyntax._
-import zio.telemetry.opentelemetry.attributevalue.AttributeValueConverterInstances._
 import zio.test.Assertion._
 import zio.test.environment.TestClock
 import zio.test.{ assert, DefaultRunnableSpec }
 import zio._
+
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
+import io.opentelemetry.context.Context
+import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
+import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 
-import io.grpc.Context
-import io.opentelemetry.common.Attributes
+import java.lang
 
 object TracingTest extends DefaultRunnableSpec {
 
-  val inMemoryTracer: UIO[(InMemoryTracing, Tracer)] = for {
-    tracerProvider  <- UIO(TracerSdkProvider.builder().build())
-    inMemoryTracing <- UIO(InMemoryTracing.builder().setTracerProvider(tracerProvider).build())
-    // Without this cast, a runtime exception occurs on this particular line:
-    // failed to access class io.opentelemetry.sdk.trace.TracerSdk from class zio.telemetry.opentelemetry.TracingTest
-    // which could not be resolved, even by adding an explicit dependency on the opentelemetry-sdk package
-    // (on which we implicitly depend through the opentelemetry-exporters-inmemory package)
-    tracer = tracerProvider.get("TracingTest").asInstanceOf[Tracer]
-  } yield (inMemoryTracing, tracer)
+  val inMemoryTracer: UIO[(InMemorySpanExporter, Tracer)] = for {
+    spanExporter   <- UIO(InMemorySpanExporter.create())
+    spanProcessor  <- UIO(SimpleSpanProcessor.create(spanExporter))
+    tracerProvider <- UIO(SdkTracerProvider.builder().addSpanProcessor(spanProcessor).build())
+    tracer         = tracerProvider.get("TracingTest")
+  } yield (spanExporter, tracer)
 
-  val inMemoryTracerLayer: ULayer[Has[InMemoryTracing] with Has[Tracer]] = ZLayer.fromEffectMany(inMemoryTracer.map {
-    case (inMemoryTracing, tracer) => Has(inMemoryTracing).add(tracer)
-  })
+  val inMemoryTracerLayer: ULayer[Has[InMemorySpanExporter] with Has[Tracer]] =
+    ZLayer.fromEffectMany(inMemoryTracer.map {
+      case (inMemoryTracing, tracer) => Has(inMemoryTracing).add(tracer)
+    })
 
-  val tracingMockLayer: URLayer[Clock, Has[InMemoryTracing] with Tracing with Has[Tracer]] =
+  val tracingMockLayer: URLayer[Clock, Has[InMemorySpanExporter] with Tracing with Has[Tracer]] =
     (inMemoryTracerLayer ++ Clock.any) >>> (Tracing.live ++ inMemoryTracerLayer)
 
   def getFinishedSpans =
     ZIO
-      .access[Has[InMemoryTracing]](_.get)
-      .map(_.getSpanExporter.getFinishedSpanItems.asScala.toList)
+      .access[Has[InMemorySpanExporter]](_.get)
+      .map(_.getFinishedSpanItems.asScala.toList)
 
   def spec =
     suite("zio opentelemetry")(
@@ -65,7 +65,7 @@ object TracingTest extends DefaultRunnableSpec {
           } yield assert(root)(isSome(anything)) &&
             assert(child)(
               isSome(
-                hasField[SpanData, SpanId](
+                hasField[SpanData, String](
                   "parentSpanId",
                   _.getParentSpanId,
                   equalTo(root.get.getSpanId)
@@ -75,11 +75,10 @@ object TracingTest extends DefaultRunnableSpec {
         },
         testM("scopedEffect") {
           for {
-            tracer <- ZIO.service[Tracer]
             _ <- Tracing.scopedEffect {
-                  val span = tracer.getCurrentSpan
+                  val span = Span.current()
                   span.addEvent("In legacy code")
-                  if (Context.current() == Context.ROOT) throw new RuntimeException("Current context is root!")
+                  if (Context.current() == Context.root()) throw new RuntimeException("Current context is root!")
                   span.addEvent("Finishing legacy code")
                 }.span("Scoped")
                   .span("Root")
@@ -90,7 +89,7 @@ object TracingTest extends DefaultRunnableSpec {
           } yield assert(root)(isSome(anything)) &&
             assert(scoped)(
               isSome(
-                hasField[SpanData, SpanId](
+                hasField[SpanData, String](
                   "parentSpanId",
                   _.getParentSpanId,
                   equalTo(root.get.getSpanId)
@@ -102,13 +101,12 @@ object TracingTest extends DefaultRunnableSpec {
         },
         testM("scopedEffectTotal") {
           for {
-            tracer <- ZIO.service[Tracer]
             _ <- Tracing.scopedEffectTotal {
-                  val span = tracer.getCurrentSpan
+                  val span = Span.current()
                   span.addEvent("In legacy code")
-                  if (Context.current() == Context.ROOT) throw new RuntimeException("Current context is root!")
+                  if (Context.current() == Context.root()) throw new RuntimeException("Current context is root!")
                   Thread.sleep(10)
-                  if (Context.current() == Context.ROOT) throw new RuntimeException("Current context is root!")
+                  if (Context.current() == Context.root()) throw new RuntimeException("Current context is root!")
                   span.addEvent("Finishing legacy code")
                 }.span("Scoped")
                   .span("Root")
@@ -119,7 +117,7 @@ object TracingTest extends DefaultRunnableSpec {
           } yield assert(root)(isSome(anything)) &&
             assert(scoped)(
               isSome(
-                hasField[SpanData, SpanId](
+                hasField[SpanData, String](
                   "parentSpanId",
                   _.getParentSpanId,
                   equalTo(root.get.getSpanId)
@@ -131,12 +129,11 @@ object TracingTest extends DefaultRunnableSpec {
         },
         testM("scopedEffectFromFuture") {
           for {
-            tracer <- ZIO.service[Tracer]
             result <- Tracing.scopedEffectFromFuture { _ =>
                        Future.successful {
-                         val span = tracer.getCurrentSpan
+                         val span = Span.current()
                          span.addEvent("In legacy code")
-                         if (Context.current() == Context.ROOT)
+                         if (Context.current() == Context.root())
                            throw new RuntimeException("Current context is root!")
                          span.addEvent("Finishing legacy code")
                          1
@@ -150,7 +147,7 @@ object TracingTest extends DefaultRunnableSpec {
             assert(root)(isSome(anything)) &&
             assert(scoped)(
               isSome(
-                hasField[SpanData, SpanId](
+                hasField[SpanData, String](
                   "parentSpanId",
                   _.getParentSpanId,
                   equalTo(root.get.getSpanId)
@@ -169,31 +166,36 @@ object TracingTest extends DefaultRunnableSpec {
           } yield assert(root)(isSome(anything)) &&
             assert(child)(
               isSome(
-                hasField[SpanData, SpanId](
+                hasField[SpanData, String](
                   "parent",
                   _.getParentSpanId,
-                  equalTo(new SpanId(0))
+                  equalTo(SpanId.getInvalid)
                 )
               )
             )
         },
         testM("inject - extract roundtrip") {
-          val httpTextFormat                       = io.opentelemetry.OpenTelemetry.getPropagators.getHttpTextFormat
+          val propagator                           = W3CTraceContextPropagator.getInstance()
           val carrier: mutable.Map[String, String] = mutable.Map().empty
 
-          val getter: Getter[mutable.Map[String, String]] =
-            (carrier, key) => carrier.get(key).orNull
+          val getter: Getter[mutable.Map[String, String]] = new Getter[mutable.Map[String, String]] {
+            override def keys(carrier: mutable.Map[String, String]): lang.Iterable[String] =
+              carrier.keys.asJava
+
+            override def get(carrier: mutable.Map[String, String], key: String): String =
+              carrier.get(key).orNull
+          }
 
           val setter: Setter[mutable.Map[String, String]] =
             (carrier, key, value) => carrier.update(key, value)
 
           val injectExtract =
             inject(
-              httpTextFormat,
+              propagator,
               carrier,
               setter
             ).span("foo") *> UIO.unit
-              .spanFrom(httpTextFormat, carrier, getter, "baz")
+              .spanFrom(propagator, carrier, getter, "baz")
               .span("bar")
 
           for {
@@ -220,9 +222,9 @@ object TracingTest extends DefaultRunnableSpec {
                   .span("foo")
             spans <- getFinishedSpans
             tags  = spans.head.getAttributes
-          } yield assert(tags.get("boolean"))(equalTo(AttributeValue.booleanAttributeValue(true))) &&
-            assert(tags.get("int"))(equalTo(AttributeValue.longAttributeValue(1))) &&
-            assert(tags.get("string"))(equalTo(AttributeValue.stringAttributeValue("foo")))
+          } yield assert(tags.get(AttributeKey.booleanKey("boolean")))(equalTo(Boolean.box(true))) &&
+            assert(tags.get(AttributeKey.longKey("int")))(equalTo(Long.box(1))) &&
+            assert(tags.get(AttributeKey.stringKey("string")))(equalTo("foo"))
         },
         testM("logging") {
           val duration = 1000.micros
@@ -234,10 +236,10 @@ object TracingTest extends DefaultRunnableSpec {
                 .addEventWithAttributes(
                   "message2",
                   Attributes.of(
-                    "msg",
-                    AttributeValue.stringAttributeValue("message"),
-                    "size",
-                    AttributeValue.longAttributeValue(1)
+                    AttributeKey.stringKey("msg"),
+                    "message",
+                    AttributeKey.longKey("size"),
+                    Long.box(1)
                   )
                 )
 
@@ -256,10 +258,10 @@ object TracingTest extends DefaultRunnableSpec {
                 1000000L,
                 "message2",
                 Attributes.of(
-                  "msg",
-                  AttributeValue.stringAttributeValue("message"),
-                  "size",
-                  AttributeValue.longAttributeValue(1)
+                  AttributeKey.stringKey("msg"),
+                  "message",
+                  AttributeKey.longKey("size"),
+                  Long.box(1)
                 )
               )
             )
