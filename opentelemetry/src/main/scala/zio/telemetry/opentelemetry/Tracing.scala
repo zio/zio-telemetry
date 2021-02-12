@@ -31,9 +31,9 @@ object Tracing {
   private def createChildOf(parent: Context, spanName: String, spanKind: SpanKind): URManaged[Tracing, Context] =
     ZManaged.accessManaged[Tracing](_.get.createChildOf(parent, spanName, spanKind))
 
-  private def getCurrentContext: URIO[Tracing, Context] = currentContext.flatMap(_.get)
+  def getCurrentContext: URIO[Tracing, Context] = currentContext.flatMap(_.get)
 
-  private def getCurrentSpan: URIO[Tracing, Span] = getCurrentContext.map(Span.fromContext)
+  def getCurrentSpan: URIO[Tracing, Span] = getCurrentContext.map(Span.fromContext)
 
   private def setErrorStatus[E](
     span: Span,
