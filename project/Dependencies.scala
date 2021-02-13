@@ -10,7 +10,7 @@ object Dependencies {
     val opencensus     = "0.28.3"
     val zipkin         = "2.16.3"
     val zio            = "1.0.4-2"
-    val zioInteropCats = "2.2.0.1"
+    val zioInteropCats = "2.3.1.0"
   }
 
   lazy val zio = Seq(
