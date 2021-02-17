@@ -30,7 +30,7 @@ object Dependencies {
     "io.opentelemetry"        % "opentelemetry-api"         % Versions.opentelemetry,
     "io.opentelemetry"        % "opentelemetry-context"     % Versions.opentelemetry,
     "io.opentelemetry"        % "opentelemetry-sdk-testing" % Versions.opentelemetry % Test,
-    "org.scala-lang.modules" %% "scala-collection-compat"   % "2.4.1"
+    "org.scala-lang.modules" %% "scala-collection-compat"   % "2.4.2"
   )
 
   lazy val opencensus = zio ++ Seq(
