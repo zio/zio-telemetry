@@ -4,8 +4,7 @@ import io.circe.Encoder
 import io.circe.syntax._
 import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
-import io.opentelemetry.context.propagation.TextMapPropagator
-import io.opentelemetry.context.propagation.TextMapPropagator.Getter
+import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator }
 import org.http4s._
 import org.http4s.circe.jsonEncoderOf
 import org.http4s.dsl.Http4sDsl
@@ -25,8 +24,8 @@ object StatusService {
 
   implicit def encoder[A: Encoder]: EntityEncoder[AppTask, A] = jsonEncoderOf[AppTask, A]
 
-  val propagator: TextMapPropagator = W3CTraceContextPropagator.getInstance()
-  val getter: Getter[Headers]       = new Getter[Headers] {
+  val propagator: TextMapPropagator  = W3CTraceContextPropagator.getInstance()
+  val getter: TextMapGetter[Headers] = new TextMapGetter[Headers] {
     override def keys(carrier: Headers): lang.Iterable[String] =
       carrier.toList.map(_.name.value).asJava
 

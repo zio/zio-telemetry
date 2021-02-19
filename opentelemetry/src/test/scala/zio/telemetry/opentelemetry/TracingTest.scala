@@ -3,7 +3,6 @@ package zio.telemetry.opentelemetry
 import io.opentelemetry.api.common.{ AttributeKey, Attributes }
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.api.trace.{ Span, SpanId, Tracer }
-import io.opentelemetry.context.propagation.TextMapPropagator.{ Getter, Setter }
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.data.SpanData
 import zio.clock.Clock
@@ -19,6 +18,7 @@ import scala.collection.mutable
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 import io.opentelemetry.context.Context
+import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapSetter }
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 
@@ -178,7 +178,7 @@ object TracingTest extends DefaultRunnableSpec {
           val propagator                           = W3CTraceContextPropagator.getInstance()
           val carrier: mutable.Map[String, String] = mutable.Map().empty
 
-          val getter: Getter[mutable.Map[String, String]] = new Getter[mutable.Map[String, String]] {
+          val getter: TextMapGetter[mutable.Map[String, String]] = new TextMapGetter[mutable.Map[String, String]] {
             override def keys(carrier: mutable.Map[String, String]): lang.Iterable[String] =
               carrier.keys.asJava
 
@@ -186,7 +186,7 @@ object TracingTest extends DefaultRunnableSpec {
               carrier.get(key).orNull
           }
 
-          val setter: Setter[mutable.Map[String, String]] =
+          val setter: TextMapSetter[mutable.Map[String, String]] =
             (carrier, key, value) => carrier.update(key, value)
 
           val injectExtract =
