@@ -31,7 +31,22 @@ object Tracing {
   private def createChildOf(parent: Span, spanName: String, spanKind: SpanKind): URManaged[Tracing, Span] =
     ZManaged.accessManaged[Tracing](_.get.createChildOf(parent, spanName, spanKind))
 
-  private def getCurrentSpan: URIO[Tracing, Span] = currentSpan.flatMap(_.get)
+  /**
+   * Get the current span stored in the zio-telemetry ref
+   * @return
+   */
+  def getCurrentSpan: URIO[Tracing, Span] = currentSpan.flatMap(_.get)
+
+  /**
+   * Get the current span stored in the zio-telemetry ref, allowing
+   * integration with externally created spans from native
+   * opentelemetry-api instrumentations
+   *
+   * @param span The span to set as current
+   * @return
+   */
+  def setCurrentSpan(span: Span): URIO[Tracing, Unit] =
+    currentSpan.flatMap(_.set(span))
 
   private def setErrorStatus[E](
     span: Span,
