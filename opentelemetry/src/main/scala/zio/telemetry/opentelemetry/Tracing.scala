@@ -100,7 +100,7 @@ object Tracing {
       r   <- createChildOf(old, spanName, spanKind).use(finalizeSpanUsingEffect(effect, _, toErrorStatus))
     } yield r
 
-  /*
+  /**
    * Introduces a thread-local scope during the execution allowing
    * for non-zio context propagation.
    *
@@ -116,7 +116,7 @@ object Tracing {
                      }
     } yield eff
 
-  /*
+  /**
    * Introduces a thread-local scope during the execution allowing
    * for non-zio context propagation.
    *
@@ -132,7 +132,7 @@ object Tracing {
                      }
     } yield eff
 
-  /*
+  /**
    * Introduces a thread-local scope from the currently active zio span
    * allowing for non-zio context propagation. This scope will only be
    * active during Future creation, so another mechanism must be used to
