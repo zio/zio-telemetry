@@ -1,11 +1,13 @@
 package zio.telemetry.opentelemetry
 
 import java.util.concurrent.TimeUnit
+
 import scala.concurrent.ExecutionContext
+
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.trace.{ Span, SpanKind, StatusCode, Tracer }
 import io.opentelemetry.context.Context
-import io.opentelemetry.context.propagation.TextMapPropagator
+import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator, TextMapSetter }
 import zio.clock.Clock
 import zio.telemetry.opentelemetry.SpanPropagation.{ extractSpan, injectSpan }
 import zio._
@@ -65,7 +67,7 @@ object Tracing {
   def spanFrom[C, R, E, A](
     propagator: TextMapPropagator,
     carrier: C,
-    getter: TextMapPropagator.Getter[C],
+    getter: TextMapGetter[C],
     spanName: String,
     spanKind: SpanKind,
     toErrorStatus: PartialFunction[E, StatusCode]
@@ -159,7 +161,7 @@ object Tracing {
   def inject[C](
     propagator: TextMapPropagator,
     carrier: C,
-    setter: TextMapPropagator.Setter[C]
+    setter: TextMapSetter[C]
   ): URIO[Tracing, Unit] =
     for {
       current <- getCurrentSpan
