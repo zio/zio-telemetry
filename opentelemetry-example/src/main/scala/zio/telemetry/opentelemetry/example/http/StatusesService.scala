@@ -3,8 +3,7 @@ package zio.telemetry.opentelemetry.example.http
 import io.circe.Encoder
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.api.trace.{ SpanKind, StatusCode }
-import io.opentelemetry.context.propagation.TextMapPropagator
-import io.opentelemetry.context.propagation.TextMapPropagator.Setter
+import io.opentelemetry.context.propagation.{ TextMapPropagator, TextMapSetter }
 import org.http4s.circe.jsonEncoderOf
 import org.http4s.dsl.Http4sDsl
 import org.http4s.{ EntityEncoder, HttpRoutes }
@@ -22,8 +21,8 @@ object StatusesService {
 
   implicit def encoder[A: Encoder]: EntityEncoder[AppTask, A] = jsonEncoderOf[AppTask, A]
 
-  val propagator: TextMapPropagator               = W3CTraceContextPropagator.getInstance()
-  val setter: Setter[mutable.Map[String, String]] = (carrier, key, value) => carrier.update(key, value)
+  val propagator: TextMapPropagator                      = W3CTraceContextPropagator.getInstance()
+  val setter: TextMapSetter[mutable.Map[String, String]] = (carrier, key, value) => carrier.update(key, value)
 
   val errorMapper: PartialFunction[Throwable, StatusCode] = { case _ => StatusCode.UNSET }
 

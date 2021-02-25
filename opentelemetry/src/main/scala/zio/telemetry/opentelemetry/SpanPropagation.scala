@@ -2,7 +2,7 @@ package zio.telemetry.opentelemetry
 
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.context.Context
-import io.opentelemetry.context.propagation.TextMapPropagator
+import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator, TextMapSetter }
 import zio.{ UIO, URIO, ZIO }
 
 private[opentelemetry] object SpanPropagation {
@@ -33,7 +33,7 @@ private[opentelemetry] object SpanPropagation {
   def extractSpan[C](
     propagator: TextMapPropagator,
     carrier: C,
-    getter: TextMapPropagator.Getter[C]
+    getter: TextMapGetter[C]
   ): UIO[Span] =
     ZIO.uninterruptible {
       UIO(Span.fromContext(propagator.extract(Context.root(), carrier, getter)))
@@ -46,7 +46,7 @@ private[opentelemetry] object SpanPropagation {
     span: Span,
     propagator: TextMapPropagator,
     carrier: C,
-    setter: TextMapPropagator.Setter[C]
+    setter: TextMapSetter[C]
   ): URIO[Tracing, Unit] = {
     val context = span.storeInContext(Context.root())
     UIO(propagator.inject(context, carrier, setter))

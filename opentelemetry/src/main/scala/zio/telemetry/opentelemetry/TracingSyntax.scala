@@ -1,7 +1,7 @@
 package zio.telemetry.opentelemetry
 
 import io.opentelemetry.api.common.Attributes
-import io.opentelemetry.context.propagation.TextMapPropagator
+import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator }
 import io.opentelemetry.api.trace.{ SpanKind, StatusCode }
 import zio.ZIO
 import zio.clock.Clock
@@ -16,7 +16,7 @@ object TracingSyntax {
     def spanFrom[C](
       propagator: TextMapPropagator,
       carrier: C,
-      getter: TextMapPropagator.Getter[C],
+      getter: TextMapGetter[C],
       spanName: String,
       spanKind: SpanKind = SpanKind.INTERNAL,
       toErrorStatus: PartialFunction[E, StatusCode] = Map.empty
