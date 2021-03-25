@@ -6,10 +6,10 @@ object Dependencies {
     val jaeger         = "1.5.0"
     val sttp           = "2.2.9"
     val opentracing    = "0.33.0"
-    val opentelemetry  = "0.17.1"
+    val opentelemetry  = "1.0.1"
     val opencensus     = "0.28.3"
     val zipkin         = "2.16.3"
-    val zio            = "1.0.4-2"
+    val zio            = "1.0.5"
     val zioInteropCats = "2.3.1.0"
   }
 
@@ -49,7 +49,7 @@ object Dependencies {
     "io.jaegertracing"              % "jaeger-core"                   % Versions.jaeger,
     "io.jaegertracing"              % "jaeger-client"                 % Versions.jaeger,
     "io.jaegertracing"              % "jaeger-zipkin"                 % Versions.jaeger,
-    "com.github.pureconfig"        %% "pureconfig"                    % "0.14.0",
+    "com.github.pureconfig"        %% "pureconfig"                    % "0.14.1",
     "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % Versions.sttp,
     "com.softwaremill.sttp.client" %% "circe"                         % Versions.sttp,
     "dev.zio"                      %% "zio-interop-cats"              % Versions.zioInteropCats
