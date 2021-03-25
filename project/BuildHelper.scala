@@ -61,7 +61,7 @@ object BuildHelper {
           "242"
         ) ++ std2xOptions ++ optimizerOptions(optimize)
 
-      case _             =>
+      case _ =>
         Seq.empty
     }
 }
