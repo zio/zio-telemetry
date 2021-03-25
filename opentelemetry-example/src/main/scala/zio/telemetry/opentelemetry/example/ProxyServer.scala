@@ -31,7 +31,7 @@ object ProxyServer extends zio.App {
           .drain
       }
 
-  val httpBackend = ZLayer.fromManaged(Managed.make(AsyncHttpClientZioBackend())(_.close.ignore))
+  val httpBackend = ZLayer.fromManaged(Managed.make(AsyncHttpClientZioBackend())(_.close().ignore))
   val client      = Configuration.live ++ httpBackend >>> Client.live
   val tracer      = Configuration.live >>> JaegerTracer.live
   val envLayer    = tracer ++ Clock.live >>> Tracing.live ++ Configuration.live ++ client
