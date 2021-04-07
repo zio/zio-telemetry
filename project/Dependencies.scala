@@ -63,6 +63,6 @@ object Dependencies {
   lazy val opentelemetryExample = example ++ Seq(
     "io.opentelemetry" % "opentelemetry-exporter-jaeger" % Versions.opentelemetry,
     "io.opentelemetry" % "opentelemetry-sdk"             % Versions.opentelemetry,
-    "io.grpc"          % "grpc-netty-shaded"             % "1.36.1"
+    "io.grpc"          % "grpc-netty-shaded"             % "1.37.0"
   )
 }
