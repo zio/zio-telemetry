@@ -49,7 +49,7 @@ object Dependencies {
     "io.jaegertracing"              % "jaeger-core"                   % Versions.jaeger,
     "io.jaegertracing"              % "jaeger-client"                 % Versions.jaeger,
     "io.jaegertracing"              % "jaeger-zipkin"                 % Versions.jaeger,
-    "com.github.pureconfig"        %% "pureconfig"                    % "0.14.1",
+    "com.github.pureconfig"        %% "pureconfig"                    % "0.15.0",
     "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % Versions.sttp,
     "com.softwaremill.sttp.client" %% "circe"                         % Versions.sttp,
     "dev.zio"                      %% "zio-interop-cats"              % Versions.zioInteropCats
