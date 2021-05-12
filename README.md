@@ -1,5 +1,6 @@
 # ZIO telemetry
 
+[![Project stage][Stage]][Stage-Page]
 ![CI][Badge-CI]
 [![Releases][Badge-SonatypeReleases]][Link-SonatypeReleases]
 [![Snapshots][Badge-SonatypeSnapshots]][Link-SonatypeSnapshots]
@@ -191,3 +192,5 @@ and head over to [http://localhost:16686/](http://localhost:16686/) to see the r
 [Link-Circle]: https://circleci.com/gh/zio/zio-telemetry/tree/master
 [Link-SonatypeReleases]: https://oss.sonatype.org/content/repositories/releases/dev/zio/zio-opentracing_2.12/ "Sonatype Releases"
 [Link-SonatypeSnapshots]: https://oss.sonatype.org/content/repositories/snapshots/dev/zio/zio-opentracing_2.12/ "Sonatype Snapshots"
+[Stage]: https://img.shields.io/badge/Project%20Stage-Production%20Ready-brightgreen.svg
+[Stage-Page]: https://github.com/zio/zio/wiki/Project-Stages
