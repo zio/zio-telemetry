@@ -1,8 +1,8 @@
 package zio.telemetry.opentelemetry
 
 import io.opentelemetry.context.Context
-import io.opentelemetry.context.propagation.{TextMapGetter, TextMapPropagator, TextMapSetter}
-import zio.{UIO, URIO, ZIO}
+import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator, TextMapSetter }
+import zio.{ UIO, URIO, ZIO }
 
 private[opentelemetry] object ContextPropagation {
 
