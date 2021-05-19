@@ -1,8 +1,8 @@
 package zio.telemetry.opentelemetry
 
 import io.opentelemetry.context.Context
-import io.opentelemetry.context.propagation.TextMapPropagator
-import zio.{ UIO, URIO, ZIO }
+import io.opentelemetry.context.propagation.{TextMapGetter, TextMapPropagator, TextMapSetter}
+import zio.{UIO, URIO, ZIO}
 
 private[opentelemetry] object ContextPropagation {
 
@@ -12,7 +12,7 @@ private[opentelemetry] object ContextPropagation {
   def extractContext[C](
     propagator: TextMapPropagator,
     carrier: C,
-    getter: TextMapPropagator.Getter[C]
+    getter: TextMapGetter[C]
   ): UIO[Context] =
     ZIO.uninterruptible {
       UIO(propagator.extract(Context.root(), carrier, getter))
@@ -25,7 +25,7 @@ private[opentelemetry] object ContextPropagation {
     context: Context,
     propagator: TextMapPropagator,
     carrier: C,
-    setter: TextMapPropagator.Setter[C]
+    setter: TextMapSetter[C]
   ): URIO[Tracing, Unit] =
     UIO(propagator.inject(context, carrier, setter))
 
