@@ -9,7 +9,7 @@ object Dependencies {
     val opentelemetry  = "1.2.0"
     val opencensus     = "0.28.3"
     val zipkin         = "2.16.3"
-    val zio            = "1.0.7"
+    val zio            = "1.0.8"
     val zioInteropCats = "2.4.1.0"
   }
 
@@ -30,7 +30,7 @@ object Dependencies {
     "io.opentelemetry"        % "opentelemetry-api"         % Versions.opentelemetry,
     "io.opentelemetry"        % "opentelemetry-context"     % Versions.opentelemetry,
     "io.opentelemetry"        % "opentelemetry-sdk-testing" % Versions.opentelemetry % Test,
-    "org.scala-lang.modules" %% "scala-collection-compat"   % "2.4.3"
+    "org.scala-lang.modules" %% "scala-collection-compat"   % "2.4.4"
   )
 
   lazy val opencensus = zio ++ Seq(
@@ -40,8 +40,8 @@ object Dependencies {
   )
 
   lazy val example = Seq(
-    "org.typelevel"                %% "cats-core"                     % "2.6.1",
-    "io.circe"                     %% "circe-generic"                 % "0.13.0",
+    "org.typelevel"                %% "cats-core"                     % "2.6.0",
+    "io.circe"                     %% "circe-generic"                 % "0.14.0",
     "org.http4s"                   %% "http4s-core"                   % Versions.http4s,
     "org.http4s"                   %% "http4s-blaze-server"           % Versions.http4s,
     "org.http4s"                   %% "http4s-dsl"                    % Versions.http4s,
