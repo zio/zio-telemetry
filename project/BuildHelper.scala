@@ -12,7 +12,7 @@ object BuildHelper {
     incOptions ~= (_.withLogRecompileOnMacro(false))
   )
 
-  private val Scala212 = "2.12.13"
+  private val Scala212 = "2.12.14"
   private val Scala213 = "2.13.5"
 
   private val stdOptions = Seq(
