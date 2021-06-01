@@ -26,7 +26,7 @@ jobs:
       - name: Setup Scala and Java
         uses: olafurpg/setup-scala@v12
       - name: Cache scala dependencies
-        uses: coursier/cache-action@v5
+        uses: coursier/cache-action@v6
       - name: Lint code
         run: sbt check
 
@@ -48,7 +48,7 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
       - name: Cache scala dependencies
-        uses: coursier/cache-action@v5
+        uses: coursier/cache-action@v6
       - name: Run tests
         run: sbt ++${{ matrix.scala }}! test
 
@@ -72,7 +72,7 @@ jobs:
       - name: Setup Scala and Java
         uses: olafurpg/setup-scala@v12
       - name: Cache scala dependencies
-        uses: coursier/cache-action@v5
+        uses: coursier/cache-action@v6
       - name: Release artifacts
         run: sbt ci-release
         env:
