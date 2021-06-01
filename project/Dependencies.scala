@@ -2,15 +2,15 @@ import sbt._
 
 object Dependencies {
   object Versions {
-    val http4s         = "0.21.21"
+    val http4s         = "0.21.24"
     val jaeger         = "1.6.0"
     val sttp           = "2.2.9"
     val opentracing    = "0.33.0"
     val opentelemetry  = "1.2.0"
     val opencensus     = "0.28.3"
     val zipkin         = "2.16.3"
-    val zio            = "1.0.7"
-    val zioInteropCats = "2.4.1.0"
+    val zio            = "1.0.8"
+    val zioInteropCats = "2.5.1.0"
   }
 
   lazy val zio = Seq(
@@ -40,8 +40,8 @@ object Dependencies {
   )
 
   lazy val example = Seq(
-    "org.typelevel"                %% "cats-core"                     % "2.6.0",
-    "io.circe"                     %% "circe-generic"                 % "0.13.0",
+    "org.typelevel"                %% "cats-core"                     % "2.6.1",
+    "io.circe"                     %% "circe-generic"                 % "0.14.1",
     "org.http4s"                   %% "http4s-core"                   % Versions.http4s,
     "org.http4s"                   %% "http4s-blaze-server"           % Versions.http4s,
     "org.http4s"                   %% "http4s-dsl"                    % Versions.http4s,
