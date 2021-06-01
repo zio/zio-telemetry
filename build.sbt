@@ -40,7 +40,7 @@ addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck"
 lazy val root =
   project
     .in(file("."))
-    .settings(skip in publish := true)
+    .settings(publish / skip := true)
     .aggregate(opentracing, opentelemetry, opencensus, opentracingExample, opentelemetryExample)
 
 lazy val opentracing =
@@ -64,7 +64,7 @@ lazy val opentracingExample =
   project
     .in(file("opentracing-example"))
     .settings(stdSettings("opentracing-example"))
-    .settings(skip in publish := true)
+    .settings(publish / skip := true)
     .settings(libraryDependencies := Dependencies.opentracingExample)
     .dependsOn(opentracing)
 
@@ -72,6 +72,6 @@ lazy val opentelemetryExample =
   project
     .in(file("opentelemetry-example"))
     .settings(stdSettings("opentelemetry-example"))
-    .settings(skip in publish := true)
+    .settings(publish / skip := true)
     .settings(libraryDependencies := Dependencies.opentelemetryExample)
     .dependsOn(opentelemetry)
