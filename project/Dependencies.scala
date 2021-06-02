@@ -9,8 +9,8 @@ object Dependencies {
     val opentelemetry  = "1.2.0"
     val opencensus     = "0.28.3"
     val zipkin         = "2.16.3"
-    val zio            = "1.0.8"
-    val zioInteropCats = "3.1.1.0"
+    val zio            = "1.0.9"
+    val zioInteropCats = "2.5.1.0"
   }
 
   lazy val zio = Seq(
@@ -63,6 +63,6 @@ object Dependencies {
   lazy val opentelemetryExample = example ++ Seq(
     "io.opentelemetry" % "opentelemetry-exporter-jaeger" % Versions.opentelemetry,
     "io.opentelemetry" % "opentelemetry-sdk"             % Versions.opentelemetry,
-    "io.grpc"          % "grpc-netty-shaded"             % "1.37.1"
+    "io.grpc"          % "grpc-netty-shaded"             % "1.38.0"
   )
 }
