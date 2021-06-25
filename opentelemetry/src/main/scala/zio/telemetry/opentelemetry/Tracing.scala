@@ -9,6 +9,7 @@ import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator, 
 import zio.clock.Clock
 import zio.telemetry.opentelemetry.ContextPropagation.{ extractContext, injectContext }
 import zio._
+import io.opentelemetry.api.trace.SpanContext
 
 object Tracing {
   trait Service {
@@ -212,6 +213,12 @@ object Tracing {
    */
   def setAttribute(name: String, value: String): URIO[Tracing, Span] =
     getCurrentSpan.map(_.setAttribute(name, value))
+
+  /**
+   * Gets the current SpanContext
+   */
+  def getCurrentSpanContext: URIO[Tracing, SpanContext] =
+    getCurrentSpan.map(_.getSpanContext())
 
   def managed(tracer: Tracer): URManaged[Clock, Service] = {
     class Live(defaultContext: FiberRef[Context], clock: Clock.Service) extends Service {
