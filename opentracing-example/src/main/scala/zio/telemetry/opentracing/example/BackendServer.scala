@@ -2,7 +2,7 @@ package zio.telemetry.opentracing.example
 
 import cats.effect.{ ExitCode => catsExitCode }
 import org.http4s.server.Router
-import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.syntax.kleisli._
 import zio.{ ExitCode, ZEnv, ZIO }
 import zio.clock.Clock
