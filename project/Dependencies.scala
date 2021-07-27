@@ -9,7 +9,7 @@ object Dependencies {
     val opentelemetry  = "1.4.1"
     val opencensus     = "0.28.3"
     val zipkin         = "2.16.3"
-    val zio            = "1.0.9"
+    val zio            = "1.0.10"
     val zioInteropCats = "2.5.1.0"
   }
 
