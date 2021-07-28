@@ -10,6 +10,7 @@ object Dependencies {
     val opencensus     = "0.28.3"
     val zipkin         = "2.16.3"
     val zio            = "1.0.9"
+    val zioConfig      = "1.0.6"
     val zioInteropCats = "2.5.1.0"
   }
 
@@ -52,6 +53,9 @@ object Dependencies {
     "com.github.pureconfig"        %% "pureconfig"                    % "0.16.0",
     "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % Versions.sttp,
     "com.softwaremill.sttp.client" %% "circe"                         % Versions.sttp,
+    "dev.zio"                      %% "zio-config"                    % Versions.zioConfig,
+    "dev.zio"                      %% "zio-config-magnolia"           % Versions.zioConfig,
+    "dev.zio"                      %% "zio-config-typesafe"           % Versions.zioConfig,
     "dev.zio"                      %% "zio-interop-cats"              % Versions.zioInteropCats
   )
 
