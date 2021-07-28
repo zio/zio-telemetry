@@ -4,12 +4,14 @@ object Dependencies {
   object Versions {
     val http4s         = "0.21.25"
     val jaeger         = "1.6.0"
-    val sttp           = "2.2.9"
+    val sttp           = "3.3.11"
     val opentracing    = "0.33.0"
     val opentelemetry  = "1.4.1"
     val opencensus     = "0.28.3"
     val zipkin         = "2.16.3"
     val zio            = "1.0.9"
+    val zioHttp        = "1.0.0.0-RC17"
+    val zioJson        = "0.1.5"
     val zioInteropCats = "2.5.1.0"
   }
 
@@ -40,19 +42,21 @@ object Dependencies {
   )
 
   lazy val example = Seq(
-    "org.typelevel"                %% "cats-core"                     % "2.6.1",
-    "io.circe"                     %% "circe-generic"                 % "0.14.1",
-    "org.http4s"                   %% "http4s-core"                   % Versions.http4s,
-    "org.http4s"                   %% "http4s-blaze-server"           % Versions.http4s,
-    "org.http4s"                   %% "http4s-dsl"                    % Versions.http4s,
-    "org.http4s"                   %% "http4s-circe"                  % Versions.http4s,
-    "io.jaegertracing"              % "jaeger-core"                   % Versions.jaeger,
-    "io.jaegertracing"              % "jaeger-client"                 % Versions.jaeger,
-    "io.jaegertracing"              % "jaeger-zipkin"                 % Versions.jaeger,
-    "com.github.pureconfig"        %% "pureconfig"                    % "0.16.0",
-    "com.softwaremill.sttp.client" %% "async-http-client-backend-zio" % Versions.sttp,
-    "com.softwaremill.sttp.client" %% "circe"                         % Versions.sttp,
-    "dev.zio"                      %% "zio-interop-cats"              % Versions.zioInteropCats
+    "org.typelevel"                 %% "cats-core"                     % "2.6.1",
+    "io.circe"                      %% "circe-generic"                 % "0.14.1",
+    "org.http4s"                    %% "http4s-core"                   % Versions.http4s,
+    "org.http4s"                    %% "http4s-blaze-server"           % Versions.http4s,
+    "org.http4s"                    %% "http4s-dsl"                    % Versions.http4s,
+    "org.http4s"                    %% "http4s-circe"                  % Versions.http4s,
+    "io.jaegertracing"               % "jaeger-core"                   % Versions.jaeger,
+    "io.jaegertracing"               % "jaeger-client"                 % Versions.jaeger,
+    "io.jaegertracing"               % "jaeger-zipkin"                 % Versions.jaeger,
+    "com.github.pureconfig"         %% "pureconfig"                    % "0.16.0",
+    "com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % Versions.sttp,
+    "com.softwaremill.sttp.client3" %% "zio-json"                      % Versions.sttp,
+    "io.d11"                        %% "zhttp"                         % Versions.zioHttp,
+    "dev.zio"                       %% "zio-json"                      % Versions.zioJson,
+    "dev.zio"                       %% "zio-interop-cats"              % Versions.zioInteropCats
   )
 
   lazy val opentracingExample = example ++ Seq(
