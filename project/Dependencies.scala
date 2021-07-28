@@ -12,6 +12,7 @@ object Dependencies {
     val zio            = "1.0.9"
     val zioHttp        = "1.0.0.0-RC17"
     val zioJson        = "0.1.5"
+    val zioConfig      = "1.0.6"
     val zioInteropCats = "2.5.1.0"
   }
 
@@ -56,6 +57,9 @@ object Dependencies {
     "com.softwaremill.sttp.client3" %% "zio-json"                      % Versions.sttp,
     "io.d11"                        %% "zhttp"                         % Versions.zioHttp,
     "dev.zio"                       %% "zio-json"                      % Versions.zioJson,
+    "dev.zio"                       %% "zio-config"                    % Versions.zioConfig,
+    "dev.zio"                       %% "zio-config-magnolia"           % Versions.zioConfig,
+    "dev.zio"                       %% "zio-config-typesafe"           % Versions.zioConfig,
     "dev.zio"                       %% "zio-interop-cats"              % Versions.zioInteropCats
   )
 
