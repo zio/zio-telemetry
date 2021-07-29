@@ -30,10 +30,10 @@ object StatusesService {
             up       = Status.up("proxy")
             res     <- Client
                          .status(backendUri.withPath("status"), headers)
-                         .map(_.body)
-                         .flatMap {
-                           case Right(s) => ZIO.succeed(Response.jsonString(Statuses(List(s, up)).toJson))
-                           case _        => ZIO.succeed(Response.jsonString(Statuses(List(Status.down("backend"), up)).toJson))
+                         .map { res =>
+                           val status = res.body.getOrElse(Status.down("backend"))
+                           val statuses =  Statuses(List(status, up))
+                           Response.jsonString(statuses.toJson)
                          }
           } yield res
 
