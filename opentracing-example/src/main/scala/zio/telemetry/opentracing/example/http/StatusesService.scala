@@ -6,8 +6,9 @@ import io.opentracing.tag.Tags
 import sttp.model.Uri
 import sttp.model.Method.GET
 import zio.clock.Clock
+import zio.magic._
 import zio.telemetry.opentracing.OpenTracing
-import zio.{ UIO, ZIO, ZLayer }
+import zio.{ UIO, ZLayer }
 import zhttp.http.HttpApp
 import zhttp.http._
 import zio.json._
@@ -16,7 +17,7 @@ import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
 object StatusesService {
-  def statuses(backendUri: Uri, service: ZLayer[Clock, Throwable, Clock with OpenTracing]): HttpApp[Clock, Throwable] = {
+  def statuses(backendUri: Uri, service: ZLayer[Clock, Throwable, OpenTracing]): HttpApp[Clock, Throwable] = {
     HttpApp.collectM {
       case Method.GET -> Root / "statuses" =>
         val zio =
@@ -39,7 +40,7 @@ object StatusesService {
 
         zio
           .root("/statuses")
-          .provideLayer(service)
+          .inject(service, Clock.live)
     }
   }
 

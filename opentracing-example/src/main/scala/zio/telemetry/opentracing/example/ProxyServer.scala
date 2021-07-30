@@ -1,9 +1,9 @@
 package zio.telemetry.opentracing.example
 
 import zio.{ ExitCode, ZEnv, ZIO, App }
-import zio.clock.Clock
 import zio.console.putStrLn
 import sttp.model.Uri
+import zio.magic._
 import zio.config.typesafe.TypesafeConfig
 import zio.config.getConfig
 import zio.config.magnolia.DeriveConfigDescriptor.descriptor
@@ -18,17 +18,22 @@ object ProxyServer extends App {
   private val configLayer = TypesafeConfig.fromDefaultLoader(descriptor[AppConfig])
 
   override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] = {
-    val exit =
-      ZIO.runtime[Clock].flatMap { implicit runtime =>
-        for {
-          conf       <- getConfig[AppConfig].provideLayer(configLayer)
-          service     = makeService(conf.tracer.host, "zio-proxy")
-          backendUrl <- ZIO.fromEither(Uri.safeApply(conf.backend.host, conf.backend.port))
-          result     <- (Server.port(conf.proxy.port) ++ Server.app(StatusesService.statuses(backendUrl, service)))
-            .make.use(_ => putStrLn(s"ProxyServer started on ${conf.proxy.port}") *> ZIO.never)
-            .provideCustomLayer(ServerChannelFactory.auto ++ EventLoopGroup.auto(0)).exitCode
-        } yield result
+    val exit = {
+        getConfig[AppConfig].flatMap { conf =>
+          val service = makeService(conf.tracer.host, "zio-proxy")
+          for {
+            backendUrl <- ZIO.fromEither(Uri.safeApply(conf.backend.host, conf.backend.port))
+            result     <- (Server.port(conf.proxy.port) ++ Server.app(StatusesService.statuses(backendUrl, service)))
+                            .make.use(_ => putStrLn(s"ProxyServer started on ${conf.proxy.port}") *> ZIO.never)
+                            .exitCode
+          } yield result
+        }.injectCustom(
+          configLayer,
+          ServerChannelFactory.auto,
+          EventLoopGroup.auto(0)
+        )
       }
+
     exit orElse ZIO.succeed(ExitCode.failure)
   }
 }

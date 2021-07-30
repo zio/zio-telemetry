@@ -13,6 +13,7 @@ object Dependencies {
     val zioHttp        = "1.0.0.0-RC17"
     val zioJson        = "0.1.5"
     val zioConfig      = "1.0.6"
+    val zioMagic       = "0.3.6"
     val zioInteropCats = "2.5.1.0"
   }
 
@@ -55,6 +56,7 @@ object Dependencies {
     "com.github.pureconfig"         %% "pureconfig"                    % "0.16.0",
     "com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % Versions.sttp,
     "com.softwaremill.sttp.client3" %% "zio-json"                      % Versions.sttp,
+    "io.github.kitlangton"          %% "zio-magic"                     % Versions.zioMagic,
     "io.d11"                        %% "zhttp"                         % Versions.zioHttp,
     "dev.zio"                       %% "zio-json"                      % Versions.zioJson,
     "dev.zio"                       %% "zio-config"                    % Versions.zioConfig,
