@@ -1,6 +1,6 @@
 package zio.telemetry.opentelemetry.example
 
-import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.server.{ defaults, Router }
 import zio.clock.Clock
 import zio.interop.catz._
