@@ -4,7 +4,8 @@ object Dependencies {
   object Versions {
     val http4s         = "0.21.25"
     val jaeger         = "1.6.0"
-    val sttp           = "3.3.11"
+    val sttp3          = "3.3.11"
+    val sttp           = "2.2.9"
     val opentracing    = "0.33.0"
     val opentelemetry  = "1.4.1"
     val opencensus     = "0.28.3"
@@ -53,9 +54,10 @@ object Dependencies {
     "io.jaegertracing"               % "jaeger-core"                   % Versions.jaeger,
     "io.jaegertracing"               % "jaeger-client"                 % Versions.jaeger,
     "io.jaegertracing"               % "jaeger-zipkin"                 % Versions.jaeger,
-    "com.github.pureconfig"         %% "pureconfig"                    % "0.16.0",
-    "com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % Versions.sttp,
-    "com.softwaremill.sttp.client3" %% "zio-json"                      % Versions.sttp,
+    "com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % Versions.sttp3,
+    "com.softwaremill.sttp.client3" %% "zio-json"                      % Versions.sttp3,
+    "com.softwaremill.sttp.client"  %% "async-http-client-backend-zio" % Versions.sttp,
+    "com.softwaremill.sttp.client"  %% "circe"                         % Versions.sttp,
     "io.github.kitlangton"          %% "zio-magic"                     % Versions.zioMagic,
     "io.d11"                        %% "zhttp"                         % Versions.zioHttp,
     "dev.zio"                       %% "zio-json"                      % Versions.zioJson,
