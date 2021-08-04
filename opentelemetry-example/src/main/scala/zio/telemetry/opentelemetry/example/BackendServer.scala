@@ -1,15 +1,14 @@
 package zio.telemetry.opentelemetry.example
 
-import zio.clock.Clock
 import zio.console.putStrLn
+import zio.magic._
 import zio.config.getConfig
 import zio.config.typesafe.TypesafeConfig
 import zio.config.magnolia.{ descriptor, Descriptor }
 import zio.telemetry.opentelemetry.Tracing
 import zio.telemetry.opentelemetry.example.config.AppConfig
-import zio.telemetry.opentelemetry.example.http.{ Client, StatusService }
-import zio.{ App, Managed, ZIO, ZLayer }
-import sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend
+import zio.telemetry.opentelemetry.example.http.StatusService
+import zio.{ App, ZIO }
 import sttp.model.Uri
 import zhttp.service.{ EventLoopGroup, Server }
 import zhttp.service.server.ServerChannelFactory
@@ -27,17 +26,15 @@ object BackendServer extends App {
     }
 
   val configLayer = TypesafeConfig.fromDefaultLoader(descriptor[AppConfig])
-  val httpBackend = ZLayer.fromManaged(Managed.make(AsyncHttpClientZioBackend())(_.close().ignore))
-  val client      = configLayer ++ httpBackend >>> Client.live
-  val tracer      = configLayer >>> JaegerTracer.live
-  val envLayer    = tracer ++ Clock.live >>> Tracing.live ++ configLayer ++ client
 
   override def run(args: List[String]) =
     server
-      .provideCustomLayer(
-        envLayer
-          ++ ServerChannelFactory.auto
-          ++ EventLoopGroup.auto(0)
+      .injectCustom(
+        configLayer,
+        JaegerTracer.live,
+        Tracing.live,
+        ServerChannelFactory.auto,
+        EventLoopGroup.auto(0)
       )
       .exitCode
 }
