@@ -1,14 +1,14 @@
 package zio.telemetry.opentelemetry.example.http
 
-import sttp.client._
-import sttp.client.asynchttpclient.WebSocketHandler
-import sttp.client.circe.asJson
+import sttp.client3._
+import sttp.client3.ziojson._
+import sttp.capabilities.zio.ZioStreams
+import sttp.capabilities.WebSockets
 import zio.telemetry.opentelemetry.example.config.AppConfig
 import zio.{ Task, ZIO, ZLayer }
-import zio.stream.Stream
 
 object Client {
-  type Backend = SttpBackend[Task, Stream[Throwable, Byte], WebSocketHandler]
+  type Backend = SttpBackend[Task, ZioStreams with WebSockets]
 
   trait Service {
     def status(headers: Map[String, String]): Task[Statuses]
@@ -26,10 +26,10 @@ object Client {
           .send(
             basicRequest.get(conf.backend.host.withPath("status")).headers(headers).response(asJson[Status])
           )
-          .map(_.body match {
-            case Right(s) => Statuses(List(s, up))
-            case _        => Statuses(List(Status.down("backend"), up))
-          })
+          .map { response =>
+            val status = response.body.getOrElse(Status.down("backend"))
+            Statuses(List(status, up))
+          }
     }
   )
 }

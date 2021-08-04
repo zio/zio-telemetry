@@ -1,43 +1,29 @@
 package zio.telemetry.opentelemetry.example
 
-import org.http4s.server.{ Router, defaults }
-import org.http4s.server.blaze.BlazeServerBuilder
 import zio.clock.Clock
+import zio.console.putStrLn
 import zio.config.getConfig
 import zio.config.typesafe.TypesafeConfig
 import zio.config.magnolia.{ descriptor, Descriptor }
-import zio.interop.catz._
 import zio.telemetry.opentelemetry.Tracing
 import zio.telemetry.opentelemetry.example.config.AppConfig
-import zio.telemetry.opentelemetry.example.http.{ AppEnv, AppTask, Client, StatusService }
-import zio.{ ExitCode, Managed, ZIO, ZLayer, App }
-import org.http4s.syntax.kleisli._
-import sttp.client.asynchttpclient.zio.AsyncHttpClientZioBackend
+import zio.telemetry.opentelemetry.example.http.{ Client, StatusService }
+import zio.{ Managed, ZIO, ZLayer, App }
+import sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend
 import sttp.model.Uri
+import zhttp.service.{ EventLoopGroup, Server }
+import zhttp.service.server.ServerChannelFactory
 
 object BackendServer extends App {
   implicit val sttpUriDescriptor: Descriptor[Uri] =
     Descriptor[String].transformOrFailLeft(Uri.parse)(_.toString)
 
-  val router = Router[AppTask]("/" -> StatusService.routes).orNotFound
-
   val server =
-    ZIO
-      .runtime[AppEnv]
-      .flatMap { implicit runtime =>
-        implicit val ec = runtime.platform.executor.asEC
-        getConfig[AppConfig].flatMap { conf =>
-          BlazeServerBuilder[AppTask](ec)
-            .bindHttp(
-              conf.proxy.host.port.getOrElse(defaults.HttpPort),
-              conf.proxy.host.host.getOrElse(defaults.IPv4Host)
-            )
-            .withHttpApp(router)
-            .serve
-            .compile
-            .drain
-        }
-      }
+    getConfig[AppConfig].flatMap { conf =>
+      val port = conf.backend.host.port.getOrElse(9000)
+      (Server.port(port) ++ Server.app(StatusService.routes))
+        .make.use(_ => putStrLn(s"BackendServer started on port $port") *> ZIO.never)
+    }
 
   val configLayer = TypesafeConfig.fromDefaultLoader(descriptor[AppConfig])
   val httpBackend = ZLayer.fromManaged(Managed.make(AsyncHttpClientZioBackend())(_.close().ignore))
@@ -46,5 +32,7 @@ object BackendServer extends App {
   val envLayer    = tracer ++ Clock.live >>> Tracing.live ++ configLayer ++ client
 
   override def run(args: List[String]) =
-    server.provideCustomLayer(envLayer).fold(_ => ExitCode.failure, _ => ExitCode.success)
+    server.provideCustomLayer(envLayer
+      ++ ServerChannelFactory.auto
+      ++ EventLoopGroup.auto(0)).exitCode
 }

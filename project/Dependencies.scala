@@ -2,10 +2,8 @@ import sbt._
 
 object Dependencies {
   object Versions {
-    val http4s         = "0.21.25"
     val jaeger         = "1.6.0"
     val sttp3          = "3.3.11"
-    val sttp           = "2.2.9"
     val opentracing    = "0.33.0"
     val opentelemetry  = "1.4.1"
     val opencensus     = "0.28.3"
@@ -15,7 +13,6 @@ object Dependencies {
     val zioJson        = "0.1.5"
     val zioConfig      = "1.0.6"
     val zioMagic       = "0.3.6"
-    val zioInteropCats = "2.5.1.0"
   }
 
   lazy val zio = Seq(
@@ -46,25 +43,17 @@ object Dependencies {
 
   lazy val example = Seq(
     "org.typelevel"                 %% "cats-core"                     % "2.6.1",
-    "io.circe"                      %% "circe-generic"                 % "0.14.1",
-    "org.http4s"                    %% "http4s-core"                   % Versions.http4s,
-    "org.http4s"                    %% "http4s-blaze-server"           % Versions.http4s,
-    "org.http4s"                    %% "http4s-dsl"                    % Versions.http4s,
-    "org.http4s"                    %% "http4s-circe"                  % Versions.http4s,
     "io.jaegertracing"               % "jaeger-core"                   % Versions.jaeger,
     "io.jaegertracing"               % "jaeger-client"                 % Versions.jaeger,
     "io.jaegertracing"               % "jaeger-zipkin"                 % Versions.jaeger,
     "com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % Versions.sttp3,
     "com.softwaremill.sttp.client3" %% "zio-json"                      % Versions.sttp3,
-    "com.softwaremill.sttp.client"  %% "async-http-client-backend-zio" % Versions.sttp,
-    "com.softwaremill.sttp.client"  %% "circe"                         % Versions.sttp,
     "io.github.kitlangton"          %% "zio-magic"                     % Versions.zioMagic,
     "io.d11"                        %% "zhttp"                         % Versions.zioHttp,
     "dev.zio"                       %% "zio-json"                      % Versions.zioJson,
     "dev.zio"                       %% "zio-config"                    % Versions.zioConfig,
     "dev.zio"                       %% "zio-config-magnolia"           % Versions.zioConfig,
-    "dev.zio"                       %% "zio-config-typesafe"           % Versions.zioConfig,
-    "dev.zio"                       %% "zio-interop-cats"              % Versions.zioInteropCats
+    "dev.zio"                       %% "zio-config-typesafe"           % Versions.zioConfig
   )
 
   lazy val opentracingExample = example ++ Seq(

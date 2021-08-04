@@ -18,7 +18,6 @@ object JaegerTracer {
         tracerProvider <- UIO(SdkTracerProvider.builder().addSpanProcessor(spanProcessor).build())
         openTelemetry  <- UIO(OpenTelemetrySdk.builder().setTracerProvider(tracerProvider).build())
         tracer         <- UIO(openTelemetry.getTracer("zio.telemetry.opentelemetry.example.JaegerTracer"))
-
       } yield tracer
     )
 
