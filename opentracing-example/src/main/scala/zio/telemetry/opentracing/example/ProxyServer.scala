@@ -1,37 +1,38 @@
 package zio.telemetry.opentracing.example
 
-import cats.effect.{ ExitCode => catsExitCode }
-import org.http4s.server.Router
-import org.http4s.server.blaze.BlazeServerBuilder
-import org.http4s.syntax.kleisli._
+import zio.{ App, ExitCode, ZEnv, ZIO }
+import zio.console.putStrLn
 import sttp.model.Uri
-import zio.{ ExitCode, ZEnv, ZIO }
-import zio.clock.Clock
-import zio.interop.catz._
+import zio.magic._
+import zio.config.typesafe.TypesafeConfig
+import zio.config.getConfig
+import zio.config.magnolia.DeriveConfigDescriptor.descriptor
 import zio.telemetry.opentracing.example.JaegerTracer.makeService
-import zio.telemetry.opentracing.example.config.Configuration
-import zio.telemetry.opentracing.example.http.{ AppTask, StatusesService }
+import zio.telemetry.opentracing.example.config.AppConfig
+import zio.telemetry.opentracing.example.http.StatusesService
+import zhttp.service.{ EventLoopGroup, Server }
+import zhttp.service.server.ServerChannelFactory
 
-object ProxyServer extends CatsApp {
+object ProxyServer extends App {
+
+  private val configLayer = TypesafeConfig.fromDefaultLoader(descriptor[AppConfig])
 
   override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] = {
     val exit =
-      ZIO.runtime[Clock].flatMap { implicit runtime =>
-        implicit val ec = runtime.platform.executor.asEC
+      getConfig[AppConfig].flatMap { conf =>
+        val service = makeService(conf.tracer.host, "zio-proxy")
         for {
-          conf       <- Configuration.load.provideLayer(Configuration.live)
-          service     = makeService(conf.tracer.host, "zio-proxy")
           backendUrl <- ZIO.fromEither(Uri.safeApply(conf.backend.host, conf.backend.port))
-          router      = Router[AppTask]("/" -> StatusesService.statuses(backendUrl, service)).orNotFound
-          result     <- BlazeServerBuilder[AppTask](ec)
-                          .bindHttp(conf.proxy.port, conf.proxy.host)
-                          .withHttpApp(router)
-                          .serve
-                          .compile[AppTask, AppTask, catsExitCode]
-                          .drain
-                          .as(ExitCode.success)
+          result     <- (Server.port(conf.proxy.port) ++ Server.app(StatusesService.statuses(backendUrl, service))).make
+                          .use(_ => putStrLn(s"ProxyServer started on ${conf.proxy.port}") *> ZIO.never)
+                          .exitCode
         } yield result
-      }
+      }.injectCustom(
+        configLayer,
+        ServerChannelFactory.auto,
+        EventLoopGroup.auto(0)
+      )
+
     exit orElse ZIO.succeed(ExitCode.failure)
   }
 }
