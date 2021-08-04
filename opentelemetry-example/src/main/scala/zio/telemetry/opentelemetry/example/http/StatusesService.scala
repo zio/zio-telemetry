@@ -6,8 +6,8 @@ import io.opentelemetry.context.propagation.{ TextMapPropagator, TextMapSetter }
 import zio.UIO
 import zio.telemetry.opentelemetry.Tracing.root
 import zio.telemetry.opentelemetry.Tracing
-import zhttp.http._
-import zio.json._
+import zhttp.http.{ /, Http, HttpApp, Method, Response, Root }
+import zio.json.EncoderOps
 
 import scala.collection.mutable
 

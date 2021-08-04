@@ -6,8 +6,8 @@ import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator }
 import zio.telemetry.opentelemetry.Tracing
 import zio.telemetry.opentelemetry.TracingSyntax._
 import zio.telemetry.opentelemetry.example.http.{ Status => ServiceStatus }
-import zhttp.http._
-import zio.json._
+import zhttp.http.{ /, Header, Http, HttpApp, Method, Response, Root }
+import zio.json.EncoderOps
 import zio.ZIO
 
 import java.lang
