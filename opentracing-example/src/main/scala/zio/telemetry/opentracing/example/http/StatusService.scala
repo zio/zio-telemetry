@@ -14,12 +14,11 @@ import scala.jdk.CollectionConverters._
 
 object StatusService {
   def status(service: ZLayer[Clock, Throwable, OpenTracing]): HttpApp[Clock, Throwable] =
-    Http.collectM {
-      case request@Method.GET -> Root / "status" =>
-        val headers = request.headers.map(h => h.name.toString -> h.value.toString).toMap
-        ZIO.unit
-          .spanFrom(HttpHeadersFormat, new TextMapAdapter(headers.asJava), "/status")
-          .as(Response.jsonString(ServiceStatus.up("backend").toJson))
-          .inject(service, Clock.live)
+    Http.collectM { case request @ Method.GET -> Root / "status" =>
+      val headers = request.headers.map(h => h.name.toString -> h.value.toString).toMap
+      ZIO.unit
+        .spanFrom(HttpHeadersFormat, new TextMapAdapter(headers.asJava), "/status")
+        .as(Response.jsonString(ServiceStatus.up("backend").toJson))
+        .inject(service, Clock.live)
     }
 }
