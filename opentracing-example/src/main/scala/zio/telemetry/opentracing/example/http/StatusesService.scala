@@ -10,8 +10,8 @@ import zio.magic._
 import zio.telemetry.opentracing.OpenTracing
 import zio.{ UIO, ZLayer }
 import zhttp.http.HttpApp
-import zhttp.http._
-import zio.json._
+import zhttp.http.{ Method, Response, Root }
+import zio.json.EncoderOps
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
