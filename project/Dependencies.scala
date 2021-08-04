@@ -2,17 +2,17 @@ import sbt._
 
 object Dependencies {
   object Versions {
-    val jaeger         = "1.6.0"
-    val sttp3          = "3.3.11"
-    val opentracing    = "0.33.0"
-    val opentelemetry  = "1.4.1"
-    val opencensus     = "0.28.3"
-    val zipkin         = "2.16.3"
-    val zio            = "1.0.9"
-    val zioHttp        = "1.0.0.0-RC17"
-    val zioJson        = "0.1.5"
-    val zioConfig      = "1.0.6"
-    val zioMagic       = "0.3.6"
+    val jaeger        = "1.6.0"
+    val sttp3         = "3.3.11"
+    val opentracing   = "0.33.0"
+    val opentelemetry = "1.4.1"
+    val opencensus    = "0.28.3"
+    val zipkin        = "2.16.3"
+    val zio           = "1.0.10"
+    val zioHttp       = "1.0.0.0-RC17"
+    val zioJson       = "0.1.5"
+    val zioConfig     = "1.0.6"
+    val zioMagic      = "0.3.6"
   }
 
   lazy val zio = Seq(
