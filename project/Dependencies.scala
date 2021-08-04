@@ -3,7 +3,7 @@ import sbt._
 object Dependencies {
   object Versions {
     val jaeger        = "1.6.0"
-    val sttp3         = "3.3.11"
+    val sttp3         = "3.3.13"
     val opentracing   = "0.33.0"
     val opentelemetry = "1.4.1"
     val opencensus    = "0.28.3"
