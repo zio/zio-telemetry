@@ -1,6 +1,6 @@
 package zio.telemetry.opentracing.example
 
-import zio.{ ExitCode, ZEnv, ZIO, App }
+import zio.{ App, ExitCode, ZEnv, ZIO }
 import zio.clock.Clock
 import zio.console.putStrLn
 import zio.magic._

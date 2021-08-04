@@ -8,7 +8,7 @@ import zio.config.magnolia.{ descriptor, Descriptor }
 import zio.telemetry.opentelemetry.Tracing
 import zio.telemetry.opentelemetry.example.config.AppConfig
 import zio.telemetry.opentelemetry.example.http.{ Client, StatusService }
-import zio.{ Managed, ZIO, ZLayer, App }
+import zio.{ App, Managed, ZIO, ZLayer }
 import sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend
 import sttp.model.Uri
 import zhttp.service.{ EventLoopGroup, Server }
@@ -21,8 +21,9 @@ object BackendServer extends App {
   val server =
     getConfig[AppConfig].flatMap { conf =>
       val port = conf.backend.host.port.getOrElse(9000)
-      (Server.port(port) ++ Server.app(StatusService.routes))
-        .make.use(_ => putStrLn(s"BackendServer started on port $port") *> ZIO.never)
+      (Server.port(port) ++ Server.app(StatusService.routes)).make.use(_ =>
+        putStrLn(s"BackendServer started on port $port") *> ZIO.never
+      )
     }
 
   val configLayer = TypesafeConfig.fromDefaultLoader(descriptor[AppConfig])
@@ -32,7 +33,11 @@ object BackendServer extends App {
   val envLayer    = tracer ++ Clock.live >>> Tracing.live ++ configLayer ++ client
 
   override def run(args: List[String]) =
-    server.provideCustomLayer(envLayer
-      ++ ServerChannelFactory.auto
-      ++ EventLoopGroup.auto(0)).exitCode
+    server
+      .provideCustomLayer(
+        envLayer
+          ++ ServerChannelFactory.auto
+          ++ EventLoopGroup.auto(0)
+      )
+      .exitCode
 }
