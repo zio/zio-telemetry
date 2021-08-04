@@ -7,7 +7,7 @@ import zio.magic._
 import zio.telemetry.opentracing.example.http.{ Status => ServiceStatus }
 import zio.telemetry.opentracing._
 import zio.{ ZIO, ZLayer }
-import zhttp.http.{ /, Http, HttpApp, Method, Response, Root }
+import zhttp.http.{ ->, /, Http, HttpApp, Method, Response, Root }
 import zio.json.EncoderOps
 
 import scala.jdk.CollectionConverters._

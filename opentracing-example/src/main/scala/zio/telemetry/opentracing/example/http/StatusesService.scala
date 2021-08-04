@@ -9,7 +9,7 @@ import zio.clock.Clock
 import zio.magic._
 import zio.telemetry.opentracing.OpenTracing
 import zio.{ UIO, ZLayer }
-import zhttp.http.{ /, HttpApp, Method, Response, Root }
+import zhttp.http.{ ->, /, HttpApp, Method, Response, Root }
 import zio.json.EncoderOps
 
 import scala.collection.mutable
