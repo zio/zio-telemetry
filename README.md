@@ -96,12 +96,16 @@ To check if it's running properly visit [Jaeger UI](http://localhost:16686/).
 More info can be found [here][jaeger-docker].
 
 Our application contains two services:
- 1. [proxy](./modules/example/src/main/scala/zio/telemetry/example/ProxyServer.scala) service
- 2. [backend](./modules/example/src/main/scala/zio/telemetry/example/BackendServer.scala) service
+ 1. proxy service
+ 2. backend service
 
 #### Proxy service
 
 Represents entry point to example distributed system. It exposes `/statuses` endpoint which returns list of system's services statuses.
+
+The service consists of a `ProxyServer` and `StatusesService`.
+
+##### ProxyServer
 
 In order to start service run:
 ```bash
@@ -114,10 +118,17 @@ ProxyServer started on port 8080
 ```
 if the server has been started properly.
 
+##### StatusesService
+
+Provides the implementation of the service, which returns the status of the backend service and the proxy service itself. `Client` is used to retrieve the status of the backend service.
 
 #### Backend service
 
-Represents "internal" service of the system. It exposes `/status` endpoint which returns service status.
+Represents "internal" service of the system. It exposes `/status` endpoint which returns the status of the backend service.
+
+The service consists of a `BackendServer` and `StatusService`.
+
+##### BackendServer
 
 In order to start service run:
 ```bash
@@ -130,7 +141,31 @@ BackendServer started on port 9000
 ```
 if the server has been started properly.
 
-Configuration is given in [application.conf](./modules/example/src/main/resources/application.conf).
+##### StatusService
+
+Provides the implementation of the service, which is to simply return the status of the backend service.
+
+#### Status
+
+```scala
+final case class Status(name: String, status: String)
+```
+
+Represents the status of a service.
+
+#### Statuses
+
+```scala
+final case class Statuses(data: List[Status]) extends AnyVal
+```
+
+Represents the statuses of a number of services.
+
+#### Configuration
+
+Configuration is given in `application.conf`.
+
+#### Running
 
 After both services are properly started, running following command
 ```bash
