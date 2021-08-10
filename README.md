@@ -108,7 +108,11 @@ In order to start service run:
 sbt "opentracingExample/runMain zio.telemetry.opentracing.example.ProxyServer"
 ```
 
-If it's start properly it should be available on `http://0.0.0.0:8080/statuses`.
+The console should output
+```bash
+ProxyServer started on port 8080
+```
+if the server has been started properly.
 
 
 #### Backend service
@@ -120,30 +124,21 @@ In order to start service run:
 sbt "opentracingExample/runMain zio.telemetry.opentracing.example.BackendServer"
 ```
 
-If it's start properly it should be available on `http://0.0.0.0:9000/status`.
+The console should output
+```bash
+BackendServer started on port 9000
+```
+if the server has been started properly.
 
 Configuration is given in [application.conf](./modules/example/src/main/resources/application.conf).
 
 After both services are properly started, running following command
 ```bash
-curl -X GET http://0.0.0.0:8080/statuses
+curl -X GET http://localhost:8080/statuses
 ```
 should return following response:
 ```json
-{
-  "data": [
-    {
-      "name": "backend",
-      "version": "1.0.0",
-      "status": "up"
-    },
-    {
-      "name": "proxy",
-      "version": "1.0.0",
-      "status": "up"
-    }
-  ]
-}
+{"data":[{"name":"backend","status":"up"},{"name":"proxy","status":"up"}]}
 ```
 
 Simultaneously, it will create trace that will be stored in Jaeger backend.
@@ -174,7 +169,7 @@ sbt "opentelemetryExample/runMain zio.telemetry.opentelemetry.example.BackendSer
 ```
 Now perform the following request:
 ```bash
-curl -X GET http://0.0.0.0:8080/statuses
+curl -X GET http://localhost:8080/statuses
 ```
 and head over to [http://localhost:16686/](http://localhost:16686/) to see the result.
 
