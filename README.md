@@ -96,8 +96,8 @@ To check if it's running properly visit [Jaeger UI](http://localhost:16686/).
 More info can be found [here][jaeger-docker].
 
 Our application contains two services:
- 1. proxy service
- 2. backend service
+ 1. [proxy](opentracing-example/src/main/scala/zio/telemetry/opentracing/example/ProxyServer.scala) service
+ 2. [backend](opentracing-example/src/main/scala/zio/telemetry/opentracing/example/BackendServer.scala) service
 
 #### Proxy service
 
@@ -163,7 +163,7 @@ Represents the statuses of a number of services.
 
 #### Configuration
 
-Configuration is given in `application.conf`.
+Configuration is given in [application.conf](opentracing-example/src/main/resources/application.conf).
 
 #### Running
 
