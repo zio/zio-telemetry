@@ -9,7 +9,7 @@ import zio.config.getConfig
 import zio.config.magnolia.DeriveConfigDescriptor.descriptor
 import zio.telemetry.opentracing.example.JaegerTracer.makeService
 import zio.telemetry.opentracing.example.config.AppConfig
-import zio.telemetry.opentracing.example.http.StatusService
+import zio.telemetry.opentracing.example.http.BackendApp
 import zhttp.service.{ EventLoopGroup, Server }
 import zhttp.service.server.ServerChannelFactory
 
@@ -22,7 +22,7 @@ object BackendServer extends App {
       ZIO.runtime[Clock].flatMap { implicit runtime =>
         getConfig[AppConfig].flatMap { conf =>
           val service = makeService(conf.tracer.host, "zio-backend")
-          (Server.port(conf.backend.port) ++ Server.app(StatusService.status(service))).make
+          (Server.port(conf.backend.port) ++ Server.app(BackendApp.status(service))).make
             .use(_ => putStrLn(s"BackendServer started at ${conf.backend.port}") *> ZIO.never)
             .exitCode
         }.injectCustom(

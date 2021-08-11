@@ -13,7 +13,7 @@ import zio.ZIO
 import java.lang
 import scala.jdk.CollectionConverters._
 
-object StatusService {
+object BackendApp {
 
   val propagator: TextMapPropagator       = W3CTraceContextPropagator.getInstance()
   val getter: TextMapGetter[List[Header]] = new TextMapGetter[List[Header]] {

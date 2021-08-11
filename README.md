@@ -96,12 +96,16 @@ To check if it's running properly visit [Jaeger UI](http://localhost:16686/).
 More info can be found [here][jaeger-docker].
 
 Our application contains two services:
- 1. [proxy](./modules/example/src/main/scala/zio/telemetry/example/ProxyServer.scala) service
- 2. [backend](./modules/example/src/main/scala/zio/telemetry/example/BackendServer.scala) service
+ 1. [proxy](opentracing-example/src/main/scala/zio/telemetry/opentracing/example/ProxyServer.scala) service
+ 2. [backend](opentracing-example/src/main/scala/zio/telemetry/opentracing/example/BackendServer.scala) service
 
 #### Proxy service
 
 Represents entry point to example distributed system. It exposes `/statuses` endpoint which returns list of system's services statuses.
+
+The service consists of a `ProxyServer` and `ProxyApp`.
+
+##### ProxyServer
 
 In order to start service run:
 ```bash
@@ -113,11 +117,20 @@ The console should output
 ProxyServer started on port 8080
 ```
 if the server has been started properly.
+typ
+##### ProxyApp
 
+Provides the implementation of the service, which returns the status of the backend service and the proxy service itself. `Client` is used to retrieve the status of the backend service.
+
+This is also where the tracing of the application is done, by collecting the timings and logging things such as the span type and the HTTP method. The context is injected into a carrier, and passed along to the backend through `Client`, where a child span is created, and logging of the backend service is done.
 
 #### Backend service
 
-Represents "internal" service of the system. It exposes `/status` endpoint which returns service status.
+Represents "internal" service of the system. It exposes `/status` endpoint which returns the status of the backend service.
+
+The service consists of a `BackendServer` and `BackendApp`.
+
+##### BackendServer
 
 In order to start service run:
 ```bash
@@ -130,7 +143,31 @@ BackendServer started on port 9000
 ```
 if the server has been started properly.
 
-Configuration is given in [application.conf](./modules/example/src/main/resources/application.conf).
+##### BackendApp
+
+Provides the implementation of the service, which is to simply return the status of the backend service.
+
+#### Status
+
+```scala
+final case class Status(name: String, status: String)
+```
+
+Represents the status of a service.
+
+#### Statuses
+
+```scala
+final case class Statuses(data: List[Status]) extends AnyVal
+```
+
+Represents the statuses of a number of services.
+
+#### Configuration
+
+Configuration is given in [application.conf](opentracing-example/src/main/resources/application.conf).
+
+#### Running
 
 After both services are properly started, running following command
 ```bash
