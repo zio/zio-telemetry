@@ -12,7 +12,7 @@ object Dependencies {
     val zioHttp       = "1.0.0.0-RC17"
     val zioJson       = "0.1.5"
     val zioConfig     = "1.0.6"
-    val zioMagic      = "0.3.6"
+    val zioMagic      = "0.3.7"
   }
 
   lazy val zio = Seq(
