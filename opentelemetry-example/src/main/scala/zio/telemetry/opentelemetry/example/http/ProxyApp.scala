@@ -11,7 +11,7 @@ import zio.json.EncoderOps
 
 import scala.collection.mutable
 
-object StatusesService {
+object ProxyApp {
 
   val propagator: TextMapPropagator                      = W3CTraceContextPropagator.getInstance()
   val setter: TextMapSetter[mutable.Map[String, String]] = (carrier, key, value) => carrier.update(key, value)

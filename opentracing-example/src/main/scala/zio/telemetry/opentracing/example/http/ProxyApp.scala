@@ -15,7 +15,7 @@ import zio.json.EncoderOps
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
-object StatusesService {
+object ProxyApp {
   def statuses(backendUri: Uri, service: ZLayer[Clock, Throwable, OpenTracing]): HttpApp[Clock, Throwable] =
     HttpApp.collectM { case Method.GET -> Root / "statuses" =>
       val zio =

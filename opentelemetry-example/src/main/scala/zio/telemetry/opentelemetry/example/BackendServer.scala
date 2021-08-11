@@ -7,7 +7,7 @@ import zio.config.typesafe.TypesafeConfig
 import zio.config.magnolia.{ descriptor, Descriptor }
 import zio.telemetry.opentelemetry.Tracing
 import zio.telemetry.opentelemetry.example.config.AppConfig
-import zio.telemetry.opentelemetry.example.http.StatusService
+import zio.telemetry.opentelemetry.example.http.BackendApp
 import zio.{ App, ZIO }
 import sttp.model.Uri
 import zhttp.service.{ EventLoopGroup, Server }
@@ -20,7 +20,7 @@ object BackendServer extends App {
   val server =
     getConfig[AppConfig].flatMap { conf =>
       val port = conf.backend.host.port.getOrElse(9000)
-      (Server.port(port) ++ Server.app(StatusService.routes)).make.use(_ =>
+      (Server.port(port) ++ Server.app(BackendApp.routes)).make.use(_ =>
         putStrLn(s"BackendServer started on port $port") *> ZIO.never
       )
     }
