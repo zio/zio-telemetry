@@ -117,10 +117,12 @@ The console should output
 ProxyServer started on port 8080
 ```
 if the server has been started properly.
-
+typ
 ##### StatusesService
 
 Provides the implementation of the service, which returns the status of the backend service and the proxy service itself. `Client` is used to retrieve the status of the backend service.
+
+This is also where the tracing of the application is done, by collecting the timings and logging things such as the span type and the HTTP method. The context is injected into a carrier, and passed along to the backend through `Client`, where a child span is created, and logging of the backend service is done.
 
 #### Backend service
 
