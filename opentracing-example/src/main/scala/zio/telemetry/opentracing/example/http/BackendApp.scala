@@ -12,7 +12,7 @@ import zio.json.EncoderOps
 
 import scala.jdk.CollectionConverters._
 
-object StatusService {
+object BackendApp {
   def status(service: ZLayer[Clock, Throwable, OpenTracing]): HttpApp[Clock, Throwable] =
     Http.collectM { case request @ Method.GET -> Root / "status" =>
       val headers = request.headers.map(h => h.name.toString -> h.value.toString).toMap

@@ -9,7 +9,7 @@ import zio.config.getConfig
 import zio.config.magnolia.DeriveConfigDescriptor.descriptor
 import zio.telemetry.opentracing.example.JaegerTracer.makeService
 import zio.telemetry.opentracing.example.config.AppConfig
-import zio.telemetry.opentracing.example.http.StatusesService
+import zio.telemetry.opentracing.example.http.ProxyApp
 import zhttp.service.{ EventLoopGroup, Server }
 import zhttp.service.server.ServerChannelFactory
 
@@ -23,7 +23,7 @@ object ProxyServer extends App {
         val service = makeService(conf.tracer.host, "zio-proxy")
         for {
           backendUrl <- ZIO.fromEither(Uri.safeApply(conf.backend.host, conf.backend.port))
-          result     <- (Server.port(conf.proxy.port) ++ Server.app(StatusesService.statuses(backendUrl, service))).make
+          result     <- (Server.port(conf.proxy.port) ++ Server.app(ProxyApp.statuses(backendUrl, service))).make
                           .use(_ => putStrLn(s"ProxyServer started on ${conf.proxy.port}") *> ZIO.never)
                           .exitCode
         } yield result

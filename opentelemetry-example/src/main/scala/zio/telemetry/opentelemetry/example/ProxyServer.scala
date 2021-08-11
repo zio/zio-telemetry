@@ -7,7 +7,7 @@ import zio.config.typesafe.TypesafeConfig
 import zio.config.magnolia.{ descriptor, Descriptor }
 import zio.telemetry.opentelemetry.Tracing
 import zio.telemetry.opentelemetry.example.config.AppConfig
-import zio.telemetry.opentelemetry.example.http.{ Client, StatusesService }
+import zio.telemetry.opentelemetry.example.http.{ Client, ProxyApp }
 import zio.{ App, Managed, ZIO, ZLayer }
 import sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend
 import sttp.model.Uri
@@ -21,7 +21,7 @@ object ProxyServer extends App {
   val server =
     getConfig[AppConfig].flatMap { conf =>
       val port = conf.proxy.host.port.getOrElse(8080)
-      (Server.port(port) ++ Server.app(StatusesService.routes)).make.use(_ =>
+      (Server.port(port) ++ Server.app(ProxyApp.routes)).make.use(_ =>
         putStrLn(s"ProxyServer started on port $port") *> ZIO.never
       )
     }

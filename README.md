@@ -103,7 +103,7 @@ Our application contains two services:
 
 Represents entry point to example distributed system. It exposes `/statuses` endpoint which returns list of system's services statuses.
 
-The service consists of a `ProxyServer` and `StatusesService`.
+The service consists of a `ProxyServer` and `ProxyApp`.
 
 ##### ProxyServer
 
@@ -118,7 +118,7 @@ ProxyServer started on port 8080
 ```
 if the server has been started properly.
 typ
-##### StatusesService
+##### ProxyApp
 
 Provides the implementation of the service, which returns the status of the backend service and the proxy service itself. `Client` is used to retrieve the status of the backend service.
 
@@ -128,7 +128,7 @@ This is also where the tracing of the application is done, by collecting the tim
 
 Represents "internal" service of the system. It exposes `/status` endpoint which returns the status of the backend service.
 
-The service consists of a `BackendServer` and `StatusService`.
+The service consists of a `BackendServer` and `BackendApp`.
 
 ##### BackendServer
 
@@ -143,7 +143,7 @@ BackendServer started on port 9000
 ```
 if the server has been started properly.
 
-##### StatusService
+##### BackendApp
 
 Provides the implementation of the service, which is to simply return the status of the backend service.
 
