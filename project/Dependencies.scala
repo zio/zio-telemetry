@@ -8,7 +8,7 @@ object Dependencies {
     val opentelemetry = "1.5.0"
     val opencensus    = "0.28.3"
     val zipkin        = "2.16.3"
-    val zio           = "1.0.10"
+    val zio           = "1.0.11"
     val zioHttp       = "1.0.0.0-RC17"
     val zioJson       = "0.1.5"
     val zioConfig     = "1.0.6"
