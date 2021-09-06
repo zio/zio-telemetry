@@ -76,9 +76,9 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
   ): ZIO[Any, Nothing, Unit] =
     for {
       current <- currentSpan_.get
-      _       <- UIO(attributes.foreach({ case ((k, v)) =>
+      _       <- UIO(attributes.foreach { case ((k, v)) =>
                    current.putAttribute(k, v)
-                 }))
+                 })
     } yield ()
 
   private def createSpan(
