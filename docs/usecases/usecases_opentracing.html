@@ -1,0 +1,147 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><title>OpenTracing Example · ZIO Telemetry</title><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="generator" content="Docusaurus"/><meta name="description" content="You can find the source code [here](https://github.com/zio/zio-telemetry/tree/master/opentracing-example)."/><meta name="docsearch:language" content="en"/><meta property="og:title" content="OpenTracing Example · ZIO Telemetry"/><meta property="og:type" content="website"/><meta property="og:url" content="https://zio.github.io/zio-telemetry/"/><meta property="og:description" content="You can find the source code [here](https://github.com/zio/zio-telemetry/tree/master/opentracing-example)."/><meta property="og:image" content="https://zio.github.io/zio-telemetry/img/undraw_online.svg"/><meta name="twitter:card" content="summary"/><meta name="twitter:image" content="https://zio.github.io/zio-telemetry/img/undraw_tweetstorm.svg"/><link rel="shortcut icon" href="/zio-telemetry/img/favicon.png"/><link rel="stylesheet" href="https://cdn.jsdelivr.net/docsearch.js/1/docsearch.min.css"/><link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css"/><script type="text/javascript" src="https://buttons.github.io/buttons.js"></script><script src="https://unpkg.com/vanilla-back-to-top@7.1.14/dist/vanilla-back-to-top.min.js"></script><script>
+        document.addEventListener('DOMContentLoaded', function() {
+          addBackToTop(
+            {"zIndex":100,"cornerOffset":100}
+          )
+        });
+        </script><script src="/zio-telemetry/js/scrollSpy.js"></script><link rel="stylesheet" href="/zio-telemetry/css/main.css"/><script src="/zio-telemetry/js/codetabs.js"></script></head><body class="sideNavVisible separateOnPageNav"><div class="fixedHeaderContainer"><div class="headerWrapper wrapper"><header><a href="/zio-telemetry/"><img class="logo" src="/zio-telemetry/img/navbar_brand2x.png" alt="ZIO Telemetry"/><h2 class="headerTitleWithLogo">ZIO Telemetry</h2></a><div class="navigationWrapper navigationSlider"><nav class="slidingNav"><ul class="nav-site nav-site-internal"><li class=""><a href="/zio-telemetry/docs/overview/overview_index" target="_self">Overview</a></li><li class="siteNavGroupActive"><a href="/zio-telemetry/docs/usecases/usecases_index" target="_self">Use Cases</a></li><li class=""><a href="/zio-telemetry/docs/about/about_index" target="_self">About</a></li><li class="navSearchWrapper reactNavSearchWrapper"><input type="text" id="search_input_react" placeholder="Search" title="Search"/></li></ul></nav></div></header></div></div><div class="navPusher"><div class="docMainWrapper wrapper"><div class="docsNavContainer" id="docsNav"><nav class="toc"><div class="toggleNav"><section class="navWrapper wrapper"><div class="navBreadcrumb wrapper"><div class="navToggle" id="navToggler"><div class="hamburger-menu"><div class="line1"></div><div class="line2"></div><div class="line3"></div></div></div><h2><i>›</i><span>Use Cases</span></h2><div class="tocToggler" id="tocToggler"><i class="icon-toc"></i></div></div><div class="navGroups"><div class="navGroup"><h3 class="navGroupCategoryTitle">Use Cases</h3><ul class=""><li class="navListItem"><a class="navItem" href="/zio-telemetry/docs/usecases/usecases_index">Contents</a></li><li class="navListItem navListItemActive"><a class="navItem" href="/zio-telemetry/docs/usecases/usecases_opentracing">OpenTracing Example</a></li><li class="navListItem"><a class="navItem" href="/zio-telemetry/docs/usecases/usecases_opentelemetry">OpenTelemetry Example</a></li></ul></div></div></section></div><script>
+            var coll = document.getElementsByClassName('collapsible');
+            var checkActiveCategory = true;
+            for (var i = 0; i < coll.length; i++) {
+              var links = coll[i].nextElementSibling.getElementsByTagName('*');
+              if (checkActiveCategory){
+                for (var j = 0; j < links.length; j++) {
+                  if (links[j].classList.contains('navListItemActive')){
+                    coll[i].nextElementSibling.classList.toggle('hide');
+                    coll[i].childNodes[1].classList.toggle('rotate');
+                    checkActiveCategory = false;
+                    break;
+                  }
+                }
+              }
+
+              coll[i].addEventListener('click', function() {
+                var arrow = this.childNodes[1];
+                arrow.classList.toggle('rotate');
+                var content = this.nextElementSibling;
+                content.classList.toggle('hide');
+              });
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+              createToggler('#navToggler', '#docsNav', 'docsSliderActive');
+              createToggler('#tocToggler', 'body', 'tocActive');
+
+              var headings = document.querySelector('.toc-headings');
+              headings && headings.addEventListener('click', function(event) {
+                var el = event.target;
+                while(el !== headings){
+                  if (el.tagName === 'A') {
+                    document.body.classList.remove('tocActive');
+                    break;
+                  } else{
+                    el = el.parentNode;
+                  }
+                }
+              }, false);
+
+              function createToggler(togglerSelector, targetSelector, className) {
+                var toggler = document.querySelector(togglerSelector);
+                var target = document.querySelector(targetSelector);
+
+                if (!toggler) {
+                  return;
+                }
+
+                toggler.onclick = function(event) {
+                  event.preventDefault();
+
+                  target.classList.toggle(className);
+                };
+              }
+            });
+        </script></nav></div><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 id="__docusaurus" class="postHeaderTitle">OpenTracing Example</h1></header><article><div><span><p>You can find the source code <a href="https://github.com/zio/zio-telemetry/tree/master/opentracing-example">here</a>.</p>
+<p>Firstly, start <a href="https://www.jaegertracing.io">Jaeger</a> by running the following command:</p>
+<pre><code class="hljs css language-bash">docker run -d --name jaeger \
+  -e COLLECTOR_ZIPKIN_HTTP_PORT=9411 \
+  -p 5775:5775/udp \
+  -p 6831:6831/udp \
+  -p 6832:6832/udp \
+  -p 5778:5778 \
+  -p 16686:16686 \
+  -p 14268:14268 \
+  -p 9411:9411 \
+  jaegertracing/all-in-one:1.6
+</code></pre>
+<p>To check if it's running properly visit <a href="http://localhost:16686/">Jaeger UI</a>.
+More info can be found <a href="https://www.jaegertracing.io/docs/1.6/getting-started/#all-in-one-docker-image">here</a>.</p>
+<p>Our application contains two services:</p>
+<ol>
+<li><a href="https://github.com/zio/zio-telemetry/blob/master/opentracing-example/src/main/scala/zio/telemetry/opentracing/example/ProxyServer.scala">Proxy</a> service</li>
+<li><a href="https://github.com/zio/zio-telemetry/blob/master/opentracing-example/src/main/scala/zio/telemetry/opentracing/example/BackendServer.scala">Backend</a> service</li>
+</ol>
+<h3><a class="anchor" aria-hidden="true" id="proxy-service"></a><a href="#proxy-service" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Proxy Service</h3>
+<p>Represents the entry point of the distributed system example. It exposes the <code>/statuses</code> endpoint which returns a list of system's services statuses.</p>
+<p>The service consists of <code>ProxyServer</code> and <code>ProxyApp</code>.</p>
+<h4><a class="anchor" aria-hidden="true" id="proxyserver"></a><a href="#proxyserver" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>ProxyServer</h4>
+<p>In order to start the service run:</p>
+<pre><code class="hljs css language-bash">sbt <span class="hljs-string">"opentracingExample/runMain zio.telemetry.opentracing.example.ProxyServer"</span>
+</code></pre>
+<p>The console should output</p>
+<pre><code class="hljs css language-bash">ProxyServer started on port 8080
+</code></pre>
+<p>if the server has been started properly.</p>
+<h4><a class="anchor" aria-hidden="true" id="proxyapp"></a><a href="#proxyapp" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>ProxyApp</h4>
+<p>Provides the implementation of the service, which returns the status of the backend service and the proxy service itself. <code>Client</code> is used to retrieve the status of the backend service.</p>
+<p>This is also where the tracing of the application is done, by collecting the timings and logging things such as the span type and the HTTP method. The context is injected into a carrier, and passed along to the backend through <code>Client</code>, where a child span is created, and logging of the backend service is done.</p>
+<h3><a class="anchor" aria-hidden="true" id="backend-service"></a><a href="#backend-service" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Backend Service</h3>
+<p>Represents the &quot;internal&quot; service of the system. It exposes the <code>/status</code> endpoint which returns the status of the backend service.</p>
+<p>The service consists of <code>BackendServer</code> and <code>BackendApp</code>.</p>
+<h4><a class="anchor" aria-hidden="true" id="backendserver"></a><a href="#backendserver" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>BackendServer</h4>
+<p>In order to start the service run:</p>
+<pre><code class="hljs css language-bash">sbt <span class="hljs-string">"opentracingExample/runMain zio.telemetry.opentracing.example.BackendServer"</span>
+</code></pre>
+<p>The console should output</p>
+<pre><code class="hljs css language-bash">BackendServer started on port 9000
+</code></pre>
+<p>if the server has been started properly.</p>
+<h4><a class="anchor" aria-hidden="true" id="backendapp"></a><a href="#backendapp" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>BackendApp</h4>
+<p>Provides the implementation of the service, which is to simply return the status of the backend service.</p>
+<h3><a class="anchor" aria-hidden="true" id="status"></a><a href="#status" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Status</h3>
+<pre><code class="hljs css language-scala"><span class="hljs-keyword">final</span> <span class="hljs-keyword">case</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Status</span>(<span class="hljs-params">name: <span class="hljs-type">String</span>, status: <span class="hljs-type">String</span></span>)</span>
+</code></pre>
+<p>Represents the status of a service.</p>
+<h3><a class="anchor" aria-hidden="true" id="statuses"></a><a href="#statuses" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Statuses</h3>
+<pre><code class="hljs css language-scala"><span class="hljs-keyword">final</span> <span class="hljs-keyword">case</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Statuses</span>(<span class="hljs-params">data: <span class="hljs-type">List</span>[<span class="hljs-type">Status</span>]</span>) <span class="hljs-keyword">extends</span> <span class="hljs-title">AnyVal</span></span>
+</code></pre>
+<p>Represents the statuses of a number of services.</p>
+<h3><a class="anchor" aria-hidden="true" id="configuration"></a><a href="#configuration" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Configuration</h3>
+<p>Configuration is given in <a href="https://github.com/zio/zio-telemetry/blob/82787facf973feeb9c128f21a964fad15d7c591d/opentracing-example/src/main/resources/application.conf">application.conf</a>.</p>
+<h3><a class="anchor" aria-hidden="true" id="running"></a><a href="#running" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Running</h3>
+<p>After both services are properly started, running the following command</p>
+<pre><code class="hljs css language-bash">curl -X GET http://localhost:8080/statuses
+</code></pre>
+<p>should return the following response:</p>
+<pre><code class="hljs css language-json">{<span class="hljs-attr">"data"</span>:[{<span class="hljs-attr">"name"</span>:<span class="hljs-string">"backend"</span>,<span class="hljs-attr">"status"</span>:<span class="hljs-string">"up"</span>},{<span class="hljs-attr">"name"</span>:<span class="hljs-string">"proxy"</span>,<span class="hljs-attr">"status"</span>:<span class="hljs-string">"up"</span>}]}
+</code></pre>
+<p>Simultaneously, it will create trace that will be stored in Jaeger backend.</p>
+</span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/zio-telemetry/docs/usecases/usecases_index"><span class="arrow-prev">← </span><span>Contents</span></a><a class="docs-next button" href="/zio-telemetry/docs/usecases/usecases_opentelemetry"><span class="function-name-prevnext">OpenTelemetry Example</span><span class="arrow-next"> →</span></a></div></div></div><nav class="onPageNav"></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/zio-telemetry/" class="nav-home"><img src="/zio-telemetry/img/sidebar_brand2x.png" alt="ZIO Telemetry"/></a><div><h5>GitHub</h5><a class="github-button" href="https://github.com/zio/zio-telemetry" data-icon="octicon-star" data-count-href="/zio/zio-telemetry/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star this project on GitHub">Star</a></div><div><h5>Chat with us on Discord</h5><a href="https://discord.gg/2ccFBr4"><img src="/zio-telemetry//img/discord.png" width="120" alt="discord"/></a></div><div><h5>Additional resources</h5><a href="/zio-telemetry/api/index.html">Scaladoc of zio-telemetry</a></div></section><section class="copyright">Copyright © 2021 ZIO Maintainers</section></footer></div><script type="text/javascript" src="https://cdn.jsdelivr.net/docsearch.js/1/docsearch.min.js"></script><script>
+                document.addEventListener('keyup', function(e) {
+                  if (e.target !== document.body) {
+                    return;
+                  }
+                  // keyCode for '/' (slash)
+                  if (e.keyCode === 191) {
+                    const search = document.getElementById('search_input_react');
+                    search && search.focus();
+                  }
+                });
+              </script><script>
+              var search = docsearch({
+                
+                apiKey: 'b7978c4d7d28a5a9181d2eea975b0e99',
+                indexName: 'zio-telemetry',
+                inputSelector: '#search_input_react',
+                algoliaOptions: {}
+              });
+            </script></body></html>
