@@ -46,8 +46,8 @@ object Tracing {
   }
 
   /**
-   * Sets the `currentContext` to `context` only while `effect` runs,
-   * and error status of `span` according to any potential failure of effect.
+   * Sets the `currentContext` to `context` only while `effect` runs, and error status of `span` according to any
+   * potential failure of effect.
    */
   private def finalizeSpanUsingEffect[R, E, A](
     effect: ZIO[R, E, A],
@@ -62,8 +62,8 @@ object Tracing {
     } yield r
 
   /**
-   * Extracts the span from carrier `C` and set its child span with name 'spanName' as the current span.
-   * Ends the span when the effect finishes.
+   * Extracts the span from carrier `C` and set its child span with name 'spanName' as the current span. Ends the span
+   * when the effect finishes.
    */
   def spanFrom[C, R, E, A](
     propagator: TextMapPropagator,
@@ -79,8 +79,7 @@ object Tracing {
     } yield r
 
   /**
-   * Sets the current span to be the new root span with name 'spanName'
-   * Ends the span when the effect finishes.
+   * Sets the current span to be the new root span with name 'spanName' Ends the span when the effect finishes.
    */
   def root[R, E, A](
     spanName: String,
@@ -90,8 +89,8 @@ object Tracing {
     createRoot(spanName, spanKind).use(finalizeSpanUsingEffect(effect, _, toErrorStatus))
 
   /**
-   * Sets the current span to be the child of the current span with name 'spanName'
-   * Ends the span when the effect finishes.
+   * Sets the current span to be the child of the current span with name 'spanName' Ends the span when the effect
+   * finishes.
    */
   def span[R, E, A](
     spanName: String,
@@ -104,8 +103,7 @@ object Tracing {
     } yield r
 
   /**
-   * Introduces a thread-local scope during the execution allowing
-   * for non-zio context propagation.
+   * Introduces a thread-local scope during the execution allowing for non-zio context propagation.
    *
    * Closes the scope when the effect finishes.
    */
@@ -120,8 +118,7 @@ object Tracing {
     } yield eff
 
   /**
-   * Introduces a thread-local scope during the execution allowing
-   * for non-zio context propagation.
+   * Introduces a thread-local scope during the execution allowing for non-zio context propagation.
    *
    * Closes the scope when the effect finishes.
    */
@@ -136,13 +133,12 @@ object Tracing {
     } yield eff
 
   /**
-   * Introduces a thread-local scope from the currently active zio span
-   * allowing for non-zio context propagation. This scope will only be
-   * active during Future creation, so another mechanism must be used to
-   * ensure that the scope is passed into the Future callbacks.
+   * Introduces a thread-local scope from the currently active zio span allowing for non-zio context propagation. This
+   * scope will only be active during Future creation, so another mechanism must be used to ensure that the scope is
+   * passed into the Future callbacks.
    *
-   * The java auto instrumentation package provides such a mechanism out of
-   * the box, so one is not provided as a part of this method.
+   * The java auto instrumentation package provides such a mechanism out of the box, so one is not provided as a part of
+   * this method.
    *
    * CLoses the scope when the effect finishes
    */
