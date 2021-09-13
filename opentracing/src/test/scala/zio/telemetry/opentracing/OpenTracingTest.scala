@@ -20,7 +20,7 @@ object OpenTracingTest extends DefaultRunnableSpec {
     ZLayer.fromEffect(UIO(new MockTracer))
 
   val testService: URLayer[HasMockTracer with Clock, OpenTracing] =
-    ZLayer.fromServiceManaged(tracer => OpenTracing.managed(tracer, "ROOT"))
+    ZLayer.fromServiceManaged((tracer: MockTracer) => OpenTracing.managed(tracer, "ROOT"))
 
   val customLayer = mockTracer ++ ((mockTracer ++ Clock.any) >>> testService)
 
