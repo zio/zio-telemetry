@@ -17,11 +17,13 @@ object Tracing {
     private[opentelemetry] val currentContext: FiberRef[Context]
     private[opentelemetry] def createRoot(spanName: String, spanKind: SpanKind): UManaged[Context]
     private[opentelemetry] def createChildOf(parent: Context, spanName: String, spanKind: SpanKind): UManaged[Context]
+    private[opentelemetry] def createChildOfUnsafe(parent: Context, spanName: String, spanKind: SpanKind): UIO[Context]
     private[opentelemetry] def getTracer: UIO[Tracer]
+    private[opentelemetry] def end: UIO[Any]
   }
 
   private def currentNanos: URIO[Tracing, Long] =
-    ZIO.accessM[Tracing](_.get.currentNanos)
+    ZIO.serviceWith[Tracing.Service](_.currentNanos)
 
   private def currentContext: URIO[Tracing, FiberRef[Context]] =
     ZIO.access[Tracing](_.get.currentContext)
@@ -31,6 +33,11 @@ object Tracing {
 
   private def createChildOf(parent: Context, spanName: String, spanKind: SpanKind): URManaged[Tracing, Context] =
     ZManaged.accessManaged[Tracing](_.get.createChildOf(parent, spanName, spanKind))
+
+  private def createChildOfUnsafe(parent: Context, spanName: String, spanKind: SpanKind): URIO[Tracing, Context] =
+    ZIO.serviceWith[Tracing.Service](_.createChildOfUnsafe(parent, spanName, spanKind))
+
+  private def end: URIO[Tracing, Any] = ZIO.serviceWith(_.end)
 
   private def getCurrentContext: URIO[Tracing, Context] = currentContext.flatMap(_.get)
 
@@ -79,6 +86,26 @@ object Tracing {
     } yield r
 
   /**
+   * Extracts the span from carrier `C` and unsafely set its child span with name 'spanName' as the current span. You
+   * need to make sure to call the finalize effect to end the span. Primarily useful for interop.
+   */
+  def spanFromUnsafe[C](
+    propagator: TextMapPropagator,
+    carrier: C,
+    getter: TextMapGetter[C],
+    spanName: String,
+    spanKind: SpanKind
+  ): URIO[Tracing, (Span, URIO[Tracing, Any])] =
+    for {
+      context <- extractContext(propagator, carrier, getter)
+      updated <- createChildOfUnsafe(context, spanName, spanKind)
+      ctx     <- currentContext
+      old     <- ctx.getAndSet(updated)
+      span    <- getCurrentSpan
+      finalize = end *> ctx.set(old)
+    } yield (span, finalize)
+
+  /**
    * Sets the current span to be the new root span with name 'spanName' Ends the span when the effect finishes.
    */
   def root[R, E, A](
@@ -101,6 +128,23 @@ object Tracing {
       old <- getCurrentContext
       r   <- createChildOf(old, spanName, spanKind).use(finalizeSpanUsingEffect(effect, _, toErrorStatus))
     } yield r
+
+  /**
+   * Unsafely sets the current span to be the child of the current span with name 'spanName' You need to manually call
+   * the finalizer to end the span. Useful for interop.
+   */
+  def spanUnsafe(
+    spanName: String,
+    spanKind: SpanKind
+  ): URIO[Tracing, (Span, ZIO[Tracing, Nothing, Any])] =
+    for {
+      old     <- getCurrentContext
+      updated <- createChildOfUnsafe(old, spanName, spanKind)
+      ctx     <- currentContext
+      _       <- ctx.set(updated)
+      span    <- getCurrentSpan
+      finalize = end *> ctx.set(old)
+    } yield (span, finalize)
 
   /**
    * Introduces a thread-local scope during the execution allowing for non-zio context propagation.
@@ -218,7 +262,7 @@ object Tracing {
 
   def managed(tracer: Tracer): URManaged[Clock, Service] = {
     class Live(defaultContext: FiberRef[Context], clock: Clock.Service) extends Service {
-      def end(span: Span): UIO[Unit] = currentNanos.map(span.end(_, TimeUnit.NANOSECONDS))
+      private def endSpan(span: Span): UIO[Unit] = currentNanos.map(span.end(_, TimeUnit.NANOSECONDS))
 
       def currentNanos: UIO[Long] = clock.currentTime(TimeUnit.NANOSECONDS)
 
@@ -234,7 +278,7 @@ object Tracing {
                                .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
                                .startSpan()
                            )
-                         )(end)
+                         )(endSpan)
         } yield span.storeInContext(Context.root())
 
       def createChildOf(parent: Context, spanName: String, spanKind: SpanKind): UManaged[Context] =
@@ -249,8 +293,29 @@ object Tracing {
                                .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
                                .startSpan()
                            )
-                         )(end)
+                         )(endSpan)
         } yield span.storeInContext(parent)
+
+      def createChildOfUnsafe(parent: Context, spanName: String, spanKind: SpanKind): UIO[Context] =
+        for {
+          nanoSeconds <- currentNanos
+          span        <-
+            UIO(
+              tracer
+                .spanBuilder(spanName)
+                .setParent(parent)
+                .setSpanKind(spanKind)
+                .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
+                .startSpan()
+            )
+        } yield span.storeInContext(parent)
+
+      override private[opentelemetry] def end: UIO[Any] =
+        for {
+          nanos   <- currentNanos
+          context <- currentContext.get
+          span     = Span.fromContext(context)
+        } yield span.end(nanos, TimeUnit.NANOSECONDS)
 
       override private[opentelemetry] def getTracer: UIO[Tracer] =
         UIO.succeed(tracer)
@@ -258,20 +323,13 @@ object Tracing {
       val currentContext: FiberRef[Context] = defaultContext
     }
 
-    def end(tracing: Tracing.Service): UIO[Unit] =
-      for {
-        nanos   <- tracing.currentNanos
-        context <- tracing.currentContext.get
-        span     = Span.fromContext(context)
-      } yield span.end(nanos, TimeUnit.NANOSECONDS)
-
     val tracing: URIO[Clock, Service] =
       for {
         clock          <- ZIO.access[Clock](_.get)
         defaultContext <- FiberRef.make[Context](Context.root())
       } yield new Live(defaultContext, clock)
 
-    ZManaged.make(tracing)(end)
+    ZManaged.make(tracing)(_.end)
   }
 
   def live: URLayer[Clock with Has[Tracer], Tracing] = ZLayer.fromManaged(
