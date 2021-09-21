@@ -7,7 +7,7 @@ import io.opencensus.trace.SpanContext
 import io.opencensus.trace.Span
 
 object syntax {
-  implicit final class OpenCensusZioOps[R, E, A](val effect: ZIO[R, E, A]) extends AnyVal {
+  implicit final class OpenCensusZioOps[-R, +E, +A](val effect: ZIO[R, E, A]) extends AnyVal {
     def span(
       name: String,
       kind: Span.Kind = null,
