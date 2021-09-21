@@ -747,6 +747,43 @@ finishes.</p>
       <p class="shortcomment cmt">Extracts the span from carrier <code>C</code> and set its child span with name 'spanName' as the current span.</p><div class="fullcomment"><div class="comment cmt"><p>Extracts the span from carrier <code>C</code> and set its child span with name 'spanName' as the current span. Ends the span
 when the effect finishes.
 </p></div></div>
+    </li><li name="zio.telemetry.opentelemetry.Tracing#spanFromUnsafe" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="spanFromUnsafe[C](propagator:io.opentelemetry.context.propagation.TextMapPropagator,carrier:C,getter:io.opentelemetry.context.propagation.TextMapGetter[C],spanName:String,spanKind:io.opentelemetry.api.trace.SpanKind):zio.URIO[zio.telemetry.opentelemetry.Tracing,(io.opentelemetry.api.trace.Span,zio.URIO[zio.telemetry.opentelemetry.Tracing,Any])]"></a><a id="spanFromUnsafe[C](TextMapPropagator,C,TextMapGetter[C],String,SpanKind):URIO[Tracing,(Span,URIO[Tracing,Any])]"></a>
+      <span class="permalink">
+      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#spanFromUnsafe[C](propagator:io.opentelemetry.context.propagation.TextMapPropagator,carrier:C,getter:io.opentelemetry.context.propagation.TextMapGetter[C],spanName:String,spanKind:io.opentelemetry.api.trace.SpanKind):zio.URIO[zio.telemetry.opentelemetry.Tracing,(io.opentelemetry.api.trace.Span,zio.URIO[zio.telemetry.opentelemetry.Tracing,Any])]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">spanFromUnsafe</span><span class="tparams">[<span name="C">C</span>]</span><span class="params">(<span name="propagator">propagator: <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-context/1.6.0/io/opentelemetry/context/propagation/TextMapPropagator.html#io.opentelemetry.context.propagation.TextMapPropagator" class="extype" name="io.opentelemetry.context.propagation.TextMapPropagator">TextMapPropagator</a></span>, <span name="carrier">carrier: <span class="extype" name="zio.telemetry.opentelemetry.Tracing.spanFromUnsafe.C">C</span></span>, <span name="getter">getter: <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-context/1.6.0/io/opentelemetry/context/propagation/TextMapGetter.html#io.opentelemetry.context.propagation.TextMapGetter" class="extype" name="io.opentelemetry.context.propagation.TextMapGetter">TextMapGetter</a>[<span class="extype" name="zio.telemetry.opentelemetry.Tracing.spanFromUnsafe.C">C</span>]</span>, <span name="spanName">spanName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="spanKind">spanKind: <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.6.0/io/opentelemetry/api/trace/SpanKind.html#io.opentelemetry.api.trace.SpanKind" class="extype" name="io.opentelemetry.api.trace.SpanKind">SpanKind</a></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="index.html#Tracing=zio.Has[zio.telemetry.opentelemetry.Tracing.Service]" class="extmbr" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, (<a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.6.0/io/opentelemetry/api/trace/Span.html#io.opentelemetry.api.trace.Span" class="extype" name="io.opentelemetry.api.trace.Span">Span</a>, <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="index.html#Tracing=zio.Has[zio.telemetry.opentelemetry.Tracing.Service]" class="extmbr" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <a href="https://www.scala-lang.org/api/2.12.15/scala/Any.html#scala.Any" class="extype" name="scala.Any">Any</a>])]</span>
+      </span>
+      
+      <p class="shortcomment cmt">Extracts the span from carrier <code>C</code> and unsafely set its child span with name 'spanName' as the current span.</p><div class="fullcomment"><div class="comment cmt"><p>Extracts the span from carrier <code>C</code> and unsafely set its child span with name 'spanName' as the current span. You
+need to make sure to call the finalize effect to end the span. Primarily useful for interop.
+</p></div></div>
+    </li><li name="zio.telemetry.opentelemetry.Tracing#spanUnsafe" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="spanUnsafe(spanName:String,spanKind:io.opentelemetry.api.trace.SpanKind):zio.URIO[zio.telemetry.opentelemetry.Tracing,(io.opentelemetry.api.trace.Span,zio.ZIO[zio.telemetry.opentelemetry.Tracing,Nothing,Any])]"></a><a id="spanUnsafe(String,SpanKind):URIO[Tracing,(Span,ZIO[Tracing,Nothing,Any])]"></a>
+      <span class="permalink">
+      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#spanUnsafe(spanName:String,spanKind:io.opentelemetry.api.trace.SpanKind):zio.URIO[zio.telemetry.opentelemetry.Tracing,(io.opentelemetry.api.trace.Span,zio.ZIO[zio.telemetry.opentelemetry.Tracing,Nothing,Any])]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">spanUnsafe</span><span class="params">(<span name="spanName">spanName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="spanKind">spanKind: <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.6.0/io/opentelemetry/api/trace/SpanKind.html#io.opentelemetry.api.trace.SpanKind" class="extype" name="io.opentelemetry.api.trace.SpanKind">SpanKind</a></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="index.html#Tracing=zio.Has[zio.telemetry.opentelemetry.Tracing.Service]" class="extmbr" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, (<a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.6.0/io/opentelemetry/api/trace/Span.html#io.opentelemetry.api.trace.Span" class="extype" name="io.opentelemetry.api.trace.Span">Span</a>, <a href="https://javadoc.io/page/dev.zio/zio_2.12/1.0.12/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<a href="index.html#Tracing=zio.Has[zio.telemetry.opentelemetry.Tracing.Service]" class="extmbr" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <a href="https://www.scala-lang.org/api/2.12.15/scala/Nothing.html#scala.Nothing" class="extype" name="scala.Nothing">Nothing</a>, <a href="https://www.scala-lang.org/api/2.12.15/scala/Any.html#scala.Any" class="extype" name="scala.Any">Any</a>])]</span>
+      </span>
+      
+      <p class="shortcomment cmt">Unsafely sets the current span to be the child of the current span with name 'spanName' You need to manually call
+the finalizer to end the span.</p><div class="fullcomment"><div class="comment cmt"><p>Unsafely sets the current span to be the child of the current span with name 'spanName' You need to manually call
+the finalizer to end the span. Useful for interop.
+</p></div></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a><a id="synchronized[T0](⇒T0):T0"></a>
       <span class="permalink">
