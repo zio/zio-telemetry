@@ -8,7 +8,7 @@ import zio.clock.Clock
 
 object TracingSyntax {
 
-  implicit final class OpenTelemetryZioOps[R, E, A](val effect: ZIO[R, E, A]) extends AnyVal {
+  implicit final class OpenTelemetryZioOps[-R, +E, +A](val effect: ZIO[R, E, A]) extends AnyVal {
 
     def spanFrom[C](
       propagator: TextMapPropagator,
