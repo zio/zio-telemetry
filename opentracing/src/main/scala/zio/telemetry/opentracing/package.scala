@@ -6,7 +6,7 @@ import zio.{ Has, ZIO }
 package object opentracing {
   type OpenTracing = Has[OpenTracing.Service]
 
-  implicit final class OpenTracingZioOps[R, E, A](val zio: ZIO[R, E, A]) extends AnyVal {
+  implicit final class OpenTracingZioOps[-R, +E, +A](val zio: ZIO[R, E, A]) extends AnyVal {
 
     def root(
       operation: String,
