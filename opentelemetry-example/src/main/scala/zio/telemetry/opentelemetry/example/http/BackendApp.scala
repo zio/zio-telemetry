@@ -20,7 +20,7 @@ object BackendApp {
     override def keys(carrier: List[Header]): lang.Iterable[String] =
       carrier.map(_.name.toString).asJava
 
-    override def get(carrier: List[Header], key: String): String =
+    override def get(carrier: List[Header], key: String): String    =
       carrier.find(_.name.toString == key).map(_.value.toString).orNull
   }
 

@@ -41,7 +41,7 @@ object ProxyApp {
         .inject(service, Clock.live)
     }
 
-  private def extractHeaders(adapter: TextMapAdapter): UIO[Map[String, String]] = {
+  private def extractHeaders(adapter: TextMapAdapter): UIO[Map[String, String]]                            = {
     val m = mutable.Map.empty[String, String]
     UIO(adapter.forEach { entry =>
       m.put(entry.getKey, entry.getValue)

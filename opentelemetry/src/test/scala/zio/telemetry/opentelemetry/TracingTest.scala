@@ -182,7 +182,7 @@ object TracingTest extends DefaultRunnableSpec {
             override def keys(carrier: mutable.Map[String, String]): lang.Iterable[String] =
               carrier.keys.asJava
 
-            override def get(carrier: mutable.Map[String, String], key: String): String =
+            override def get(carrier: mutable.Map[String, String], key: String): String    =
               carrier.get(key).orNull
           }
 
