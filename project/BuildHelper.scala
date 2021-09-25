@@ -12,7 +12,7 @@ object BuildHelper {
     incOptions ~= (_.withLogRecompileOnMacro(false))
   )
 
-  val onlyWithScala2 = Seq(
+  val onlyWithScala2                        = Seq(
     crossScalaVersions := Seq(Scala212, Scala213)
   )
 
@@ -29,11 +29,11 @@ object BuildHelper {
     list.map(v => (v.split('.').take(2).mkString("."), v)).toMap
   }
 
-  private val Scala212: String = versions("2.12")
-  private val Scala213: String = versions("2.13")
-  private val Scala3: String   = versions("3.0")
+  private val Scala212: String              = versions("2.12")
+  private val Scala213: String              = versions("2.13")
+  private val Scala3: String                = versions("3.0")
 
-  private val stdOptions = Seq(
+  private val stdOptions                                            = Seq(
     "-deprecation",
     "-encoding",
     "UTF-8",
@@ -47,7 +47,7 @@ object BuildHelper {
     }
   }
 
-  private val std2xOptions = Seq(
+  private val std2xOptions                                          = Seq(
     "-language:higherKinds",
     "-language:existentials",
     "-explaintypes",
@@ -57,7 +57,7 @@ object BuildHelper {
     "-Ywarn-value-discard"
   )
 
-  private def optimizerOptions(optimize: Boolean) =
+  private def optimizerOptions(optimize: Boolean)                   =
     if (optimize) Seq("-opt:l:inline", "-opt-inline-from:zio.internal.**") else Nil
 
   private def extraOptions(scalaVersion: String, optimize: Boolean) =
