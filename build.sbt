@@ -38,30 +38,30 @@ addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
 addCommandAlias("compileExamples", "opentracingExample/compile;opentelemetryExample/compile")
 
-lazy val root                 =
+lazy val root =
   project
     .in(file("."))
     .settings(publish / skip := true)
     .aggregate(opentracing, opentelemetry, opencensus)
 
-lazy val opentracing          =
+lazy val opentracing =
   project
     .in(file("opentracing"))
     .settings(stdSettings("zio-opentracing"))
     .settings(libraryDependencies := Dependencies.opentracing)
 
-lazy val opentelemetry        =
+lazy val opentelemetry =
   project
     .in(file("opentelemetry"))
     .settings(stdSettings("zio-opentelemetry"))
     .settings(libraryDependencies := Dependencies.opentelemetry)
 
-lazy val opencensus           = project
+lazy val opencensus = project
   .in(file("opencensus"))
   .settings(stdSettings("zio-opencensus"))
   .settings(libraryDependencies := Dependencies.opencensus)
 
-lazy val opentracingExample   =
+lazy val opentracingExample =
   project
     .in(file("opentracing-example"))
     .settings(stdSettings("opentracing-example"))
@@ -79,7 +79,7 @@ lazy val opentelemetryExample =
     .settings(libraryDependencies := Dependencies.opentelemetryExample)
     .dependsOn(opentelemetry)
 
-lazy val docs                 =
+lazy val docs =
   project
     .in(file("zio-telemetry-docs"))
     .settings(

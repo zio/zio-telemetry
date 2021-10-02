@@ -6,13 +6,13 @@ object Attributes {
   trait implicits {
     import scala.language.implicitConversions
 
-    implicit def boolToAttribute(b: Boolean): AttributeValue  =
+    implicit def boolToAttribute(b: Boolean): AttributeValue =
       AttributeValue.booleanAttributeValue(b)
 
     implicit def stringToAttribute(s: String): AttributeValue =
       AttributeValue.stringAttributeValue(s)
 
-    implicit def longToAttribute(l: Long): AttributeValue     =
+    implicit def longToAttribute(l: Long): AttributeValue =
       AttributeValue.longAttributeValue(l)
 
     implicit def doubleToAttribute(d: Double): AttributeValue =

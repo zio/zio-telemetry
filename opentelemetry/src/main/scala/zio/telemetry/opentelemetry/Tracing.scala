@@ -22,22 +22,22 @@ object Tracing {
     private[opentelemetry] def end: UIO[Any]
   }
 
-  private def currentNanos: URIO[Tracing, Long]                                                                  =
+  private def currentNanos: URIO[Tracing, Long] =
     ZIO.serviceWith[Tracing.Service](_.currentNanos)
 
-  private def currentContext: URIO[Tracing, FiberRef[Context]]                                                   =
+  private def currentContext: URIO[Tracing, FiberRef[Context]] =
     ZIO.access[Tracing](_.get.currentContext)
 
-  private def createRoot(spanName: String, spanKind: SpanKind): URManaged[Tracing, Context]                      =
+  private def createRoot(spanName: String, spanKind: SpanKind): URManaged[Tracing, Context] =
     ZManaged.accessManaged[Tracing](_.get.createRoot(spanName, spanKind))
 
-  private def createChildOf(parent: Context, spanName: String, spanKind: SpanKind): URManaged[Tracing, Context]  =
+  private def createChildOf(parent: Context, spanName: String, spanKind: SpanKind): URManaged[Tracing, Context] =
     ZManaged.accessManaged[Tracing](_.get.createChildOf(parent, spanName, spanKind))
 
   private def createChildOfUnsafe(parent: Context, spanName: String, spanKind: SpanKind): URIO[Tracing, Context] =
     ZIO.serviceWith[Tracing.Service](_.createChildOfUnsafe(parent, spanName, spanKind))
 
-  private def end: URIO[Tracing, Any]                                                                            = ZIO.serviceWith(_.end)
+  private def end: URIO[Tracing, Any] = ZIO.serviceWith(_.end)
 
   private def getCurrentContext: URIO[Tracing, Context] = currentContext.flatMap(_.get)
 
@@ -310,14 +310,14 @@ object Tracing {
             )
         } yield span.storeInContext(parent)
 
-      override private[opentelemetry] def end: UIO[Any]                                            =
+      override private[opentelemetry] def end: UIO[Any] =
         for {
           nanos   <- currentNanos
           context <- currentContext.get
           span     = Span.fromContext(context)
         } yield span.end(nanos, TimeUnit.NANOSECONDS)
 
-      override private[opentelemetry] def getTracer: UIO[Tracer]                                   =
+      override private[opentelemetry] def getTracer: UIO[Tracer] =
         UIO.succeed(tracer)
 
       val currentContext: FiberRef[Context] = defaultContext
