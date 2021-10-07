@@ -210,6 +210,25 @@ object Tracing {
     } yield ()
 
   /**
+   * Create a child of 'span' with name 'spanName' as the current span. Ends the span when the effect finishes.
+   */
+  def inSpan[R, E, A](
+    span: Span,
+    spanName: String,
+    spanKind: SpanKind,
+    toErrorStatus: PartialFunction[E, StatusCode]
+  )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
+    for {
+      r <- createChildOf(
+             Context.root().`with`(span),
+             spanName,
+             spanKind
+           ).use(
+             finalizeSpanUsingEffect(effect, _, toErrorStatus)
+           )
+    } yield r
+
+  /**
    * Adds an event to the current span
    */
   def addEvent(name: String): URIO[Tracing, Span] =

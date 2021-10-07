@@ -2,7 +2,7 @@ package zio.telemetry.opentelemetry
 
 import io.opentelemetry.api.common.{ AttributeKey, Attributes }
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
-import io.opentelemetry.api.trace.{ Span, SpanId, Tracer }
+import io.opentelemetry.api.trace.{ Span, SpanBuilder, SpanId, Tracer }
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.data.SpanData
 import zio.clock.Clock
@@ -173,6 +173,26 @@ object TracingTest extends DefaultRunnableSpec {
                 )
               )
             )
+        },
+        testM("inSpan") {
+          for {
+            (_, tracer)               <- inMemoryTracer
+            externallyProvidedRootSpan = tracer.spanBuilder("external").startSpan()
+            scope                      = externallyProvidedRootSpan.makeCurrent()
+            _                         <- UIO.unit.inSpan(externallyProvidedRootSpan, "zio-otel-child")
+            _                          = externallyProvidedRootSpan.end()
+            _                          = scope.close()
+            spans                     <- getFinishedSpans
+            child                      = spans.find(_.getName == "zio-otel-child")
+          } yield assert(child)(
+            isSome(
+              hasField[SpanData, String](
+                "parent",
+                _.getParentSpanId,
+                equalTo(externallyProvidedRootSpan.getSpanContext.getSpanId)
+              )
+            )
+          )
         },
         testM("inject - extract roundtrip") {
           val propagator                           = W3CTraceContextPropagator.getInstance()
