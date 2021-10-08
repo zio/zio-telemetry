@@ -369,6 +369,25 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyVal → Any</dd></dl></div>
+    </li><li name="zio.telemetry.opentelemetry.TracingSyntax.OpenTelemetryZioOps#inSpan" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="inSpan(span:io.opentelemetry.api.trace.Span,spanName:String,spanKind:io.opentelemetry.api.trace.SpanKind,toErrorStatus:PartialFunction[E,io.opentelemetry.api.trace.StatusCode]):zio.ZIO[Rwithzio.telemetry.opentelemetry.Tracing,E,A]"></a><a id="inSpan(Span,String,SpanKind,PartialFunction[E,StatusCode]):ZIO[RwithTracing,E,A]"></a>
+      <span class="permalink">
+      <a href="../../../zio/telemetry/opentelemetry/TracingSyntax$$OpenTelemetryZioOps.html#inSpan(span:io.opentelemetry.api.trace.Span,spanName:String,spanKind:io.opentelemetry.api.trace.SpanKind,toErrorStatus:PartialFunction[E,io.opentelemetry.api.trace.StatusCode]):zio.ZIO[Rwithzio.telemetry.opentelemetry.Tracing,E,A]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">inSpan</span><span class="params">(<span name="span">span: <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.6.0/io/opentelemetry/api/trace/Span.html#io.opentelemetry.api.trace.Span" class="extype" name="io.opentelemetry.api.trace.Span">Span</a></span>, <span name="spanName">spanName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="spanKind">spanKind: <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.6.0/io/opentelemetry/api/trace/SpanKind.html#io.opentelemetry.api.trace.SpanKind" class="extype" name="io.opentelemetry.api.trace.SpanKind">SpanKind</a> = <span class="symbol">SpanKind.INTERNAL</span></span>, <span name="toErrorStatus">toErrorStatus: <a href="https://www.scala-lang.org/api/2.12.15/scala/PartialFunction.html#scala.PartialFunction" class="extype" name="scala.PartialFunction">PartialFunction</a>[<span class="extype" name="zio.telemetry.opentelemetry.TracingSyntax.OpenTelemetryZioOps.E">E</span>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.6.0/io/opentelemetry/api/trace/StatusCode.html#io.opentelemetry.api.trace.StatusCode" class="extype" name="io.opentelemetry.api.trace.StatusCode">StatusCode</a>] = <span class="symbol">Map.empty</span></span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/1.0.12/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentelemetry.TracingSyntax.OpenTelemetryZioOps.R">R</span> with <a href="index.html#Tracing=zio.Has[zio.telemetry.opentelemetry.Tracing.Service]" class="extmbr" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <span class="extype" name="zio.telemetry.opentelemetry.TracingSyntax.OpenTelemetryZioOps.E">E</span>, <span class="extype" name="zio.telemetry.opentelemetry.TracingSyntax.OpenTelemetryZioOps.A">A</span>]</span>
+      </span>
+      
+      <p class="shortcomment cmt">Mark this effect as the child of an externally provided span.</p><div class="fullcomment"><div class="comment cmt"><p>Mark this effect as the child of an externally provided span. zio-opentelemetry will mark the span as being the
+child of the external one.</p><p>This is designed for use-cases where you are incrementally introducing zio &amp; zio-telemetry in a project that
+already makes use of instrumentation, and you need to interoperate with futures-based code.</p><p>The caller is solely responsible for managing the external span, including calling <span class="extype" name="Span#end">Span#end</span>
+</p></div></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <span class="permalink">

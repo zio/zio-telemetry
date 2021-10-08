@@ -459,6 +459,23 @@
                 <span class="name">@native</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li name="zio.telemetry.opentelemetry.Tracing#inSpan" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="inSpan[R,E,A](span:io.opentelemetry.api.trace.Span,spanName:String,spanKind:io.opentelemetry.api.trace.SpanKind,toErrorStatus:PartialFunction[E,io.opentelemetry.api.trace.StatusCode])(effect:zio.ZIO[R,E,A]):zio.ZIO[Rwithzio.telemetry.opentelemetry.Tracing,E,A]"></a><a id="inSpan[R,E,A](Span,String,SpanKind,PartialFunction[E,StatusCode])(ZIO[R,E,A]):ZIO[RwithTracing,E,A]"></a>
+      <span class="permalink">
+      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#inSpan[R,E,A](span:io.opentelemetry.api.trace.Span,spanName:String,spanKind:io.opentelemetry.api.trace.SpanKind,toErrorStatus:PartialFunction[E,io.opentelemetry.api.trace.StatusCode])(effect:zio.ZIO[R,E,A]):zio.ZIO[Rwithzio.telemetry.opentelemetry.Tracing,E,A]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">inSpan</span><span class="tparams">[<span name="R">R</span>, <span name="E">E</span>, <span name="A">A</span>]</span><span class="params">(<span name="span">span: <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.6.0/io/opentelemetry/api/trace/Span.html#io.opentelemetry.api.trace.Span" class="extype" name="io.opentelemetry.api.trace.Span">Span</a></span>, <span name="spanName">spanName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="spanKind">spanKind: <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.6.0/io/opentelemetry/api/trace/SpanKind.html#io.opentelemetry.api.trace.SpanKind" class="extype" name="io.opentelemetry.api.trace.SpanKind">SpanKind</a></span>, <span name="toErrorStatus">toErrorStatus: <a href="https://www.scala-lang.org/api/2.12.15/scala/PartialFunction.html#scala.PartialFunction" class="extype" name="scala.PartialFunction">PartialFunction</a>[<span class="extype" name="zio.telemetry.opentelemetry.Tracing.inSpan.E">E</span>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.6.0/io/opentelemetry/api/trace/StatusCode.html#io.opentelemetry.api.trace.StatusCode" class="extype" name="io.opentelemetry.api.trace.StatusCode">StatusCode</a>]</span>)</span><span class="params">(<span name="effect">effect: <a href="https://javadoc.io/page/dev.zio/zio_2.12/1.0.12/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentelemetry.Tracing.inSpan.R">R</span>, <span class="extype" name="zio.telemetry.opentelemetry.Tracing.inSpan.E">E</span>, <span class="extype" name="zio.telemetry.opentelemetry.Tracing.inSpan.A">A</span>]</span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/1.0.12/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentelemetry.Tracing.inSpan.R">R</span> with <a href="index.html#Tracing=zio.Has[zio.telemetry.opentelemetry.Tracing.Service]" class="extmbr" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <span class="extype" name="zio.telemetry.opentelemetry.Tracing.inSpan.E">E</span>, <span class="extype" name="zio.telemetry.opentelemetry.Tracing.inSpan.A">A</span>]</span>
+      </span>
+      
+      <p class="shortcomment cmt">Create a child of 'span' with name 'spanName' as the current span.</p><div class="fullcomment"><div class="comment cmt"><p>Create a child of 'span' with name 'spanName' as the current span. Ends the span when the effect finishes.
+</p></div></div>
     </li><li name="zio.telemetry.opentelemetry.Tracing#inject" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="inject[C](propagator:io.opentelemetry.context.propagation.TextMapPropagator,carrier:C,setter:io.opentelemetry.context.propagation.TextMapSetter[C]):zio.URIO[zio.telemetry.opentelemetry.Tracing,Unit]"></a><a id="inject[C](TextMapPropagator,C,TextMapSetter[C]):URIO[Tracing,Unit]"></a>
       <span class="permalink">
