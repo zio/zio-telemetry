@@ -174,6 +174,26 @@ object TracingTest extends DefaultRunnableSpec {
               )
             )
         },
+        testM("inSpan") {
+          for {
+            (_, tracer)               <- inMemoryTracer
+            externallyProvidedRootSpan = tracer.spanBuilder("external").startSpan()
+            scope                      = externallyProvidedRootSpan.makeCurrent()
+            _                         <- UIO.unit.inSpan(externallyProvidedRootSpan, "zio-otel-child")
+            _                          = externallyProvidedRootSpan.end()
+            _                          = scope.close()
+            spans                     <- getFinishedSpans
+            child                      = spans.find(_.getName == "zio-otel-child")
+          } yield assert(child)(
+            isSome(
+              hasField[SpanData, String](
+                "parent",
+                _.getParentSpanId,
+                equalTo(externallyProvidedRootSpan.getSpanContext.getSpanId)
+              )
+            )
+          )
+        },
         testM("inject - extract roundtrip") {
           val propagator                           = W3CTraceContextPropagator.getInstance()
           val carrier: mutable.Map[String, String] = mutable.Map().empty
