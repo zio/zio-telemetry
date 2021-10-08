@@ -39,7 +39,7 @@ object TracingSyntax {
      * This is designed for use-cases where you are incrementally introducing zio & zio-telemetry in a project that
      * already makes use of instrumentation, and you need to interoperate with futures-based code.
      *
-     * The caller is solely responsible for managing the external span, including calling [[Span#end]]
+     * The caller is solely responsible for managing the external span, including calling Span.end
      */
     def inSpan(
       span: Span,
