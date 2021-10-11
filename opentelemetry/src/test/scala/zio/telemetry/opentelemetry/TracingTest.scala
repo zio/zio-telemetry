@@ -239,12 +239,22 @@ object TracingTest extends DefaultRunnableSpec {
                        .setAttribute("boolean", true)
                        .setAttribute("int", 1)
                        .setAttribute("string", "foo")
+                       .setAttribute("booleans", Seq(true, false))
+                       .setAttribute("longs", Seq(1L, 2L))
+                       .setAttribute("strings", Seq("foo", "bar"))
                        .span("foo")
             spans <- getFinishedSpans
             tags   = spans.head.getAttributes
           } yield assert(tags.get(AttributeKey.booleanKey("boolean")))(equalTo(Boolean.box(true))) &&
             assert(tags.get(AttributeKey.longKey("int")))(equalTo(Long.box(1))) &&
-            assert(tags.get(AttributeKey.stringKey("string")))(equalTo("foo"))
+            assert(tags.get(AttributeKey.stringKey("string")))(equalTo("foo")) &&
+            assert(tags.get(AttributeKey.booleanArrayKey("booleans")))(
+              equalTo(Seq(Boolean.box(true), Boolean.box(false)).asJava)
+            ) &&
+            assert(tags.get(AttributeKey.longArrayKey("longs")))(
+              equalTo(Seq(Long.box(1L), Long.box(2L)).asJava)
+            ) &&
+            assert(tags.get(AttributeKey.stringArrayKey("strings")))(equalTo(Seq("foo", "bar").asJava))
         },
         testM("logging") {
           val duration = 1000.micros
