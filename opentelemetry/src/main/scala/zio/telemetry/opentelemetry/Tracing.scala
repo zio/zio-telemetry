@@ -2,7 +2,7 @@ package zio.telemetry.opentelemetry
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
-import io.opentelemetry.api.common.Attributes
+import io.opentelemetry.api.common.{ AttributeKey, Attributes }
 import io.opentelemetry.api.trace.{ Span, SpanKind, StatusCode, Tracer }
 import io.opentelemetry.context.Context
 import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator, TextMapSetter }
@@ -272,6 +272,9 @@ object Tracing {
    */
   def setAttribute(name: String, value: String): URIO[Tracing, Span] =
     getCurrentSpan.map(_.setAttribute(name, value))
+
+  def setAttribute[T](key: AttributeKey[T], value: T): URIO[Tracing, Span] =
+    getCurrentSpan.map(_.setAttribute(key, value))
 
   /**
    * Gets the current SpanContext
