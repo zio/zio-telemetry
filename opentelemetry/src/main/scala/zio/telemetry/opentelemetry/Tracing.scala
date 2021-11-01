@@ -275,6 +275,9 @@ object Tracing {
   def setAttribute(name: String, value: String): URIO[Tracing, Span] =
     getCurrentSpan.map(_.setAttribute(name, value))
 
+  def setAttribute[T](key: AttributeKey[T], value: T): URIO[Tracing, Span] =
+    getCurrentSpan.map(_.setAttribute(key, value))
+
   def setAttribute(name: String, values: Seq[String]): URIO[Tracing, Span] = {
     val v = values.asJava
     getCurrentSpan.map(_.setAttribute(AttributeKey.stringArrayKey(name), v))

@@ -1,6 +1,6 @@
 package zio.telemetry.opentelemetry
 
-import io.opentelemetry.api.common.Attributes
+import io.opentelemetry.api.common.{ AttributeKey, Attributes }
 import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator }
 import io.opentelemetry.api.trace.{ Span, SpanKind, StatusCode }
 import zio.ZIO
@@ -69,6 +69,9 @@ object TracingSyntax {
 
     def setAttribute(name: String, value: String): ZIO[Tracing with R, E, A] =
       effect <* Tracing.setAttribute(name, value)
+
+    def setAttribute[T](key: AttributeKey[T], value: T): ZIO[Tracing with R, E, A] =
+      effect <* Tracing.setAttribute(key, value)
 
     def setAttribute(name: String, values: Seq[String]): ZIO[Tracing with R, E, A] =
       effect <* Tracing.setAttribute(name, values)
