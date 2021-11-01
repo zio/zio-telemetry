@@ -69,5 +69,24 @@ object TracingSyntax {
 
     def setAttribute(name: String, value: String): ZIO[Tracing with R, E, A] =
       effect <* Tracing.setAttribute(name, value)
+
+    def setAttribute(name: String, values: Seq[String]): ZIO[Tracing with R, E, A] =
+      effect <* Tracing.setAttribute(name, values)
+
+    def setAttribute(name: String, values: Seq[Boolean])(implicit i1: DummyImplicit): ZIO[Tracing with R, E, A] =
+      effect <* Tracing.setAttribute(name, values)
+
+    def setAttribute(name: String, values: Seq[Long])(implicit
+      i1: DummyImplicit,
+      i2: DummyImplicit
+    ): ZIO[Tracing with R, E, A] =
+      effect <* Tracing.setAttribute(name, values)(i1, i2)
+
+    def setAttribute(name: String, values: Seq[Double])(implicit
+      i1: DummyImplicit,
+      i2: DummyImplicit,
+      i3: DummyImplicit
+    ): ZIO[Tracing with R, E, A] =
+      effect <* Tracing.setAttribute(name, values)(i1, i2, i3)
   }
 }
