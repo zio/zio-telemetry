@@ -1,0 +1,24 @@
+{
+  "overview-sidebar": {
+    "Overview": [
+      "overview/overview_index",
+      "overview/overview_opentracing",
+      "overview/overview_opencensus",
+      "overview/overview_opentelemetry"
+    ]
+  },
+  "usecases-sidebar": {
+    "Use Cases": [
+      "usecases/usecases_index",
+      "usecases/usecases_opentracing",
+      "usecases/usecases_opentelemetry"
+    ]
+  },
+  "about-sidebar": {
+      "About": [
+          "about/about_index",
+          "about/about_contributing",
+          "about/about_coc"
+      ]
+  }
+}

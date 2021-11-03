@@ -1,7 +1,7 @@
 package zio.telemetry.opentracing
 
 import io.opentracing.mock.{ MockSpan, MockTracer }
-import io.opentracing.propagation.{ Format, TextMapAdapter }
+import io.opentracing.propagation.{ BinaryAdapters, Format, TextMapAdapter }
 import zio._
 import zio.clock.Clock
 import zio.duration._
@@ -12,6 +12,7 @@ import zio.test.environment.TestClock
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
+import java.nio.ByteBuffer
 object OpenTracingTest extends DefaultRunnableSpec {
 
   type HasMockTracer = Has[MockTracer]
@@ -20,7 +21,7 @@ object OpenTracingTest extends DefaultRunnableSpec {
     ZLayer.fromEffect(UIO(new MockTracer))
 
   val testService: URLayer[HasMockTracer with Clock, OpenTracing] =
-    ZLayer.fromServiceManaged(tracer => OpenTracing.managed(tracer, "ROOT"))
+    ZLayer.fromServiceManaged((tracer: MockTracer) => OpenTracing.managed(tracer, "ROOT"))
 
   val customLayer = mockTracer ++ ((mockTracer ++ Clock.any) >>> testService)
 
@@ -87,6 +88,37 @@ object OpenTracingTest extends DefaultRunnableSpec {
                 )
               )
             )
+          }
+        },
+        testM("spanFrom behaves like root if extract returns null") {
+          val tm = new TextMapAdapter(mutable.Map.empty.asJava)
+          for {
+            tracer <- ZIO.access[HasMockTracer](_.get)
+            _      <- UIO.unit.spanFrom(Format.Builtin.TEXT_MAP, tm, "spanFrom")
+          } yield {
+            val spans    = tracer.finishedSpans.asScala
+            val spanFrom = spans.find(_.operationName() == "spanFrom")
+            assert(spanFrom)(
+              isSome(
+                hasField[MockSpan, Long](
+                  "parent",
+                  _.parentId,
+                  equalTo(0L)
+                )
+              )
+            )
+          }
+        },
+        testM("spanFrom is a no-op if extract throws") {
+          val byteBuffer = ByteBuffer.wrap("corrupted binary".toCharArray.map(x => x.toByte))
+          val tm         = BinaryAdapters.extractionCarrier(byteBuffer)
+          for {
+            tracer <- ZIO.access[HasMockTracer](_.get)
+            _      <- UIO.unit.spanFrom(Format.Builtin.BINARY_EXTRACT, tm, "spanFrom")
+          } yield {
+            val spans    = tracer.finishedSpans.asScala
+            val spanFrom = spans.find(_.operationName() == "spanFrom")
+            assert(spanFrom)(isNone)
           }
         },
         testM("inject - extract roundtrip") {

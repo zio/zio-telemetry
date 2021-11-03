@@ -1,11 +1,9 @@
 package zio.telemetry.opentelemetry.example.http
 
-import io.circe._
-import io.circe.generic.semiauto._
+import zio.json.{ DeriveJsonCodec, JsonCodec }
 
 final case class Statuses(data: List[Status]) extends AnyVal
 
 object Statuses {
-  implicit val decoder: Decoder[Statuses] = deriveDecoder
-  implicit val encoder: Encoder[Statuses] = deriveEncoder
+  implicit val codec: JsonCodec[Statuses] = DeriveJsonCodec.gen[Statuses]
 }

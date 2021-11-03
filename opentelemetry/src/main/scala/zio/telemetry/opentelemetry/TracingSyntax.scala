@@ -2,13 +2,13 @@ package zio.telemetry.opentelemetry
 
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator }
-import io.opentelemetry.api.trace.{ SpanKind, StatusCode }
+import io.opentelemetry.api.trace.{ Span, SpanKind, StatusCode }
 import zio.ZIO
 import zio.clock.Clock
 
 object TracingSyntax {
 
-  implicit final class OpenTelemetryZioOps[R, E, A](val effect: ZIO[R, E, A]) extends AnyVal {
+  implicit final class OpenTelemetryZioOps[-R, +E, +A](val effect: ZIO[R, E, A]) extends AnyVal {
 
     def spanFrom[C](
       propagator: TextMapPropagator,
@@ -31,6 +31,23 @@ object TracingSyntax {
       spanKind: SpanKind = SpanKind.INTERNAL,
       toErrorStatus: PartialFunction[E, StatusCode] = Map.empty
     ): ZIO[R with Tracing, E, A] = Tracing.span(spanName, spanKind, toErrorStatus)(effect)
+
+    /**
+     * Mark this effect as the child of an externally provided span. zio-opentelemetry will mark the span as being the
+     * child of the external one.
+     *
+     * This is designed for use-cases where you are incrementally introducing zio & zio-telemetry in a project that
+     * already makes use of instrumentation, and you need to interoperate with futures-based code.
+     *
+     * The caller is solely responsible for managing the external span, including calling Span.end
+     */
+    def inSpan(
+      span: Span,
+      spanName: String,
+      spanKind: SpanKind = SpanKind.INTERNAL,
+      toErrorStatus: PartialFunction[E, StatusCode] = Map.empty
+    ): ZIO[R with Tracing, E, A] =
+      Tracing.inSpan(span, spanName, spanKind, toErrorStatus)(effect)
 
     def addEvent(name: String): ZIO[Tracing with Clock with R, E, A] =
       effect <* Tracing.addEvent(name)

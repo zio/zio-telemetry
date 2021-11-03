@@ -2,10 +2,10 @@ import BuildHelper._
 
 inThisBuild(
   List(
-    organization := "dev.zio",
-    homepage := Some(url("https://github.com/zio/zio-telemetry/")),
-    licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-    developers := List(
+    organization  := "dev.zio",
+    homepage      := Some(url("https://github.com/zio/zio-telemetry/")),
+    licenses      := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+    developers    := List(
       Developer(
         "mijicd",
         "Dejan Mijic",
@@ -22,7 +22,7 @@ inThisBuild(
     pgpPassphrase := sys.env.get("PGP_PASSWORD").map(_.toArray),
     pgpPublicRing := file("/tmp/public.asc"),
     pgpSecretRing := file("/tmp/secret.asc"),
-    scmInfo := Some(
+    scmInfo       := Some(
       ScmInfo(
         url("https://github.com/zio/zio-telemetry/"),
         "scm:git:git@github.com:zio/zio-telemetry.git"
@@ -32,16 +32,17 @@ inThisBuild(
 )
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
-Global / testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
+Global / testFrameworks       := Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
+addCommandAlias("compileExamples", "opentracingExample/compile;opentelemetryExample/compile")
 
 lazy val root =
   project
     .in(file("."))
-    .settings(skip in publish := true)
-    .aggregate(opentracing, opentelemetry, opencensus, opentracingExample, opentelemetryExample)
+    .settings(publish / skip := true)
+    .aggregate(opentracing, opentelemetry, opencensus)
 
 lazy val opentracing =
   project
@@ -64,7 +65,8 @@ lazy val opentracingExample =
   project
     .in(file("opentracing-example"))
     .settings(stdSettings("opentracing-example"))
-    .settings(skip in publish := true)
+    .settings(publish / skip := true)
+    .settings(onlyWithScala2)
     .settings(libraryDependencies := Dependencies.opentracingExample)
     .dependsOn(opentracing)
 
@@ -72,6 +74,24 @@ lazy val opentelemetryExample =
   project
     .in(file("opentelemetry-example"))
     .settings(stdSettings("opentelemetry-example"))
-    .settings(skip in publish := true)
+    .settings(publish / skip := true)
+    .settings(onlyWithScala2)
     .settings(libraryDependencies := Dependencies.opentelemetryExample)
     .dependsOn(opentelemetry)
+
+lazy val docs =
+  project
+    .in(file("zio-telemetry-docs"))
+    .settings(
+      publish / skip                             := true,
+      moduleName                                 := "zio-telemetry-docs",
+      scalacOptions -= "-Yno-imports",
+      scalacOptions -= "-Xfatal-warnings",
+      ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(opentracing, opentelemetry, opencensus),
+      ScalaUnidoc / unidoc / target              := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
+      cleanFiles += (ScalaUnidoc / unidoc / target).value,
+      docusaurusCreateSite                       := docusaurusCreateSite.dependsOn(Compile / unidoc).value,
+      docusaurusPublishGhpages                   := docusaurusPublishGhpages.dependsOn(Compile / unidoc).value
+    )
+    .dependsOn(opentracing, opentelemetry, opencensus)
+    .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)

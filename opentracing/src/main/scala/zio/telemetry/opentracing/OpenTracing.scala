@@ -103,10 +103,9 @@ object OpenTracing {
   ): ZIO[R1, E, Span] =
     ZIO.service[OpenTracing.Service].flatMap { service =>
       Task(service.tracer.extract(format, carrier))
-        .fold(_ => None, Option.apply)
-        .flatMap {
-          case None          => zio
-          case Some(spanCtx) =>
+        .foldM(
+          _ => zio,
+          spanCtx =>
             for {
               current <- service.currentSpan.get
               span    <- UIO(service.tracer.buildSpan(operation).asChildOf(spanCtx).start())
@@ -115,7 +114,7 @@ object OpenTracing {
                            .catchAllCause(c => service.error(span, c, tagError, logError) *> IO.done(Exit.Failure(c)))
                            .ensuring(service.finish(span) *> service.currentSpan.set(current))
             } yield res
-        }
+        )
     }
 
   def context: URIO[OpenTracing, SpanContext] =

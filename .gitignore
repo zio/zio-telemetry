@@ -1,6 +1,14 @@
 **/.DS_Store
-project/metals.sbt
+**/metals.sbt
 target
 .bloop
 .metals
 .idea
+.bsp
+.vscode
+website/node_modules
+website/build
+website/i18n
+website/static/api
+website/yarn.lock
+

@@ -1,41 +1,44 @@
 package zio.telemetry.opentelemetry.example
 
-import org.http4s.server.blaze.BlazeServerBuilder
-import org.http4s.server.{ defaults, Router }
-import zio.clock.Clock
-import zio.interop.catz._
+import zio.console.putStrLn
+import zio.magic._
+import zio.config.getConfig
+import zio.config.typesafe.TypesafeConfig
+import zio.config.magnolia.{ descriptor, Descriptor }
 import zio.telemetry.opentelemetry.Tracing
-import zio.telemetry.opentelemetry.example.config.{ Config, Configuration }
-import zio.telemetry.opentelemetry.example.http.{ AppEnv, AppTask, Client, StatusesService }
-import zio.{ ExitCode, Managed, ZIO, ZLayer }
-import org.http4s.syntax.kleisli._
-import sttp.client.asynchttpclient.zio.AsyncHttpClientZioBackend
+import zio.telemetry.opentelemetry.example.config.AppConfig
+import zio.telemetry.opentelemetry.example.http.{ Client, ProxyApp }
+import zio.{ App, Managed, ZIO, ZLayer }
+import sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend
+import sttp.model.Uri
+import zhttp.service.{ EventLoopGroup, Server }
+import zhttp.service.server.ServerChannelFactory
 
-object ProxyServer extends zio.App {
-
-  val router = Router[AppTask]("/" -> StatusesService.routes).orNotFound
+object ProxyServer extends App {
+  implicit val sttpUriDescriptor: Descriptor[Uri] =
+    Descriptor[String].transformOrFailLeft(Uri.parse)(_.toString)
 
   val server =
-    ZIO
-      .runtime[AppEnv]
-      .flatMap { implicit runtime =>
-        implicit val ec = runtime.platform.executor.asEC
-        BlazeServerBuilder[AppTask](ec)
-          .bindHttp(
-            runtime.environment.get[Config].proxy.host.port.getOrElse(defaults.HttpPort),
-            runtime.environment.get[Config].proxy.host.host
-          )
-          .withHttpApp(router)
-          .serve
-          .compile
-          .drain
-      }
+    getConfig[AppConfig].flatMap { conf =>
+      val port = conf.proxy.host.port.getOrElse(8080)
+      (Server.port(port) ++ Server.app(ProxyApp.routes)).make.use(_ =>
+        putStrLn(s"ProxyServer started on port $port") *> ZIO.never
+      )
+    }
 
+  val configLayer = TypesafeConfig.fromDefaultLoader(descriptor[AppConfig])
   val httpBackend = ZLayer.fromManaged(Managed.make(AsyncHttpClientZioBackend())(_.close().ignore))
-  val client      = Configuration.live ++ httpBackend >>> Client.live
-  val tracer      = Configuration.live >>> JaegerTracer.live
-  val envLayer    = tracer ++ Clock.live >>> Tracing.live ++ Configuration.live ++ client
 
   override def run(args: List[String]) =
-    server.provideCustomLayer(envLayer).fold(_ => ExitCode.failure, _ => ExitCode.success)
+    server
+      .injectCustom(
+        configLayer,
+        httpBackend,
+        Client.live,
+        JaegerTracer.live,
+        Tracing.live,
+        ServerChannelFactory.auto,
+        EventLoopGroup.auto(0)
+      )
+      .exitCode
 }

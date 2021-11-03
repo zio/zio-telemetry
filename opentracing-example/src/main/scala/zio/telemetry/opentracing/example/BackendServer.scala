@@ -1,35 +1,37 @@
 package zio.telemetry.opentracing.example
 
-import cats.effect.{ ExitCode => catsExitCode }
-import org.http4s.server.Router
-import org.http4s.server.blaze.BlazeServerBuilder
-import org.http4s.syntax.kleisli._
-import zio.{ ExitCode, ZEnv, ZIO }
+import zio.{ App, ExitCode, ZEnv, ZIO }
 import zio.clock.Clock
-import zio.interop.catz._
+import zio.console.putStrLn
+import zio.magic._
+import zio.config.typesafe.TypesafeConfig
+import zio.config.getConfig
+import zio.config.magnolia.DeriveConfigDescriptor.descriptor
 import zio.telemetry.opentracing.example.JaegerTracer.makeService
-import zio.telemetry.opentracing.example.config.Configuration
-import zio.telemetry.opentracing.example.http.{ AppTask, StatusService }
+import zio.telemetry.opentracing.example.config.AppConfig
+import zio.telemetry.opentracing.example.http.BackendApp
+import zhttp.service.{ EventLoopGroup, Server }
+import zhttp.service.server.ServerChannelFactory
 
-object BackendServer extends CatsApp {
+object BackendServer extends App {
+
+  private val configLayer = TypesafeConfig.fromDefaultLoader(descriptor[AppConfig])
 
   override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] = {
     val exit =
       ZIO.runtime[Clock].flatMap { implicit runtime =>
-        implicit val ec = runtime.platform.executor.asEC
-        for {
-          conf   <- Configuration.load.provideLayer(Configuration.live)
-          service = makeService(conf.tracer.host, "zio-backend")
-          router  = Router[AppTask]("/" -> StatusService.status(service)).orNotFound
-          result <- BlazeServerBuilder[AppTask](ec)
-                      .bindHttp(conf.backend.port, conf.backend.host)
-                      .withHttpApp(router)
-                      .serve
-                      .compile[AppTask, AppTask, catsExitCode]
-                      .drain
-                      .as(ExitCode.success)
-        } yield result
+        getConfig[AppConfig].flatMap { conf =>
+          val service = makeService(conf.tracer.host, "zio-backend")
+          (Server.port(conf.backend.port) ++ Server.app(BackendApp.status(service))).make
+            .use(_ => putStrLn(s"BackendServer started at ${conf.backend.port}") *> ZIO.never)
+            .exitCode
+        }.injectCustom(
+          configLayer,
+          ServerChannelFactory.auto,
+          EventLoopGroup.auto(0)
+        )
       }
-    exit.orElse(ZIO.succeed(ExitCode.failure))
+
+    exit orElse ZIO.succeed(ExitCode.failure)
   }
 }
