@@ -297,6 +297,13 @@ object TracingTest extends DefaultRunnableSpec {
             )
             assert(tags)(equalTo(expected))
           }
+        },
+        testM("baggaging") {
+          for {
+            _         <- UIO.unit.setBaggage("some", "thing")
+            baggage   <- Tracing.getCurrentBaggage
+            entryValue = Option(baggage.getEntryValue("some"))
+          } yield assert(entryValue)(equalTo(Some("thing")))
         }
       ).provideCustomLayer(tracingMockLayer)
     )
