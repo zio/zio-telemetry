@@ -2,7 +2,7 @@ package zio.telemetry.opentelemetry
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
-import io.opentelemetry.api.common.Attributes
+import io.opentelemetry.api.common.{ AttributeKey, Attributes }
 import io.opentelemetry.api.trace.{ Span, SpanKind, StatusCode, Tracer }
 import io.opentelemetry.context.Context
 import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator, TextMapSetter }
@@ -10,6 +10,8 @@ import zio.clock.Clock
 import zio.telemetry.opentelemetry.ContextPropagation.{ extractContext, injectContext }
 import zio._
 import io.opentelemetry.api.trace.SpanContext
+
+import scala.jdk.CollectionConverters._
 
 object Tracing {
   trait Service {
@@ -272,6 +274,36 @@ object Tracing {
    */
   def setAttribute(name: String, value: String): URIO[Tracing, Span] =
     getCurrentSpan.map(_.setAttribute(name, value))
+
+  def setAttribute[T](key: AttributeKey[T], value: T): URIO[Tracing, Span] =
+    getCurrentSpan.map(_.setAttribute(key, value))
+
+  def setAttribute(name: String, values: Seq[String]): URIO[Tracing, Span] = {
+    val v = values.asJava
+    getCurrentSpan.map(_.setAttribute(AttributeKey.stringArrayKey(name), v))
+  }
+
+  def setAttribute(name: String, values: Seq[Boolean])(implicit i1: DummyImplicit): URIO[Tracing, Span] = {
+    val v = values.map(Boolean.box).asJava
+    getCurrentSpan.map(_.setAttribute(AttributeKey.booleanArrayKey(name), v))
+  }
+
+  def setAttribute(name: String, values: Seq[Long])(implicit
+    i1: DummyImplicit,
+    i2: DummyImplicit
+  ): URIO[Tracing, Span] = {
+    val v = values.map(Long.box).asJava
+    getCurrentSpan.map(_.setAttribute(AttributeKey.longArrayKey(name), v))
+  }
+
+  def setAttribute(name: String, values: Seq[Double])(implicit
+    i1: DummyImplicit,
+    i2: DummyImplicit,
+    i3: DummyImplicit
+  ): URIO[Tracing, Span] = {
+    val v = values.map(Double.box).asJava
+    getCurrentSpan.map(_.setAttribute(AttributeKey.doubleArrayKey(name), v))
+  }
 
   /**
    * Gets the current SpanContext
