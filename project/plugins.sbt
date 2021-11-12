@@ -1,4 +1,4 @@
-addSbtPlugin("com.github.sbt"                      % "sbt-ci-release"   % "1.5.9")
+addSbtPlugin("com.github.sbt"                    % "sbt-ci-release"   % "1.5.9")
 addSbtPlugin("com.thoughtworks.sbt-api-mappings" % "sbt-api-mappings" % "3.0.0")
 addSbtPlugin("com.eed3si9n"                      % "sbt-unidoc"       % "0.4.3")
 addSbtPlugin("ch.epfl.scala"                     % "sbt-bloop"        % "1.4.9")
