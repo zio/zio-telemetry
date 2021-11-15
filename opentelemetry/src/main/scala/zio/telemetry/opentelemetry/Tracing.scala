@@ -313,7 +313,7 @@ object Tracing {
   def setBaggage(name: String, value: String): URIO[Tracing, Context] =
     for {
       contextRef <- currentContext
-      context    <- contextRef.getAndUpdate(context =>
+      context    <- contextRef.updateAndGet(context =>
                       Baggage.fromContext(context).toBuilder.put(name, value).build().storeInContext(context)
                     )
     } yield context
