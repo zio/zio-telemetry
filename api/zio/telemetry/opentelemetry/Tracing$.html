@@ -423,6 +423,23 @@
                 <span class="name">@native</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li name="zio.telemetry.opentelemetry.Tracing#getCurrentBaggage" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="getCurrentBaggage:zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.baggage.Baggage]"></a><a id="getCurrentBaggage:URIO[Tracing,Baggage]"></a>
+      <span class="permalink">
+      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#getCurrentBaggage:zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.baggage.Baggage]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">getCurrentBaggage</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="index.html#Tracing=zio.Has[zio.telemetry.opentelemetry.Tracing.Service]" class="extmbr" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.9.1/io/opentelemetry/api/baggage/Baggage.html#io.opentelemetry.api.baggage.Baggage" class="extype" name="io.opentelemetry.api.baggage.Baggage">Baggage</a>]</span>
+      </span>
+      
+      <p class="shortcomment cmt">Gets the baggage from current context
+</p>
     </li><li name="zio.telemetry.opentelemetry.Tracing#getCurrentContext" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="getCurrentContext:zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.context.Context]"></a><a id="getCurrentContext:URIO[Tracing,Context]"></a>
       <span class="permalink">
@@ -841,6 +858,23 @@ this method.</p><p>CLoses the scope when the effect finishes
       </span>
       
       <p class="shortcomment cmt">Sets an attribute of the current span.</p>
+    </li><li name="zio.telemetry.opentelemetry.Tracing#setBaggage" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="setBaggage(name:String,value:String):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.context.Context]"></a><a id="setBaggage(String,String):URIO[Tracing,Context]"></a>
+      <span class="permalink">
+      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#setBaggage(name:String,value:String):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.context.Context]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">setBaggage</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="index.html#Tracing=zio.Has[zio.telemetry.opentelemetry.Tracing.Service]" class="extmbr" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-context/1.9.1/io/opentelemetry/context/Context.html#io.opentelemetry.context.Context" class="extype" name="io.opentelemetry.context.Context">Context</a>]</span>
+      </span>
+      
+      <p class="shortcomment cmt">Sets a baggage entry in the current context
+</p>
     </li><li name="zio.telemetry.opentelemetry.Tracing#span" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="span[R,E,A](spanName:String,spanKind:io.opentelemetry.api.trace.SpanKind,toErrorStatus:PartialFunction[E,io.opentelemetry.api.trace.StatusCode])(effect:zio.ZIO[R,E,A]):zio.ZIO[Rwithzio.telemetry.opentelemetry.Tracing,E,A]"></a><a id="span[R,E,A](String,SpanKind,PartialFunction[E,StatusCode])(ZIO[R,E,A]):ZIO[RwithTracing,E,A]"></a>
       <span class="permalink">
