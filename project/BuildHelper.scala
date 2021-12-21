@@ -25,13 +25,26 @@ object BuildHelper {
     val doc  = new Load(LoadSettings.builder().build())
       .loadFromReader(scala.io.Source.fromFile(".github/workflows/ci.yml").bufferedReader())
     val yaml = doc.asInstanceOf[JMap[String, JMap[String, JMap[String, JMap[String, JMap[String, JList[String]]]]]]]
-    val list = yaml.get("jobs").get("test").get("strategy").get("matrix").get("scala").asScala
-    list.map(v => (v.split('.').take(2).mkString("."), v)).toMap
+
+    yaml
+      .get("jobs")
+      .get("test")
+      .get("strategy")
+      .get("matrix")
+      .get("scala")
+      .asScala
+      .map { v =>
+        val vs   = v.split('.')
+        val init = vs.take(vs(0) match { case "2" => 2; case _ => 1 })
+
+        init.mkString(".") -> v
+      }
+      .toMap
   }
 
   private val Scala212: String = versions("2.12")
   private val Scala213: String = versions("2.13")
-  private val Scala3: String   = versions("3.0")
+  private val Scala3: String   = versions("3")
 
   private val stdOptions = Seq(
     "-deprecation",

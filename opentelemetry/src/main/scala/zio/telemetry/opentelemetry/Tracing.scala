@@ -43,9 +43,9 @@ object Tracing {
 
   private def end: URIO[Tracing, Any] = ZIO.serviceWith(_.end)
 
-  private def getCurrentContext: URIO[Tracing, Context] = currentContext.flatMap(_.get)
+  def getCurrentContext: URIO[Tracing, Context] = currentContext.flatMap(_.get)
 
-  private def getCurrentSpan: URIO[Tracing, Span] = getCurrentContext.map(Span.fromContext)
+  def getCurrentSpan: URIO[Tracing, Span] = getCurrentContext.map(Span.fromContext)
 
   private def setErrorStatus[E](
     span: Span,
