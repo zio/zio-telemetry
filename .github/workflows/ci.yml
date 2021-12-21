@@ -28,7 +28,7 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Lint code
-        run: sbt check
+        run: ./sbt check
 
   mdoc:
     runs-on: ubuntu-20.04
@@ -41,7 +41,7 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Check Document Generation
-        run: sbt docs/docusaurusCreateSite
+        run: ./sbt docs/docusaurusCreateSite
 
   test:
     runs-on: ubuntu-20.04
@@ -63,7 +63,7 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Run tests
-        run: sbt ++${{ matrix.scala }}! test
+        run: ./sbt ++${{ matrix.scala }}! test
       - name: Compile examples
         if: ${{ startsWith(matrix.scala, '2') }}
         run: ./sbt ++${{ matrix.scala }}! compileExamples
@@ -90,7 +90,7 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Release artifacts
-        run: sbt ci-release
+        run: ./sbt ci-release
         env:
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
