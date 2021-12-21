@@ -1,5 +1,7 @@
 package zio.telemetry.opentelemetry
 
+import io.opentelemetry.api.baggage.Baggage
+
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
 import io.opentelemetry.api.common.{ AttributeKey, Attributes }
@@ -304,6 +306,23 @@ object Tracing {
     val v = values.map(Double.box).asJava
     getCurrentSpan.map(_.setAttribute(AttributeKey.doubleArrayKey(name), v))
   }
+
+  /**
+   * Sets a baggage entry in the current context
+   */
+  def setBaggage(name: String, value: String): URIO[Tracing, Context] =
+    for {
+      contextRef <- currentContext
+      context    <- contextRef.updateAndGet(context =>
+                      Baggage.fromContext(context).toBuilder.put(name, value).build().storeInContext(context)
+                    )
+    } yield context
+
+  /**
+   * Gets the baggage from current context
+   */
+  def getCurrentBaggage: URIO[Tracing, Baggage] =
+    getCurrentContext.map(Baggage.fromContext)
 
   /**
    * Gets the current SpanContext

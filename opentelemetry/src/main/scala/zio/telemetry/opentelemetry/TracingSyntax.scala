@@ -91,5 +91,8 @@ object TracingSyntax {
       i3: DummyImplicit
     ): ZIO[Tracing with R, E, A] =
       effect <* Tracing.setAttribute(name, values)(i1, i2, i3)
+
+    def setBaggage(name: String, value: String): ZIO[Tracing with R, E, A] =
+      effect <* Tracing.setBaggage(name, value)
   }
 }
