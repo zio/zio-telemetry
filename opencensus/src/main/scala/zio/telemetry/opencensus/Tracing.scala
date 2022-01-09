@@ -52,7 +52,7 @@ object Tracing {
     toErrorStatus: ErrorMapper[E] = defaultMapper[E],
     attributes: Map[String, AttributeValue] = Map()
   )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
-    ZIO.accessM(_.get.span(name, kind, toErrorStatus, attributes)(effect))
+    ZIO.environmentWithZIO(_.get[Tracing].span(name, kind, toErrorStatus, attributes)(effect))
 
   def root[R, E, A](
     name: String,
@@ -60,7 +60,7 @@ object Tracing {
     toErrorStatus: ErrorMapper[E] = defaultMapper[E],
     attributes: Map[String, AttributeValue] = Map()
   )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
-    ZIO.accessM(_.get.root(name, kind, toErrorStatus, attributes)(effect))
+    ZIO.environmentWithZIO(_.get[Tracing].root(name, kind, toErrorStatus, attributes)(effect))
 
   def fromRemoteSpan[R, E, A](
     remote: SpanContext,
@@ -69,8 +69,8 @@ object Tracing {
     toErrorStatus: ErrorMapper[E] = defaultMapper[E],
     attributes: Map[String, AttributeValue] = Map()
   )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
-    ZIO.accessM(
-      _.get.fromRemoteSpan(remote, name, kind, toErrorStatus, attributes)(
+    ZIO.environmentWithZIO(
+      _.get[Tracing].fromRemoteSpan(remote, name, kind, toErrorStatus, attributes)(
         effect
       )
     )
@@ -78,12 +78,12 @@ object Tracing {
   def putAttributes(
     attributes: (String, AttributeValue)*
   ): ZIO[Tracing, Nothing, Unit] =
-    ZIO.accessM(_.get.putAttributes(attributes.toMap))
+    ZIO.environmentWithZIO(_.get.putAttributes(attributes.toMap))
 
   def withAttributes[R, E, A](
     attributes: (String, AttributeValue)*
   )(eff: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
-    ZIO.accessM[Tracing](_.get.putAttributes(attributes.toMap)) *> eff
+    ZIO.environmentWithZIO[Tracing](_.get.putAttributes(attributes.toMap)) *> eff
 
   def fromRootSpan[C, R, E, A](
     format: TextFormat,
@@ -94,7 +94,7 @@ object Tracing {
     toErrorStatus: ErrorMapper[E] = defaultMapper[E],
     attributes: Map[String, AttributeValue] = Map()
   )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
-    Task(format.extract(carrier, getter)).foldM(
+    Task(format.extract(carrier, getter)).foldZIO(
       _ => root(name, kind, toErrorStatus)(effect),
       remote => fromRemoteSpan(remote, name, kind, toErrorStatus, attributes)(effect)
     )
@@ -104,5 +104,5 @@ object Tracing {
     carrier: C,
     setter: TextFormat.Setter[C]
   ): URIO[R with Tracing, Unit] =
-    ZIO.accessM(_.get.inject(format, carrier, setter))
+    ZIO.environmentWithZIO(_.get[Tracing].inject(format, carrier, setter))
 }

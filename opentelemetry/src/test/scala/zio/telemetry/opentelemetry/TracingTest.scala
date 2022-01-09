@@ -5,13 +5,12 @@ import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.api.trace.{ Span, SpanId, Tracer }
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.data.SpanData
-import zio.clock.Clock
-import zio.duration._
+
 import zio.telemetry.opentelemetry.Tracing.inject
 import zio.telemetry.opentelemetry.TracingSyntax._
 import zio.test.Assertion._
-import zio.test.environment.TestClock
-import zio.test.{ assert, DefaultRunnableSpec }
+import zio.test.assert
+import zio.test.TestClock
 import zio._
 
 import scala.collection.mutable
@@ -23,8 +22,9 @@ import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 
 import java.lang
+import zio.test.ZIOSpecDefault
 
-object TracingTest extends DefaultRunnableSpec {
+object TracingTest extends ZIOSpecDefault {
 
   val inMemoryTracer: UIO[(InMemorySpanExporter, Tracer)] = for {
     spanExporter   <- UIO(InMemorySpanExporter.create())
@@ -33,30 +33,30 @@ object TracingTest extends DefaultRunnableSpec {
     tracer          = tracerProvider.get("TracingTest")
   } yield (spanExporter, tracer)
 
-  val inMemoryTracerLayer: ULayer[Has[InMemorySpanExporter] with Has[Tracer]] =
-    ZLayer.fromEffectMany(inMemoryTracer.map { case (inMemoryTracing, tracer) =>
-      Has(inMemoryTracing).add(tracer)
+  val inMemoryTracerLayer: ULayer[InMemorySpanExporter with Tracer] =
+    ZLayer.fromZIOEnvironment(inMemoryTracer.map { case (inMemoryTracing, tracer) =>
+      ZEnvironment(inMemoryTracing).add(tracer)
     })
 
-  val tracingMockLayer: URLayer[Clock, Has[InMemorySpanExporter] with Tracing with Has[Tracer]] =
+  val tracingMockLayer: URLayer[Clock, InMemorySpanExporter with Tracing with Tracer] =
     (inMemoryTracerLayer ++ Clock.any) >>> (Tracing.live ++ inMemoryTracerLayer)
 
   def getFinishedSpans =
     ZIO
-      .access[Has[InMemorySpanExporter]](_.get)
+      .access[InMemorySpanExporter](_.get)
       .map(_.getFinishedSpanItems.asScala.toList)
 
   def spec =
     suite("zio opentelemetry")(
-      testM("acquire/release the service") {
+      test("acquire/release the service") {
         for {
           _             <- Tracing.live.build
-                             .use_(UIO.unit)
+                             .useDiscard(UIO.unit)
           finishedSpans <- getFinishedSpans
         } yield assert(finishedSpans)(hasSize(equalTo(0)))
       }.provideCustomLayer(inMemoryTracerLayer),
       suite("spans")(
-        testM("childSpan") {
+        test("childSpan") {
           for {
             _     <- UIO.unit.span("Child").span("Root")
             spans <- getFinishedSpans
@@ -73,7 +73,7 @@ object TracingTest extends DefaultRunnableSpec {
               )
             )
         },
-        testM("scopedEffect") {
+        test("scopedEffect") {
           for {
             _     <- Tracing.scopedEffect {
                        val span = Span.current()
@@ -99,7 +99,7 @@ object TracingTest extends DefaultRunnableSpec {
               equalTo(List("In legacy code", "Finishing legacy code"))
             )
         },
-        testM("scopedEffectTotal") {
+        test("scopedEffectTotal") {
           for {
             _     <- Tracing.scopedEffectTotal {
                        val span = Span.current()
@@ -127,7 +127,7 @@ object TracingTest extends DefaultRunnableSpec {
               equalTo(List("In legacy code", "Finishing legacy code"))
             )
         },
-        testM("scopedEffectFromFuture") {
+        test("scopedEffectFromFuture") {
           for {
             result <- Tracing.scopedEffectFromFuture { _ =>
                         Future.successful {
@@ -157,7 +157,7 @@ object TracingTest extends DefaultRunnableSpec {
               equalTo(List("In legacy code", "Finishing legacy code"))
             )
         },
-        testM("rootSpan") {
+        test("rootSpan") {
           for {
             _     <- UIO.unit.root("ROOT2").root("ROOT")
             spans <- getFinishedSpans
@@ -174,7 +174,7 @@ object TracingTest extends DefaultRunnableSpec {
               )
             )
         },
-        testM("inSpan") {
+        test("inSpan") {
           for {
             (_, tracer)               <- inMemoryTracer
             externallyProvidedRootSpan = tracer.spanBuilder("external").startSpan()
@@ -194,7 +194,7 @@ object TracingTest extends DefaultRunnableSpec {
             )
           )
         },
-        testM("inject - extract roundtrip") {
+        test("inject - extract roundtrip") {
           val propagator                           = W3CTraceContextPropagator.getInstance()
           val carrier: mutable.Map[String, String] = mutable.Map().empty
 
@@ -233,7 +233,7 @@ object TracingTest extends DefaultRunnableSpec {
             assert(bar.get.getParentSpanId)(equalTo(root.get.getSpanId)) &&
             assert(baz.get.getParentSpanId)(equalTo(foo.get.getSpanId))
         },
-        testM("tagging") {
+        test("tagging") {
           for {
             _     <- UIO.unit
                        .setAttribute("boolean", true)
@@ -256,7 +256,7 @@ object TracingTest extends DefaultRunnableSpec {
             ) &&
             assert(tags.get(AttributeKey.stringArrayKey("strings")))(equalTo(Seq("foo", "bar").asJava))
         },
-        testM("logging") {
+        test("logging") {
           val duration = 1000.micros
 
           val log =
@@ -298,7 +298,7 @@ object TracingTest extends DefaultRunnableSpec {
             assert(tags)(equalTo(expected))
           }
         },
-        testM("baggaging") {
+        test("baggaging") {
           for {
             _         <- UIO.unit.setBaggage("some", "thing")
             baggage   <- Tracing.getCurrentBaggage

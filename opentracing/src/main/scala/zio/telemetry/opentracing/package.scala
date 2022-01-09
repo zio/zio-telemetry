@@ -1,10 +1,10 @@
 package zio.telemetry
 
 import io.opentracing.propagation.Format
-import zio.{ Has, ZIO }
+import zio.ZIO
 
 package object opentracing {
-  type OpenTracing = Has[OpenTracing.Service]
+  type OpenTracing = OpenTracing.Service
 
   implicit final class OpenTracingZioOps[-R, +E, +A](val zio: ZIO[R, E, A]) extends AnyVal {
 

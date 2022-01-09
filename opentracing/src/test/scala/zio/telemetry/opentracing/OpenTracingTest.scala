@@ -3,19 +3,19 @@ package zio.telemetry.opentracing
 import io.opentracing.mock.{ MockSpan, MockTracer }
 import io.opentracing.propagation.{ BinaryAdapters, Format, TextMapAdapter }
 import zio._
-import zio.clock.Clock
-import zio.duration._
+import zio.Clock
+
 import zio.test._
 import zio.test.Assertion._
-import zio.test.environment.TestClock
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
 import java.nio.ByteBuffer
-object OpenTracingTest extends DefaultRunnableSpec {
+import zio.test.ZIOSpecDefault
+object OpenTracingTest extends ZIOSpecDefault {
 
-  type HasMockTracer = Has[MockTracer]
+  type HasMockTracer = MockTracer
 
   val mockTracer: Layer[Nothing, HasMockTracer] =
     ZLayer.fromEffect(UIO(new MockTracer))
@@ -27,13 +27,13 @@ object OpenTracingTest extends DefaultRunnableSpec {
 
   def spec =
     suite("zio opentracing")(
-      testM("managedService") {
+      test("managedService") {
         val tracer = new MockTracer
 
         OpenTracing
           .live(tracer, "ROOT")
           .build
-          .use_(UIO.unit)
+          .useDiscard(UIO.unit)
           .as(
             assert(tracer.finishedSpans.asScala)(hasSize(equalTo(1))) && assert(tracer.finishedSpans().get(0))(
               hasField[MockSpan, String](
@@ -50,7 +50,7 @@ object OpenTracingTest extends DefaultRunnableSpec {
           )
       },
       suite("spans")(
-        testM("childSpan") {
+        test("childSpan") {
           for {
             tracer <- ZIO.access[HasMockTracer](_.get)
             _      <- UIO.unit.span("Child").span("ROOT")
@@ -70,7 +70,7 @@ object OpenTracingTest extends DefaultRunnableSpec {
             )
           }
         },
-        testM("rootSpan") {
+        test("rootSpan") {
           for {
             tracer <- ZIO.access[HasMockTracer](_.get)
             _      <- UIO.unit.root("ROOT2").root("ROOT")
@@ -90,7 +90,7 @@ object OpenTracingTest extends DefaultRunnableSpec {
             )
           }
         },
-        testM("spanFrom behaves like root if extract returns null") {
+        test("spanFrom behaves like root if extract returns null") {
           val tm = new TextMapAdapter(mutable.Map.empty.asJava)
           for {
             tracer <- ZIO.access[HasMockTracer](_.get)
@@ -109,7 +109,7 @@ object OpenTracingTest extends DefaultRunnableSpec {
             )
           }
         },
-        testM("spanFrom is a no-op if extract throws") {
+        test("spanFrom is a no-op if extract throws") {
           val byteBuffer = ByteBuffer.wrap("corrupted binary".toCharArray.map(x => x.toByte))
           val tm         = BinaryAdapters.extractionCarrier(byteBuffer)
           for {
@@ -121,7 +121,7 @@ object OpenTracingTest extends DefaultRunnableSpec {
             assert(spanFrom)(isNone)
           }
         },
-        testM("inject - extract roundtrip") {
+        test("inject - extract roundtrip") {
           val tm            = new TextMapAdapter(mutable.Map.empty.asJava)
           val injectExtract = OpenTracing.inject(Format.Builtin.TEXT_MAP, tm).span("foo") *>
             OpenTracing
@@ -145,7 +145,7 @@ object OpenTracingTest extends DefaultRunnableSpec {
             assert(baz.get.parentId())(equalTo(foo.get.context().spanId()))
           }
         },
-        testM("tagging") {
+        test("tagging") {
           for {
             tracer <- ZIO.access[HasMockTracer](_.get)
             _      <- UIO.unit
@@ -159,7 +159,7 @@ object OpenTracingTest extends DefaultRunnableSpec {
             assert(tags)(equalTo(expected))
           }
         },
-        testM("logging") {
+        test("logging") {
           val duration = 1000.micros
 
           val log =
@@ -188,7 +188,7 @@ object OpenTracingTest extends DefaultRunnableSpec {
             assert(tags)(equalTo(expected))
           }
         },
-        testM("baggage") {
+        test("baggage") {
           for {
             _      <- OpenTracing.setBaggageItem("foo", "bar")
             _      <- OpenTracing.setBaggageItem("bar", "baz")

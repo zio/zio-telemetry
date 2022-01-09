@@ -8,7 +8,6 @@ import io.opentelemetry.api.common.{ AttributeKey, Attributes }
 import io.opentelemetry.api.trace.{ Span, SpanKind, StatusCode, Tracer }
 import io.opentelemetry.context.Context
 import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator, TextMapSetter }
-import zio.clock.Clock
 import zio.telemetry.opentelemetry.ContextPropagation.{ extractContext, injectContext }
 import zio._
 import io.opentelemetry.api.trace.SpanContext
@@ -27,7 +26,7 @@ object Tracing {
   }
 
   private def currentNanos: URIO[Tracing, Long] =
-    ZIO.serviceWith[Tracing.Service](_.currentNanos)
+    ZIO.serviceWithZIO[Tracing.Service](_.currentNanos)
 
   private def currentContext: URIO[Tracing, FiberRef[Context]] =
     ZIO.access[Tracing](_.get.currentContext)
@@ -39,9 +38,9 @@ object Tracing {
     ZManaged.accessManaged[Tracing](_.get.createChildOf(parent, spanName, spanKind))
 
   private def createChildOfUnsafe(parent: Context, spanName: String, spanKind: SpanKind): URIO[Tracing, Context] =
-    ZIO.serviceWith[Tracing.Service](_.createChildOfUnsafe(parent, spanName, spanKind))
+    ZIO.serviceWithZIO[Tracing.Service](_.createChildOfUnsafe(parent, spanName, spanKind))
 
-  private def end: URIO[Tracing, Any] = ZIO.serviceWith(_.end)
+  private def end: URIO[Tracing, Any] = ZIO.serviceWithZIO(_.end)
 
   def getCurrentContext: URIO[Tracing, Context] = currentContext.flatMap(_.get)
 
@@ -158,7 +157,7 @@ object Tracing {
   def scopedEffect[R, A](effect: => A): ZIO[Tracing, Throwable, A] =
     for {
       currentContext <- getCurrentContext
-      eff            <- Task.effect {
+      eff            <- Task.attempt {
                           val scope = currentContext.makeCurrent()
                           try effect
                           finally scope.close()
@@ -173,7 +172,7 @@ object Tracing {
   def scopedEffectTotal[R, A](effect: => A): ZIO[Tracing, Nothing, A] =
     for {
       currentContext <- getCurrentContext
-      eff            <- Task.effectTotal {
+      eff            <- Task.succeed {
                           val scope = currentContext.makeCurrent()
                           try effect
                           finally scope.close()
@@ -331,15 +330,15 @@ object Tracing {
     getCurrentSpan.map(_.getSpanContext())
 
   def managed(tracer: Tracer): URManaged[Clock, Service] = {
-    class Live(defaultContext: FiberRef[Context], clock: Clock.Service) extends Service {
+    class Live(defaultContext: FiberRef[Context], clock: Clock) extends Service {
       private def endSpan(span: Span): UIO[Unit] = currentNanos.map(span.end(_, TimeUnit.NANOSECONDS))
 
       def currentNanos: UIO[Long] = clock.currentTime(TimeUnit.NANOSECONDS)
 
       def createRoot(spanName: String, spanKind: SpanKind): UManaged[Context] =
         for {
-          nanoSeconds <- currentNanos.toManaged_
-          span        <- ZManaged.make(
+          nanoSeconds <- currentNanos.toManaged
+          span        <- ZManaged.acquireReleaseWith(
                            UIO(
                              tracer
                                .spanBuilder(spanName)
@@ -353,8 +352,8 @@ object Tracing {
 
       def createChildOf(parent: Context, spanName: String, spanKind: SpanKind): UManaged[Context] =
         for {
-          nanoSeconds <- currentNanos.toManaged_
-          span        <- ZManaged.make(
+          nanoSeconds <- currentNanos.toManaged
+          span        <- ZManaged.acquireReleaseWith(
                            UIO(
                              tracer
                                .spanBuilder(spanName)
@@ -399,10 +398,10 @@ object Tracing {
         defaultContext <- FiberRef.make[Context](Context.root())
       } yield new Live(defaultContext, clock)
 
-    ZManaged.make(tracing)(_.end)
+    ZManaged.acquireReleaseWith(tracing)(_.end)
   }
 
-  def live: URLayer[Clock with Has[Tracer], Tracing] = ZLayer.fromManaged(
-    ZIO.access[Has[Tracer]](_.get).toManaged_.flatMap(managed)
+  def live: URLayer[Clock with Tracer, Tracing] = ZLayer.fromManaged(
+    ZIO.access[Tracer](_.get).toManaged.flatMap(managed)
   )
 }

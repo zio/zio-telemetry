@@ -6,7 +6,6 @@ import io.opentracing.propagation.Format
 import io.opentracing.{ Span, SpanContext, Tracer }
 import io.opentracing.noop.NoopTracerFactory
 import zio._
-import zio.clock.Clock
 
 import scala.jdk.CollectionConverters._
 
@@ -34,11 +33,11 @@ object OpenTracing {
     ZLayer.fromManaged(managed(tracer, rootOperation))
 
   def managed(tracer0: Tracer, rootOperation: String): URManaged[Clock, OpenTracing.Service] =
-    ZManaged.make(
+    ZManaged.acquireReleaseWith(
       for {
         span  <- UIO(tracer0.buildSpan(rootOperation).start())
         ref   <- FiberRef.make(span)
-        clock <- ZIO.service[Clock.Service]
+        clock <- ZIO.service[Clock]
         micros = clock.currentTime(TimeUnit.MICROSECONDS)
       } yield new OpenTracing.Service { self =>
         val tracer: Tracer = tracer0
@@ -103,7 +102,7 @@ object OpenTracing {
   ): ZIO[R1, E, Span] =
     ZIO.service[OpenTracing.Service].flatMap { service =>
       Task(service.tracer.extract(format, carrier))
-        .foldM(
+        .foldZIO(
           _ => zio,
           spanCtx =>
             for {
@@ -118,20 +117,20 @@ object OpenTracing {
     }
 
   def context: URIO[OpenTracing, SpanContext] =
-    ZIO.accessM(_.get.currentSpan.get.map(_.context))
+    ZIO.environmentWithZIO(_.get.currentSpan.get.map(_.context))
 
   def getBaggageItem(key: String): URIO[OpenTracing, Option[String]] =
     for {
       service <- ZIO.service[OpenTracing.Service]
       span    <- service.currentSpan.get
-      res     <- ZIO.effectTotal(span.getBaggageItem(key)).map(Option(_))
+      res     <- ZIO.succeed(span.getBaggageItem(key)).map(Option(_))
     } yield res
 
   def inject[C <: AnyRef](format: Format[C], carrier: C): URIO[OpenTracing, Unit] =
     for {
       service <- ZIO.service[OpenTracing.Service]
       span    <- service.currentSpan.get
-      _       <- ZIO.effectTotal(service.tracer.inject(span.context(), format, carrier))
+      _       <- ZIO.succeed(service.tracer.inject(span.context(), format, carrier))
     } yield ()
 
   def log(msg: String): URIO[OpenTracing, Unit] = log(ZIO.unit, msg)
@@ -139,10 +138,10 @@ object OpenTracing {
   def log(fields: Map[String, _]): URIO[OpenTracing, Unit] = log(ZIO.unit, fields)
 
   def log[R, E, A](zio: ZIO[R, E, A], fields: Map[String, _]): ZIO[R with OpenTracing, E, A] =
-    ZIO.accessM(_.get.log(zio, fields))
+    ZIO.environmentWithZIO(_.get[OpenTracing].log(zio, fields))
 
   def log[R, E, A](zio: ZIO[R, E, A], msg: String): ZIO[R with OpenTracing, E, A] =
-    ZIO.accessM(_.get.log(zio, msg))
+    ZIO.environmentWithZIO(_.get[OpenTracing].log(zio, msg))
 
   def root[R, E, A](
     zio: ZIO[R, E, A],
@@ -150,10 +149,10 @@ object OpenTracing {
     tagError: Boolean = false,
     logError: Boolean = false
   ): ZIO[R with OpenTracing, E, A] =
-    ZIO.accessM(_.get.root(zio, operation, tagError, logError))
+    ZIO.environmentWithZIO(_.get[OpenTracing].root(zio, operation, tagError, logError))
 
   def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R with OpenTracing, E, A] =
-    ZIO.accessM(_.get.setBaggageItem(zio, key, value))
+    ZIO.environmentWithZIO(_.get[OpenTracing].setBaggageItem(zio, key, value))
 
   def setBaggageItem(key: String, value: String): URIO[OpenTracing, Unit] = setBaggageItem(ZIO.unit, key, value)
 
@@ -163,16 +162,16 @@ object OpenTracing {
     tagError: Boolean = false,
     logError: Boolean = false
   ): ZIO[R with OpenTracing, E, A] =
-    ZIO.accessM(_.get.span(zio, operation, tagError, logError))
+    ZIO.environmentWithZIO(_.get[OpenTracing].span(zio, operation, tagError, logError))
 
   def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R with OpenTracing, E, A] =
-    ZIO.accessM(_.get.tag(zio, key, value))
+    ZIO.environmentWithZIO(_.get[OpenTracing].tag(zio, key, value))
 
   def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Int): ZIO[R with OpenTracing, E, A] =
-    ZIO.accessM(_.get.tag(zio, key, value))
+    ZIO.environmentWithZIO(_.get[OpenTracing].tag(zio, key, value))
 
   def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Boolean): ZIO[R with OpenTracing, E, A] =
-    ZIO.accessM(_.get.tag(zio, key, value))
+    ZIO.environmentWithZIO(_.get[OpenTracing].tag(zio, key, value))
 
   def tag(key: String, value: String): URIO[OpenTracing, Unit] = tag(ZIO.unit, key, value)
 

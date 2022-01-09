@@ -4,7 +4,7 @@ import io.opentelemetry.api.common.{ AttributeKey, Attributes }
 import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator }
 import io.opentelemetry.api.trace.{ Span, SpanKind, StatusCode }
 import zio.ZIO
-import zio.clock.Clock
+import zio.Clock
 
 object TracingSyntax {
 
