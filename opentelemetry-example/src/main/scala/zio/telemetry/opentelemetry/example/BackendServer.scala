@@ -1,19 +1,18 @@
 package zio.telemetry.opentelemetry.example
 
-import zio.console.putStrLn
-import zio.magic._
+import sttp.model.Uri
+import zhttp.service.server.ServerChannelFactory
+import zhttp.service.{EventLoopGroup, Server, ServerChannelFactory}
+import zio.Console.printLine
 import zio.config.getConfig
+import zio.config.magnolia.{Descriptor, descriptor}
 import zio.config.typesafe.TypesafeConfig
-import zio.config.magnolia.{ descriptor, Descriptor }
 import zio.telemetry.opentelemetry.Tracing
 import zio.telemetry.opentelemetry.example.config.AppConfig
 import zio.telemetry.opentelemetry.example.http.BackendApp
-import zio.{ App, ZIO }
-import sttp.model.Uri
-import zhttp.service.{ EventLoopGroup, Server }
-import zhttp.service.server.ServerChannelFactory
+import zio.{ZEnv, ZIO, ZIOAppDefault, ZLayer}
 
-object BackendServer extends App {
+object BackendServer extends ZIOAppDefault {
   implicit val sttpUriDescriptor: Descriptor[Uri] =
     Descriptor[String].transformOrFailLeft(Uri.parse)(_.toString)
 
@@ -21,20 +20,15 @@ object BackendServer extends App {
     getConfig[AppConfig].flatMap { conf =>
       val port = conf.backend.host.port.getOrElse(9000)
       (Server.port(port) ++ Server.app(BackendApp.routes)).make.use(_ =>
-        putStrLn(s"BackendServer started on port $port") *> ZIO.never
+        printLine(s"BackendServer started on port $port") *> ZIO.never
       )
     }
 
-  val configLayer = TypesafeConfig.fromDefaultLoader(descriptor[AppConfig])
+  val configLayer = TypesafeConfig.fromResourcePath(descriptor[AppConfig])
 
-  override def run(args: List[String]) =
-    server
-      .injectCustom(
-        configLayer,
-        JaegerTracer.live,
-        Tracing.live,
-        ServerChannelFactory.auto,
-        EventLoopGroup.auto(0)
-      )
-      .exitCode
+  val appLayer: ZLayer[ZEnv with AppConfig, Throwable, Tracing with ServerChannelFactory with EventLoopGroup] =
+    (JaegerTracer.live >>> Tracing.live) ++ ServerChannelFactory.auto ++ EventLoopGroup.auto(0)
+
+  override def run =
+    server.provideSomeLayer(configLayer >+> appLayer).exitCode
 }

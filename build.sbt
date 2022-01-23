@@ -61,23 +61,23 @@ lazy val opencensus = project
   .settings(stdSettings("zio-opencensus"))
   .settings(libraryDependencies := Dependencies.opencensus)
 
-//lazy val opentracingExample =
-//  project
-//    .in(file("opentracing-example"))
-//    .settings(stdSettings("opentracing-example"))
-//    .settings(publish / skip := true)
-//    .settings(onlyWithScala2)
-//    .settings(libraryDependencies := Dependencies.opentracingExample)
-//    .dependsOn(opentracing)
-//
-//lazy val opentelemetryExample =
-//  project
-//    .in(file("opentelemetry-example"))
-//    .settings(stdSettings("opentelemetry-example"))
-//    .settings(publish / skip := true)
-//    .settings(onlyWithScala2)
-//    .settings(libraryDependencies := Dependencies.opentelemetryExample)
-//    .dependsOn(opentelemetry)
+lazy val opentracingExample =
+  project
+    .in(file("opentracing-example"))
+    .settings(stdSettings("opentracing-example"))
+    .settings(publish / skip := true)
+    .settings(onlyWithScala2)
+    .settings(libraryDependencies := Dependencies.opentracingExample)
+    .dependsOn(opentracing)
+
+lazy val opentelemetryExample =
+  project
+    .in(file("opentelemetry-example"))
+    .settings(stdSettings("opentelemetry-example"))
+    .settings(publish / skip := true)
+    .settings(onlyWithScala2)
+    .settings(libraryDependencies := Dependencies.opentelemetryExample)
+    .dependsOn(opentelemetry)
 
 lazy val docs =
   project

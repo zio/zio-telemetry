@@ -4,8 +4,7 @@ import io.jaegertracing.Configuration
 import io.jaegertracing.internal.samplers.ConstSampler
 import io.jaegertracing.zipkin.ZipkinV2Reporter
 import org.apache.http.client.utils.URIBuilder
-import zio.ZLayer
-import zio.clock.Clock
+import zio.{Clock, ZLayer}
 import zio.telemetry.opentracing.OpenTracing
 import zipkin2.reporter.AsyncReporter
 import zipkin2.reporter.okhttp3.OkHttpSender

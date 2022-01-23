@@ -1,38 +1,36 @@
 package zio.telemetry.opentracing.example
 
-import zio.{ App, ExitCode, ZEnv, ZIO }
-import zio.console.putStrLn
 import sttp.model.Uri
-import zio.magic._
-import zio.config.typesafe.TypesafeConfig
+import zhttp.service.server.ServerChannelFactory
+import zhttp.service.{EventLoopGroup, Server, ServerChannelFactory}
+import zio.Console.printLine
 import zio.config.getConfig
 import zio.config.magnolia.DeriveConfigDescriptor.descriptor
+import zio.config.typesafe.TypesafeConfig
 import zio.telemetry.opentracing.example.JaegerTracer.makeService
 import zio.telemetry.opentracing.example.config.AppConfig
 import zio.telemetry.opentracing.example.http.ProxyApp
-import zhttp.service.{ EventLoopGroup, Server }
-import zhttp.service.server.ServerChannelFactory
+import zio.{ExitCode, ZEnv, ZIO, ZIOAppDefault, ZLayer}
 
-object ProxyServer extends App {
+object ProxyServer extends ZIOAppDefault {
 
-  private val configLayer = TypesafeConfig.fromDefaultLoader(descriptor[AppConfig])
+  private val configLayer = TypesafeConfig.fromResourcePath(descriptor[AppConfig])
 
-  override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] = {
+  private val appEnv: ZLayer[ZEnv, Throwable, AppConfig with EventLoopGroup with ServerChannelFactory] =
+    configLayer ++ ServerChannelFactory.auto ++ EventLoopGroup.auto(0)
+
+  override def run: ZIO[ZEnv, Nothing, ExitCode] = {
     val exit =
       getConfig[AppConfig].flatMap { conf =>
         val service = makeService(conf.tracer.host, "zio-proxy")
         for {
           backendUrl <- ZIO.fromEither(Uri.safeApply(conf.backend.host, conf.backend.port))
           result     <- (Server.port(conf.proxy.port) ++ Server.app(ProxyApp.statuses(backendUrl, service))).make
-                          .use(_ => putStrLn(s"ProxyServer started on ${conf.proxy.port}") *> ZIO.never)
+                          .use(_ => printLine(s"ProxyServer started on ${conf.proxy.port}") *> ZIO.never)
                           .exitCode
         } yield result
-      }.injectCustom(
-        configLayer,
-        ServerChannelFactory.auto,
-        EventLoopGroup.auto(0)
-      )
+      }
 
-    exit orElse ZIO.succeed(ExitCode.failure)
+    exit.provideSomeLayer(appEnv) orElse ZIO.succeed(ExitCode.failure)
   }
 }

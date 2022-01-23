@@ -1,11 +1,11 @@
 package zio.telemetry.opentelemetry.example.http
 
+import sttp.capabilities.WebSockets
+import sttp.capabilities.zio.ZioStreams
 import sttp.client3._
 import sttp.client3.ziojson._
-import sttp.capabilities.zio.ZioStreams
-import sttp.capabilities.WebSockets
 import zio.telemetry.opentelemetry.example.config.AppConfig
-import zio.{ Task, ZIO, ZLayer }
+import zio.{Task, ZIO, ZLayer}
 
 object Client {
   type Backend = SttpBackend[Task, ZioStreams with WebSockets]
@@ -15,12 +15,14 @@ object Client {
   }
 
   def status(headers: Map[String, String]) =
-    ZIO.accessM[Client](_.get.status(headers))
+    ZIO.environmentWithZIO[Client](_.get.status(headers))
 
   val up = Status.up("proxy")
 
-  val live = ZLayer.fromServices((backend: Backend, conf: AppConfig) =>
-    new Service {
+  val live: ZLayer[AppConfig with Backend, Throwable, Service] = (for {
+    conf <- ZIO.service[AppConfig]
+    backend <- ZIO.service[Backend]
+    service = new Service {
       def status(headers: Map[String, String]): Task[Statuses] =
         backend
           .send(
@@ -31,5 +33,5 @@ object Client {
             Statuses(List(status, up))
           }
     }
-  )
+  } yield service).toLayer
 }
