@@ -6,7 +6,7 @@ object Dependencies {
     val sttp3         = "3.3.14"
     val opentracing   = "0.33.0"
     val opentelemetry = "1.11.0"
-    val opencensus    = "0.30.0"
+    val opencensus    = "0.31.0"
     val zipkin        = "2.16.3"
     val zio           = "1.0.13"
     val zioHttp       = "1.0.0.0-RC17"
