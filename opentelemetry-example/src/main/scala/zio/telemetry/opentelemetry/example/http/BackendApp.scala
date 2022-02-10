@@ -2,11 +2,11 @@ package zio.telemetry.opentelemetry.example.http
 
 import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
-import io.opentelemetry.context.propagation.{TextMapGetter, TextMapPropagator}
+import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator }
 import zio.telemetry.opentelemetry.Tracing
 import zio.telemetry.opentelemetry.TracingSyntax._
-import zio.telemetry.opentelemetry.example.http.{Status => ServiceStatus}
-import zhttp.http.{!!, ->, /, Headers, Http, HttpApp, Method, Response}
+import zio.telemetry.opentelemetry.example.http.{ Status => ServiceStatus }
+import zhttp.http.{ !!, ->, /, Headers, Http, HttpApp, Method, Response }
 import zio.json.EncoderOps
 import zio.ZIO
 
@@ -15,7 +15,7 @@ import scala.jdk.CollectionConverters._
 
 object BackendApp {
 
-  val propagator: TextMapPropagator       = W3CTraceContextPropagator.getInstance()
+  val propagator: TextMapPropagator  = W3CTraceContextPropagator.getInstance()
   val getter: TextMapGetter[Headers] = new TextMapGetter[Headers] {
     override def keys(carrier: Headers): lang.Iterable[String] =
       carrier.headers.headersAsList.map(_._1).asJava

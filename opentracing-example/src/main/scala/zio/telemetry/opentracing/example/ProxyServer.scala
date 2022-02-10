@@ -2,7 +2,7 @@ package zio.telemetry.opentracing.example
 
 import sttp.model.Uri
 import zhttp.service.server.ServerChannelFactory
-import zhttp.service.{EventLoopGroup, Server, ServerChannelFactory}
+import zhttp.service.{ EventLoopGroup, Server, ServerChannelFactory }
 import zio.Console.printLine
 import zio.config.getConfig
 import zio.config.magnolia.DeriveConfigDescriptor.descriptor
@@ -10,7 +10,7 @@ import zio.config.typesafe.TypesafeConfig
 import zio.telemetry.opentracing.example.JaegerTracer.makeService
 import zio.telemetry.opentracing.example.config.AppConfig
 import zio.telemetry.opentracing.example.http.ProxyApp
-import zio.{ExitCode, ZEnv, ZIO, ZIOAppDefault, ZLayer}
+import zio.{ ExitCode, ZEnv, ZIO, ZIOAppDefault, ZLayer }
 
 object ProxyServer extends ZIOAppDefault {
 

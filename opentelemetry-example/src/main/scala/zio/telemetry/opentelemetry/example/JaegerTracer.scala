@@ -11,14 +11,16 @@ import zio.telemetry.opentelemetry.example.config.AppConfig
 object JaegerTracer {
 
   def live: RLayer[AppConfig, Tracer] =
-    ZLayer.service[AppConfig].flatMap(c =>
-      (for {
-        spanExporter <- Task(JaegerGrpcSpanExporter.builder().setEndpoint(c.get.tracer.host).build())
-        spanProcessor <- UIO(SimpleSpanProcessor.create(spanExporter))
-        tracerProvider <- UIO(SdkTracerProvider.builder().addSpanProcessor(spanProcessor).build())
-        openTelemetry <- UIO(OpenTelemetrySdk.builder().setTracerProvider(tracerProvider).build())
-        tracer <- UIO(openTelemetry.getTracer("zio.telemetry.opentelemetry.example.JaegerTracer"))
-      } yield tracer).toLayer
-    )
+    ZLayer
+      .service[AppConfig]
+      .flatMap(c =>
+        (for {
+          spanExporter   <- Task(JaegerGrpcSpanExporter.builder().setEndpoint(c.get.tracer.host).build())
+          spanProcessor  <- UIO(SimpleSpanProcessor.create(spanExporter))
+          tracerProvider <- UIO(SdkTracerProvider.builder().addSpanProcessor(spanProcessor).build())
+          openTelemetry  <- UIO(OpenTelemetrySdk.builder().setTracerProvider(tracerProvider).build())
+          tracer         <- UIO(openTelemetry.getTracer("zio.telemetry.opentelemetry.example.JaegerTracer"))
+        } yield tracer).toLayer
+      )
 
 }

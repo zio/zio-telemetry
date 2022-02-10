@@ -5,14 +5,14 @@ import sttp.capabilities.zio.ZioStreams
 import sttp.client3.SttpBackend
 import zio.config.getConfig
 import zio.config.typesafe.TypesafeConfig
-import zio.config.magnolia.{Descriptor, descriptor}
+import zio.config.magnolia.{ descriptor, Descriptor }
 import zio.telemetry.opentelemetry.Tracing
 import zio.telemetry.opentelemetry.example.config.AppConfig
-import zio.telemetry.opentelemetry.example.http.{Client, ProxyApp}
-import zio.{ExitCode, Task, URIO, ZEnv, ZIO, ZIOAppDefault, ZLayer, ZManaged}
+import zio.telemetry.opentelemetry.example.http.{ Client, ProxyApp }
+import zio.{ ExitCode, Task, URIO, ZEnv, ZIO, ZIOAppDefault, ZLayer, ZManaged }
 import sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend
 import sttp.model.Uri
-import zhttp.service.{EventLoopGroup, Server, ServerChannelFactory}
+import zhttp.service.{ EventLoopGroup, Server, ServerChannelFactory }
 import zhttp.service.server.ServerChannelFactory
 import zio.Console.printLine
 
@@ -35,7 +35,8 @@ object ProxyServer extends ZIOAppDefault {
 
   val sttp: ZLayer[AppConfig, Throwable, Client] = httpBackend >>> Client.live
 
-  val appEnv: ZLayer[ZEnv with AppConfig, Throwable, Client with Tracing with ServerChannelFactory with EventLoopGroup] =
+  val appEnv
+    : ZLayer[ZEnv with AppConfig, Throwable, Client with Tracing with ServerChannelFactory with EventLoopGroup] =
     (JaegerTracer.live >>> Tracing.live) ++ sttp ++ ServerChannelFactory.auto ++ EventLoopGroup.auto(0)
 
   override def run: URIO[ZEnv, ExitCode] =

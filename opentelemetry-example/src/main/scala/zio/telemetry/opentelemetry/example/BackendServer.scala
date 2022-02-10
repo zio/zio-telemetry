@@ -2,15 +2,15 @@ package zio.telemetry.opentelemetry.example
 
 import sttp.model.Uri
 import zhttp.service.server.ServerChannelFactory
-import zhttp.service.{EventLoopGroup, Server, ServerChannelFactory}
+import zhttp.service.{ EventLoopGroup, Server, ServerChannelFactory }
 import zio.Console.printLine
 import zio.config.getConfig
-import zio.config.magnolia.{Descriptor, descriptor}
+import zio.config.magnolia.{ descriptor, Descriptor }
 import zio.config.typesafe.TypesafeConfig
 import zio.telemetry.opentelemetry.Tracing
 import zio.telemetry.opentelemetry.example.config.AppConfig
 import zio.telemetry.opentelemetry.example.http.BackendApp
-import zio.{ZEnv, ZIO, ZIOAppDefault, ZLayer}
+import zio.{ ZEnv, ZIO, ZIOAppDefault, ZLayer }
 
 object BackendServer extends ZIOAppDefault {
   implicit val sttpUriDescriptor: Descriptor[Uri] =

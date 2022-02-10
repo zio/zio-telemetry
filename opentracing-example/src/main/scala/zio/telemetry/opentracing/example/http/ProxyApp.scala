@@ -1,21 +1,21 @@
 package zio.telemetry.opentracing.example.http
 
-import io.opentracing.propagation.Format.Builtin.{HTTP_HEADERS => HttpHeadersFormat}
+import io.opentracing.propagation.Format.Builtin.{ HTTP_HEADERS => HttpHeadersFormat }
 import io.opentracing.propagation.TextMapAdapter
 import io.opentracing.tag.Tags
 import sttp.model.Method.GET
 import sttp.model.Uri
-import zhttp.http.{Status => _, _}
+import zhttp.http.{ ->, /, Http, HttpApp, Method, Path, Response }
 import zio.json.EncoderOps
 import zio.telemetry.opentracing.OpenTracing
-import zio.{Clock, UIO, ZLayer}
+import zio.{ Clock, UIO, ZLayer }
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
 object ProxyApp {
   def statuses(backendUri: Uri, service: ZLayer[Clock, Throwable, OpenTracing]): HttpApp[Clock, Throwable] =
-    Http.fromFunctionZIO { case Method.GET -> !! / "statuses" =>
+    Http.collectZIO { case Method.GET -> Path.End / "statuses" =>
       val zio =
         for {
           _       <- OpenTracing.tag(Tags.SPAN_KIND.getKey, Tags.SPAN_KIND_CLIENT)
