@@ -1,6 +1,6 @@
 package zio.telemetry.opentelemetry.example.http
 
-import zio.json.{ DeriveJsonCodec, JsonCodec }
+import zio.json._
 
 final case class Statuses(data: List[Status]) extends AnyVal
 

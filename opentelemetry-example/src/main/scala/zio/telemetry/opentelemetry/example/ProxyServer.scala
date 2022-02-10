@@ -1,20 +1,22 @@
 package zio.telemetry.opentelemetry.example
 
-import zio.console.putStrLn
-import zio.magic._
+import sttp.capabilities.WebSockets
+import sttp.capabilities.zio.ZioStreams
+import sttp.client3.SttpBackend
 import zio.config.getConfig
 import zio.config.typesafe.TypesafeConfig
 import zio.config.magnolia.{ descriptor, Descriptor }
 import zio.telemetry.opentelemetry.Tracing
 import zio.telemetry.opentelemetry.example.config.AppConfig
 import zio.telemetry.opentelemetry.example.http.{ Client, ProxyApp }
-import zio.{ App, Managed, ZIO, ZLayer }
+import zio.{ ExitCode, Task, URIO, ZEnv, ZIO, ZIOAppDefault, ZLayer, ZManaged }
 import sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend
 import sttp.model.Uri
-import zhttp.service.{ EventLoopGroup, Server }
+import zhttp.service.{ EventLoopGroup, Server, ServerChannelFactory }
 import zhttp.service.server.ServerChannelFactory
+import zio.Console.printLine
 
-object ProxyServer extends App {
+object ProxyServer extends ZIOAppDefault {
   implicit val sttpUriDescriptor: Descriptor[Uri] =
     Descriptor[String].transformOrFailLeft(Uri.parse)(_.toString)
 
@@ -22,23 +24,24 @@ object ProxyServer extends App {
     getConfig[AppConfig].flatMap { conf =>
       val port = conf.proxy.host.port.getOrElse(8080)
       (Server.port(port) ++ Server.app(ProxyApp.routes)).make.use(_ =>
-        putStrLn(s"ProxyServer started on port $port") *> ZIO.never
+        printLine(s"ProxyServer started on port $port") *> ZIO.never
       )
     }
 
-  val configLayer = TypesafeConfig.fromDefaultLoader(descriptor[AppConfig])
-  val httpBackend = ZLayer.fromManaged(Managed.make(AsyncHttpClientZioBackend())(_.close().ignore))
+  val configLayer = TypesafeConfig.fromResourcePath(descriptor[AppConfig])
 
-  override def run(args: List[String]) =
-    server
-      .injectCustom(
-        configLayer,
-        httpBackend,
-        Client.live,
-        JaegerTracer.live,
-        Tracing.live,
-        ServerChannelFactory.auto,
-        EventLoopGroup.auto(0)
-      )
-      .exitCode
+  val httpBackend: ZLayer[Any, Throwable, SttpBackend[Task, ZioStreams with WebSockets]] =
+    ZManaged.acquireReleaseWith(AsyncHttpClientZioBackend())(_.close().ignore).toLayer
+
+  val sttp: ZLayer[AppConfig, Throwable, Client.Service] = httpBackend >>> Client.live
+
+  val appEnv: ZLayer[
+    ZEnv with AppConfig,
+    Throwable,
+    Client.Service with Tracing.Service with ServerChannelFactory with EventLoopGroup
+  ] =
+    (JaegerTracer.live >>> Tracing.live) ++ sttp ++ ServerChannelFactory.auto ++ EventLoopGroup.auto(0)
+
+  override def run: URIO[ZEnv, ExitCode] =
+    server.provideSomeLayer(configLayer >+> appEnv).exitCode
 }

@@ -51,16 +51,16 @@ object Tracing {
     kind: Span.Kind = null,
     toErrorStatus: ErrorMapper[E] = defaultMapper[E],
     attributes: Map[String, AttributeValue] = Map()
-  )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
-    ZIO.accessM(_.get.span(name, kind, toErrorStatus, attributes)(effect))
+  )(effect: ZIO[R, E, A]): ZIO[R with Service, E, A] =
+    ZIO.environmentWithZIO(_.get[Service].span(name, kind, toErrorStatus, attributes)(effect))
 
   def root[R, E, A](
     name: String,
     kind: Span.Kind = null,
     toErrorStatus: ErrorMapper[E] = defaultMapper[E],
     attributes: Map[String, AttributeValue] = Map()
-  )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
-    ZIO.accessM(_.get.root(name, kind, toErrorStatus, attributes)(effect))
+  )(effect: ZIO[R, E, A]): ZIO[R with Service, E, A] =
+    ZIO.environmentWithZIO(_.get[Service].root(name, kind, toErrorStatus, attributes)(effect))
 
   def fromRemoteSpan[R, E, A](
     remote: SpanContext,
@@ -68,22 +68,22 @@ object Tracing {
     kind: Span.Kind = null,
     toErrorStatus: ErrorMapper[E] = defaultMapper[E],
     attributes: Map[String, AttributeValue] = Map()
-  )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
-    ZIO.accessM(
-      _.get.fromRemoteSpan(remote, name, kind, toErrorStatus, attributes)(
+  )(effect: ZIO[R, E, A]): ZIO[R with Service, E, A] =
+    ZIO.environmentWithZIO(
+      _.get[Service].fromRemoteSpan(remote, name, kind, toErrorStatus, attributes)(
         effect
       )
     )
 
   def putAttributes(
     attributes: (String, AttributeValue)*
-  ): ZIO[Tracing, Nothing, Unit] =
-    ZIO.accessM(_.get.putAttributes(attributes.toMap))
+  ): ZIO[Service, Nothing, Unit] =
+    ZIO.environmentWithZIO(_.get.putAttributes(attributes.toMap))
 
   def withAttributes[R, E, A](
     attributes: (String, AttributeValue)*
-  )(eff: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
-    ZIO.accessM[Tracing](_.get.putAttributes(attributes.toMap)) *> eff
+  )(eff: ZIO[R, E, A]): ZIO[R with Service, E, A] =
+    ZIO.environmentWithZIO[Service](_.get.putAttributes(attributes.toMap)) *> eff
 
   def fromRootSpan[C, R, E, A](
     format: TextFormat,
@@ -93,8 +93,8 @@ object Tracing {
     kind: Span.Kind = Span.Kind.SERVER,
     toErrorStatus: ErrorMapper[E] = defaultMapper[E],
     attributes: Map[String, AttributeValue] = Map()
-  )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
-    Task(format.extract(carrier, getter)).foldM(
+  )(effect: ZIO[R, E, A]): ZIO[R with Service, E, A] =
+    Task(format.extract(carrier, getter)).foldZIO(
       _ => root(name, kind, toErrorStatus)(effect),
       remote => fromRemoteSpan(remote, name, kind, toErrorStatus, attributes)(effect)
     )
@@ -103,6 +103,6 @@ object Tracing {
     format: TextFormat,
     carrier: C,
     setter: TextFormat.Setter[C]
-  ): URIO[R with Tracing, Unit] =
-    ZIO.accessM(_.get.inject(format, carrier, setter))
+  ): URIO[R with Service, Unit] =
+    ZIO.environmentWithZIO(_.get[Service].inject(format, carrier, setter))
 }

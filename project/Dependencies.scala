@@ -3,16 +3,15 @@ import sbt._
 object Dependencies {
   object Versions {
     val jaeger        = "1.6.0"
-    val sttp3         = "3.3.14"
+    val sttp3         = "3.4.1"
     val opentracing   = "0.33.0"
     val opentelemetry = "1.11.0"
     val opencensus    = "0.31.0"
     val zipkin        = "2.16.3"
-    val zio           = "1.0.13"
-    val zioHttp       = "1.0.0.0-RC17"
-    val zioJson       = "0.1.5"
-    val zioConfig     = "1.0.6"
-    val zioMagic      = "0.3.8"
+    val zio           = "2.0.0-RC2"
+    val zioHttp       = "2.0.0-RC3"
+    val zioJson       = "0.3.0-RC3"
+    val zioConfig     = "3.0.0-RC2"
   }
 
   lazy val zio = Seq(
@@ -48,7 +47,6 @@ object Dependencies {
     "io.jaegertracing"               % "jaeger-zipkin"                 % Versions.jaeger,
     "com.softwaremill.sttp.client3" %% "async-http-client-backend-zio" % Versions.sttp3,
     "com.softwaremill.sttp.client3" %% "zio-json"                      % Versions.sttp3,
-    "io.github.kitlangton"          %% "zio-magic"                     % Versions.zioMagic,
     "io.d11"                        %% "zhttp"                         % Versions.zioHttp,
     "dev.zio"                       %% "zio-json"                      % Versions.zioJson,
     "dev.zio"                       %% "zio-config"                    % Versions.zioConfig,

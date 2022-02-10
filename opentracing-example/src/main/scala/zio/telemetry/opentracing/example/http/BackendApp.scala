@@ -2,23 +2,21 @@ package zio.telemetry.opentracing.example.http
 
 import io.opentracing.propagation.Format.Builtin.{ HTTP_HEADERS => HttpHeadersFormat }
 import io.opentracing.propagation.TextMapAdapter
-import zio.clock.Clock
-import zio.magic._
-import zio.telemetry.opentracing.example.http.{ Status => ServiceStatus }
-import zio.telemetry.opentracing._
-import zio.{ ZIO, ZLayer }
-import zhttp.http.{ ->, /, Http, HttpApp, Method, Response, Root }
+import zhttp.http.{ ->, /, Http, HttpApp, Method, Path, Response }
 import zio.json.EncoderOps
+import zio.telemetry.opentracing._
+import zio.telemetry.opentracing.example.http.{ Status => ServiceStatus }
+import zio.{ Clock, ZIO, ZLayer }
 
 import scala.jdk.CollectionConverters._
 
 object BackendApp {
-  def status(service: ZLayer[Clock, Throwable, OpenTracing]): HttpApp[Clock, Throwable] =
-    Http.collectM { case request @ Method.GET -> Root / "status" =>
-      val headers = request.headers.map(h => h.name.toString -> h.value.toString).toMap
+  def status(service: ZLayer[Clock, Throwable, OpenTracing.Service]): HttpApp[Clock, Throwable] =
+    Http.collectZIO { case request @ Method.GET -> Path.End / "status" =>
+      val headers = request.headers.toList.toMap
       ZIO.unit
         .spanFrom(HttpHeadersFormat, new TextMapAdapter(headers.asJava), "/status")
-        .as(Response.jsonString(ServiceStatus.up("backend").toJson))
-        .inject(service, Clock.live)
+        .as(Response.json(ServiceStatus.up("backend").toJson))
+        .provideSomeLayer(service)
     }
 }
