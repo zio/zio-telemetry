@@ -18,10 +18,10 @@ object BackendApp {
   val propagator: TextMapPropagator       = W3CTraceContextPropagator.getInstance()
   val getter: TextMapGetter[Headers] = new TextMapGetter[Headers] {
     override def keys(carrier: Headers): lang.Iterable[String] =
-      carrier.toChunk.map(_._1.toString).asJava
+      carrier.headers.headersAsList.map(_._1).asJava
 
     override def get(carrier: Headers, key: String): String =
-      carrier.getHeader(key).map(_._2.toString).orNull
+      carrier.headers.headerValue(key).orNull
   }
 
   val routes: HttpApp[Tracing, Throwable] =
@@ -32,7 +32,7 @@ object BackendApp {
         _        <- Tracing.addEvent("event from backend after response")
       } yield response
 
-      response.spanFrom(propagator, request.getHeaders, getter, "/status", SpanKind.SERVER)
+      response.spanFrom(propagator, request.headers, getter, "/status", SpanKind.SERVER)
     }
 
 }

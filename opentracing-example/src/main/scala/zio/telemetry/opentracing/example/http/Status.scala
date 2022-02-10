@@ -1,6 +1,6 @@
 package zio.telemetry.opentracing.example.http
 
-import zio.json.{ DeriveJsonCodec, JsonCodec }
+import zio.json._
 
 final case class Status(name: String, status: String)
 
