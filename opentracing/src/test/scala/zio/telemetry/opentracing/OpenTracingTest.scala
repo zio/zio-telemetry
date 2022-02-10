@@ -13,15 +13,14 @@ import scala.jdk.CollectionConverters._
 
 import java.nio.ByteBuffer
 import zio.test.ZIOSpecDefault
+
 object OpenTracingTest extends ZIOSpecDefault {
 
-  type HasMockTracer = MockTracer
+  val mockTracer: Layer[Nothing, MockTracer] =
+    ZLayer.fromZIO(UIO(new MockTracer))
 
-  val mockTracer: Layer[Nothing, HasMockTracer] =
-    ZLayer.fromEffect(UIO(new MockTracer))
-
-  val testService: URLayer[HasMockTracer with Clock, OpenTracing] =
-    ZLayer.fromServiceManaged((tracer: MockTracer) => OpenTracing.managed(tracer, "ROOT"))
+  val testService: URLayer[MockTracer with Clock, OpenTracing] =
+    ZManaged.service[MockTracer].flatMap(OpenTracing.managed(_, "ROOT")).toLayer
 
   val customLayer = mockTracer ++ ((mockTracer ++ Clock.any) >>> testService)
 
@@ -52,7 +51,7 @@ object OpenTracingTest extends ZIOSpecDefault {
       suite("spans")(
         test("childSpan") {
           for {
-            tracer <- ZIO.access[HasMockTracer](_.get)
+            tracer <- ZIO.service[MockTracer]
             _      <- UIO.unit.span("Child").span("ROOT")
           } yield {
             val spans = tracer.finishedSpans.asScala
@@ -72,7 +71,7 @@ object OpenTracingTest extends ZIOSpecDefault {
         },
         test("rootSpan") {
           for {
-            tracer <- ZIO.access[HasMockTracer](_.get)
+            tracer <- ZIO.service[MockTracer]
             _      <- UIO.unit.root("ROOT2").root("ROOT")
           } yield {
             val spans = tracer.finishedSpans.asScala
@@ -93,7 +92,7 @@ object OpenTracingTest extends ZIOSpecDefault {
         test("spanFrom behaves like root if extract returns null") {
           val tm = new TextMapAdapter(mutable.Map.empty.asJava)
           for {
-            tracer <- ZIO.access[HasMockTracer](_.get)
+            tracer <- ZIO.service[MockTracer]
             _      <- UIO.unit.spanFrom(Format.Builtin.TEXT_MAP, tm, "spanFrom")
           } yield {
             val spans    = tracer.finishedSpans.asScala
@@ -113,7 +112,7 @@ object OpenTracingTest extends ZIOSpecDefault {
           val byteBuffer = ByteBuffer.wrap("corrupted binary".toCharArray.map(x => x.toByte))
           val tm         = BinaryAdapters.extractionCarrier(byteBuffer)
           for {
-            tracer <- ZIO.access[HasMockTracer](_.get)
+            tracer <- ZIO.service[MockTracer]
             _      <- UIO.unit.spanFrom(Format.Builtin.BINARY_EXTRACT, tm, "spanFrom")
           } yield {
             val spans    = tracer.finishedSpans.asScala
@@ -128,7 +127,7 @@ object OpenTracingTest extends ZIOSpecDefault {
               .spanFrom(Format.Builtin.TEXT_MAP, tm, UIO.unit, "baz")
               .span("bar")
           for {
-            tracer <- ZIO.access[HasMockTracer](_.get)
+            tracer <- ZIO.service[MockTracer]
             _      <- injectExtract.span("ROOT")
           } yield {
             val spans = tracer.finishedSpans().asScala
@@ -147,7 +146,7 @@ object OpenTracingTest extends ZIOSpecDefault {
         },
         test("tagging") {
           for {
-            tracer <- ZIO.access[HasMockTracer](_.get)
+            tracer <- ZIO.service[MockTracer]
             _      <- UIO.unit
                         .tag("boolean", true)
                         .tag("int", 1)
@@ -167,7 +166,7 @@ object OpenTracingTest extends ZIOSpecDefault {
               TestClock.adjust(duration).log(Map("msg" -> "message", "size" -> 1))
 
           for {
-            tracer <- ZIO.access[HasMockTracer](_.get)
+            tracer <- ZIO.service[MockTracer]
             _      <- log.span("foo")
           } yield {
             val tags =

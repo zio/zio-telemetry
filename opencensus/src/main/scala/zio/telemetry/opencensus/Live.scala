@@ -13,7 +13,7 @@ import io.opencensus.trace.Tracer
 object Live {
   val live: URLayer[Tracer, Tracing] =
     ZLayer.fromManaged(for {
-      tracer  <- ZIO.access[Tracer](_.get).toManaged
+      tracer  <- ZManaged.service[Tracer]
       tracing  = FiberRef.make[Span](BlankSpan.INSTANCE).map(new Live(tracer, _))
       managed <- ZManaged.acquireReleaseWith(tracing)(_.end)
     } yield managed)
@@ -116,7 +116,7 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
     for {
       r <- currentSpan_
              .locally(span)(effect)
-             .tapCause(setErrorStatus(span, _, toErrorStatus))
+             .tapErrorCause(setErrorStatus(span, _, toErrorStatus))
     } yield r
 
   def inject[C, R, E, A](

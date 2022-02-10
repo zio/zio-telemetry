@@ -29,13 +29,13 @@ object Tracing {
     ZIO.serviceWithZIO[Tracing.Service](_.currentNanos)
 
   private def currentContext: URIO[Tracing, FiberRef[Context]] =
-    ZIO.access[Tracing](_.get.currentContext)
+    ZIO.service[Tracing].map(_.currentContext)
 
   private def createRoot(spanName: String, spanKind: SpanKind): URManaged[Tracing, Context] =
-    ZManaged.accessManaged[Tracing](_.get.createRoot(spanName, spanKind))
+    ZManaged.service[Tracing].flatMap(_.createRoot(spanName, spanKind))
 
   private def createChildOf(parent: Context, spanName: String, spanKind: SpanKind): URManaged[Tracing, Context] =
-    ZManaged.accessManaged[Tracing](_.get.createChildOf(parent, spanName, spanKind))
+    ZManaged.service[Tracing].flatMap(_.createChildOf(parent, spanName, spanKind))
 
   private def createChildOfUnsafe(parent: Context, spanName: String, spanKind: SpanKind): URIO[Tracing, Context] =
     ZIO.serviceWithZIO[Tracing.Service](_.createChildOfUnsafe(parent, spanName, spanKind))
@@ -68,7 +68,7 @@ object Tracing {
       current <- currentContext
       r       <- current
                    .locally(context)(effect)
-                   .tapCause(setErrorStatus(Span.fromContext(context), _, toErrorStatus))
+                   .tapErrorCause(setErrorStatus(Span.fromContext(context), _, toErrorStatus))
     } yield r
 
   /**
@@ -394,14 +394,12 @@ object Tracing {
 
     val tracing: URIO[Clock, Service] =
       for {
-        clock          <- ZIO.access[Clock](_.get)
+        clock          <- ZIO.service[Clock]
         defaultContext <- FiberRef.make[Context](Context.root())
       } yield new Live(defaultContext, clock)
 
     ZManaged.acquireReleaseWith(tracing)(_.end)
   }
 
-  def live: URLayer[Clock with Tracer, Tracing] = ZLayer.fromManaged(
-    ZIO.access[Tracer](_.get).toManaged.flatMap(managed)
-  )
+  def live: URLayer[Clock with Tracer, Tracing] = ZManaged.service[Tracer].flatMap(managed).toLayer
 }

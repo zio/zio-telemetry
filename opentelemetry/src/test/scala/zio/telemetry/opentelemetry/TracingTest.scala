@@ -43,7 +43,7 @@ object TracingTest extends ZIOSpecDefault {
 
   def getFinishedSpans =
     ZIO
-      .access[InMemorySpanExporter](_.get)
+      .service[InMemorySpanExporter]
       .map(_.getFinishedSpanItems.asScala.toList)
 
   def spec =
