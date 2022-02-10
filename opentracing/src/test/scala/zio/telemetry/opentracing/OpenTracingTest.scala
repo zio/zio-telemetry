@@ -19,7 +19,7 @@ object OpenTracingTest extends ZIOSpecDefault {
   val mockTracer: Layer[Nothing, MockTracer] =
     ZLayer.fromZIO(UIO(new MockTracer))
 
-  val testService: URLayer[MockTracer with Clock, OpenTracing] =
+  val testService: URLayer[MockTracer with Clock, OpenTracing.Service] =
     ZManaged.service[MockTracer].flatMap(OpenTracing.managed(_, "ROOT")).toLayer
 
   val customLayer = mockTracer ++ ((mockTracer ++ Clock.any) >>> testService)

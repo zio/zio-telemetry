@@ -17,20 +17,20 @@ object TracingSyntax {
       spanName: String,
       spanKind: SpanKind = SpanKind.INTERNAL,
       toErrorStatus: PartialFunction[E, StatusCode] = Map.empty
-    ): ZIO[R with Tracing, E, A] =
+    ): ZIO[R with Tracing.Service, E, A] =
       Tracing.spanFrom(propagator, carrier, getter, spanName, spanKind, toErrorStatus)(effect)
 
     def root(
       spanName: String,
       spanKind: SpanKind = SpanKind.INTERNAL,
       toErrorStatus: PartialFunction[E, StatusCode] = Map.empty
-    ): ZIO[R with Tracing, E, A] = Tracing.root(spanName, spanKind, toErrorStatus)(effect)
+    ): ZIO[R with Tracing.Service, E, A] = Tracing.root(spanName, spanKind, toErrorStatus)(effect)
 
     def span(
       spanName: String,
       spanKind: SpanKind = SpanKind.INTERNAL,
       toErrorStatus: PartialFunction[E, StatusCode] = Map.empty
-    ): ZIO[R with Tracing, E, A] = Tracing.span(spanName, spanKind, toErrorStatus)(effect)
+    ): ZIO[R with Tracing.Service, E, A] = Tracing.span(spanName, spanKind, toErrorStatus)(effect)
 
     /**
      * Mark this effect as the child of an externally provided span. zio-opentelemetry will mark the span as being the
@@ -46,53 +46,55 @@ object TracingSyntax {
       spanName: String,
       spanKind: SpanKind = SpanKind.INTERNAL,
       toErrorStatus: PartialFunction[E, StatusCode] = Map.empty
-    ): ZIO[R with Tracing, E, A] =
+    ): ZIO[R with Tracing.Service, E, A] =
       Tracing.inSpan(span, spanName, spanKind, toErrorStatus)(effect)
 
-    def addEvent(name: String): ZIO[Tracing with Clock with R, E, A] =
+    def addEvent(name: String): ZIO[Tracing.Service with Clock with R, E, A] =
       effect <* Tracing.addEvent(name)
 
     def addEventWithAttributes(
       name: String,
       attributes: Attributes
-    ): ZIO[Tracing with R, E, A] =
+    ): ZIO[Tracing.Service with R, E, A] =
       effect <* Tracing.addEventWithAttributes(name, attributes)
 
-    def setAttribute(name: String, value: Boolean): ZIO[Tracing with R, E, A] =
+    def setAttribute(name: String, value: Boolean): ZIO[Tracing.Service with R, E, A] =
       effect <* Tracing.setAttribute(name, value)
 
-    def setAttribute(name: String, value: Double): ZIO[Tracing with R, E, A] =
+    def setAttribute(name: String, value: Double): ZIO[Tracing.Service with R, E, A] =
       effect <* Tracing.setAttribute(name, value)
 
-    def setAttribute(name: String, value: Long): ZIO[Tracing with R, E, A] =
+    def setAttribute(name: String, value: Long): ZIO[Tracing.Service with R, E, A] =
       effect <* Tracing.setAttribute(name, value)
 
-    def setAttribute(name: String, value: String): ZIO[Tracing with R, E, A] =
+    def setAttribute(name: String, value: String): ZIO[Tracing.Service with R, E, A] =
       effect <* Tracing.setAttribute(name, value)
 
-    def setAttribute[T](key: AttributeKey[T], value: T): ZIO[Tracing with R, E, A] =
+    def setAttribute[T](key: AttributeKey[T], value: T): ZIO[Tracing.Service with R, E, A] =
       effect <* Tracing.setAttribute(key, value)
 
-    def setAttribute(name: String, values: Seq[String]): ZIO[Tracing with R, E, A] =
+    def setAttribute(name: String, values: Seq[String]): ZIO[Tracing.Service with R, E, A] =
       effect <* Tracing.setAttribute(name, values)
 
-    def setAttribute(name: String, values: Seq[Boolean])(implicit i1: DummyImplicit): ZIO[Tracing with R, E, A] =
+    def setAttribute(name: String, values: Seq[Boolean])(implicit
+      i1: DummyImplicit
+    ): ZIO[Tracing.Service with R, E, A] =
       effect <* Tracing.setAttribute(name, values)
 
     def setAttribute(name: String, values: Seq[Long])(implicit
       i1: DummyImplicit,
       i2: DummyImplicit
-    ): ZIO[Tracing with R, E, A] =
+    ): ZIO[Tracing.Service with R, E, A] =
       effect <* Tracing.setAttribute(name, values)(i1, i2)
 
     def setAttribute(name: String, values: Seq[Double])(implicit
       i1: DummyImplicit,
       i2: DummyImplicit,
       i3: DummyImplicit
-    ): ZIO[Tracing with R, E, A] =
+    ): ZIO[Tracing.Service with R, E, A] =
       effect <* Tracing.setAttribute(name, values)(i1, i2, i3)
 
-    def setBaggage(name: String, value: String): ZIO[Tracing with R, E, A] =
+    def setBaggage(name: String, value: String): ZIO[Tracing.Service with R, E, A] =
       effect <* Tracing.setBaggage(name, value)
   }
 }

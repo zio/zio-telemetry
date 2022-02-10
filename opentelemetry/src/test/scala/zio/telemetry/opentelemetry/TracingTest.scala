@@ -38,7 +38,7 @@ object TracingTest extends ZIOSpecDefault {
       ZEnvironment(inMemoryTracing).add(tracer)
     })
 
-  val tracingMockLayer: URLayer[Clock, InMemorySpanExporter with Tracing with Tracer] =
+  val tracingMockLayer: URLayer[Clock, InMemorySpanExporter with Tracing.Service with Tracer] =
     (inMemoryTracerLayer ++ Clock.any) >>> (Tracing.live ++ inMemoryTracerLayer)
 
   def getFinishedSpans =

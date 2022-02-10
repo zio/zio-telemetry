@@ -26,7 +26,7 @@ object BackendServer extends ZIOAppDefault {
 
   val configLayer = TypesafeConfig.fromResourcePath(descriptor[AppConfig])
 
-  val appLayer: ZLayer[ZEnv with AppConfig, Throwable, Tracing with ServerChannelFactory with EventLoopGroup] =
+  val appLayer: ZLayer[ZEnv with AppConfig, Throwable, Tracing.Service with ServerChannelFactory with EventLoopGroup] =
     (JaegerTracer.live >>> Tracing.live) ++ ServerChannelFactory.auto ++ EventLoopGroup.auto(0)
 
   override def run =

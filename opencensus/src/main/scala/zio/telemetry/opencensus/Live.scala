@@ -11,7 +11,7 @@ import io.opencensus.trace.propagation.TextFormat
 import io.opencensus.trace.Tracer
 
 object Live {
-  val live: URLayer[Tracer, Tracing] =
+  val live: URLayer[Tracer, Tracing.Service] =
     ZLayer.fromManaged(for {
       tracer  <- ZManaged.service[Tracer]
       tracing  = FiberRef.make[Span](BlankSpan.INSTANCE).map(new Live(tracer, _))

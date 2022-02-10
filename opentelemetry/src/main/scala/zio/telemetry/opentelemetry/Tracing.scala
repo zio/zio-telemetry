@@ -25,26 +25,26 @@ object Tracing {
     private[opentelemetry] def end: UIO[Any]
   }
 
-  private def currentNanos: URIO[Tracing, Long] =
-    ZIO.serviceWithZIO[Tracing.Service](_.currentNanos)
+  private def currentNanos: URIO[Service, Long] =
+    ZIO.serviceWithZIO[Service](_.currentNanos)
 
-  private def currentContext: URIO[Tracing, FiberRef[Context]] =
-    ZIO.service[Tracing].map(_.currentContext)
+  private def currentContext: URIO[Service, FiberRef[Context]] =
+    ZIO.service[Service].map(_.currentContext)
 
-  private def createRoot(spanName: String, spanKind: SpanKind): URManaged[Tracing, Context] =
-    ZManaged.service[Tracing].flatMap(_.createRoot(spanName, spanKind))
+  private def createRoot(spanName: String, spanKind: SpanKind): URManaged[Service, Context] =
+    ZManaged.service[Service].flatMap(_.createRoot(spanName, spanKind))
 
-  private def createChildOf(parent: Context, spanName: String, spanKind: SpanKind): URManaged[Tracing, Context] =
-    ZManaged.service[Tracing].flatMap(_.createChildOf(parent, spanName, spanKind))
+  private def createChildOf(parent: Context, spanName: String, spanKind: SpanKind): URManaged[Service, Context] =
+    ZManaged.service[Service].flatMap(_.createChildOf(parent, spanName, spanKind))
 
-  private def createChildOfUnsafe(parent: Context, spanName: String, spanKind: SpanKind): URIO[Tracing, Context] =
-    ZIO.serviceWithZIO[Tracing.Service](_.createChildOfUnsafe(parent, spanName, spanKind))
+  private def createChildOfUnsafe(parent: Context, spanName: String, spanKind: SpanKind): URIO[Service, Context] =
+    ZIO.serviceWithZIO[Service](_.createChildOfUnsafe(parent, spanName, spanKind))
 
-  private def end: URIO[Tracing, Any] = ZIO.serviceWithZIO(_.end)
+  private def end: URIO[Service, Any] = ZIO.serviceWithZIO(_.end)
 
-  def getCurrentContext: URIO[Tracing, Context] = currentContext.flatMap(_.get)
+  def getCurrentContext: URIO[Service, Context] = currentContext.flatMap(_.get)
 
-  def getCurrentSpan: URIO[Tracing, Span] = getCurrentContext.map(Span.fromContext)
+  def getCurrentSpan: URIO[Service, Span] = getCurrentContext.map(Span.fromContext)
 
   private def setErrorStatus[E](
     span: Span,
@@ -63,7 +63,7 @@ object Tracing {
     effect: ZIO[R, E, A],
     context: Context,
     toErrorStatus: PartialFunction[E, StatusCode]
-  ): ZIO[R with Tracing, E, A] =
+  ): ZIO[R with Service, E, A] =
     for {
       current <- currentContext
       r       <- current
@@ -82,7 +82,7 @@ object Tracing {
     spanName: String,
     spanKind: SpanKind,
     toErrorStatus: PartialFunction[E, StatusCode]
-  )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
+  )(effect: ZIO[R, E, A]): ZIO[R with Service, E, A] =
     for {
       context <- extractContext(propagator, carrier, getter)
       r       <- createChildOf(context, spanName, spanKind).use(finalizeSpanUsingEffect(effect, _, toErrorStatus))
@@ -98,7 +98,7 @@ object Tracing {
     getter: TextMapGetter[C],
     spanName: String,
     spanKind: SpanKind
-  ): URIO[Tracing, (Span, URIO[Tracing, Any])] =
+  ): URIO[Service, (Span, URIO[Service, Any])] =
     for {
       context <- extractContext(propagator, carrier, getter)
       updated <- createChildOfUnsafe(context, spanName, spanKind)
@@ -115,7 +115,7 @@ object Tracing {
     spanName: String,
     spanKind: SpanKind,
     toErrorStatus: PartialFunction[E, StatusCode]
-  )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
+  )(effect: ZIO[R, E, A]): ZIO[R with Service, E, A] =
     createRoot(spanName, spanKind).use(finalizeSpanUsingEffect(effect, _, toErrorStatus))
 
   /**
@@ -126,7 +126,7 @@ object Tracing {
     spanName: String,
     spanKind: SpanKind,
     toErrorStatus: PartialFunction[E, StatusCode]
-  )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
+  )(effect: ZIO[R, E, A]): ZIO[R with Service, E, A] =
     for {
       old <- getCurrentContext
       r   <- createChildOf(old, spanName, spanKind).use(finalizeSpanUsingEffect(effect, _, toErrorStatus))
@@ -139,7 +139,7 @@ object Tracing {
   def spanUnsafe(
     spanName: String,
     spanKind: SpanKind
-  ): URIO[Tracing, (Span, ZIO[Tracing, Nothing, Any])] =
+  ): URIO[Service, (Span, ZIO[Service, Nothing, Any])] =
     for {
       old     <- getCurrentContext
       updated <- createChildOfUnsafe(old, spanName, spanKind)
@@ -154,7 +154,7 @@ object Tracing {
    *
    * Closes the scope when the effect finishes.
    */
-  def scopedEffect[R, A](effect: => A): ZIO[Tracing, Throwable, A] =
+  def scopedEffect[R, A](effect: => A): ZIO[Service, Throwable, A] =
     for {
       currentContext <- getCurrentContext
       eff            <- Task.attempt {
@@ -169,7 +169,7 @@ object Tracing {
    *
    * Closes the scope when the effect finishes.
    */
-  def scopedEffectTotal[R, A](effect: => A): ZIO[Tracing, Nothing, A] =
+  def scopedEffectTotal[R, A](effect: => A): ZIO[Service, Nothing, A] =
     for {
       currentContext <- getCurrentContext
       eff            <- Task.succeed {
@@ -189,7 +189,7 @@ object Tracing {
    *
    * CLoses the scope when the effect finishes
    */
-  def scopedEffectFromFuture[R, A](make: ExecutionContext => scala.concurrent.Future[A]): ZIO[Tracing, Throwable, A] =
+  def scopedEffectFromFuture[R, A](make: ExecutionContext => scala.concurrent.Future[A]): ZIO[Service, Throwable, A] =
     for {
       currentContext <- getCurrentContext
       eff            <- ZIO.fromFuture { implicit ec =>
@@ -206,7 +206,7 @@ object Tracing {
     propagator: TextMapPropagator,
     carrier: C,
     setter: TextMapSetter[C]
-  ): URIO[Tracing, Unit] =
+  ): URIO[Service, Unit] =
     for {
       current <- getCurrentContext
       _       <- injectContext(current, propagator, carrier, setter)
@@ -220,7 +220,7 @@ object Tracing {
     spanName: String,
     spanKind: SpanKind,
     toErrorStatus: PartialFunction[E, StatusCode]
-  )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
+  )(effect: ZIO[R, E, A]): ZIO[R with Service, E, A] =
     for {
       r <- createChildOf(
              Context.root().`with`(span),
@@ -234,7 +234,7 @@ object Tracing {
   /**
    * Adds an event to the current span
    */
-  def addEvent(name: String): URIO[Tracing, Span] =
+  def addEvent(name: String): URIO[Service, Span] =
     for {
       nanoSeconds <- currentNanos
       span        <- getCurrentSpan
@@ -246,7 +246,7 @@ object Tracing {
   def addEventWithAttributes(
     name: String,
     attributes: Attributes
-  ): URIO[Tracing, Span] =
+  ): URIO[Service, Span] =
     for {
       nanoSeconds <- currentNanos
       span        <- getCurrentSpan
@@ -255,36 +255,36 @@ object Tracing {
   /**
    * Sets an attribute of the current span.
    */
-  def setAttribute(name: String, value: Boolean): URIO[Tracing, Span] =
+  def setAttribute(name: String, value: Boolean): URIO[Service, Span] =
     getCurrentSpan.map(_.setAttribute(name, value))
 
   /**
    * Sets an attribute of the current span.
    */
-  def setAttribute(name: String, value: Double): URIO[Tracing, Span] =
+  def setAttribute(name: String, value: Double): URIO[Service, Span] =
     getCurrentSpan.map(_.setAttribute(name, value))
 
   /**
    * Sets an attribute of the current span.
    */
-  def setAttribute(name: String, value: Long): URIO[Tracing, Span] =
+  def setAttribute(name: String, value: Long): URIO[Service, Span] =
     getCurrentSpan.map(_.setAttribute(name, value))
 
   /**
    * Sets an attribute of the current span.
    */
-  def setAttribute(name: String, value: String): URIO[Tracing, Span] =
+  def setAttribute(name: String, value: String): URIO[Service, Span] =
     getCurrentSpan.map(_.setAttribute(name, value))
 
-  def setAttribute[T](key: AttributeKey[T], value: T): URIO[Tracing, Span] =
+  def setAttribute[T](key: AttributeKey[T], value: T): URIO[Service, Span] =
     getCurrentSpan.map(_.setAttribute(key, value))
 
-  def setAttribute(name: String, values: Seq[String]): URIO[Tracing, Span] = {
+  def setAttribute(name: String, values: Seq[String]): URIO[Service, Span] = {
     val v = values.asJava
     getCurrentSpan.map(_.setAttribute(AttributeKey.stringArrayKey(name), v))
   }
 
-  def setAttribute(name: String, values: Seq[Boolean])(implicit i1: DummyImplicit): URIO[Tracing, Span] = {
+  def setAttribute(name: String, values: Seq[Boolean])(implicit i1: DummyImplicit): URIO[Service, Span] = {
     val v = values.map(Boolean.box).asJava
     getCurrentSpan.map(_.setAttribute(AttributeKey.booleanArrayKey(name), v))
   }
@@ -292,7 +292,7 @@ object Tracing {
   def setAttribute(name: String, values: Seq[Long])(implicit
     i1: DummyImplicit,
     i2: DummyImplicit
-  ): URIO[Tracing, Span] = {
+  ): URIO[Service, Span] = {
     val v = values.map(Long.box).asJava
     getCurrentSpan.map(_.setAttribute(AttributeKey.longArrayKey(name), v))
   }
@@ -301,7 +301,7 @@ object Tracing {
     i1: DummyImplicit,
     i2: DummyImplicit,
     i3: DummyImplicit
-  ): URIO[Tracing, Span] = {
+  ): URIO[Service, Span] = {
     val v = values.map(Double.box).asJava
     getCurrentSpan.map(_.setAttribute(AttributeKey.doubleArrayKey(name), v))
   }
@@ -309,7 +309,7 @@ object Tracing {
   /**
    * Sets a baggage entry in the current context
    */
-  def setBaggage(name: String, value: String): URIO[Tracing, Context] =
+  def setBaggage(name: String, value: String): URIO[Service, Context] =
     for {
       contextRef <- currentContext
       context    <- contextRef.updateAndGet(context =>
@@ -320,13 +320,13 @@ object Tracing {
   /**
    * Gets the baggage from current context
    */
-  def getCurrentBaggage: URIO[Tracing, Baggage] =
+  def getCurrentBaggage: URIO[Service, Baggage] =
     getCurrentContext.map(Baggage.fromContext)
 
   /**
    * Gets the current SpanContext
    */
-  def getCurrentSpanContext: URIO[Tracing, SpanContext] =
+  def getCurrentSpanContext: URIO[Service, SpanContext] =
     getCurrentSpan.map(_.getSpanContext())
 
   def managed(tracer: Tracer): URManaged[Clock, Service] = {
@@ -401,5 +401,5 @@ object Tracing {
     ZManaged.acquireReleaseWith(tracing)(_.end)
   }
 
-  def live: URLayer[Clock with Tracer, Tracing] = ZManaged.service[Tracer].flatMap(managed).toLayer
+  def live: URLayer[Clock with Tracer, Service] = ZManaged.service[Tracer].flatMap(managed).toLayer
 }

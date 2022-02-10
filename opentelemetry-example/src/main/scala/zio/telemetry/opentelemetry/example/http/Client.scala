@@ -15,7 +15,7 @@ object Client {
   }
 
   def status(headers: Map[String, String]) =
-    ZIO.environmentWithZIO[Client](_.get.status(headers))
+    ZIO.environmentWithZIO[Client.Service](_.get.status(headers))
 
   val up = Status.up("proxy")
 

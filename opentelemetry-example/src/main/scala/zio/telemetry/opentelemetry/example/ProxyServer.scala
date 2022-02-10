@@ -33,10 +33,13 @@ object ProxyServer extends ZIOAppDefault {
   val httpBackend: ZLayer[Any, Throwable, SttpBackend[Task, ZioStreams with WebSockets]] =
     ZManaged.acquireReleaseWith(AsyncHttpClientZioBackend())(_.close().ignore).toLayer
 
-  val sttp: ZLayer[AppConfig, Throwable, Client] = httpBackend >>> Client.live
+  val sttp: ZLayer[AppConfig, Throwable, Client.Service] = httpBackend >>> Client.live
 
-  val appEnv
-    : ZLayer[ZEnv with AppConfig, Throwable, Client with Tracing with ServerChannelFactory with EventLoopGroup] =
+  val appEnv: ZLayer[
+    ZEnv with AppConfig,
+    Throwable,
+    Client.Service with Tracing.Service with ServerChannelFactory with EventLoopGroup
+  ] =
     (JaegerTracer.live >>> Tracing.live) ++ sttp ++ ServerChannelFactory.auto ++ EventLoopGroup.auto(0)
 
   override def run: URIO[ZEnv, ExitCode] =

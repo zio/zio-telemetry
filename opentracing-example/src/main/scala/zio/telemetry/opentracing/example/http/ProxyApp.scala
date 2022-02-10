@@ -14,7 +14,7 @@ import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
 object ProxyApp {
-  def statuses(backendUri: Uri, service: ZLayer[Clock, Throwable, OpenTracing]): HttpApp[Clock, Throwable] =
+  def statuses(backendUri: Uri, service: ZLayer[Clock, Throwable, OpenTracing.Service]): HttpApp[Clock, Throwable] =
     Http.collectZIO { case Method.GET -> Path.End / "statuses" =>
       val zio =
         for {

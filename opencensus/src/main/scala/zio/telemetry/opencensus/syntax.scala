@@ -13,7 +13,7 @@ object syntax {
       kind: Span.Kind = null,
       toErrorStatus: ErrorMapper[E] = Tracing.defaultMapper[E],
       attributes: Map[String, AttributeValue]
-    ): ZIO[R with Tracing, E, A] =
+    ): ZIO[R with Tracing.Service, E, A] =
       Tracing.span(name, kind, toErrorStatus, attributes)(effect)
 
     def root(
@@ -21,7 +21,7 @@ object syntax {
       kind: Span.Kind = null,
       toErrorStatus: ErrorMapper[E] = Tracing.defaultMapper[E],
       attributes: Map[String, AttributeValue]
-    ): ZIO[R with Tracing, E, A] =
+    ): ZIO[R with Tracing.Service, E, A] =
       Tracing.root(name, kind, toErrorStatus, attributes)(effect)
 
     def fromRemoteSpan(
@@ -30,12 +30,12 @@ object syntax {
       kind: Span.Kind,
       toErrorStatus: ErrorMapper[E],
       attributes: Map[String, AttributeValue]
-    ): ZIO[R with Tracing, E, A] =
+    ): ZIO[R with Tracing.Service, E, A] =
       Tracing.fromRemoteSpan(remote, name, kind, toErrorStatus, attributes)(effect)
 
     def withAttributes(
       attributes: (String, AttributeValue)*
-    ): ZIO[R with Tracing, E, A] =
+    ): ZIO[R with Tracing.Service, E, A] =
       Tracing.withAttributes(attributes: _*)(effect)
   }
 }
