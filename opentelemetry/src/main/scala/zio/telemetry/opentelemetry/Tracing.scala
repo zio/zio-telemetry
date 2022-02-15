@@ -53,7 +53,11 @@ object Tracing {
     toErrorStatus: PartialFunction[E, StatusCode]
   ): UIO[Span] = {
     val errorStatus: StatusCode = cause.failureOption.flatMap(toErrorStatus.lift).getOrElse(StatusCode.UNSET)
-    UIO(span.setStatus(errorStatus, cause.prettyPrint))
+
+    UIO {
+      span.setAttribute("error", true)
+      span.setStatus(errorStatus, cause.prettyPrint)
+    }
   }
 
   /**
