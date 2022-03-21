@@ -15,7 +15,7 @@ private[opentelemetry] object ContextPropagation {
     getter: TextMapGetter[C]
   ): UIO[Context] =
     ZIO.uninterruptible {
-      UIO(propagator.extract(Context.root(), carrier, getter))
+      ZIO.succeed(propagator.extract(Context.root(), carrier, getter))
     }
 
   /**
@@ -27,6 +27,6 @@ private[opentelemetry] object ContextPropagation {
     carrier: C,
     setter: TextMapSetter[C]
   ): URIO[Tracing.Service, Unit] =
-    UIO(propagator.inject(context, carrier, setter))
+    ZIO.succeed(propagator.inject(context, carrier, setter))
 
 }

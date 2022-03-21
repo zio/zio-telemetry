@@ -9,7 +9,7 @@ import zio.config.magnolia.{ descriptor, Descriptor }
 import zio.telemetry.opentelemetry.Tracing
 import zio.telemetry.opentelemetry.example.config.AppConfig
 import zio.telemetry.opentelemetry.example.http.{ Client, ProxyApp }
-import zio.{ ExitCode, Task, URIO, ZEnv, ZIO, ZIOAppDefault, ZLayer, ZManaged }
+import zio.{ ExitCode, Task, URIO, ZEnv, ZIO, ZIOAppDefault, ZLayer }
 import sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend
 import sttp.model.Uri
 import zhttp.service.{ EventLoopGroup, Server, ServerChannelFactory }
@@ -31,7 +31,7 @@ object ProxyServer extends ZIOAppDefault {
   val configLayer = TypesafeConfig.fromResourcePath(descriptor[AppConfig])
 
   val httpBackend: ZLayer[Any, Throwable, SttpBackend[Task, ZioStreams with WebSockets]] =
-    ZManaged.acquireReleaseWith(AsyncHttpClientZioBackend())(_.close().ignore).toLayer
+    ZLayer.fromAcquireRelease(AsyncHttpClientZioBackend())(_.close().ignore)
 
   val sttp: ZLayer[AppConfig, Throwable, Client.Service] = httpBackend >>> Client.live
 

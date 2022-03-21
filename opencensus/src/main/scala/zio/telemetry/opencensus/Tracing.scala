@@ -94,10 +94,12 @@ object Tracing {
     toErrorStatus: ErrorMapper[E] = defaultMapper[E],
     attributes: Map[String, AttributeValue] = Map()
   )(effect: ZIO[R, E, A]): ZIO[R with Service, E, A] =
-    Task(format.extract(carrier, getter)).foldZIO(
-      _ => root(name, kind, toErrorStatus)(effect),
-      remote => fromRemoteSpan(remote, name, kind, toErrorStatus, attributes)(effect)
-    )
+    ZIO
+      .attempt(format.extract(carrier, getter))
+      .foldZIO(
+        _ => root(name, kind, toErrorStatus)(effect),
+        remote => fromRemoteSpan(remote, name, kind, toErrorStatus, attributes)(effect)
+      )
 
   def inject[C, R, E, A](
     format: TextFormat,

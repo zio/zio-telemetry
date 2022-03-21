@@ -1,6 +1,7 @@
 package zio.telemetry.opencensus
 
 import zio._
+import zio.managed._
 
 import io.opencensus.trace.AttributeValue
 import io.opencensus.trace.BlankSpan
@@ -76,7 +77,7 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
   ): ZIO[Any, Nothing, Unit] =
     for {
       current <- currentSpan_.get
-      _       <- UIO(attributes.foreach { case ((k, v)) =>
+      _       <- ZIO.succeed(attributes.foreach { case ((k, v)) =>
                    current.putAttribute(k, v)
                  })
     } yield ()
@@ -87,13 +88,13 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
     kind: Span.Kind
   ): UManaged[Span] =
     ZManaged.acquireReleaseWith(
-      UIO(
+      ZIO.succeed(
         tracer
           .spanBuilderWithExplicitParent(name, parent)
           .setSpanKind(kind)
           .startSpan()
       )
-    )(span => UIO(span.end))
+    )(span => ZIO.succeed(span.end()))
 
   private def createSpanFromRemote(
     parent: SpanContext,
@@ -101,13 +102,13 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
     kind: Span.Kind
   ): UManaged[Span] =
     ZManaged.acquireReleaseWith(
-      UIO(
+      ZIO.succeed(
         tracer
           .spanBuilderWithRemoteParent(name, parent)
           .setSpanKind(kind)
           .startSpan()
       )
-    )(span => UIO(span.end))
+    )(span => ZIO.succeed(span.end()))
 
   private def finalizeSpanUsingEffect[R, E, A](
     effect: ZIO[R, E, A],
@@ -126,13 +127,13 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
   ): UIO[Unit] =
     for {
       current <- currentSpan
-      _       <- URIO(format.inject(current.getContext(), carrier, setter))
+      _       <- ZIO.succeed(format.inject(current.getContext, carrier, setter))
     } yield ()
 
   private[opencensus] def end: UIO[Unit] =
     for {
       span <- currentSpan_.get
-      _    <- UIO(span.end())
+      _    <- ZIO.succeed(span.end())
     } yield ()
 
   private def setErrorStatus[E](
@@ -142,6 +143,6 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
   ): UIO[Unit] = {
     val errorStatus =
       cause.failureOption.flatMap(toErrorStatus.lift).getOrElse(Status.UNKNOWN)
-    UIO(span.setStatus(errorStatus))
+    ZIO.succeed(span.setStatus(errorStatus))
   }
 }

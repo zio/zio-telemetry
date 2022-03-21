@@ -3,21 +3,20 @@ package zio.telemetry.opentracing
 import io.opentracing.mock.{ MockSpan, MockTracer }
 import io.opentracing.propagation.{ BinaryAdapters, Format, TextMapAdapter }
 import zio._
-import zio.Clock
-
+import zio.managed._
 import zio.test._
 import zio.test.Assertion._
+import zio.test.ZIOSpecDefault
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
 import java.nio.ByteBuffer
-import zio.test.ZIOSpecDefault
 
 object OpenTracingTest extends ZIOSpecDefault {
 
   val mockTracer: Layer[Nothing, MockTracer] =
-    ZLayer.fromZIO(UIO(new MockTracer))
+    ZLayer.fromZIO(ZIO.succeed(new MockTracer))
 
   val testService: URLayer[MockTracer with Clock, OpenTracing.Service] =
     ZManaged.service[MockTracer].flatMap(OpenTracing.managed(_, "ROOT")).toLayer
@@ -29,10 +28,12 @@ object OpenTracingTest extends ZIOSpecDefault {
       test("managedService") {
         val tracer = new MockTracer
 
-        OpenTracing
-          .live(tracer, "ROOT")
-          .build
-          .useDiscard(UIO.unit)
+        ZIO
+          .scoped(
+            OpenTracing
+              .live(tracer, "ROOT")
+              .build
+          )
           .as(
             assert(tracer.finishedSpans.asScala)(hasSize(equalTo(1))) && assert(tracer.finishedSpans().get(0))(
               hasField[MockSpan, String](

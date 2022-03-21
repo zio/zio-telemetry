@@ -8,7 +8,7 @@ import sttp.model.Uri
 import zhttp.http.{ ->, /, Http, HttpApp, Method, Path, Response }
 import zio.json.EncoderOps
 import zio.telemetry.opentracing.OpenTracing
-import zio.{ Clock, UIO, ZLayer }
+import zio.{ Clock, UIO, ZIO, ZLayer }
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
@@ -21,7 +21,7 @@ object ProxyApp {
           _       <- OpenTracing.tag(Tags.SPAN_KIND.getKey, Tags.SPAN_KIND_CLIENT)
           _       <- OpenTracing.tag(Tags.HTTP_METHOD.getKey, GET.method)
           _       <- OpenTracing.setBaggageItem("proxy-baggage-item-key", "proxy-baggage-item-value")
-          buffer  <- UIO.succeed(new TextMapAdapter(mutable.Map.empty[String, String].asJava))
+          buffer  <- ZIO.succeed(new TextMapAdapter(mutable.Map.empty[String, String].asJava))
           _       <- OpenTracing.inject(HttpHeadersFormat, buffer)
           headers <- extractHeaders(buffer)
           up       = Status.up("proxy")
@@ -41,7 +41,7 @@ object ProxyApp {
 
   private def extractHeaders(adapter: TextMapAdapter): UIO[Map[String, String]] = {
     val m = mutable.Map.empty[String, String]
-    UIO(adapter.forEach { entry =>
+    ZIO.succeed(adapter.forEach { entry =>
       m.put(entry.getKey, entry.getValue)
       ()
     }).as(m.toMap)

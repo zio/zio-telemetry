@@ -5,12 +5,12 @@ import io.opentelemetry.api.baggage.Baggage
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
 import io.opentelemetry.api.common.{ AttributeKey, Attributes }
-import io.opentelemetry.api.trace.{ Span, SpanKind, StatusCode, Tracer }
+import io.opentelemetry.api.trace.{ Span, SpanContext, SpanKind, StatusCode, Tracer }
 import io.opentelemetry.context.Context
 import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator, TextMapSetter }
 import zio.telemetry.opentelemetry.ContextPropagation.{ extractContext, injectContext }
 import zio._
-import io.opentelemetry.api.trace.SpanContext
+import zio.managed._
 
 import scala.jdk.CollectionConverters._
 
@@ -52,7 +52,7 @@ object Tracing {
     toErrorStatus: PartialFunction[E, StatusCode]
   ): UIO[Span] = {
     val errorStatus: StatusCode = cause.failureOption.flatMap(toErrorStatus.lift).getOrElse(StatusCode.UNSET)
-    UIO(span.setStatus(errorStatus, cause.prettyPrint))
+    ZIO.succeed(span.setStatus(errorStatus, cause.prettyPrint))
   }
 
   /**
@@ -157,7 +157,7 @@ object Tracing {
   def scopedEffect[R, A](effect: => A): ZIO[Service, Throwable, A] =
     for {
       currentContext <- getCurrentContext
-      eff            <- Task.attempt {
+      eff            <- ZIO.attempt {
                           val scope = currentContext.makeCurrent()
                           try effect
                           finally scope.close()
@@ -172,7 +172,7 @@ object Tracing {
   def scopedEffectTotal[R, A](effect: => A): ZIO[Service, Nothing, A] =
     for {
       currentContext <- getCurrentContext
-      eff            <- Task.succeed {
+      eff            <- ZIO.succeed {
                           val scope = currentContext.makeCurrent()
                           try effect
                           finally scope.close()
@@ -339,7 +339,7 @@ object Tracing {
         for {
           nanoSeconds <- currentNanos.toManaged
           span        <- ZManaged.acquireReleaseWith(
-                           UIO(
+                           ZIO.succeed(
                              tracer
                                .spanBuilder(spanName)
                                .setNoParent()
@@ -354,7 +354,7 @@ object Tracing {
         for {
           nanoSeconds <- currentNanos.toManaged
           span        <- ZManaged.acquireReleaseWith(
-                           UIO(
+                           ZIO.succeed(
                              tracer
                                .spanBuilder(spanName)
                                .setParent(parent)
@@ -369,7 +369,7 @@ object Tracing {
         for {
           nanoSeconds <- currentNanos
           span        <-
-            UIO(
+            ZIO.succeed(
               tracer
                 .spanBuilder(spanName)
                 .setParent(parent)
@@ -387,7 +387,7 @@ object Tracing {
         } yield span.end(nanos, TimeUnit.NANOSECONDS)
 
       override private[opentelemetry] def getTracer: UIO[Tracer] =
-        UIO.succeed(tracer)
+        ZIO.succeed(tracer)
 
       val currentContext: FiberRef[Context] = defaultContext
     }
