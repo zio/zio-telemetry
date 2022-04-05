@@ -8,13 +8,13 @@ import sttp.model.Uri
 import zhttp.http.{ ->, /, Http, HttpApp, Method, Path, Response }
 import zio.json.EncoderOps
 import zio.telemetry.opentracing.OpenTracing
-import zio.{ Clock, UIO, ZIO, ZLayer }
+import zio.{ UIO, ZIO, ZLayer }
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
 object ProxyApp {
-  def statuses(backendUri: Uri, service: ZLayer[Clock, Throwable, OpenTracing.Service]): HttpApp[Clock, Throwable] =
+  def statuses(backendUri: Uri, service: ZLayer[Any, Throwable, OpenTracing.Service]): HttpApp[Any, Throwable] =
     Http.collectZIO { case Method.GET -> Path.End / "statuses" =>
       val zio =
         for {

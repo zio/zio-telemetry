@@ -3,7 +3,6 @@ package zio.telemetry.opentracing
 import io.opentracing.mock.{ MockSpan, MockTracer }
 import io.opentracing.propagation.{ BinaryAdapters, Format, TextMapAdapter }
 import zio._
-import zio.managed._
 import zio.test._
 import zio.test.Assertion._
 import zio.test.ZIOSpecDefault
@@ -18,10 +17,10 @@ object OpenTracingTest extends ZIOSpecDefault {
   val mockTracer: Layer[Nothing, MockTracer] =
     ZLayer.fromZIO(ZIO.succeed(new MockTracer))
 
-  val testService: URLayer[MockTracer with Clock, OpenTracing.Service] =
-    ZManaged.service[MockTracer].flatMap(OpenTracing.managed(_, "ROOT")).toLayer
+  val testService: URLayer[MockTracer, OpenTracing.Service] =
+    ZLayer.scoped(ZIO.service[MockTracer].flatMap(OpenTracing.scoped(_, "ROOT")))
 
-  val customLayer = mockTracer ++ ((mockTracer ++ Clock.any) >>> testService)
+  val customLayer = mockTracer ++ (mockTracer >>> testService)
 
   def spec =
     suite("zio opentracing")(

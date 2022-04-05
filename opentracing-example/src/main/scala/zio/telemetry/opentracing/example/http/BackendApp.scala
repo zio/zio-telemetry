@@ -6,12 +6,12 @@ import zhttp.http.{ ->, /, Http, HttpApp, Method, Path, Response }
 import zio.json.EncoderOps
 import zio.telemetry.opentracing._
 import zio.telemetry.opentracing.example.http.{ Status => ServiceStatus }
-import zio.{ Clock, ZIO, ZLayer }
+import zio.{ ZIO, ZLayer }
 
 import scala.jdk.CollectionConverters._
 
 object BackendApp {
-  def status(service: ZLayer[Clock, Throwable, OpenTracing.Service]): HttpApp[Clock, Throwable] =
+  def status(service: ZLayer[Any, Throwable, OpenTracing.Service]): HttpApp[Any, Throwable] =
     Http.collectZIO { case request @ Method.GET -> Path.End / "status" =>
       val headers = request.headers.toList.toMap
       ZIO.unit

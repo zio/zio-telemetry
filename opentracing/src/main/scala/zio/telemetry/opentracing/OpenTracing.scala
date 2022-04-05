@@ -6,7 +6,6 @@ import io.opentracing.propagation.Format
 import io.opentracing.{ Span, SpanContext, Tracer }
 import io.opentracing.noop.NoopTracerFactory
 import zio._
-import zio.managed._
 
 import scala.jdk.CollectionConverters._
 
@@ -28,17 +27,17 @@ object OpenTracing {
     def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Boolean): ZIO[R, E, A]
   }
 
-  lazy val noop: URLayer[Clock, OpenTracing.Service] = live(NoopTracerFactory.create())
+  lazy val noop: ULayer[OpenTracing.Service] = live(NoopTracerFactory.create())
 
-  def live(tracer: Tracer, rootOperation: String = "ROOT"): URLayer[Clock, OpenTracing.Service] =
-    ZLayer.fromManaged(managed(tracer, rootOperation))
+  def live(tracer: Tracer, rootOperation: String = "ROOT"): ULayer[OpenTracing.Service] =
+    ZLayer.scoped(scoped(tracer, rootOperation))
 
-  def managed(tracer0: Tracer, rootOperation: String): URManaged[Clock, OpenTracing.Service] =
-    ZManaged.acquireReleaseWith(
+  def scoped(tracer0: Tracer, rootOperation: String): URIO[Scope, OpenTracing.Service] =
+    ZIO.acquireRelease(
       for {
         span  <- ZIO.succeed(tracer0.buildSpan(rootOperation).start())
         ref   <- FiberRef.make(span)
-        clock <- ZIO.service[Clock]
+        clock <- ZIO.clock
         micros = clock.currentTime(TimeUnit.MICROSECONDS)
       } yield new OpenTracing.Service { self =>
         val tracer: Tracer = tracer0
