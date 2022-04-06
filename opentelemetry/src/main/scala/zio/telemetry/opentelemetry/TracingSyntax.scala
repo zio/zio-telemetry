@@ -4,7 +4,6 @@ import io.opentelemetry.api.common.{ AttributeKey, Attributes }
 import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator }
 import io.opentelemetry.api.trace.{ Span, SpanKind, StatusCode }
 import zio.ZIO
-import zio.Clock
 
 object TracingSyntax {
 
@@ -49,7 +48,7 @@ object TracingSyntax {
     ): ZIO[R with Tracing.Service, E, A] =
       Tracing.inSpan(span, spanName, spanKind, toErrorStatus)(effect)
 
-    def addEvent(name: String): ZIO[Tracing.Service with Clock with R, E, A] =
+    def addEvent(name: String): ZIO[Tracing.Service with R, E, A] =
       effect <* Tracing.addEvent(name)
 
     def addEventWithAttributes(

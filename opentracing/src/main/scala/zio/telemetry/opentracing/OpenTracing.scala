@@ -27,17 +27,17 @@ object OpenTracing {
     def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Boolean): ZIO[R, E, A]
   }
 
-  lazy val noop: URLayer[Clock, OpenTracing.Service] = live(NoopTracerFactory.create())
+  lazy val noop: ULayer[OpenTracing.Service] = live(NoopTracerFactory.create())
 
-  def live(tracer: Tracer, rootOperation: String = "ROOT"): URLayer[Clock, OpenTracing.Service] =
-    ZLayer.fromManaged(managed(tracer, rootOperation))
+  def live(tracer: Tracer, rootOperation: String = "ROOT"): ULayer[OpenTracing.Service] =
+    ZLayer.scoped(scoped(tracer, rootOperation))
 
-  def managed(tracer0: Tracer, rootOperation: String): URManaged[Clock, OpenTracing.Service] =
-    ZManaged.acquireReleaseWith(
+  def scoped(tracer0: Tracer, rootOperation: String): URIO[Scope, OpenTracing.Service] =
+    ZIO.acquireRelease(
       for {
-        span  <- UIO(tracer0.buildSpan(rootOperation).start())
+        span  <- ZIO.succeed(tracer0.buildSpan(rootOperation).start())
         ref   <- FiberRef.make(span)
-        clock <- ZIO.service[Clock]
+        clock <- ZIO.clock
         micros = clock.currentTime(TimeUnit.MICROSECONDS)
       } yield new OpenTracing.Service { self =>
         val tracer: Tracer = tracer0
@@ -46,8 +46,8 @@ object OpenTracing {
 
         def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit] =
           for {
-            _ <- UIO(span.setTag("error", true)).when(tagError)
-            _ <- UIO(span.log(Map("error.object" -> cause, "stack" -> cause.prettyPrint).asJava)).when(logError)
+            _ <- ZIO.succeed(span.setTag("error", true)).when(tagError)
+            _ <- ZIO.succeed(span.log(Map("error.object" -> cause, "stack" -> cause.prettyPrint).asJava)).when(logError)
           } yield ()
 
         def finish(span: Span): UIO[Unit] = micros.map(span.finish)
@@ -60,7 +60,7 @@ object OpenTracing {
 
         def root[R, E, A](zio: ZIO[R, E, A], operation: String, tagError: Boolean, logError: Boolean): ZIO[R, E, A] =
           for {
-            root    <- UIO(tracer.buildSpan(operation).start())
+            root    <- ZIO.succeed(tracer.buildSpan(operation).start())
             current <- currentSpan.get
             _       <- currentSpan.set(root)
             res     <- zio
@@ -74,7 +74,7 @@ object OpenTracing {
         def span[R, E, A](zio: ZIO[R, E, A], operation: String, tagError: Boolean, logError: Boolean): ZIO[R, E, A] =
           for {
             current <- currentSpan.get
-            child   <- UIO(tracer.buildSpan(operation).asChildOf(current).start())
+            child   <- ZIO.succeed(tracer.buildSpan(operation).asChildOf(current).start())
             _       <- currentSpan.set(child)
             res     <- zio
                          .catchAllCause(c => error(child, c, tagError, logError) *> IO.done(Exit.Failure(c)))
@@ -90,7 +90,7 @@ object OpenTracing {
         def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Boolean): ZIO[R, E, A] =
           zio <* currentSpan.get.map(_.setTag(key, value))
       }
-    )(_.currentSpan.get.flatMap(span => UIO(span.finish())))
+    )(_.currentSpan.get.flatMap(span => ZIO.succeed(span.finish())))
 
   def spanFrom[R, R1 <: R with OpenTracing.Service, E, Span, C <: AnyRef](
     format: Format[C],
@@ -101,13 +101,14 @@ object OpenTracing {
     logError: Boolean = true
   ): ZIO[R1, E, Span] =
     ZIO.service[OpenTracing.Service].flatMap { service =>
-      Task(service.tracer.extract(format, carrier))
+      ZIO
+        .attempt(service.tracer.extract(format, carrier))
         .foldZIO(
           _ => zio,
           spanCtx =>
             for {
               current <- service.currentSpan.get
-              span    <- UIO(service.tracer.buildSpan(operation).asChildOf(spanCtx).start())
+              span    <- ZIO.succeed(service.tracer.buildSpan(operation).asChildOf(spanCtx).start())
               _       <- service.currentSpan.set(span)
               res     <- zio
                            .catchAllCause(c => service.error(span, c, tagError, logError) *> IO.done(Exit.Failure(c)))

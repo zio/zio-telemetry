@@ -12,11 +12,11 @@ import io.opencensus.trace.Tracer
 
 object Live {
   val live: URLayer[Tracer, Tracing.Service] =
-    ZLayer.fromManaged(for {
-      tracer  <- ZManaged.service[Tracer]
-      tracing  = FiberRef.make[Span](BlankSpan.INSTANCE).map(new Live(tracer, _))
-      managed <- ZManaged.acquireReleaseWith(tracing)(_.end)
-    } yield managed)
+    ZLayer.scoped(for {
+      tracer <- ZIO.service[Tracer]
+      tracing = FiberRef.make[Span](BlankSpan.INSTANCE).map(new Live(tracer, _))
+      live   <- ZIO.acquireRelease(tracing)(_.end)
+    } yield live)
 }
 
 class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
@@ -30,15 +30,13 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
     toErrorStatus: ErrorMapper[E],
     attributes: Map[String, AttributeValue]
   )(effect: ZIO[R, E, A]): ZIO[R, E, A] =
-    for {
-      parent <- currentSpan_.get
-      res    <- createSpan(parent, name, kind).use(
-                  finalizeSpanUsingEffect(
-                    putAttributes(attributes) *> effect,
-                    toErrorStatus
-                  )
-                )
-    } yield res
+    ZIO.scoped[R] {
+      for {
+        parent <- currentSpan_.get
+        span   <- createSpan(parent, name, kind)
+        res    <- finalizeSpanUsingEffect(putAttributes(attributes) *> effect, toErrorStatus)(span)
+      } yield res
+    }
 
   def root[R, E, A](
     name: String,
@@ -46,14 +44,14 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
     toErrorStatus: ErrorMapper[E],
     attributes: Map[String, AttributeValue]
   )(effect: ZIO[R, E, A]): ZIO[R, E, A] =
-    for {
-      res <- createSpan(BlankSpan.INSTANCE, name, kind).use(
-               finalizeSpanUsingEffect(
-                 putAttributes(attributes) *> effect,
-                 toErrorStatus
-               )
-             )
-    } yield res
+    ZIO.scoped[R] {
+      createSpan(BlankSpan.INSTANCE, name, kind).flatMap(span =>
+        finalizeSpanUsingEffect(
+          putAttributes(attributes) *> effect,
+          toErrorStatus
+        )(span)
+      )
+    }
 
   def fromRemoteSpan[R, E, A](
     remote: SpanContext,
@@ -62,21 +60,21 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
     toErrorStatus: ErrorMapper[E],
     attributes: Map[String, AttributeValue]
   )(effect: ZIO[R, E, A]): ZIO[R, E, A] =
-    for {
-      res <- createSpanFromRemote(remote, name, kind).use(
-               finalizeSpanUsingEffect(
-                 putAttributes(attributes) *> effect,
-                 toErrorStatus
-               )
-             )
-    } yield res
+    ZIO.scoped[R] {
+      createSpanFromRemote(remote, name, kind).flatMap(span =>
+        finalizeSpanUsingEffect(
+          putAttributes(attributes) *> effect,
+          toErrorStatus
+        )(span)
+      )
+    }
 
   def putAttributes(
     attributes: Map[String, AttributeValue]
   ): ZIO[Any, Nothing, Unit] =
     for {
       current <- currentSpan_.get
-      _       <- UIO(attributes.foreach { case ((k, v)) =>
+      _       <- ZIO.succeed(attributes.foreach { case ((k, v)) =>
                    current.putAttribute(k, v)
                  })
     } yield ()
@@ -85,29 +83,29 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
     parent: Span,
     name: String,
     kind: Span.Kind
-  ): UManaged[Span] =
-    ZManaged.acquireReleaseWith(
-      UIO(
+  ): URIO[Scope, Span] =
+    ZIO.acquireRelease(
+      ZIO.succeed(
         tracer
           .spanBuilderWithExplicitParent(name, parent)
           .setSpanKind(kind)
           .startSpan()
       )
-    )(span => UIO(span.end))
+    )(span => ZIO.succeed(span.end()))
 
   private def createSpanFromRemote(
     parent: SpanContext,
     name: String,
     kind: Span.Kind
-  ): UManaged[Span] =
-    ZManaged.acquireReleaseWith(
-      UIO(
+  ): URIO[Scope, Span] =
+    ZIO.acquireRelease(
+      ZIO.succeed(
         tracer
           .spanBuilderWithRemoteParent(name, parent)
           .setSpanKind(kind)
           .startSpan()
       )
-    )(span => UIO(span.end))
+    )(span => ZIO.succeed(span.end()))
 
   private def finalizeSpanUsingEffect[R, E, A](
     effect: ZIO[R, E, A],
@@ -126,13 +124,13 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
   ): UIO[Unit] =
     for {
       current <- currentSpan
-      _       <- URIO(format.inject(current.getContext(), carrier, setter))
+      _       <- ZIO.succeed(format.inject(current.getContext, carrier, setter))
     } yield ()
 
   private[opencensus] def end: UIO[Unit] =
     for {
       span <- currentSpan_.get
-      _    <- UIO(span.end())
+      _    <- ZIO.succeed(span.end())
     } yield ()
 
   private def setErrorStatus[E](
@@ -142,6 +140,6 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
   ): UIO[Unit] = {
     val errorStatus =
       cause.failureOption.flatMap(toErrorStatus.lift).getOrElse(Status.UNKNOWN)
-    UIO(span.setStatus(errorStatus))
+    ZIO.succeed(span.setStatus(errorStatus))
   }
 }

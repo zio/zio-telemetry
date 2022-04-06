@@ -27,9 +27,9 @@ import zio.test.ZIOSpecDefault
 object TracingTest extends ZIOSpecDefault {
 
   val inMemoryTracer: UIO[(InMemorySpanExporter, Tracer)] = for {
-    spanExporter   <- UIO(InMemorySpanExporter.create())
-    spanProcessor  <- UIO(SimpleSpanProcessor.create(spanExporter))
-    tracerProvider <- UIO(SdkTracerProvider.builder().addSpanProcessor(spanProcessor).build())
+    spanExporter   <- ZIO.succeed(InMemorySpanExporter.create())
+    spanProcessor  <- ZIO.succeed(SimpleSpanProcessor.create(spanExporter))
+    tracerProvider <- ZIO.succeed(SdkTracerProvider.builder().addSpanProcessor(spanProcessor).build())
     tracer          = tracerProvider.get("TracingTest")
   } yield (spanExporter, tracer)
 
@@ -38,8 +38,8 @@ object TracingTest extends ZIOSpecDefault {
       ZEnvironment(inMemoryTracing).add(tracer)
     })
 
-  val tracingMockLayer: URLayer[Clock, InMemorySpanExporter with Tracing.Service with Tracer] =
-    (inMemoryTracerLayer ++ Clock.any) >>> (Tracing.live ++ inMemoryTracerLayer)
+  val tracingMockLayer: ULayer[InMemorySpanExporter with Tracing.Service with Tracer] =
+    inMemoryTracerLayer >>> (Tracing.live ++ inMemoryTracerLayer)
 
   def getFinishedSpans =
     ZIO
@@ -50,8 +50,7 @@ object TracingTest extends ZIOSpecDefault {
     suite("zio opentelemetry")(
       test("acquire/release the service") {
         for {
-          _             <- Tracing.live.build
-                             .useDiscard(UIO.unit)
+          _             <- ZIO.scoped(Tracing.live.build)
           finishedSpans <- getFinishedSpans
         } yield assert(finishedSpans)(hasSize(equalTo(0)))
       }.provideCustomLayer(inMemoryTracerLayer),
@@ -176,7 +175,8 @@ object TracingTest extends ZIOSpecDefault {
         },
         test("inSpan") {
           for {
-            (_, tracer)               <- inMemoryTracer
+            res                       <- inMemoryTracer
+            (_, tracer)                = res
             externallyProvidedRootSpan = tracer.spanBuilder("external").startSpan()
             scope                      = externallyProvidedRootSpan.makeCurrent()
             _                         <- UIO.unit.inSpan(externallyProvidedRootSpan, "zio-otel-child")

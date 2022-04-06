@@ -3,15 +3,15 @@ import sbt._
 object Dependencies {
   object Versions {
     val jaeger        = "1.6.0"
-    val sttp3         = "3.4.1"
+    val sttp3         = "3.5.1"
     val opentracing   = "0.33.0"
     val opentelemetry = "1.11.0"
     val opencensus    = "0.31.0"
     val zipkin        = "2.16.3"
-    val zio           = "2.0.0-RC2"
-    val zioHttp       = "2.0.0-RC3"
-    val zioJson       = "0.3.0-RC3"
-    val zioConfig     = "3.0.0-RC2"
+    val zio           = "2.0.0-RC4"
+    val zioHttp       = "2.0.0-RC6"
+    val zioJson       = "0.3.0-RC6"
+    val zioConfig     = "3.0.0-RC7"
   }
 
   lazy val zio = Seq(
