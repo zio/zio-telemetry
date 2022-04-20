@@ -19,7 +19,7 @@ object Client {
 
   val up = Status.up("proxy")
 
-  val live: ZLayer[AppConfig with Backend, Throwable, Service] = (for {
+  val live: ZLayer[AppConfig with Backend, Throwable, Service] = ZLayer(for {
     conf    <- ZIO.service[AppConfig]
     backend <- ZIO.service[Backend]
     service  = new Service {
@@ -33,5 +33,5 @@ object Client {
                        Statuses(List(status, up))
                      }
                }
-  } yield service).toLayer
+  } yield service)
 }

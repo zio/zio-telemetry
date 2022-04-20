@@ -36,7 +36,9 @@ object ProxyServer extends ZIOAppDefault {
   val configLayer = TypesafeConfig.fromResourcePath(descriptor[AppConfig])
 
   val httpBackend: ZLayer[Any, Throwable, SttpBackend[Task, ZioStreams with WebSockets]] =
-    ZLayer.fromAcquireRelease(AsyncHttpClientZioBackend())(_.close().ignore)
+    ZLayer.scoped {
+      ZIO.acquireRelease(AsyncHttpClientZioBackend())(_.close().ignore)
+    }
 
   val sttp: ZLayer[AppConfig, Throwable, Client.Service] = httpBackend >>> Client.live
 
