@@ -9,7 +9,7 @@ object Dependencies {
     val opencensus    = "0.31.0"
     val zipkin        = "2.16.3"
     val zio           = "2.0.0-RC5"
-    val zioHttp       = "2.0.0-RC6" // FIXME: update to version compatible with ZIO 2.0.0-RC5
+    val zioHttp       = "2.0.0-RC7"
     val zioJson       = "0.3.0-RC7"
     val zioConfig     = "3.0.0-RC8"
   }
