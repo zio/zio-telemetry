@@ -52,7 +52,7 @@ object OpenTracingTest extends ZIOSpecDefault {
         test("childSpan") {
           for {
             tracer <- ZIO.service[MockTracer]
-            _      <- UIO.unit.span("Child").span("ROOT")
+            _      <- ZIO.unit.span("Child").span("ROOT")
           } yield {
             val spans = tracer.finishedSpans.asScala
             val root  = spans.find(_.operationName() == "ROOT")
@@ -72,7 +72,7 @@ object OpenTracingTest extends ZIOSpecDefault {
         test("rootSpan") {
           for {
             tracer <- ZIO.service[MockTracer]
-            _      <- UIO.unit.root("ROOT2").root("ROOT")
+            _      <- ZIO.unit.root("ROOT2").root("ROOT")
           } yield {
             val spans = tracer.finishedSpans.asScala
             val root  = spans.find(_.operationName() == "ROOT")
@@ -93,7 +93,7 @@ object OpenTracingTest extends ZIOSpecDefault {
           val tm = new TextMapAdapter(mutable.Map.empty.asJava)
           for {
             tracer <- ZIO.service[MockTracer]
-            _      <- UIO.unit.spanFrom(Format.Builtin.TEXT_MAP, tm, "spanFrom")
+            _      <- ZIO.unit.spanFrom(Format.Builtin.TEXT_MAP, tm, "spanFrom")
           } yield {
             val spans    = tracer.finishedSpans.asScala
             val spanFrom = spans.find(_.operationName() == "spanFrom")
@@ -113,7 +113,7 @@ object OpenTracingTest extends ZIOSpecDefault {
           val tm         = BinaryAdapters.extractionCarrier(byteBuffer)
           for {
             tracer <- ZIO.service[MockTracer]
-            _      <- UIO.unit.spanFrom(Format.Builtin.BINARY_EXTRACT, tm, "spanFrom")
+            _      <- ZIO.unit.spanFrom(Format.Builtin.BINARY_EXTRACT, tm, "spanFrom")
           } yield {
             val spans    = tracer.finishedSpans.asScala
             val spanFrom = spans.find(_.operationName() == "spanFrom")
@@ -124,7 +124,7 @@ object OpenTracingTest extends ZIOSpecDefault {
           val tm            = new TextMapAdapter(mutable.Map.empty.asJava)
           val injectExtract = OpenTracing.inject(Format.Builtin.TEXT_MAP, tm).span("foo") *>
             OpenTracing
-              .spanFrom(Format.Builtin.TEXT_MAP, tm, UIO.unit, "baz")
+              .spanFrom(Format.Builtin.TEXT_MAP, tm, ZIO.unit, "baz")
               .span("bar")
           for {
             tracer <- ZIO.service[MockTracer]
@@ -147,7 +147,7 @@ object OpenTracingTest extends ZIOSpecDefault {
         test("tagging") {
           for {
             tracer <- ZIO.service[MockTracer]
-            _      <- UIO.unit
+            _      <- ZIO.unit
                         .tag("boolean", true)
                         .tag("int", 1)
                         .tag("string", "foo")
@@ -162,7 +162,7 @@ object OpenTracingTest extends ZIOSpecDefault {
           val duration = 1000.micros
 
           val log =
-            UIO.unit.log("message") *>
+            ZIO.unit.log("message") *>
               TestClock.adjust(duration).log(Map("msg" -> "message", "size" -> 1))
 
           for {

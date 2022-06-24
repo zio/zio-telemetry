@@ -57,7 +57,7 @@ object TracingTest extends ZIOSpecDefault {
       suite("spans")(
         test("childSpan") {
           for {
-            _     <- UIO.unit.span("Child").span("Root")
+            _     <- ZIO.unit.span("Child").span("Root")
             spans <- getFinishedSpans
             root   = spans.find(_.getName == "Root")
             child  = spans.find(_.getName == "Child")
@@ -158,7 +158,7 @@ object TracingTest extends ZIOSpecDefault {
         },
         test("rootSpan") {
           for {
-            _     <- UIO.unit.root("ROOT2").root("ROOT")
+            _     <- ZIO.unit.root("ROOT2").root("ROOT")
             spans <- getFinishedSpans
             root   = spans.find(_.getName == "ROOT")
             child  = spans.find(_.getName == "ROOT2")
@@ -179,7 +179,7 @@ object TracingTest extends ZIOSpecDefault {
             (_, tracer)                = res
             externallyProvidedRootSpan = tracer.spanBuilder("external").startSpan()
             scope                      = externallyProvidedRootSpan.makeCurrent()
-            _                         <- UIO.unit.inSpan(externallyProvidedRootSpan, "zio-otel-child")
+            _                         <- ZIO.unit.inSpan(externallyProvidedRootSpan, "zio-otel-child")
             _                          = externallyProvidedRootSpan.end()
             _                          = scope.close()
             spans                     <- getFinishedSpans
@@ -214,7 +214,7 @@ object TracingTest extends ZIOSpecDefault {
               propagator,
               carrier,
               setter
-            ).span("foo") *> UIO.unit
+            ).span("foo") *> ZIO.unit
               .spanFrom(propagator, carrier, getter, "baz")
               .span("bar")
 
@@ -235,7 +235,7 @@ object TracingTest extends ZIOSpecDefault {
         },
         test("tagging") {
           for {
-            _     <- UIO.unit
+            _     <- ZIO.unit
                        .setAttribute("boolean", true)
                        .setAttribute("int", 1)
                        .setAttribute("string", "foo")
@@ -260,7 +260,7 @@ object TracingTest extends ZIOSpecDefault {
           val duration = 1000.micros
 
           val log =
-            UIO.unit.addEvent("message") *>
+            ZIO.unit.addEvent("message") *>
               TestClock
                 .adjust(duration)
                 .addEventWithAttributes(
@@ -275,7 +275,7 @@ object TracingTest extends ZIOSpecDefault {
 
           for {
             _     <- log.span("foo")
-            _     <- UIO.unit.span("Child").span("Root")
+            _     <- ZIO.unit.span("Child").span("Root")
             spans <- getFinishedSpans
             tags   = spans.collect {
                        case span if span.getName == "foo" =>
@@ -300,7 +300,7 @@ object TracingTest extends ZIOSpecDefault {
         },
         test("baggaging") {
           for {
-            _         <- UIO.unit.setBaggage("some", "thing")
+            _         <- ZIO.unit.setBaggage("some", "thing")
             baggage   <- Tracing.getCurrentBaggage
             entryValue = Option(baggage.getEntryValue("some"))
           } yield assert(entryValue)(equalTo(Some("thing")))

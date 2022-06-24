@@ -5,7 +5,7 @@ import io.opentracing.propagation.TextMapAdapter
 import io.opentracing.tag.Tags
 import sttp.model.Method.GET
 import sttp.model.Uri
-import zhttp.http.{ ->, /, Http, HttpApp, Method, Path, Response }
+import zhttp.http.{ !!, ->, /, Http, HttpApp, Method, Response }
 import zio.json.EncoderOps
 import zio.telemetry.opentracing.OpenTracing
 import zio.{ UIO, ZIO, ZLayer }
@@ -15,7 +15,7 @@ import scala.jdk.CollectionConverters._
 
 object ProxyApp {
   def statuses(backendUri: Uri, service: ZLayer[Any, Throwable, OpenTracing.Service]): HttpApp[Any, Throwable] =
-    Http.collectZIO { case Method.GET -> Path.End / "statuses" =>
+    Http.collectZIO { case Method.GET -> !! / "statuses" =>
       val zio =
         for {
           _       <- OpenTracing.tag(Tags.SPAN_KIND.getKey, Tags.SPAN_KIND_CLIENT)
@@ -41,10 +41,12 @@ object ProxyApp {
 
   private def extractHeaders(adapter: TextMapAdapter): UIO[Map[String, String]] = {
     val m = mutable.Map.empty[String, String]
-    ZIO.succeed(adapter.forEach { entry =>
-      m.put(entry.getKey, entry.getValue)
-      ()
-    }).as(m.toMap)
+    ZIO
+      .succeed(adapter.forEach { entry =>
+        m.put(entry.getKey, entry.getValue)
+        ()
+      })
+      .as(m.toMap)
   }
 
 }
