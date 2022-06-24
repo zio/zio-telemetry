@@ -11,7 +11,7 @@ import zipkin2.reporter.okhttp3.OkHttpSender
 
 object JaegerTracer {
 
-  def makeService(host: String, serviceName: String): ZLayer[Any, Throwable, OpenTracing.Service] = {
+  def makeService(host: String, serviceName: String): ZLayer[Any, Throwable, OpenTracing] = {
     val url           = new URIBuilder().setScheme("http").setHost(host).setPath("/api/v2/spans").build.toString
     val senderBuilder = OkHttpSender.newBuilder.compressionEnabled(true).endpoint(url)
 

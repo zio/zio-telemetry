@@ -26,7 +26,7 @@ private[opentelemetry] object ContextPropagation {
     propagator: TextMapPropagator,
     carrier: C,
     setter: TextMapSetter[C]
-  ): URIO[Tracing.Service, Unit] =
+  ): URIO[Tracing, Unit] =
     ZIO.succeed(propagator.inject(context, carrier, setter))
 
 }

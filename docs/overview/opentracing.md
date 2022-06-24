@@ -16,26 +16,18 @@ First, add the following dependency to your build.sbt:
 
 ## Usage
 
-To use ZIO Telemetry, you will need a `Clock` and an `OpenTelemetry` service in your
+To use ZIO Telemetry, you will need an `OpenTracing` service in your
 environment:
 
 ```scala
 import io.opentracing.mock.MockTracer
 import io.opentracing.propagation._
 import zio._
-import zio.clock.Clock
 import zio.telemetry.opentracing._
 
 val tracer = new MockTracer
 
-val managedEnvironment = 
-  for {
-    clock_ <- ZIO.environment[Clock].toManaged_
-    ot     <- managed(tracer)
-  } yield new Clock with Telemetry {
-    override val clock: Clock.Service[Any]    = clock_.clock
-    override def telemetry: Telemetry.Service = ot.telemetry
-  }
+val layer = OpenTracing.live(tracer)
 ```
 
 After importing `import zio.telemetry.opentracing._`, additional combinators
@@ -44,12 +36,12 @@ managing baggage.
 
 ```scala
 // start a new root span and set some baggage item
-val zio = UIO.unit
+val zio = ZIO.unit
              .setBaggage("foo", "bar")
              .root("root span")
           
 // start a child of the current span, set a tag and log a message
-val zio = UIO.unit
+val zio = ZIO.unit
              .tag("http.status_code", 200)
              .log("doing some serious work here!")
              .span("child span")

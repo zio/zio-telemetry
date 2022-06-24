@@ -24,7 +24,7 @@ object BackendApp {
       carrier.headers.headerValue(key).orNull
   }
 
-  val routes: HttpApp[Tracing.Service, Throwable] =
+  val routes: HttpApp[Tracing, Throwable] =
     Http.collectZIO { case request @ Method.GET -> !! / "status" =>
       val response = for {
         _        <- Tracing.addEvent("event from backend before response")
