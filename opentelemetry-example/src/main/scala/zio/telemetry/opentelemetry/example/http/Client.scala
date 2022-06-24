@@ -7,22 +7,22 @@ import sttp.client3.ziojson._
 import zio.telemetry.opentelemetry.example.config.AppConfig
 import zio.{ Task, ZIO, ZLayer }
 
+trait Client {
+  def status(headers: Map[String, String]): Task[Statuses]
+}
+
 object Client {
   type Backend = SttpBackend[Task, ZioStreams with WebSockets]
 
-  trait Service {
-    def status(headers: Map[String, String]): Task[Statuses]
-  }
-
-  def status(headers: Map[String, String]) =
-    ZIO.environmentWithZIO[Client.Service](_.get.status(headers))
+  def status(headers: Map[String, String]): ZIO[Client, Throwable, Statuses] =
+    ZIO.environmentWithZIO[Client](_.get.status(headers))
 
   val up = Status.up("proxy")
 
-  val live: ZLayer[AppConfig with Backend, Throwable, Service] = ZLayer(for {
+  val live: ZLayer[AppConfig with Backend, Throwable, Client] = ZLayer(for {
     conf    <- ZIO.service[AppConfig]
     backend <- ZIO.service[Backend]
-    service  = new Service {
+    service  = new Client {
                  def status(headers: Map[String, String]): Task[Statuses] =
                    backend
                      .send(

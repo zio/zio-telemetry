@@ -18,17 +18,16 @@ object ProxyApp {
 
   val errorMapper: PartialFunction[Throwable, StatusCode] = { case _ => StatusCode.UNSET }
 
-  val routes: HttpApp[Client.Service with Tracing.Service, Throwable] = Http.collectZIO {
-    case Method.GET -> !! / "statuses" =>
-      root("/statuses", SpanKind.SERVER, errorMapper) {
-        for {
-          carrier <- ZIO.succeed(mutable.Map[String, String]().empty)
-          _       <- Tracing.setAttribute("http.method", "get")
-          _       <- Tracing.addEvent("proxy-event")
-          _       <- Tracing.inject(propagator, carrier, setter)
-          res     <- Client.status(carrier.toMap).map(s => Response.json(s.toJson))
-        } yield res
-      }
+  val routes: HttpApp[Client with Tracing, Throwable] = Http.collectZIO { case Method.GET -> !! / "statuses" =>
+    root("/statuses", SpanKind.SERVER, errorMapper) {
+      for {
+        carrier <- ZIO.succeed(mutable.Map[String, String]().empty)
+        _       <- Tracing.setAttribute("http.method", "get")
+        _       <- Tracing.addEvent("proxy-event")
+        _       <- Tracing.inject(propagator, carrier, setter)
+        res     <- Client.status(carrier.toMap).map(s => Response.json(s.toJson))
+      } yield res
+    }
   }
 
 }

@@ -15,17 +15,17 @@ First, add the following dependency to your build.sbt:
 
 ## Usage
 
-To use ZIO Telemetry, you will need a `Clock` and a `Tracing` service in your environment. You also need to provide a `tracer` implementation:
+To use ZIO Telemetry, you will need a `Tracing` service in your environment. You also need to provide a `tracer` implementation:
 
 After importing `import zio.telemetry.opencensus._`, additional combinators
 on `ZIO`s are available to support starting child spans and adding attributes.
 
 ```scala
 // start a new root span and set some attributes
-val zio = UIO.unit
+val zio = ZIO.unit
              .root("root span", attributes = ("foo", "bar))
 // start a child of the current span
-val zio = UIO.unit
+val zio = ZIO.unit
              .span("child span", attributes = Map.empty)
 ```
 
@@ -68,7 +68,7 @@ val textFormat                           = Tracing.getPropagationComponent().get
     "foo",
     attributes = Map.empty
   ) {
-    UIO.unit
+    ZIO.unit
       .span("child span", attributes = Map(("foo", "bar")))
   }
 ```

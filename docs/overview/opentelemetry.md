@@ -15,13 +15,11 @@ First, add the following dependency to your build.sbt:
 
 ## Usage
 
-To use ZIO Telemetry, you will need a `Clock` and a `Tracing` service in your environment. You also need to provide a `tracer` implementation:
+To use ZIO Telemetry, you will need a `Tracing` service in your environment. You also need to provide a `tracer` implementation:
 
 ```scala
 import io.opentelemetry.api.trace.{ SpanKind, StatusCode }
 import zio._
-import zio.console.getStrLn
-import zio.clock.Clock
 import zio.telemetry.opentelemetry.Tracing
 import zio.telemetry.opentelemetry.Tracing.root
 
@@ -35,10 +33,10 @@ val app =
       _ <- Tracing.setAttribute("foo", "bar")
       //adds an event to the current span
       _       <- Tracing.addEvent("foo")
-      message <- getStrLn
+      message <- Console.readline
       _       <- Tracing.addEvent("bar")
     } yield message
-  }.provideLayer(tracer ++ Clock.live >>> Tracing.live)
+  }.provideLayer(tracer >>> Tracing.live)
 ```
 
 After importing `import zio.telemetry.opentelemetry._`, additional combinators
@@ -46,12 +44,12 @@ on `ZIO`s are available to support starting child spans, adding events and setti
 
 ```scala
 // start a new root span and set some attribute
-val zio = UIO.unit
+val zio = ZIO.unit
              .setAttribute("foo", "bar")
              .root("root span")
           
 // start a child of the current span, set an attribute and add an event
-val zio = UIO.unit
+val zio = ZIO.unit
              .setAttribute("http.status_code", 200)
              .addEvent("doing some serious work here!")
              .span("child span")
@@ -85,7 +83,7 @@ val injectExtract =
     propagator,
     carrier,
     setter
-  ).span("foo") *> UIO.unit
+  ).span("foo") *> ZIO.unit
     .spanFrom(propagator, carrier, getter, "baz")
     .span("bar")
 ```

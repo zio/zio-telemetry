@@ -11,7 +11,7 @@ import io.opencensus.trace.propagation.TextFormat
 import io.opencensus.trace.Tracer
 
 object Live {
-  val live: URLayer[Tracer, Tracing.Service] =
+  val live: URLayer[Tracer, Tracing] =
     ZLayer.scoped(for {
       tracer <- ZIO.service[Tracer]
       tracing = FiberRef.make[Span](BlankSpan.INSTANCE).map(new Live(tracer, _))
@@ -19,8 +19,8 @@ object Live {
     } yield live)
 }
 
-class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
-  val currentSpan_ = root
+class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing {
+  val currentSpan_ : FiberRef[Span] = root
 
   def currentSpan: UIO[Span] = currentSpan_.get
 
@@ -74,7 +74,7 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
   ): ZIO[Any, Nothing, Unit] =
     for {
       current <- currentSpan_.get
-      _       <- ZIO.succeed(attributes.foreach { case ((k, v)) =>
+      _       <- ZIO.succeed(attributes.foreach { case (k, v) =>
                    current.putAttribute(k, v)
                  })
     } yield ()
@@ -117,7 +117,7 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing.Service {
              .tapErrorCause(setErrorStatus(span, _, toErrorStatus))
     } yield r
 
-  def inject[C, R, E, A](
+  def inject[C](
     format: TextFormat,
     carrier: C,
     setter: TextFormat.Setter[C]

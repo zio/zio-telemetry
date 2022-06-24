@@ -11,7 +11,7 @@ import zio.{ ZIO, ZLayer }
 import scala.jdk.CollectionConverters._
 
 object BackendApp {
-  def status(service: ZLayer[Any, Throwable, OpenTracing.Service]): HttpApp[Any, Throwable] =
+  def status(service: ZLayer[Any, Throwable, OpenTracing]): HttpApp[Any, Throwable] =
     Http.collectZIO { case request @ Method.GET -> !! / "status" =>
       val headers = request.headers.toList.toMap
       ZIO.unit
