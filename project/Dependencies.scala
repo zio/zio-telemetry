@@ -8,10 +8,10 @@ object Dependencies {
     val opentelemetry = "1.11.0"
     val opencensus    = "0.31.0"
     val zipkin        = "2.16.3"
-    val zio           = "2.0.0-RC6"
-    val zioHttp       = "2.0.0-RC9"
-    val zioJson       = "0.3.0-RC8"
-    val zioConfig     = "3.0.0-RC9"
+    val zio           = "2.0.0"
+    val zioHttp       = "2.0.0-RC10"
+    val zioJson       = "0.3.0-RC10"
+    val zioConfig     = "3.0.1"
   }
 
   lazy val zio = Seq(
