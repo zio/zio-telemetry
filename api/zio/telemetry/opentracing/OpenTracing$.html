@@ -118,9 +118,9 @@
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../index.html" class="extype" name="zio.telemetry">telemetry</a></dd></dl></div>
     </li><li class="current-entities indented3">
+                        <span class="separator"></span>
                         <a class="object" href="" title=""></a>
-                        <a class="trait" href="OpenTracing.html" title=""></a>
-                        <a href="OpenTracing.html" title="">OpenTracing</a>
+                        <a href="" title="">OpenTracing</a>
                       </li><li class="current-entities indented3">
                         <span class="separator"></span>
                         <a class="class" href="package$$OpenTracingZioOps.html" title=""></a>
@@ -132,16 +132,14 @@
           <div id="content">
             <body class="object value">
       <div id="definition">
-        <a href="OpenTracing.html" title="See companion trait"><div class="big-circle object-companion-trait">o</div></a>
+        <div class="big-circle object">o</div>
         <p id="owner"><a href="../../index.html" class="extype" name="zio">zio</a>.<a href="../index.html" class="extype" name="zio.telemetry">telemetry</a>.<a href="index.html" class="extype" name="zio.telemetry.opentracing">opentracing</a></p>
-        <h1><a href="OpenTracing.html" title="See companion trait">OpenTracing</a><span class="permalink">
+        <h1>OpenTracing<span class="permalink">
       <a href="../../../zio/telemetry/opentracing/OpenTracing$.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span></h1>
-        <h3><span class="morelinks"><div>
-            Companion <a href="OpenTracing.html" title="See companion trait">trait OpenTracing</a>
-          </div></span></h3>
+        <h3><span class="morelinks"></span></h3>
       </div>
 
       <h4 id="signature" class="signature">
@@ -205,7 +203,26 @@
         <div id="allMembers">
         
 
-        
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="zio.telemetry.opentracing.OpenTracing.Service" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
+      <a id="ServiceextendsAnyRef"></a><a id="Service:Service"></a>
+      <span class="permalink">
+      <a href="../../../zio/telemetry/opentracing/OpenTracing$$Service.html" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a title="" href="OpenTracing$$Service.html"><span class="name">Service</span></a><span class="result"> extends <a href="https://www.scala-lang.org/api/2.12.15/scala/AnyRef.html#scala.AnyRef" class="extype" name="scala.AnyRef">AnyRef</a></span>
+      </span>
+      
+      
+    </li></ol>
+            </div>
 
         
 
@@ -314,7 +331,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">context</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="OpenTracing.html" class="extype" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <a href="https://javadoc.io/page/io.opentracing/opentracing-api/0.33.0/io/opentracing/SpanContext.html#io.opentracing.SpanContext" class="extype" name="io.opentracing.SpanContext">SpanContext</a>]</span>
+        <span class="name">context</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="index.html#OpenTracing=zio.Has[zio.telemetry.opentracing.OpenTracing.Service]" class="extmbr" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <a href="https://javadoc.io/page/io.opentracing/opentracing-api/0.33.0/io/opentracing/SpanContext.html#io.opentracing.SpanContext" class="extype" name="io.opentracing.SpanContext">SpanContext</a>]</span>
       </span>
       
       
@@ -362,7 +379,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getBaggageItem</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="OpenTracing.html" class="extype" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <a href="https://www.scala-lang.org/api/2.12.15/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="scala.Predef.String">String</span>]]</span>
+        <span class="name">getBaggageItem</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="index.html#OpenTracing=zio.Has[zio.telemetry.opentracing.OpenTracing.Service]" class="extmbr" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <a href="https://www.scala-lang.org/api/2.12.15/scala/Option.html#scala.Option" class="extype" name="scala.Option">Option</a>[<span class="extype" name="scala.Predef.String">String</span>]]</span>
       </span>
       
       
@@ -378,7 +395,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">getClass</span><span class="params">()</span><span class="result">: <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java/lang/Class.html#java.lang.Class" class="extype" name="java.lang.Class">Class</a>[_]</span>
+        <span class="name">getClass</span><span class="params">()</span><span class="result">: <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/Class.html#java.lang.Class" class="extype" name="java.lang.Class">Class</a>[_]</span>
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd><dt>Annotations</dt><dd>
@@ -420,7 +437,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">inject</span><span class="tparams">[<span name="C">C &lt;: <a href="https://www.scala-lang.org/api/2.12.15/scala/AnyRef.html#scala.AnyRef" class="extype" name="scala.AnyRef">AnyRef</a></span>]</span><span class="params">(<span name="format">format: <a href="https://javadoc.io/page/io.opentracing/opentracing-api/0.33.0/io/opentracing/propagation/Format.html#io.opentracing.propagation.Format" class="extype" name="io.opentracing.propagation.Format">Format</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.inject.C">C</span>]</span>, <span name="carrier">carrier: <span class="extype" name="zio.telemetry.opentracing.OpenTracing.inject.C">C</span></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="OpenTracing.html" class="extype" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <a href="https://www.scala-lang.org/api/2.12.15/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a>]</span>
+        <span class="name">inject</span><span class="tparams">[<span name="C">C &lt;: <a href="https://www.scala-lang.org/api/2.12.15/scala/AnyRef.html#scala.AnyRef" class="extype" name="scala.AnyRef">AnyRef</a></span>]</span><span class="params">(<span name="format">format: <a href="https://javadoc.io/page/io.opentracing/opentracing-api/0.33.0/io/opentracing/propagation/Format.html#io.opentracing.propagation.Format" class="extype" name="io.opentracing.propagation.Format">Format</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.inject.C">C</span>]</span>, <span name="carrier">carrier: <span class="extype" name="zio.telemetry.opentracing.OpenTracing.inject.C">C</span></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="index.html#OpenTracing=zio.Has[zio.telemetry.opentracing.OpenTracing.Service]" class="extmbr" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <a href="https://www.scala-lang.org/api/2.12.15/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a>]</span>
       </span>
       
       
@@ -441,9 +458,9 @@
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
     </li><li name="zio.telemetry.opentracing.OpenTracing#live" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="live(tracer:io.opentracing.Tracer,rootOperation:String):zio.ULayer[zio.telemetry.opentracing.OpenTracing]"></a><a id="live(Tracer,String):ULayer[OpenTracing]"></a>
+      <a id="live(tracer:io.opentracing.Tracer,rootOperation:String):zio.URLayer[zio.clock.Clock,zio.telemetry.opentracing.OpenTracing]"></a><a id="live(Tracer,String):URLayer[Clock,OpenTracing]"></a>
       <span class="permalink">
-      <a href="../../../zio/telemetry/opentracing/OpenTracing$.html#live(tracer:io.opentracing.Tracer,rootOperation:String):zio.ULayer[zio.telemetry.opentracing.OpenTracing]" title="Permalink">
+      <a href="../../../zio/telemetry/opentracing/OpenTracing$.html#live(tracer:io.opentracing.Tracer,rootOperation:String):zio.URLayer[zio.clock.Clock,zio.telemetry.opentracing.OpenTracing]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -452,7 +469,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">live</span><span class="params">(<span name="tracer">tracer: <a href="https://javadoc.io/page/io.opentracing/opentracing-api/0.33.0/io/opentracing/Tracer.html#io.opentracing.Tracer" class="extype" name="io.opentracing.Tracer">Tracer</a></span>, <span name="rootOperation">rootOperation: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;ROOT&quot;</span></span>)</span><span class="result">: <a href="../../index.html#ULayer[+ROut]=zio.ZLayer[Any,Nothing,ROut]" class="extmbr" name="zio.ULayer">ULayer</a>[<a href="OpenTracing.html" class="extype" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>]</span>
+        <span class="name">live</span><span class="params">(<span name="tracer">tracer: <a href="https://javadoc.io/page/io.opentracing/opentracing-api/0.33.0/io/opentracing/Tracer.html#io.opentracing.Tracer" class="extype" name="io.opentracing.Tracer">Tracer</a></span>, <span name="rootOperation">rootOperation: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;ROOT&quot;</span></span>)</span><span class="result">: <a href="../../index.html#URLayer[-RIn,+ROut]=zio.ZLayer[RIn,Nothing,ROut]" class="extmbr" name="zio.URLayer">URLayer</a>[<span class="extype" name="zio.clock.Clock">Clock</span>, <a href="index.html#OpenTracing=zio.Has[zio.telemetry.opentracing.OpenTracing.Service]" class="extmbr" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>]</span>
       </span>
       
       
@@ -468,7 +485,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">log</span><span class="tparams">[<span name="R">R</span>, <span name="E">E</span>, <span name="A">A</span>]</span><span class="params">(<span name="zio">zio: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.0-RC6/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.log.R">R</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.log.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.log.A">A</span>]</span>, <span name="msg">msg: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.0-RC6/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.log.R">R</span> with <a href="OpenTracing.html" class="extype" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.log.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.log.A">A</span>]</span>
+        <span class="name">log</span><span class="tparams">[<span name="R">R</span>, <span name="E">E</span>, <span name="A">A</span>]</span><span class="params">(<span name="zio">zio: <a href="https://javadoc.io/page/dev.zio/zio_2.12/1.0.14/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.log.R">R</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.log.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.log.A">A</span>]</span>, <span name="msg">msg: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/1.0.14/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.log.R">R</span> with <a href="index.html#OpenTracing=zio.Has[zio.telemetry.opentracing.OpenTracing.Service]" class="extmbr" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.log.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.log.A">A</span>]</span>
       </span>
       
       
@@ -484,7 +501,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">log</span><span class="tparams">[<span name="R">R</span>, <span name="E">E</span>, <span name="A">A</span>]</span><span class="params">(<span name="zio">zio: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.0-RC6/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.log.R">R</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.log.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.log.A">A</span>]</span>, <span name="fields">fields: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, _]</span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.0-RC6/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.log.R">R</span> with <a href="OpenTracing.html" class="extype" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.log.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.log.A">A</span>]</span>
+        <span class="name">log</span><span class="tparams">[<span name="R">R</span>, <span name="E">E</span>, <span name="A">A</span>]</span><span class="params">(<span name="zio">zio: <a href="https://javadoc.io/page/dev.zio/zio_2.12/1.0.14/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.log.R">R</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.log.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.log.A">A</span>]</span>, <span name="fields">fields: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, _]</span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/1.0.14/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.log.R">R</span> with <a href="index.html#OpenTracing=zio.Has[zio.telemetry.opentracing.OpenTracing.Service]" class="extmbr" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.log.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.log.A">A</span>]</span>
       </span>
       
       
@@ -500,7 +517,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">log</span><span class="params">(<span name="fields">fields: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, _]</span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="OpenTracing.html" class="extype" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <a href="https://www.scala-lang.org/api/2.12.15/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a>]</span>
+        <span class="name">log</span><span class="params">(<span name="fields">fields: <span class="extype" name="scala.Predef.Map">Map</span>[<span class="extype" name="scala.Predef.String">String</span>, _]</span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="index.html#OpenTracing=zio.Has[zio.telemetry.opentracing.OpenTracing.Service]" class="extmbr" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <a href="https://www.scala-lang.org/api/2.12.15/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a>]</span>
       </span>
       
       
@@ -516,7 +533,23 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">log</span><span class="params">(<span name="msg">msg: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="OpenTracing.html" class="extype" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <a href="https://www.scala-lang.org/api/2.12.15/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a>]</span>
+        <span class="name">log</span><span class="params">(<span name="msg">msg: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="index.html#OpenTracing=zio.Has[zio.telemetry.opentracing.OpenTracing.Service]" class="extmbr" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <a href="https://www.scala-lang.org/api/2.12.15/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a>]</span>
+      </span>
+      
+      
+    </li><li name="zio.telemetry.opentracing.OpenTracing#managed" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="managed(tracer0:io.opentracing.Tracer,rootOperation:String):zio.URManaged[zio.clock.Clock,zio.telemetry.opentracing.OpenTracing.Service]"></a><a id="managed(Tracer,String):URManaged[Clock,Service]"></a>
+      <span class="permalink">
+      <a href="../../../zio/telemetry/opentracing/OpenTracing$.html#managed(tracer0:io.opentracing.Tracer,rootOperation:String):zio.URManaged[zio.clock.Clock,zio.telemetry.opentracing.OpenTracing.Service]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">managed</span><span class="params">(<span name="tracer0">tracer0: <a href="https://javadoc.io/page/io.opentracing/opentracing-api/0.33.0/io/opentracing/Tracer.html#io.opentracing.Tracer" class="extype" name="io.opentracing.Tracer">Tracer</a></span>, <span name="rootOperation">rootOperation: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="../../index.html#URManaged[-R,+A]=zio.ZManaged[R,Nothing,A]" class="extmbr" name="zio.URManaged">URManaged</a>[<span class="extype" name="zio.clock.Clock">Clock</span>, <a href="OpenTracing$$Service.html" class="extype" name="zio.telemetry.opentracing.OpenTracing.Service">Service</a>]</span>
       </span>
       
       
@@ -537,9 +570,9 @@
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
     </li><li name="zio.telemetry.opentracing.OpenTracing#noop" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="noop:zio.ULayer[zio.telemetry.opentracing.OpenTracing]"></a><a id="noop:ULayer[OpenTracing]"></a>
+      <a id="noop:zio.URLayer[zio.clock.Clock,zio.telemetry.opentracing.OpenTracing]"></a><a id="noop:URLayer[Clock,OpenTracing]"></a>
       <span class="permalink">
-      <a href="../../../zio/telemetry/opentracing/OpenTracing$.html#noop:zio.ULayer[zio.telemetry.opentracing.OpenTracing]" title="Permalink">
+      <a href="../../../zio/telemetry/opentracing/OpenTracing$.html#noop:zio.URLayer[zio.clock.Clock,zio.telemetry.opentracing.OpenTracing]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -548,7 +581,7 @@
         <span class="kind">lazy val</span>
       </span>
       <span class="symbol">
-        <span class="name">noop</span><span class="result">: <a href="../../index.html#ULayer[+ROut]=zio.ZLayer[Any,Nothing,ROut]" class="extmbr" name="zio.ULayer">ULayer</a>[<a href="OpenTracing.html" class="extype" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>]</span>
+        <span class="name">noop</span><span class="result">: <a href="../../index.html#URLayer[-RIn,+ROut]=zio.ZLayer[RIn,Nothing,ROut]" class="extmbr" name="zio.URLayer">URLayer</a>[<span class="extype" name="zio.clock.Clock">Clock</span>, <a href="index.html#OpenTracing=zio.Has[zio.telemetry.opentracing.OpenTracing.Service]" class="extmbr" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>]</span>
       </span>
       
       
@@ -606,23 +639,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">root</span><span class="tparams">[<span name="R">R</span>, <span name="E">E</span>, <span name="A">A</span>]</span><span class="params">(<span name="zio">zio: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.0-RC6/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.root.R">R</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.root.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.root.A">A</span>]</span>, <span name="operation">operation: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="tagError">tagError: <a href="https://www.scala-lang.org/api/2.12.15/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a> = <span class="symbol">false</span></span>, <span name="logError">logError: <a href="https://www.scala-lang.org/api/2.12.15/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a> = <span class="symbol">false</span></span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.0-RC6/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.root.R">R</span> with <a href="OpenTracing.html" class="extype" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.root.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.root.A">A</span>]</span>
-      </span>
-      
-      
-    </li><li name="zio.telemetry.opentracing.OpenTracing#scoped" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="scoped(tracer0:io.opentracing.Tracer,rootOperation:String):zio.URIO[zio.Scope,zio.telemetry.opentracing.OpenTracing]"></a><a id="scoped(Tracer,String):URIO[Scope,OpenTracing]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentracing/OpenTracing$.html#scoped(tracer0:io.opentracing.Tracer,rootOperation:String):zio.URIO[zio.Scope,zio.telemetry.opentracing.OpenTracing]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">scoped</span><span class="params">(<span name="tracer0">tracer0: <a href="https://javadoc.io/page/io.opentracing/opentracing-api/0.33.0/io/opentracing/Tracer.html#io.opentracing.Tracer" class="extype" name="io.opentracing.Tracer">Tracer</a></span>, <span name="rootOperation">rootOperation: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.0-RC6/zio/Scope.html#zio.Scope" class="extype" name="zio.Scope">Scope</a>, <a href="OpenTracing.html" class="extype" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>]</span>
+        <span class="name">root</span><span class="tparams">[<span name="R">R</span>, <span name="E">E</span>, <span name="A">A</span>]</span><span class="params">(<span name="zio">zio: <a href="https://javadoc.io/page/dev.zio/zio_2.12/1.0.14/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.root.R">R</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.root.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.root.A">A</span>]</span>, <span name="operation">operation: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="tagError">tagError: <a href="https://www.scala-lang.org/api/2.12.15/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a> = <span class="symbol">false</span></span>, <span name="logError">logError: <a href="https://www.scala-lang.org/api/2.12.15/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a> = <span class="symbol">false</span></span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/1.0.14/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.root.R">R</span> with <a href="index.html#OpenTracing=zio.Has[zio.telemetry.opentracing.OpenTracing.Service]" class="extmbr" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.root.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.root.A">A</span>]</span>
       </span>
       
       
@@ -638,7 +655,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">setBaggageItem</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="OpenTracing.html" class="extype" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <a href="https://www.scala-lang.org/api/2.12.15/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a>]</span>
+        <span class="name">setBaggageItem</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="index.html#OpenTracing=zio.Has[zio.telemetry.opentracing.OpenTracing.Service]" class="extmbr" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <a href="https://www.scala-lang.org/api/2.12.15/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a>]</span>
       </span>
       
       
@@ -654,7 +671,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">setBaggageItem</span><span class="tparams">[<span name="R">R</span>, <span name="E">E</span>, <span name="A">A</span>]</span><span class="params">(<span name="zio">zio: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.0-RC6/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.setBaggageItem.R">R</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.setBaggageItem.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.setBaggageItem.A">A</span>]</span>, <span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.0-RC6/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.setBaggageItem.R">R</span> with <a href="OpenTracing.html" class="extype" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.setBaggageItem.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.setBaggageItem.A">A</span>]</span>
+        <span class="name">setBaggageItem</span><span class="tparams">[<span name="R">R</span>, <span name="E">E</span>, <span name="A">A</span>]</span><span class="params">(<span name="zio">zio: <a href="https://javadoc.io/page/dev.zio/zio_2.12/1.0.14/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.setBaggageItem.R">R</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.setBaggageItem.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.setBaggageItem.A">A</span>]</span>, <span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/1.0.14/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.setBaggageItem.R">R</span> with <a href="index.html#OpenTracing=zio.Has[zio.telemetry.opentracing.OpenTracing.Service]" class="extmbr" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.setBaggageItem.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.setBaggageItem.A">A</span>]</span>
       </span>
       
       
@@ -670,7 +687,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">span</span><span class="tparams">[<span name="R">R</span>, <span name="E">E</span>, <span name="A">A</span>]</span><span class="params">(<span name="zio">zio: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.0-RC6/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.span.R">R</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.span.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.span.A">A</span>]</span>, <span name="operation">operation: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="tagError">tagError: <a href="https://www.scala-lang.org/api/2.12.15/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a> = <span class="symbol">false</span></span>, <span name="logError">logError: <a href="https://www.scala-lang.org/api/2.12.15/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a> = <span class="symbol">false</span></span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.0-RC6/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.span.R">R</span> with <a href="OpenTracing.html" class="extype" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.span.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.span.A">A</span>]</span>
+        <span class="name">span</span><span class="tparams">[<span name="R">R</span>, <span name="E">E</span>, <span name="A">A</span>]</span><span class="params">(<span name="zio">zio: <a href="https://javadoc.io/page/dev.zio/zio_2.12/1.0.14/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.span.R">R</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.span.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.span.A">A</span>]</span>, <span name="operation">operation: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="tagError">tagError: <a href="https://www.scala-lang.org/api/2.12.15/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a> = <span class="symbol">false</span></span>, <span name="logError">logError: <a href="https://www.scala-lang.org/api/2.12.15/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a> = <span class="symbol">false</span></span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/1.0.14/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.span.R">R</span> with <a href="index.html#OpenTracing=zio.Has[zio.telemetry.opentracing.OpenTracing.Service]" class="extmbr" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.span.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.span.A">A</span>]</span>
       </span>
       
       
@@ -686,7 +703,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">spanFrom</span><span class="tparams">[<span name="R">R</span>, <span name="R1">R1 &lt;: <span class="extype" name="zio.telemetry.opentracing.OpenTracing.spanFrom.R">R</span> with <a href="OpenTracing.html" class="extype" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a></span>, <span name="E">E</span>, <span name="Span">Span</span>, <span name="C">C &lt;: <a href="https://www.scala-lang.org/api/2.12.15/scala/AnyRef.html#scala.AnyRef" class="extype" name="scala.AnyRef">AnyRef</a></span>]</span><span class="params">(<span name="format">format: <a href="https://javadoc.io/page/io.opentracing/opentracing-api/0.33.0/io/opentracing/propagation/Format.html#io.opentracing.propagation.Format" class="extype" name="io.opentracing.propagation.Format">Format</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.spanFrom.C">C</span>]</span>, <span name="carrier">carrier: <span class="extype" name="zio.telemetry.opentracing.OpenTracing.spanFrom.C">C</span></span>, <span name="zio">zio: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.0-RC6/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.spanFrom.R">R</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.spanFrom.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.spanFrom.Span">Span</span>]</span>, <span name="operation">operation: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="tagError">tagError: <a href="https://www.scala-lang.org/api/2.12.15/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a> = <span class="symbol">true</span></span>, <span name="logError">logError: <a href="https://www.scala-lang.org/api/2.12.15/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a> = <span class="symbol">true</span></span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.0-RC6/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.spanFrom.R1">R1</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.spanFrom.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.spanFrom.Span">Span</span>]</span>
+        <span class="name">spanFrom</span><span class="tparams">[<span name="R">R</span>, <span name="R1">R1 &lt;: <span class="extype" name="zio.telemetry.opentracing.OpenTracing.spanFrom.R">R</span> with <a href="index.html#OpenTracing=zio.Has[zio.telemetry.opentracing.OpenTracing.Service]" class="extmbr" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a></span>, <span name="E">E</span>, <span name="Span">Span</span>, <span name="C">C &lt;: <a href="https://www.scala-lang.org/api/2.12.15/scala/AnyRef.html#scala.AnyRef" class="extype" name="scala.AnyRef">AnyRef</a></span>]</span><span class="params">(<span name="format">format: <a href="https://javadoc.io/page/io.opentracing/opentracing-api/0.33.0/io/opentracing/propagation/Format.html#io.opentracing.propagation.Format" class="extype" name="io.opentracing.propagation.Format">Format</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.spanFrom.C">C</span>]</span>, <span name="carrier">carrier: <span class="extype" name="zio.telemetry.opentracing.OpenTracing.spanFrom.C">C</span></span>, <span name="zio">zio: <a href="https://javadoc.io/page/dev.zio/zio_2.12/1.0.14/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.spanFrom.R">R</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.spanFrom.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.spanFrom.Span">Span</span>]</span>, <span name="operation">operation: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="tagError">tagError: <a href="https://www.scala-lang.org/api/2.12.15/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a> = <span class="symbol">true</span></span>, <span name="logError">logError: <a href="https://www.scala-lang.org/api/2.12.15/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a> = <span class="symbol">true</span></span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/1.0.14/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.spanFrom.R1">R1</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.spanFrom.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.spanFrom.Span">Span</span>]</span>
       </span>
       
       
@@ -718,7 +735,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">tag</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <a href="https://www.scala-lang.org/api/2.12.15/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="OpenTracing.html" class="extype" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <a href="https://www.scala-lang.org/api/2.12.15/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a>]</span>
+        <span class="name">tag</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <a href="https://www.scala-lang.org/api/2.12.15/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="index.html#OpenTracing=zio.Has[zio.telemetry.opentracing.OpenTracing.Service]" class="extmbr" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <a href="https://www.scala-lang.org/api/2.12.15/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a>]</span>
       </span>
       
       
@@ -734,7 +751,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">tag</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <a href="https://www.scala-lang.org/api/2.12.15/scala/Int.html#scala.Int" class="extype" name="scala.Int">Int</a></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="OpenTracing.html" class="extype" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <a href="https://www.scala-lang.org/api/2.12.15/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a>]</span>
+        <span class="name">tag</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <a href="https://www.scala-lang.org/api/2.12.15/scala/Int.html#scala.Int" class="extype" name="scala.Int">Int</a></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="index.html#OpenTracing=zio.Has[zio.telemetry.opentracing.OpenTracing.Service]" class="extmbr" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <a href="https://www.scala-lang.org/api/2.12.15/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a>]</span>
       </span>
       
       
@@ -750,7 +767,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">tag</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="OpenTracing.html" class="extype" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <a href="https://www.scala-lang.org/api/2.12.15/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a>]</span>
+        <span class="name">tag</span><span class="params">(<span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="index.html#OpenTracing=zio.Has[zio.telemetry.opentracing.OpenTracing.Service]" class="extmbr" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <a href="https://www.scala-lang.org/api/2.12.15/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a>]</span>
       </span>
       
       
@@ -766,7 +783,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">tag</span><span class="tparams">[<span name="R">R</span>, <span name="E">E</span>, <span name="A">A</span>]</span><span class="params">(<span name="zio">zio: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.0-RC6/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.R">R</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.A">A</span>]</span>, <span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <a href="https://www.scala-lang.org/api/2.12.15/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a></span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.0-RC6/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.R">R</span> with <a href="OpenTracing.html" class="extype" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.A">A</span>]</span>
+        <span class="name">tag</span><span class="tparams">[<span name="R">R</span>, <span name="E">E</span>, <span name="A">A</span>]</span><span class="params">(<span name="zio">zio: <a href="https://javadoc.io/page/dev.zio/zio_2.12/1.0.14/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.R">R</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.A">A</span>]</span>, <span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <a href="https://www.scala-lang.org/api/2.12.15/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a></span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/1.0.14/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.R">R</span> with <a href="index.html#OpenTracing=zio.Has[zio.telemetry.opentracing.OpenTracing.Service]" class="extmbr" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.A">A</span>]</span>
       </span>
       
       
@@ -782,7 +799,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">tag</span><span class="tparams">[<span name="R">R</span>, <span name="E">E</span>, <span name="A">A</span>]</span><span class="params">(<span name="zio">zio: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.0-RC6/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.R">R</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.A">A</span>]</span>, <span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <a href="https://www.scala-lang.org/api/2.12.15/scala/Int.html#scala.Int" class="extype" name="scala.Int">Int</a></span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.0-RC6/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.R">R</span> with <a href="OpenTracing.html" class="extype" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.A">A</span>]</span>
+        <span class="name">tag</span><span class="tparams">[<span name="R">R</span>, <span name="E">E</span>, <span name="A">A</span>]</span><span class="params">(<span name="zio">zio: <a href="https://javadoc.io/page/dev.zio/zio_2.12/1.0.14/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.R">R</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.A">A</span>]</span>, <span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <a href="https://www.scala-lang.org/api/2.12.15/scala/Int.html#scala.Int" class="extype" name="scala.Int">Int</a></span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/1.0.14/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.R">R</span> with <a href="index.html#OpenTracing=zio.Has[zio.telemetry.opentracing.OpenTracing.Service]" class="extmbr" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.A">A</span>]</span>
       </span>
       
       
@@ -798,7 +815,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">tag</span><span class="tparams">[<span name="R">R</span>, <span name="E">E</span>, <span name="A">A</span>]</span><span class="params">(<span name="zio">zio: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.0-RC6/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.R">R</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.A">A</span>]</span>, <span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.0-RC6/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.R">R</span> with <a href="OpenTracing.html" class="extype" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.A">A</span>]</span>
+        <span class="name">tag</span><span class="tparams">[<span name="R">R</span>, <span name="E">E</span>, <span name="A">A</span>]</span><span class="params">(<span name="zio">zio: <a href="https://javadoc.io/page/dev.zio/zio_2.12/1.0.14/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.R">R</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.A">A</span>]</span>, <span name="key">key: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/1.0.14/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.R">R</span> with <a href="index.html#OpenTracing=zio.Has[zio.telemetry.opentracing.OpenTracing.Service]" class="extmbr" name="zio.telemetry.opentracing.OpenTracing">OpenTracing</a>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.E">E</span>, <span class="extype" name="zio.telemetry.opentracing.OpenTracing.tag.A">A</span>]</span>
       </span>
       
       
@@ -814,7 +831,7 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">toString</span><span class="params">()</span><span class="result">: <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java/lang/String.html#java.lang.String" class="extype" name="java.lang.String">String</a></span>
+        <span class="name">toString</span><span class="params">()</span><span class="result">: <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/String.html#java.lang.String" class="extype" name="java.lang.String">String</a></span>
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
