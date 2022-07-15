@@ -1,16 +1,15 @@
 package zio.telemetry.opentelemetry
 
 import io.opentelemetry.api.baggage.Baggage
+import io.opentelemetry.api.common.{ AttributeKey, Attributes }
+import io.opentelemetry.api.trace._
+import io.opentelemetry.context.Context
+import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator, TextMapSetter }
+import zio._
+import zio.telemetry.opentelemetry.ContextPropagation.{ extractContext, injectContext }
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
-import io.opentelemetry.api.common.{ AttributeKey, Attributes }
-import io.opentelemetry.api.trace.{ Span, SpanContext, SpanKind, StatusCode, Tracer }
-import io.opentelemetry.context.Context
-import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator, TextMapSetter }
-import zio.telemetry.opentelemetry.ContextPropagation.{ extractContext, injectContext }
-import zio._
-
 import scala.jdk.CollectionConverters._
 
 trait Tracing {
