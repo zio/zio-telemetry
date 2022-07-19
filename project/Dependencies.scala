@@ -5,10 +5,10 @@ object Dependencies {
     val jaeger        = "1.6.0"
     val sttp3         = "3.3.14"
     val opentracing   = "0.33.0"
-    val opentelemetry = "1.13.0"
+    val opentelemetry = "1.16.0"
     val opencensus    = "0.31.1"
     val zipkin        = "2.16.3"
-    val zio           = "1.0.14"
+    val zio           = "1.0.16"
     val zioHttp       = "1.0.0.0-RC17"
     val zioJson       = "0.1.5"
     val zioConfig     = "1.0.6"
@@ -25,14 +25,14 @@ object Dependencies {
     "io.opentracing"          % "opentracing-api"         % Versions.opentracing,
     "io.opentracing"          % "opentracing-noop"        % Versions.opentracing,
     "io.opentracing"          % "opentracing-mock"        % Versions.opentracing % Test,
-    "org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0"
+    "org.scala-lang.modules" %% "scala-collection-compat" % "2.8.0"
   )
 
   lazy val opentelemetry = zio ++ Seq(
     "io.opentelemetry"        % "opentelemetry-api"         % Versions.opentelemetry,
     "io.opentelemetry"        % "opentelemetry-context"     % Versions.opentelemetry,
     "io.opentelemetry"        % "opentelemetry-sdk-testing" % Versions.opentelemetry % Test,
-    "org.scala-lang.modules" %% "scala-collection-compat"   % "2.7.0"
+    "org.scala-lang.modules" %% "scala-collection-compat"   % "2.8.0"
   )
 
   lazy val opencensus = zio ++ Seq(
