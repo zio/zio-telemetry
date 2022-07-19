@@ -12,7 +12,7 @@ Firstly, start Jaeger by running the following command:
 docker run --rm -it \
   -p 16686:16686 \
   -p 14250:14250 \
-  jaegertracing/all-in-one:1.16
+  jaegertracing/all-in-one:1.36
 ```
 
 Then start the proxy server
