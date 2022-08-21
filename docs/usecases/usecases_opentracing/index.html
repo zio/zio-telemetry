@@ -62,8 +62,8 @@
             });
         </script></nav></div><div class="container mainContainer docsContainer"><div class="wrapper"><div class="post"><header class="postHeader"><h1 id="__docusaurus" class="postHeaderTitle">OpenTracing Example</h1></header><article><div><span><p>You can find the source code <a href="https://github.com/zio/zio-telemetry/tree/master/opentracing-example">here</a>.</p>
 <p>Firstly, start <a href="https://www.jaegertracing.io">Jaeger</a> by running the following command:</p>
-<pre><code class="hljs css language-bash">docker run -d --name jaeger \
-  -e COLLECTOR_ZIPKIN_HTTP_PORT=9411 \
+<pre><code class="hljs css language-bash">docker run --rm -it \
+  -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
   -p 5775:5775/udp \
   -p 6831:6831/udp \
   -p 6832:6832/udp \
@@ -71,7 +71,7 @@
   -p 16686:16686 \
   -p 14268:14268 \
   -p 9411:9411 \
-  jaegertracing/all-in-one:1.6
+  jaegertracing/all-in-one:1.36
 </code></pre>
 <p>To check if it's running properly visit <a href="http://localhost:16686/">Jaeger UI</a>.
 More info can be found <a href="https://www.jaegertracing.io/docs/1.6/getting-started/#all-in-one-docker-image">here</a>.</p>
