@@ -304,6 +304,15 @@ object TracingTest extends ZIOSpecDefault {
             baggage   <- Tracing.getCurrentBaggage
             entryValue = Option(baggage.getEntryValue("some"))
           } yield assert(entryValue)(equalTo(Some("thing")))
+        },
+        test("resources") {
+          for {
+            ref      <- Ref.make(false)
+            scope    <- Scope.make
+            resource  = ZIO.addFinalizer(ref.set(true))
+            _        <- scope.extend(resource.span("Resource"))
+            released <- ref.get
+          } yield assert(released)(isFalse)
         }
       ).provideCustomLayer(tracingMockLayer)
     )

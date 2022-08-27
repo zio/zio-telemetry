@@ -17,13 +17,13 @@ trait Tracing {
 
   private[opentelemetry] val currentContext: FiberRef[Context]
 
-  private[opentelemetry] def createRoot(spanName: String, spanKind: SpanKind): URIO[Scope, Context]
+  private[opentelemetry] def createRoot(spanName: String, spanKind: SpanKind): UIO[(UIO[Unit], Context)]
 
   private[opentelemetry] def createChildOf(
     parent: Context,
     spanName: String,
     spanKind: SpanKind
-  ): URIO[Scope, Context]
+  ): UIO[(UIO[Unit], Context)]
 
   private[opentelemetry] def createChildOfUnsafe(parent: Context, spanName: String, spanKind: SpanKind): UIO[Context]
 
@@ -39,10 +39,14 @@ object Tracing {
   private def currentContext: URIO[Tracing, FiberRef[Context]] =
     ZIO.service[Tracing].map(_.currentContext)
 
-  private def createRoot(spanName: String, spanKind: SpanKind): URIO[Scope with Tracing, Context] =
+  private def createRoot(spanName: String, spanKind: SpanKind): URIO[Tracing, (UIO[Unit], Context)] =
     ZIO.serviceWithZIO[Tracing](_.createRoot(spanName, spanKind))
 
-  private def createChildOf(parent: Context, spanName: String, spanKind: SpanKind): URIO[Scope with Tracing, Context] =
+  private def createChildOf(
+    parent: Context,
+    spanName: String,
+    spanKind: SpanKind
+  ): URIO[Tracing, (UIO[Unit], Context)] =
     ZIO.serviceWithZIO[Tracing](_.createChildOf(parent, spanName, spanKind))
 
   private def createChildOfUnsafe(parent: Context, spanName: String, spanKind: SpanKind): URIO[Tracing, Context] =
@@ -91,12 +95,14 @@ object Tracing {
     spanKind: SpanKind,
     toErrorStatus: PartialFunction[E, StatusCode]
   )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
-    ZIO.scoped[R with Tracing] {
-      for {
-        context <- extractContext(propagator, carrier, getter)
-        ctx     <- createChildOf(context, spanName, spanKind)
-        r       <- finalizeSpanUsingEffect(effect, ctx, toErrorStatus)
-      } yield r
+    extractContext(propagator, carrier, getter).flatMap { context =>
+      ZIO.acquireReleaseWith {
+        createChildOf(context, spanName, spanKind)
+      } { case (r, _) =>
+        r
+      } { case (_, ctx) =>
+        finalizeSpanUsingEffect(effect, ctx, toErrorStatus)
+      }
     }
 
   /**
@@ -127,8 +133,12 @@ object Tracing {
     spanKind: SpanKind,
     toErrorStatus: PartialFunction[E, StatusCode]
   )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
-    ZIO.scoped[R with Tracing] {
-      createRoot(spanName, spanKind).flatMap(finalizeSpanUsingEffect(effect, _, toErrorStatus))
+    ZIO.acquireReleaseWith {
+      createRoot(spanName, spanKind)
+    } { case (r, _) =>
+      r
+    } { case (_, ctx) =>
+      finalizeSpanUsingEffect(effect, ctx, toErrorStatus)
     }
 
   /**
@@ -140,12 +150,14 @@ object Tracing {
     spanKind: SpanKind,
     toErrorStatus: PartialFunction[E, StatusCode]
   )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
-    ZIO.scoped[R with Tracing] {
-      for {
-        old <- getCurrentContext
-        ctx <- createChildOf(old, spanName, spanKind)
-        r   <- finalizeSpanUsingEffect(effect, ctx, toErrorStatus)
-      } yield r
+    getCurrentContext.flatMap { old =>
+      ZIO.acquireReleaseWith {
+        createChildOf(old, spanName, spanKind)
+      } { case (r, _) =>
+        r
+      } { case (_, ctx) =>
+        finalizeSpanUsingEffect(effect, ctx, toErrorStatus)
+      }
     }
 
   /**
@@ -237,9 +249,12 @@ object Tracing {
     spanKind: SpanKind,
     toErrorStatus: PartialFunction[E, StatusCode]
   )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
-    ZIO.scoped[R with Tracing] {
+    ZIO.acquireReleaseWith {
       createChildOf(Context.root().`with`(span), spanName, spanKind)
-        .flatMap(finalizeSpanUsingEffect(effect, _, toErrorStatus))
+    } { case (r, _) =>
+      r
+    } { case (_, ctx) =>
+      finalizeSpanUsingEffect(effect, ctx, toErrorStatus)
     }
 
   /**
@@ -346,35 +361,31 @@ object Tracing {
 
       def currentNanos: UIO[Long] = Clock.currentTime(TimeUnit.NANOSECONDS)
 
-      def createRoot(spanName: String, spanKind: SpanKind): URIO[Scope, Context] =
+      def createRoot(spanName: String, spanKind: SpanKind): UIO[(UIO[Unit], Context)] =
         for {
           nanoSeconds <- currentNanos
-          span        <- ZIO.acquireRelease(
-                           ZIO.succeed(
-                             tracer
-                               .spanBuilder(spanName)
-                               .setNoParent()
-                               .setSpanKind(spanKind)
-                               .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
-                               .startSpan()
-                           )
-                         )(endSpan)
-        } yield span.storeInContext(Context.root())
+          span        <- ZIO.succeed(
+                           tracer
+                             .spanBuilder(spanName)
+                             .setNoParent()
+                             .setSpanKind(spanKind)
+                             .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
+                             .startSpan()
+                         )
+        } yield (endSpan(span), span.storeInContext(Context.root()))
 
-      def createChildOf(parent: Context, spanName: String, spanKind: SpanKind): URIO[Scope, Context] =
+      def createChildOf(parent: Context, spanName: String, spanKind: SpanKind): UIO[(UIO[Unit], Context)] =
         for {
           nanoSeconds <- currentNanos
-          span        <- ZIO.acquireRelease(
-                           ZIO.succeed(
-                             tracer
-                               .spanBuilder(spanName)
-                               .setParent(parent)
-                               .setSpanKind(spanKind)
-                               .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
-                               .startSpan()
-                           )
-                         )(endSpan)
-        } yield span.storeInContext(parent)
+          span        <- ZIO.succeed(
+                           tracer
+                             .spanBuilder(spanName)
+                             .setParent(parent)
+                             .setSpanKind(spanKind)
+                             .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
+                             .startSpan()
+                         )
+        } yield (endSpan(span), span.storeInContext(parent))
 
       def createChildOfUnsafe(parent: Context, spanName: String, spanKind: SpanKind): UIO[Context] =
         for {
