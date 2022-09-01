@@ -7,4 +7,4 @@ addSbtPlugin("org.scalameta"                     % "sbt-scalafmt"     % "2.4.6")
 addSbtPlugin("org.scalameta"                     % "sbt-mdoc"         % "2.3.2")
 addSbtPlugin("org.scoverage"                     % "sbt-scoverage"    % "2.0.0")
 
-libraryDependencies += "org.snakeyaml" % "snakeyaml-engine" % "2.3"
+libraryDependencies += "org.snakeyaml" % "snakeyaml-engine" % "2.4"
