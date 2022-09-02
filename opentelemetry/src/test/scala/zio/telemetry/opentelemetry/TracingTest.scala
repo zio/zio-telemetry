@@ -53,7 +53,7 @@ object TracingTest extends ZIOSpecDefault {
           _             <- ZIO.scoped(Tracing.live.build)
           finishedSpans <- getFinishedSpans
         } yield assert(finishedSpans)(hasSize(equalTo(0)))
-      }.provideCustomLayer(inMemoryTracerLayer),
+      }.provideLayer(inMemoryTracerLayer),
       suite("spans")(
         test("childSpan") {
           for {
@@ -314,6 +314,6 @@ object TracingTest extends ZIOSpecDefault {
             released <- ref.get
           } yield assert(released)(isFalse)
         }
-      ).provideCustomLayer(tracingMockLayer)
+      ).provideLayer(tracingMockLayer)
     )
 }
