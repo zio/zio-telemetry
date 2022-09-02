@@ -196,6 +196,6 @@ object OpenTracingTest extends ZIOSpecDefault {
           } yield assert(fooBag)(isSome(equalTo("bar"))) &&
             assert(barBag)(isSome(equalTo("baz")))
         }
-      ).provideCustomLayer(customLayer)
+      ).provideLayer(customLayer)
     )
 }

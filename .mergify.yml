@@ -4,13 +4,13 @@ pull_request_rules:
       - author=scala-steward
     actions:
       assign:
-        users: [runtologist, mijicd]
+        users: [runtologist, mijicd, grouzen]
       label:
         add: [dependency-update]
 
   - name: merge Scala Steward's PRs
     conditions:
-      - base=master
+      - base=series/2.x
       - author=scala-steward  
       - "body~=(labels: library-update, semver-minor)|(labels: library-update, semver-patch)|(labels: sbt-plugin-update, semver-minor)|(labels: sbt-plugin-update, semver-patch)|(labels: scalafix-rule-update)|(labels: test-library-update)" 
       - "status-success=license/cla"
