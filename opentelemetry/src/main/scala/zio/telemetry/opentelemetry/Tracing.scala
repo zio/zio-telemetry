@@ -520,69 +520,97 @@ object Tracing {
     ZIO.serviceWithZIO[Tracing](_.getCurrentSpanContext)
 
   def scoped(tracer: Tracer): URIO[Scope, Tracing] = {
-    class Live(defaultContext: FiberRef[Context]) extends Tracing {
-      private def endSpan(span: Span): UIO[Unit] = currentNanos.map(span.end(_, TimeUnit.NANOSECONDS))
-
-      def currentNanos: UIO[Long] = Clock.currentTime(TimeUnit.NANOSECONDS)
-
-      def createRoot(spanName: String, spanKind: SpanKind): UIO[(UIO[Unit], Context)] =
-        for {
-          nanoSeconds <- currentNanos
-          span        <- ZIO.succeed(
-                           tracer
-                             .spanBuilder(spanName)
-                             .setNoParent()
-                             .setSpanKind(spanKind)
-                             .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
-                             .startSpan()
-                         )
-        } yield (endSpan(span), span.storeInContext(Context.root()))
-
-      def createChildOf(parent: Context, spanName: String, spanKind: SpanKind): UIO[(UIO[Unit], Context)] =
-        for {
-          nanoSeconds <- currentNanos
-          span        <- ZIO.succeed(
-                           tracer
-                             .spanBuilder(spanName)
-                             .setParent(parent)
-                             .setSpanKind(spanKind)
-                             .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
-                             .startSpan()
-                         )
-        } yield (endSpan(span), span.storeInContext(parent))
-
-      def createChildOfUnsafe(parent: Context, spanName: String, spanKind: SpanKind): UIO[Context] =
-        for {
-          nanoSeconds <- currentNanos
-          span        <-
-            ZIO.succeed(
-              tracer
-                .spanBuilder(spanName)
-                .setParent(parent)
-                .setSpanKind(spanKind)
-                .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
-                .startSpan()
-            )
-        } yield span.storeInContext(parent)
-
-      override private[opentelemetry] def end: UIO[Any] =
-        for {
-          nanos   <- currentNanos
-          context <- currentContext.get
-          span     = Span.fromContext(context)
-        } yield span.end(nanos, TimeUnit.NANOSECONDS)
-
-      override private[opentelemetry] def getTracer: UIO[Tracer] =
-        ZIO.succeed(tracer)
-
-      val currentContext: FiberRef[Context] = defaultContext
-    }
-
     val tracing: URIO[Scope, Tracing] =
-      FiberRef.make[Context](Context.root()).map(new Live(_))
+      FiberRef.make[Context](Context.root()).map(new Live(tracer, _))
 
     ZIO.acquireRelease(tracing)(_.end)
   }
 
   def live: URLayer[Tracer, Tracing] = ZLayer.scoped(ZIO.service[Tracer].flatMap(scoped))
+
+  def scopedPropagating(tracer: Tracer): URIO[Scope, Tracing] = {
+    class ContextAdapter(delegate: FiberRef[Context]) extends FiberRef.Proxy[Context](delegate) {
+      override def modify[B](f: Context => (B, Context))(implicit trace: Trace): UIO[B] =
+        ZIO.succeed {
+          val ctx         = Context.current()
+          val (res, next) = f(ctx)
+          if (ctx != next) next.makeCurrent()
+          res
+        }
+    }
+
+    val tracing: URIO[Scope, Tracing] =
+      FiberRef
+        .make[Context](Context.root())
+        .map(ref => new Live(tracer, new ContextAdapter(ref)))
+
+    ZIO.acquireRelease(tracing)(_.end)
+  }
+
+  /**
+   * Tracing context will be bidirectionally propagated between ZIO and non-ZIO code. This could be useful when
+   * automatic instrumentation via OpenTelemetry JVM agent is used.
+   */
+  def propagating: URLayer[Tracer, Tracing] =
+    Runtime.addSupervisor(new PropagatingSupervisor) ++
+      ZLayer.scoped(ZIO.service[Tracer].flatMap(scopedPropagating))
+
+  private class Live(tracer: Tracer, defaultContext: FiberRef[Context]) extends Tracing {
+    private def endSpan(span: Span): UIO[Unit] = currentNanos.map(span.end(_, TimeUnit.NANOSECONDS))
+
+    def currentNanos: UIO[Long] = Clock.currentTime(TimeUnit.NANOSECONDS)
+
+    def createRoot(spanName: String, spanKind: SpanKind): UIO[(UIO[Unit], Context)] =
+      for {
+        nanoSeconds <- currentNanos
+        span        <- ZIO.succeed(
+                         tracer
+                           .spanBuilder(spanName)
+                           .setNoParent()
+                           .setSpanKind(spanKind)
+                           .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
+                           .startSpan()
+                       )
+      } yield (endSpan(span), span.storeInContext(Context.root()))
+
+    def createChildOf(parent: Context, spanName: String, spanKind: SpanKind): UIO[(UIO[Unit], Context)] =
+      for {
+        nanoSeconds <- currentNanos
+        span        <- ZIO.succeed(
+                         tracer
+                           .spanBuilder(spanName)
+                           .setParent(parent)
+                           .setSpanKind(spanKind)
+                           .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
+                           .startSpan()
+                       )
+      } yield (endSpan(span), span.storeInContext(parent))
+
+    def createChildOfUnsafe(parent: Context, spanName: String, spanKind: SpanKind): UIO[Context] =
+      for {
+        nanoSeconds <- currentNanos
+        span        <-
+          ZIO.succeed(
+            tracer
+              .spanBuilder(spanName)
+              .setParent(parent)
+              .setSpanKind(spanKind)
+              .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
+              .startSpan()
+          )
+      } yield span.storeInContext(parent)
+
+    override private[opentelemetry] def end: UIO[Any] =
+      for {
+        nanos   <- currentNanos
+        context <- currentContext.get
+        span     = Span.fromContext(context)
+      } yield span.end(nanos, TimeUnit.NANOSECONDS)
+
+    override private[opentelemetry] def getTracer: UIO[Tracer] =
+      ZIO.succeed(tracer)
+
+    val currentContext: FiberRef[Context] = defaultContext
+  }
+
 }
