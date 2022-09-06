@@ -150,7 +150,7 @@ trait Tracing {
    *
    * CLoses the scope when the effect finishes
    */
-  def scopedEffectFromFuture[A](make: ExecutionContext => scala.concurrent.Future[A]): ZIO[Any, Throwable, A] =
+  def scopedEffectFromFuture[A](make: ExecutionContext => scala.concurrent.Future[A]): Task[A] =
     for {
       currentContext <- getCurrentContext
       eff            <- ZIO.fromFuture { implicit ec =>
