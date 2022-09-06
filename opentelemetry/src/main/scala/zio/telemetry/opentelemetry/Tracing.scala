@@ -115,7 +115,7 @@ trait Tracing {
    *
    * Closes the scope when the effect finishes.
    */
-  def scopedEffect[A](effect: => A): ZIO[Any, Throwable, A] =
+  def scopedEffect[A](effect: => A): Task[A] =
     for {
       currentContext <- getCurrentContext
       eff            <- ZIO.attempt {
