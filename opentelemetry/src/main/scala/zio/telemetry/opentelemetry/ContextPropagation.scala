@@ -2,7 +2,7 @@ package zio.telemetry.opentelemetry
 
 import io.opentelemetry.context.Context
 import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator, TextMapSetter }
-import zio.{ UIO, URIO, ZIO }
+import zio.{ UIO, ZIO }
 
 private[opentelemetry] object ContextPropagation {
 
@@ -26,7 +26,7 @@ private[opentelemetry] object ContextPropagation {
     propagator: TextMapPropagator,
     carrier: C,
     setter: TextMapSetter[C]
-  ): URIO[Tracing, Unit] =
+  ): UIO[Unit] =
     ZIO.succeed(propagator.inject(context, carrier, setter))
 
 }
