@@ -130,7 +130,7 @@ trait Tracing {
    *
    * Closes the scope when the effect finishes.
    */
-  def scopedEffectTotal[A](effect: => A): ZIO[Any, Nothing, A] =
+  def scopedEffectTotal[A](effect: => A): UIO[A] =
     for {
       currentContext <- getCurrentContext
       eff            <- ZIO.succeed {
