@@ -8,7 +8,7 @@ import zio.telemetry.opentelemetry.TracingSyntax._
 import zio.telemetry.opentelemetry.example.http.{ Status => ServiceStatus }
 import zhttp.http.{ !!, ->, /, Headers, Http, HttpApp, Method, Response }
 import zio.json.EncoderOps
-import zio.ZIO
+import zio.{ URLayer, ZIO, ZLayer }
 import BackendApp._
 
 import java.lang
@@ -30,7 +30,7 @@ final case class BackendApp(tracing: Tracing) {
 
 object BackendApp {
 
-  val propagator: TextMapPropagator  = W3CTraceContextPropagator.getInstance()
+  val propagator: TextMapPropagator = W3CTraceContextPropagator.getInstance()
 
   val getter: TextMapGetter[Headers] = new TextMapGetter[Headers] {
     override def keys(carrier: Headers): lang.Iterable[String] =
@@ -39,4 +39,6 @@ object BackendApp {
     override def get(carrier: Headers, key: String): String =
       carrier.headers.headerValue(key).orNull
   }
+
+  val layer: URLayer[Tracing, BackendApp] = ZLayer.fromFunction(BackendApp.apply _)
 }

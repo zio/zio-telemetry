@@ -2,15 +2,15 @@ package zio.telemetry.opentelemetry.example
 
 import sttp.model.Uri
 import zhttp.service.server.ServerChannelFactory
-import zhttp.service.{EventLoopGroup, Server, ServerChannelFactory}
+import zhttp.service.{ EventLoopGroup, Server, ServerChannelFactory }
 import zio.Console.printLine
-import zio.config.{ReadError, getConfig}
-import zio.config.magnolia.{Descriptor, descriptor}
+import zio.config.{ getConfig, ReadError }
+import zio.config.magnolia.{ descriptor, Descriptor }
 import zio.config.typesafe.TypesafeConfig
 import zio.telemetry.opentelemetry.Tracing
 import zio.telemetry.opentelemetry.example.config.AppConfig
 import zio.telemetry.opentelemetry.example.http.BackendApp
-import zio.{ExitCode, Layer, ZIO, ZIOAppDefault, ZLayer, RLayer, Task, URLayer, RIO}
+import zio.{ ExitCode, Layer, RIO, RLayer, Task, URLayer, ZIO, ZIOAppDefault, ZLayer }
 import BackendServer.AppEnv
 
 final case class BackendServer(backendApp: BackendApp) {
@@ -41,13 +41,13 @@ object BackendServer extends ZIOAppDefault {
 
   val layer: URLayer[BackendApp, BackendServer] = ZLayer.fromFunction(BackendServer.apply _)
 
-  override def run: Task[ExitCode] = {
+  override def run: Task[ExitCode] =
     ZIO
       .serviceWithZIO[BackendServer](_.server.exitCode)
       .provide(
         configLayer,
         appLayer,
+        BackendApp.layer,
         layer
       )
-  }
 }

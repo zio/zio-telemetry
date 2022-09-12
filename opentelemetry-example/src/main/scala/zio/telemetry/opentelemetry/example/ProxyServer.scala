@@ -6,15 +6,15 @@ import sttp.client3.SttpBackend
 import sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend
 import sttp.model.Uri
 import zhttp.service.server.ServerChannelFactory
-import zhttp.service.{EventLoopGroup, Server, ServerChannelFactory}
+import zhttp.service.{ EventLoopGroup, Server, ServerChannelFactory }
 import zio.Console.printLine
-import zio.config.{ReadError, getConfig}
+import zio.config.{ getConfig, ReadError }
 import zio.config.magnolia._
 import zio.config.typesafe.TypesafeConfig
 import zio.telemetry.opentelemetry.Tracing
 import zio.telemetry.opentelemetry.example.config.AppConfig
-import zio.telemetry.opentelemetry.example.http.{Client, ProxyApp}
-import zio.{ExitCode, Layer, Task, ZIO, ZIOAppDefault, ZLayer, RIO, RLayer, URLayer, TaskLayer}
+import zio.telemetry.opentelemetry.example.http.{ Client, ProxyApp }
+import zio.{ ExitCode, Layer, RIO, RLayer, Task, TaskLayer, URLayer, ZIO, ZIOAppDefault, ZLayer }
 import ProxyServer.AppEnv
 
 final case class ProxyServer(proxyApp: ProxyApp) {
@@ -52,13 +52,13 @@ object ProxyServer extends ZIOAppDefault {
 
   val layer: URLayer[ProxyApp, ProxyServer] = ZLayer.fromFunction(ProxyServer.apply _)
 
-  override def run: Task[ExitCode] = {
+  override def run: Task[ExitCode] =
     ZIO
       .serviceWithZIO[ProxyServer](_.server.exitCode)
       .provide(
         configLayer,
         appLayer,
+        ProxyApp.layer,
         layer
       )
-  }
 }

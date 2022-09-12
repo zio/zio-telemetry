@@ -3,7 +3,7 @@ package zio.telemetry.opentelemetry.example.http
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.api.trace.{ SpanKind, StatusCode }
 import io.opentelemetry.context.propagation.{ TextMapPropagator, TextMapSetter }
-import zio.ZIO
+import zio.{ URLayer, ZIO, ZLayer }
 import zio.telemetry.opentelemetry.Tracing
 import zhttp.http.{ !!, ->, /, Http, HttpApp, Method, Response }
 import zio.json.EncoderOps
@@ -28,9 +28,11 @@ final case class ProxyApp(tracing: Tracing) {
 
 object ProxyApp {
 
-  val propagator: TextMapPropagator                      = W3CTraceContextPropagator.getInstance()
+  val propagator: TextMapPropagator = W3CTraceContextPropagator.getInstance()
 
   val setter: TextMapSetter[mutable.Map[String, String]] = (carrier, key, value) => carrier.update(key, value)
 
   val errorMapper: PartialFunction[Throwable, StatusCode] = { case _ => StatusCode.UNSET }
+
+  val layer: URLayer[Tracing, ProxyApp] = ZLayer.fromFunction(ProxyApp.apply _)
 }
