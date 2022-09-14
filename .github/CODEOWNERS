@@ -1,5 +1,1 @@
 * @zio/zio-telemetry
-.github/workflows/ @mijicd
-build.sbt @mijicd
-project/BuildHelper.scala @mijicd
-
