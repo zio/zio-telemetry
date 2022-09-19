@@ -16,7 +16,8 @@ trait Tracing {
 
   def getCurrentContext: UIO[Context] = currentContext.get
 
-  def getCurrentSpan: UIO[Span] = getCurrentContext.map(Span.fromContext)
+  def getCurrentSpan: UIO[Span] =
+    getCurrentContext.map(Span.fromContext)
 
   /**
    * Extracts the span from carrier `C` and set its child span with name 'spanName' as the current span. Ends the span
@@ -50,7 +51,7 @@ trait Tracing {
     getter: TextMapGetter[C],
     spanName: String,
     spanKind: SpanKind
-  ): URIO[Tracing, (Span, URIO[Tracing, Any])] =
+  ): UIO[(Span, UIO[Any])] =
     for {
       context <- extractContext(propagator, carrier, getter)
       updated <- createChildOfUnsafe(context, spanName, spanKind)
