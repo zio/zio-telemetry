@@ -11,16 +11,16 @@ import ProxyApp._
 
 import scala.collection.mutable
 
-final case class ProxyApp(tracing: Tracing) {
+final case class ProxyApp(client: Client, tracing: Tracing) {
 
-  val routes: HttpApp[Client, Throwable] = Http.collectZIO { case Method.GET -> !! / "statuses" =>
+  val routes: HttpApp[Any, Throwable] = Http.collectZIO { case Method.GET -> !! / "statuses" =>
     tracing.root("/statuses", SpanKind.SERVER, errorMapper) {
       for {
         carrier <- ZIO.succeed(mutable.Map[String, String]().empty)
         _       <- tracing.setAttribute("http.method", "get")
         _       <- tracing.addEvent("proxy-event")
         _       <- tracing.inject(propagator, carrier, setter)
-        res     <- Client.status(carrier.toMap).map(s => Response.json(s.toJson))
+        res     <- client.status(carrier.toMap).map(s => Response.json(s.toJson))
       } yield res
     }
   }
@@ -34,5 +34,5 @@ object ProxyApp {
 
   val errorMapper: PartialFunction[Throwable, StatusCode] = { case _ => StatusCode.UNSET }
 
-  val layer: URLayer[Tracing, ProxyApp] = ZLayer.fromFunction(ProxyApp.apply _)
+  val layer: URLayer[Client with Tracing, ProxyApp] = ZLayer.fromFunction(ProxyApp.apply _)
 }
