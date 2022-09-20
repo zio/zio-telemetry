@@ -14,11 +14,14 @@ import scala.jdk.CollectionConverters._
 
 trait Tracing {
 
-  def getCurrentContext: UIO[Context] =
-    currentContext.get
+  def getCurrentContext: UIO[Context]
 
-  def getCurrentSpan: UIO[Span] =
-    getCurrentContext.map(Span.fromContext)
+  def getCurrentSpan: UIO[Span]
+
+  /**
+   * Gets the current SpanContext
+   */
+  def getCurrentSpanContext: UIO[SpanContext]
 
   /**
    * Extracts the span from carrier `C` and set its child span with name 'spanName' as the current span. Ends the span
@@ -31,16 +34,7 @@ trait Tracing {
     spanName: String,
     spanKind: SpanKind,
     toErrorStatus: PartialFunction[E, StatusCode]
-  )(effect: ZIO[R, E, A]): ZIO[R, E, A] =
-    extractContext(propagator, carrier, getter).flatMap { context =>
-      ZIO.acquireReleaseWith {
-        createChildOf(context, spanName, spanKind)
-      } { case (r, _) =>
-        r
-      } { case (_, ctx) =>
-        finalizeSpanUsingEffect(effect, ctx, toErrorStatus)
-      }
-    }
+  )(effect: ZIO[R, E, A]): ZIO[R, E, A]
 
   /**
    * Extracts the span from carrier `C` and unsafely set its child span with name 'spanName' as the current span. You
@@ -52,14 +46,7 @@ trait Tracing {
     getter: TextMapGetter[C],
     spanName: String,
     spanKind: SpanKind
-  ): UIO[(Span, UIO[Any])] =
-    for {
-      context <- extractContext(propagator, carrier, getter)
-      updated <- createChildOfUnsafe(context, spanName, spanKind)
-      old     <- currentContext.getAndSet(updated)
-      span    <- getCurrentSpan
-      finalize = end *> currentContext.set(old)
-    } yield (span, finalize)
+  ): UIO[(Span, UIO[Any])]
 
   /**
    * Sets the current span to be the new root span with name 'spanName' Ends the span when the effect finishes.
@@ -68,14 +55,7 @@ trait Tracing {
     spanName: String,
     spanKind: SpanKind,
     toErrorStatus: PartialFunction[E, StatusCode]
-  )(effect: ZIO[R, E, A]): ZIO[R, E, A] =
-    ZIO.acquireReleaseWith {
-      createRoot(spanName, spanKind)
-    } { case (r, _) =>
-      r
-    } { case (_, ctx) =>
-      finalizeSpanUsingEffect(effect, ctx, toErrorStatus)
-    }
+  )(effect: ZIO[R, E, A]): ZIO[R, E, A]
 
   /**
    * Sets the current span to be the child of the current span with name 'spanName' Ends the span when the effect
@@ -85,16 +65,7 @@ trait Tracing {
     spanName: String,
     spanKind: SpanKind,
     toErrorStatus: PartialFunction[E, StatusCode]
-  )(effect: ZIO[R, E, A]): ZIO[R, E, A] =
-    getCurrentContext.flatMap { old =>
-      ZIO.acquireReleaseWith {
-        createChildOf(old, spanName, spanKind)
-      } { case (r, _) =>
-        r
-      } { case (_, ctx) =>
-        finalizeSpanUsingEffect(effect, ctx, toErrorStatus)
-      }
-    }
+  )(effect: ZIO[R, E, A]): ZIO[R, E, A]
 
   /**
    * Unsafely sets the current span to be the child of the current span with name 'spanName' You need to manually call
@@ -103,44 +74,21 @@ trait Tracing {
   def spanUnsafe(
     spanName: String,
     spanKind: SpanKind
-  ): UIO[(Span, UIO[Any])] =
-    for {
-      old     <- getCurrentContext
-      updated <- createChildOfUnsafe(old, spanName, spanKind)
-      _       <- currentContext.set(updated)
-      span    <- getCurrentSpan
-      finalize = end *> currentContext.set(old)
-    } yield (span, finalize)
+  ): UIO[(Span, UIO[Any])]
 
   /**
    * Introduces a thread-local scope during the execution allowing for non-zio context propagation.
    *
    * Closes the scope when the effect finishes.
    */
-  def scopedEffect[A](effect: => A): Task[A] =
-    for {
-      currentContext <- getCurrentContext
-      eff            <- ZIO.attempt {
-                          val scope = currentContext.makeCurrent()
-                          try effect
-                          finally scope.close()
-                        }
-    } yield eff
+  def scopedEffect[A](effect: => A): Task[A]
 
   /**
    * Introduces a thread-local scope during the execution allowing for non-zio context propagation.
    *
    * Closes the scope when the effect finishes.
    */
-  def scopedEffectTotal[A](effect: => A): UIO[A] =
-    for {
-      currentContext <- getCurrentContext
-      eff            <- ZIO.succeed {
-                          val scope = currentContext.makeCurrent()
-                          try effect
-                          finally scope.close()
-                        }
-    } yield eff
+  def scopedEffectTotal[A](effect: => A): UIO[A]
 
   /**
    * Introduces a thread-local scope from the currently active zio span allowing for non-zio context propagation. This
@@ -152,15 +100,7 @@ trait Tracing {
    *
    * CLoses the scope when the effect finishes
    */
-  def scopedEffectFromFuture[A](make: ExecutionContext => scala.concurrent.Future[A]): Task[A] =
-    for {
-      currentContext <- getCurrentContext
-      eff            <- ZIO.fromFuture { implicit ec =>
-                          val scope = currentContext.makeCurrent()
-                          try make(ec)
-                          finally scope.close()
-                        }
-    } yield eff
+  def scopedEffectFromFuture[A](make: ExecutionContext => scala.concurrent.Future[A]): Task[A]
 
   /**
    * Injects the current span into carrier `C`
@@ -169,11 +109,7 @@ trait Tracing {
     propagator: TextMapPropagator,
     carrier: C,
     setter: TextMapSetter[C]
-  ): UIO[Unit] =
-    for {
-      current <- getCurrentContext
-      _       <- injectContext(current, propagator, carrier, setter)
-    } yield ()
+  ): UIO[Unit]
 
   /**
    * Create a child of 'span' with name 'spanName' as the current span. Ends the span when the effect finishes.
@@ -183,23 +119,12 @@ trait Tracing {
     spanName: String,
     spanKind: SpanKind,
     toErrorStatus: PartialFunction[E, StatusCode]
-  )(effect: ZIO[R, E, A]): ZIO[R, E, A] =
-    ZIO.acquireReleaseWith {
-      createChildOf(Context.root().`with`(span), spanName, spanKind)
-    } { case (r, _) =>
-      r
-    } { case (_, ctx) =>
-      finalizeSpanUsingEffect(effect, ctx, toErrorStatus)
-    }
+  )(effect: ZIO[R, E, A]): ZIO[R, E, A]
 
   /**
    * Adds an event to the current span
    */
-  def addEvent(name: String): UIO[Span] =
-    for {
-      nanoSeconds <- currentNanos
-      span        <- getCurrentSpan
-    } yield span.addEvent(name, nanoSeconds, TimeUnit.NANOSECONDS)
+  def addEvent(name: String): UIO[Span]
 
   /**
    * Adds an event with attributes to the current span.
@@ -207,123 +132,55 @@ trait Tracing {
   def addEventWithAttributes(
     name: String,
     attributes: Attributes
-  ): UIO[Span] =
-    for {
-      nanoSeconds <- currentNanos
-      span        <- getCurrentSpan
-    } yield span.addEvent(name, attributes, nanoSeconds, TimeUnit.NANOSECONDS)
+  ): UIO[Span]
 
   /**
    * Sets an attribute of the current span.
    */
-  def setAttribute(name: String, value: Boolean): UIO[Span] =
-    getCurrentSpan.map(_.setAttribute(name, value))
+  def setAttribute(name: String, value: Boolean): UIO[Span]
 
   /**
    * Sets an attribute of the current span.
    */
-  def setAttribute(name: String, value: Double): UIO[Span] =
-    getCurrentSpan.map(_.setAttribute(name, value))
+  def setAttribute(name: String, value: Double): UIO[Span]
 
   /**
    * Sets an attribute of the current span.
    */
-  def setAttribute(name: String, value: Long): UIO[Span] =
-    getCurrentSpan.map(_.setAttribute(name, value))
+  def setAttribute(name: String, value: Long): UIO[Span]
 
   /**
    * Sets an attribute of the current span.
    */
-  def setAttribute(name: String, value: String): UIO[Span] =
-    getCurrentSpan.map(_.setAttribute(name, value))
+  def setAttribute(name: String, value: String): UIO[Span]
 
-  def setAttribute[T](key: AttributeKey[T], value: T): UIO[Span] =
-    getCurrentSpan.map(_.setAttribute(key, value))
+  def setAttribute[T](key: AttributeKey[T], value: T): UIO[Span]
 
-  def setAttribute(name: String, values: Seq[String]): UIO[Span] = {
-    val v = values.asJava
-    getCurrentSpan.map(_.setAttribute(AttributeKey.stringArrayKey(name), v))
-  }
+  def setAttribute(name: String, values: Seq[String]): UIO[Span]
 
-  def setAttribute(name: String, values: Seq[Boolean])(implicit i1: DummyImplicit): UIO[Span] = {
-    val v = values.map(Boolean.box).asJava
-    getCurrentSpan.map(_.setAttribute(AttributeKey.booleanArrayKey(name), v))
-  }
+  def setAttribute(name: String, values: Seq[Boolean])(implicit i1: DummyImplicit): UIO[Span]
 
   def setAttribute(name: String, values: Seq[Long])(implicit
     i1: DummyImplicit,
     i2: DummyImplicit
-  ): UIO[Span] = {
-    val v = values.map(Long.box).asJava
-    getCurrentSpan.map(_.setAttribute(AttributeKey.longArrayKey(name), v))
-  }
+  ): UIO[Span]
 
   def setAttribute(name: String, values: Seq[Double])(implicit
     i1: DummyImplicit,
     i2: DummyImplicit,
     i3: DummyImplicit
-  ): UIO[Span] = {
-    val v = values.map(Double.box).asJava
-    getCurrentSpan.map(_.setAttribute(AttributeKey.doubleArrayKey(name), v))
-  }
+  ): UIO[Span]
 
   /**
    * Sets a baggage entry in the current context
    */
-  def setBaggage(name: String, value: String): UIO[Context] =
-    currentContext.updateAndGet(context =>
-      Baggage.fromContext(context).toBuilder.put(name, value).build().storeInContext(context)
-    )
+  def setBaggage(name: String, value: String): UIO[Context]
 
   /**
    * Gets the baggage from current context
    */
-  def getCurrentBaggage: UIO[Baggage] =
-    getCurrentContext.map(Baggage.fromContext)
+  def getCurrentBaggage: UIO[Baggage]
 
-  /**
-   * Gets the current SpanContext
-   */
-  def getCurrentSpanContext: UIO[SpanContext] =
-    getCurrentSpan.map(_.getSpanContext())
-
-  private def setErrorStatus[E](
-    span: Span,
-    cause: Cause[E],
-    toErrorStatus: PartialFunction[E, StatusCode]
-  ): UIO[Span] = {
-    val errorStatus: StatusCode = cause.failureOption.flatMap(toErrorStatus.lift).getOrElse(StatusCode.UNSET)
-    ZIO.succeed(span.setStatus(errorStatus, cause.prettyPrint))
-  }
-
-  /**
-   * Sets the `currentContext` to `context` only while `effect` runs, and error status of `span` according to any
-   * potential failure of effect.
-   */
-  private def finalizeSpanUsingEffect[R, E, A](
-    effect: ZIO[R, E, A],
-    context: Context,
-    toErrorStatus: PartialFunction[E, StatusCode]
-  ): ZIO[R, E, A] =
-    currentContext
-      .locally(context)(effect)
-      .tapErrorCause(setErrorStatus(Span.fromContext(context), _, toErrorStatus))
-
-  private[opentelemetry] def currentNanos: UIO[Long]
-
-  private[opentelemetry] val currentContext: FiberRef[Context]
-
-  private[opentelemetry] def createRoot(spanName: String, spanKind: SpanKind): UIO[(UIO[Unit], Context)]
-
-  private[opentelemetry] def createChildOf(
-    parent: Context,
-    spanName: String,
-    spanKind: SpanKind
-  ): UIO[(UIO[Unit], Context)]
-
-  private[opentelemetry] def createChildOfUnsafe(parent: Context, spanName: String, spanKind: SpanKind): UIO[Context]
-
-  private[opentelemetry] def end: UIO[Any]
 }
 
 object Tracing {
@@ -332,16 +189,243 @@ object Tracing {
     ZLayer.scoped(ZIO.service[Tracer].flatMap(scoped))
 
   def scoped(tracer: Tracer): URIO[Scope, Tracing] = {
-    val tracing: URIO[Scope, Tracing] = for {
+    val acquire: URIO[Scope, Tracing] = for {
       defaultContext <- FiberRef.make[Context](Context.root())
     } yield new Tracing { self =>
       val currentContext: FiberRef[Context] = defaultContext
 
-      private def endSpan(span: Span): UIO[Unit] = currentNanos.map(span.end(_, TimeUnit.NANOSECONDS))
+      def getCurrentContext: UIO[Context] =
+        currentContext.get
 
-      def currentNanos: UIO[Long] = Clock.currentTime(TimeUnit.NANOSECONDS)
+      def getCurrentSpan: UIO[Span] =
+        getCurrentContext.map(Span.fromContext)
 
-      def createRoot(spanName: String, spanKind: SpanKind): UIO[(UIO[Unit], Context)] =
+      def getCurrentSpanContext: UIO[SpanContext] =
+        getCurrentSpan.map(_.getSpanContext())
+
+      def spanFrom[C, R, E, A](
+        propagator: TextMapPropagator,
+        carrier: C,
+        getter: TextMapGetter[C],
+        spanName: String,
+        spanKind: SpanKind,
+        toErrorStatus: PartialFunction[E, StatusCode]
+      )(effect: ZIO[R, E, A]): ZIO[R, E, A] =
+        extractContext(propagator, carrier, getter).flatMap { context =>
+          ZIO.acquireReleaseWith {
+            createChildOf(context, spanName, spanKind)
+          } { case (r, _) =>
+            r
+          } { case (_, ctx) =>
+            finalizeSpanUsingEffect(effect, ctx, toErrorStatus)
+          }
+        }
+
+      def spanFromUnsafe[C](
+        propagator: TextMapPropagator,
+        carrier: C,
+        getter: TextMapGetter[C],
+        spanName: String,
+        spanKind: SpanKind
+      ): UIO[(Span, UIO[Any])] =
+        for {
+          context <- extractContext(propagator, carrier, getter)
+          updated <- createChildOfUnsafe(context, spanName, spanKind)
+          old     <- currentContext.getAndSet(updated)
+          span    <- getCurrentSpan
+          finalize = end *> currentContext.set(old)
+        } yield (span, finalize)
+
+      def root[R, E, A](
+        spanName: String,
+        spanKind: SpanKind,
+        toErrorStatus: PartialFunction[E, StatusCode]
+      )(effect: ZIO[R, E, A]): ZIO[R, E, A] =
+        ZIO.acquireReleaseWith {
+          createRoot(spanName, spanKind)
+        } { case (r, _) =>
+          r
+        } { case (_, ctx) =>
+          finalizeSpanUsingEffect(effect, ctx, toErrorStatus)
+        }
+
+      def span[R, E, A](
+        spanName: String,
+        spanKind: SpanKind,
+        toErrorStatus: PartialFunction[E, StatusCode]
+      )(effect: ZIO[R, E, A]): ZIO[R, E, A] =
+        getCurrentContext.flatMap { old =>
+          ZIO.acquireReleaseWith {
+            createChildOf(old, spanName, spanKind)
+          } { case (r, _) =>
+            r
+          } { case (_, ctx) =>
+            finalizeSpanUsingEffect(effect, ctx, toErrorStatus)
+          }
+        }
+
+      def spanUnsafe(
+        spanName: String,
+        spanKind: SpanKind
+      ): UIO[(Span, UIO[Any])] =
+        for {
+          old     <- getCurrentContext
+          updated <- createChildOfUnsafe(old, spanName, spanKind)
+          _       <- currentContext.set(updated)
+          span    <- getCurrentSpan
+          finalize = end *> currentContext.set(old)
+        } yield (span, finalize)
+
+      def scopedEffect[A](effect: => A): Task[A] =
+        for {
+          currentContext <- getCurrentContext
+          eff            <- ZIO.attempt {
+                              val scope = currentContext.makeCurrent()
+                              try effect
+                              finally scope.close()
+                            }
+        } yield eff
+
+      def scopedEffectTotal[A](effect: => A): UIO[A] =
+        for {
+          currentContext <- getCurrentContext
+          eff            <- ZIO.succeed {
+                              val scope = currentContext.makeCurrent()
+                              try effect
+                              finally scope.close()
+                            }
+        } yield eff
+
+      def scopedEffectFromFuture[A](make: ExecutionContext => scala.concurrent.Future[A]): Task[A] =
+        for {
+          currentContext <- getCurrentContext
+          eff            <- ZIO.fromFuture { implicit ec =>
+                              val scope = currentContext.makeCurrent()
+                              try make(ec)
+                              finally scope.close()
+                            }
+        } yield eff
+
+      def inject[C](
+        propagator: TextMapPropagator,
+        carrier: C,
+        setter: TextMapSetter[C]
+      ): UIO[Unit] =
+        for {
+          current <- getCurrentContext
+          _       <- injectContext(current, propagator, carrier, setter)
+        } yield ()
+
+      def inSpan[R, E, A](
+        span: Span,
+        spanName: String,
+        spanKind: SpanKind,
+        toErrorStatus: PartialFunction[E, StatusCode]
+      )(effect: ZIO[R, E, A]): ZIO[R, E, A] =
+        ZIO.acquireReleaseWith {
+          createChildOf(Context.root().`with`(span), spanName, spanKind)
+        } { case (r, _) =>
+          r
+        } { case (_, ctx) =>
+          finalizeSpanUsingEffect(effect, ctx, toErrorStatus)
+        }
+
+      def addEvent(name: String): UIO[Span] =
+        for {
+          nanoSeconds <- currentNanos
+          span        <- getCurrentSpan
+        } yield span.addEvent(name, nanoSeconds, TimeUnit.NANOSECONDS)
+
+      def addEventWithAttributes(
+        name: String,
+        attributes: Attributes
+      ): UIO[Span] =
+        for {
+          nanoSeconds <- currentNanos
+          span        <- getCurrentSpan
+        } yield span.addEvent(name, attributes, nanoSeconds, TimeUnit.NANOSECONDS)
+
+      def setAttribute(name: String, value: Boolean): UIO[Span] =
+        getCurrentSpan.map(_.setAttribute(name, value))
+
+      def setAttribute(name: String, value: Double): UIO[Span] =
+        getCurrentSpan.map(_.setAttribute(name, value))
+
+      def setAttribute(name: String, value: Long): UIO[Span] =
+        getCurrentSpan.map(_.setAttribute(name, value))
+
+      def setAttribute(name: String, value: String): UIO[Span] =
+        getCurrentSpan.map(_.setAttribute(name, value))
+
+      def setAttribute[T](key: AttributeKey[T], value: T): UIO[Span] =
+        getCurrentSpan.map(_.setAttribute(key, value))
+
+      def setAttribute(name: String, values: Seq[String]): UIO[Span] = {
+        val v = values.asJava
+        getCurrentSpan.map(_.setAttribute(AttributeKey.stringArrayKey(name), v))
+      }
+
+      def setAttribute(name: String, values: Seq[Boolean])(implicit i1: DummyImplicit): UIO[Span] = {
+        val v = values.map(Boolean.box).asJava
+        getCurrentSpan.map(_.setAttribute(AttributeKey.booleanArrayKey(name), v))
+      }
+
+      def setAttribute(name: String, values: Seq[Long])(implicit
+        i1: DummyImplicit,
+        i2: DummyImplicit
+      ): UIO[Span] = {
+        val v = values.map(Long.box).asJava
+        getCurrentSpan.map(_.setAttribute(AttributeKey.longArrayKey(name), v))
+      }
+
+      def setAttribute(name: String, values: Seq[Double])(implicit
+        i1: DummyImplicit,
+        i2: DummyImplicit,
+        i3: DummyImplicit
+      ): UIO[Span] = {
+        val v = values.map(Double.box).asJava
+        getCurrentSpan.map(_.setAttribute(AttributeKey.doubleArrayKey(name), v))
+      }
+
+      /**
+       * Sets a baggage entry in the current context
+       */
+      def setBaggage(name: String, value: String): UIO[Context] =
+        currentContext.updateAndGet(context =>
+          Baggage.fromContext(context).toBuilder.put(name, value).build().storeInContext(context)
+        )
+
+      /**
+       * Gets the baggage from current context
+       */
+      def getCurrentBaggage: UIO[Baggage] =
+        getCurrentContext.map(Baggage.fromContext)
+
+      private def setErrorStatus[E](
+        span: Span,
+        cause: Cause[E],
+        toErrorStatus: PartialFunction[E, StatusCode]
+      ): UIO[Span] = {
+        val errorStatus: StatusCode = cause.failureOption.flatMap(toErrorStatus.lift).getOrElse(StatusCode.UNSET)
+        ZIO.succeed(span.setStatus(errorStatus, cause.prettyPrint))
+      }
+
+      /**
+       * Sets the `currentContext` to `context` only while `effect` runs, and error status of `span` according to any
+       * potential failure of effect.
+       */
+      private def finalizeSpanUsingEffect[R, E, A](
+        effect: ZIO[R, E, A],
+        context: Context,
+        toErrorStatus: PartialFunction[E, StatusCode]
+      ): ZIO[R, E, A] =
+        currentContext
+          .locally(context)(effect)
+          .tapErrorCause(setErrorStatus(Span.fromContext(context), _, toErrorStatus))
+
+      private def currentNanos: UIO[Long] = Clock.currentTime(TimeUnit.NANOSECONDS)
+
+      private def createRoot(spanName: String, spanKind: SpanKind): UIO[(UIO[Unit], Context)] =
         for {
           nanoSeconds <- currentNanos
           span        <- ZIO.succeed(
@@ -354,7 +438,7 @@ object Tracing {
                          )
         } yield (endSpan(span), span.storeInContext(Context.root()))
 
-      def createChildOf(parent: Context, spanName: String, spanKind: SpanKind): UIO[(UIO[Unit], Context)] =
+      private def createChildOf(parent: Context, spanName: String, spanKind: SpanKind): UIO[(UIO[Unit], Context)] =
         for {
           nanoSeconds <- currentNanos
           span        <- ZIO.succeed(
@@ -367,7 +451,7 @@ object Tracing {
                          )
         } yield (endSpan(span), span.storeInContext(parent))
 
-      def createChildOfUnsafe(parent: Context, spanName: String, spanKind: SpanKind): UIO[Context] =
+      private def createChildOfUnsafe(parent: Context, spanName: String, spanKind: SpanKind): UIO[Context] =
         for {
           nanoSeconds <- currentNanos
           span        <-
@@ -381,15 +465,18 @@ object Tracing {
             )
         } yield span.storeInContext(parent)
 
-      override private[opentelemetry] def end: UIO[Any] =
-        for {
-          nanos <- currentNanos
-          span  <- getCurrentSpan
-        } yield span.end(nanos, TimeUnit.NANOSECONDS)
+      private def endSpan(span: Span): UIO[Unit] =
+        currentNanos.flatMap(nanos => ZIO.succeed(span.end(nanos, TimeUnit.NANOSECONDS)))
+
+      private def end: UIO[Any] =
+        getCurrentSpan.flatMap(endSpan)
 
     }
 
-    ZIO.acquireRelease(tracing)(_.end)
+    def release(tracing: Tracing) =
+      tracing.getCurrentSpan.flatMap(span => ZIO.succeed(span.end()))
+
+    ZIO.acquireRelease(acquire)(release)
   }
 
   def getCurrentContext: URIO[Tracing, Context] =

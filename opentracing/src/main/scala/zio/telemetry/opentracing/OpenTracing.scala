@@ -16,6 +16,7 @@ trait OpenTracing {
   def getCurrentSpan: UIO[Span]
   @deprecated("The method will be renamed to getCurrentSpanContext", "2.1.0")
   def context: UIO[SpanContext]
+  def getCurrentSpanContext: UIO[SpanContext]
   def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit]
   def finish(span: Span): UIO[Unit]
   def log[R, E, A](zio: ZIO[R, E, A], fields: Map[String, _]): ZIO[R, E, A]
@@ -47,16 +48,19 @@ object OpenTracing {
     ZLayer.scoped(scoped(tracer, rootOperation))
 
   def scoped(tracer: Tracer, rootOperation: String): URIO[Scope, OpenTracing] = {
-    val tracing: URIO[Scope, OpenTracing] = for {
-      span  <- ZIO.succeed(tracer.buildSpan(rootOperation).start())
-      ref   <- FiberRef.make(span)
-      micros = Clock.currentTime(TimeUnit.MICROSECONDS)
+    val acquire: URIO[Scope, OpenTracing] = for {
+      span         <- ZIO.succeed(tracer.buildSpan(rootOperation).start())
+      rootSpan     <- FiberRef.make(span)
+      currentMicros = Clock.currentTime(TimeUnit.MICROSECONDS)
     } yield new OpenTracing { self =>
-      val currentSpan: FiberRef[Span] = ref
+      val currentSpan: FiberRef[Span] = rootSpan
 
       def getCurrentSpan: UIO[Span] = currentSpan.get
 
       def context: UIO[SpanContext] =
+        getCurrentSpanContext
+
+      def getCurrentSpanContext: UIO[SpanContext] =
         getCurrentSpan.map(_.context)
 
       def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit] =
@@ -65,13 +69,14 @@ object OpenTracing {
           _ <- ZIO.succeed(span.log(Map("error.object" -> cause, "stack" -> cause.prettyPrint).asJava)).when(logError)
         } yield ()
 
-      def finish(span: Span): UIO[Unit] = micros.map(span.finish)
+      def finish(span: Span): UIO[Unit] =
+        currentMicros.flatMap(micros => ZIO.succeed(span.finish(micros)))
 
       def log[R, E, A](zio: ZIO[R, E, A], fields: Map[String, _]): ZIO[R, E, A] =
-        zio <* getCurrentSpan.zipWith(micros)((span, now) => span.log(now, fields.asJava))
+        zio <* getCurrentSpan.zipWith(currentMicros)((span, now) => span.log(now, fields.asJava))
 
       def log[R, E, A](zio: ZIO[R, E, A], msg: String): ZIO[R, E, A] =
-        zio <* getCurrentSpan.zipWith(micros)((span, now) => span.log(now, msg))
+        zio <* getCurrentSpan.zipWith(currentMicros)((span, now) => span.log(now, msg))
 
       def root[R, E, A](zio: ZIO[R, E, A], operation: String, tagError: Boolean, logError: Boolean): ZIO[R, E, A] =
         for {
@@ -141,7 +146,10 @@ object OpenTracing {
         } yield ()
     }
 
-    ZIO.acquireRelease(tracing)(_.getCurrentSpan.flatMap(span => ZIO.succeed(span.finish())))
+    def release(tracing: OpenTracing) =
+      tracing.getCurrentSpan.flatMap(span => ZIO.succeed(span.finish()))
+
+    ZIO.acquireRelease(acquire)(release)
   }
 
   def getCurrentSpan: URIO[OpenTracing, Span] =
@@ -158,7 +166,10 @@ object OpenTracing {
     ZIO.serviceWithZIO[OpenTracing](_.spanFrom(format, carrier, zio, operation, tagError, logError))
 
   def context: URIO[OpenTracing, SpanContext] =
-    ZIO.serviceWithZIO[OpenTracing](_.context)
+    getCurrentSpanContext
+
+  def getCurrentSpanContext: URIO[OpenTracing, SpanContext] =
+    ZIO.serviceWithZIO[OpenTracing](_.getCurrentSpanContext)
 
   def inject[C](format: Format[C], carrier: C): URIO[OpenTracing, Unit] =
     ZIO.serviceWithZIO[OpenTracing](_.inject(format, carrier))

@@ -7,6 +7,8 @@ import zio.telemetry.opencensus.Tracing.defaultMapper
 
 trait Tracing {
 
+  def getCurrentSpan: UIO[Span]
+
   def span[R, E, A](
     name: String,
     kind: Span.Kind = null,
@@ -49,8 +51,6 @@ trait Tracing {
     attrs: Map[String, AttributeValue]
   ): UIO[Unit]
 
-  private[opencensus] def end: UIO[Unit]
-
 }
 
 object Tracing {
@@ -59,11 +59,9 @@ object Tracing {
     ZLayer.scoped(ZIO.service[Tracer].flatMap(scoped))
 
   def scoped(tracer: Tracer): URIO[Scope, Tracing] = {
-    val tracing = for {
-      rootSpan <- FiberRef.make[Span](BlankSpan.INSTANCE)
+    val acquire = for {
+      currentSpan <- FiberRef.make[Span](BlankSpan.INSTANCE)
     } yield new Tracing { self =>
-      val currentSpan: FiberRef[Span] = rootSpan
-
       def getCurrentSpan: UIO[Span] = currentSpan.get
 
       def span[R, E, A](
@@ -185,12 +183,6 @@ object Tracing {
                  .tapErrorCause(setErrorStatus(span, _, toErrorStatus))
         } yield r
 
-      private[opencensus] def end: UIO[Unit] =
-        for {
-          span <- getCurrentSpan
-          _    <- ZIO.succeed(span.end())
-        } yield ()
-
       private def setErrorStatus[E](
         span: Span,
         cause: Cause[E],
@@ -203,7 +195,10 @@ object Tracing {
 
     }
 
-    ZIO.acquireRelease(tracing)(_.end)
+    def release(tracing: Tracing) =
+      tracing.getCurrentSpan.flatMap(span => ZIO.succeed(span.end()))
+
+    ZIO.acquireRelease(acquire)(release)
   }
 
   def defaultMapper[E]: ErrorMapper[E] =
