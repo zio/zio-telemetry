@@ -16,15 +16,15 @@ import scala.jdk.CollectionConverters._
 
 final case class BackendApp(tracing: Tracing) {
 
-  val routes: HttpApp[Tracing, Throwable] =
+  val routes: HttpApp[Any, Throwable] =
     Http.collectZIO { case request @ Method.GET -> !! / "status" =>
-      val response = for {
-        _        <- tracing.addEvent("event from backend before response")
-        response <- ZIO.succeed(Response.json(ServiceStatus.up("backend").toJson))
-        _        <- tracing.addEvent("event from backend after response")
-      } yield response
-
-      response.spanFrom(propagator, request.headers, getter, "/status", SpanKind.SERVER)
+      tracing.spanFrom(propagator, request.headers, getter, "/status", SpanKind.SERVER, Map.empty) {
+        for {
+          _        <- tracing.addEvent("event from backend before response")
+          response <- ZIO.succeed(Response.json(ServiceStatus.up("backend").toJson))
+          _        <- tracing.addEvent("event from backend after response")
+        } yield response
+      }
     }
 }
 
