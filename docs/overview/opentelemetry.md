@@ -21,25 +21,40 @@ To use ZIO Telemetry, you will need a `Tracing` service in your environment. You
 import io.opentelemetry.api.trace.{ SpanKind, StatusCode }
 import zio._
 import zio.telemetry.opentelemetry.Tracing
-import zio.telemetry.opentelemetry.Tracing.root
 
 val errorMapper = { case _ => StatusCode.UNSET }
 
-val app = 
+final case class App(tracing: Tracing) {
+
+  val run =
   //start root span that lasts until the effect finishes
-  root("root span", SpanKind.INTERNAL, errorMapper) {
-    for {
-      //sets an attribute to the current span
-      _ <- Tracing.setAttribute("foo", "bar")
-      //adds an event to the current span
-      _       <- Tracing.addEvent("foo")
-      message <- Console.readline
-      _       <- Tracing.addEvent("bar")
-    } yield message
-  }.provideLayer(tracer >>> Tracing.live)
+    tracing.root("root span", SpanKind.INTERNAL, errorMapper) {
+      for {
+        //sets an attribute to the current span
+        _ <- tracing.setAttribute("foo", "bar")
+        //adds an event to the current span
+        _       <- tracing.addEvent("foo")
+        message <- Console.readLine
+        _       <- tracing.addEvent("bar")
+      } yield message
+    }
+  }
+}
+
+object App {
+  val layer = ZLayer.fromFunction(App.apply _)
+}
+
+val app = ZIO
+  .serviceWithZIO[App](_.run)
+  .provide(
+    tracer,
+    Tracing.live,
+    App.layer
+  )
 ```
 
-After importing `import zio.telemetry.opentelemetry._`, additional combinators
+After importing `import zio.telemetry.opentelemetry.TracingSyntax._`, additional combinators
 on `ZIO`s are available to support starting child spans, adding events and setting attributes.
 
 ```scala
