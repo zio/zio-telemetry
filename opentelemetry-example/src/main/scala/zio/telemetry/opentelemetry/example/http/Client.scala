@@ -5,7 +5,7 @@ import sttp.capabilities.zio.ZioStreams
 import sttp.client3._
 import sttp.client3.ziojson._
 import zio.telemetry.opentelemetry.example.config.AppConfig
-import zio.{ Task, ZIO, ZLayer }
+import zio.{ Task, ZLayer }
 import Client._
 
 final case class Client(conf: AppConfig, backend: Backend) {
