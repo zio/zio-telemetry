@@ -14,7 +14,8 @@ import scala.jdk.CollectionConverters._
 
 trait Tracing {
 
-  def getCurrentContext: UIO[Context] = currentContext.get
+  def getCurrentContext: UIO[Context] =
+    currentContext.get
 
   def getCurrentSpan: UIO[Span] =
     getCurrentContext.map(Span.fromContext)
@@ -322,16 +323,16 @@ trait Tracing {
 
   private[opentelemetry] def createChildOfUnsafe(parent: Context, spanName: String, spanKind: SpanKind): UIO[Context]
 
-  private[opentelemetry] def getTracer: UIO[Tracer]
-
   private[opentelemetry] def end: UIO[Any]
 }
 
 object Tracing {
 
-  def getCurrentContext: URIO[Tracing, Context] = ZIO.serviceWithZIO(_.getCurrentContext)
+  def getCurrentContext: URIO[Tracing, Context] =
+    ZIO.serviceWithZIO(_.getCurrentContext)
 
-  def getCurrentSpan: URIO[Tracing, Span] = ZIO.serviceWithZIO(_.getCurrentSpan)
+  def getCurrentSpan: URIO[Tracing, Span] =
+    ZIO.serviceWithZIO(_.getCurrentSpan)
 
   /**
    * Extracts the span from carrier `C` and set its child span with name 'spanName' as the current span. Ends the span
@@ -573,9 +574,6 @@ object Tracing {
           span     = Span.fromContext(context)
         } yield span.end(nanos, TimeUnit.NANOSECONDS)
 
-      override private[opentelemetry] def getTracer: UIO[Tracer] =
-        ZIO.succeed(tracer)
-
       val currentContext: FiberRef[Context] = defaultContext
     }
 
@@ -585,5 +583,7 @@ object Tracing {
     ZIO.acquireRelease(tracing)(_.end)
   }
 
-  def live: URLayer[Tracer, Tracing] = ZLayer.scoped(ZIO.service[Tracer].flatMap(scoped))
+  def live: URLayer[Tracer, Tracing] =
+    ZLayer.scoped(ZIO.service[Tracer].flatMap(scoped))
+
 }

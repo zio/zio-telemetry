@@ -15,8 +15,8 @@ object JaegerTracer {
 
   def live: RLayer[AppConfig, Tracer] =
     ZLayer(for {
-      c              <- ZIO.service[AppConfig]
-      spanExporter   <- ZIO.attempt(JaegerGrpcSpanExporter.builder().setEndpoint(c.tracer.host).build())
+      config         <- ZIO.service[AppConfig]
+      spanExporter   <- ZIO.attempt(JaegerGrpcSpanExporter.builder().setEndpoint(config.tracer.host).build())
       spanProcessor  <- ZIO.succeed(SimpleSpanProcessor.create(spanExporter))
       tracerProvider <-
         ZIO.succeed(
