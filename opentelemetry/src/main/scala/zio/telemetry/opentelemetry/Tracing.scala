@@ -190,20 +190,18 @@ object Tracing {
 
   def scoped(tracer: Tracer): URIO[Scope, Tracing] = {
     val acquire: URIO[Scope, Tracing] = for {
-      defaultContext <- FiberRef.make[Context](Context.root())
+      currentContext <- FiberRef.make[Context](Context.root())
     } yield new Tracing { self =>
-      val currentContext: FiberRef[Context] = defaultContext
-
-      def getCurrentContext: UIO[Context] =
+      override def getCurrentContext: UIO[Context] =
         currentContext.get
 
-      def getCurrentSpan: UIO[Span] =
+      override def getCurrentSpan: UIO[Span] =
         getCurrentContext.map(Span.fromContext)
 
-      def getCurrentSpanContext: UIO[SpanContext] =
+      override def getCurrentSpanContext: UIO[SpanContext] =
         getCurrentSpan.map(_.getSpanContext())
 
-      def spanFrom[C, R, E, A](
+      override def spanFrom[C, R, E, A](
         propagator: TextMapPropagator,
         carrier: C,
         getter: TextMapGetter[C],
@@ -221,7 +219,7 @@ object Tracing {
           }
         }
 
-      def spanFromUnsafe[C](
+      override def spanFromUnsafe[C](
         propagator: TextMapPropagator,
         carrier: C,
         getter: TextMapGetter[C],
@@ -236,7 +234,7 @@ object Tracing {
           finalize = end *> currentContext.set(old)
         } yield (span, finalize)
 
-      def root[R, E, A](
+      override def root[R, E, A](
         spanName: String,
         spanKind: SpanKind,
         toErrorStatus: PartialFunction[E, StatusCode]
@@ -249,7 +247,7 @@ object Tracing {
           finalizeSpanUsingEffect(effect, ctx, toErrorStatus)
         }
 
-      def span[R, E, A](
+      override def span[R, E, A](
         spanName: String,
         spanKind: SpanKind,
         toErrorStatus: PartialFunction[E, StatusCode]
@@ -264,7 +262,7 @@ object Tracing {
           }
         }
 
-      def spanUnsafe(
+      override def spanUnsafe(
         spanName: String,
         spanKind: SpanKind
       ): UIO[(Span, UIO[Any])] =
@@ -276,7 +274,7 @@ object Tracing {
           finalize = end *> currentContext.set(old)
         } yield (span, finalize)
 
-      def scopedEffect[A](effect: => A): Task[A] =
+      override def scopedEffect[A](effect: => A): Task[A] =
         for {
           currentContext <- getCurrentContext
           eff            <- ZIO.attempt {
@@ -286,7 +284,7 @@ object Tracing {
                             }
         } yield eff
 
-      def scopedEffectTotal[A](effect: => A): UIO[A] =
+      override def scopedEffectTotal[A](effect: => A): UIO[A] =
         for {
           currentContext <- getCurrentContext
           eff            <- ZIO.succeed {
@@ -296,7 +294,7 @@ object Tracing {
                             }
         } yield eff
 
-      def scopedEffectFromFuture[A](make: ExecutionContext => scala.concurrent.Future[A]): Task[A] =
+      override def scopedEffectFromFuture[A](make: ExecutionContext => scala.concurrent.Future[A]): Task[A] =
         for {
           currentContext <- getCurrentContext
           eff            <- ZIO.fromFuture { implicit ec =>
@@ -306,7 +304,7 @@ object Tracing {
                             }
         } yield eff
 
-      def inject[C](
+      override def inject[C](
         propagator: TextMapPropagator,
         carrier: C,
         setter: TextMapSetter[C]
@@ -316,7 +314,7 @@ object Tracing {
           _       <- injectContext(current, propagator, carrier, setter)
         } yield ()
 
-      def inSpan[R, E, A](
+      override def inSpan[R, E, A](
         span: Span,
         spanName: String,
         spanKind: SpanKind,
@@ -330,13 +328,13 @@ object Tracing {
           finalizeSpanUsingEffect(effect, ctx, toErrorStatus)
         }
 
-      def addEvent(name: String): UIO[Span] =
+      override def addEvent(name: String): UIO[Span] =
         for {
           nanoSeconds <- currentNanos
           span        <- getCurrentSpan
         } yield span.addEvent(name, nanoSeconds, TimeUnit.NANOSECONDS)
 
-      def addEventWithAttributes(
+      override def addEventWithAttributes(
         name: String,
         attributes: Attributes
       ): UIO[Span] =
@@ -345,32 +343,32 @@ object Tracing {
           span        <- getCurrentSpan
         } yield span.addEvent(name, attributes, nanoSeconds, TimeUnit.NANOSECONDS)
 
-      def setAttribute(name: String, value: Boolean): UIO[Span] =
+      override def setAttribute(name: String, value: Boolean): UIO[Span] =
         getCurrentSpan.map(_.setAttribute(name, value))
 
-      def setAttribute(name: String, value: Double): UIO[Span] =
+      override def setAttribute(name: String, value: Double): UIO[Span] =
         getCurrentSpan.map(_.setAttribute(name, value))
 
-      def setAttribute(name: String, value: Long): UIO[Span] =
+      override def setAttribute(name: String, value: Long): UIO[Span] =
         getCurrentSpan.map(_.setAttribute(name, value))
 
-      def setAttribute(name: String, value: String): UIO[Span] =
+      override def setAttribute(name: String, value: String): UIO[Span] =
         getCurrentSpan.map(_.setAttribute(name, value))
 
-      def setAttribute[T](key: AttributeKey[T], value: T): UIO[Span] =
+      override def setAttribute[T](key: AttributeKey[T], value: T): UIO[Span] =
         getCurrentSpan.map(_.setAttribute(key, value))
 
-      def setAttribute(name: String, values: Seq[String]): UIO[Span] = {
+      override def setAttribute(name: String, values: Seq[String]): UIO[Span] = {
         val v = values.asJava
         getCurrentSpan.map(_.setAttribute(AttributeKey.stringArrayKey(name), v))
       }
 
-      def setAttribute(name: String, values: Seq[Boolean])(implicit i1: DummyImplicit): UIO[Span] = {
+      override def setAttribute(name: String, values: Seq[Boolean])(implicit i1: DummyImplicit): UIO[Span] = {
         val v = values.map(Boolean.box).asJava
         getCurrentSpan.map(_.setAttribute(AttributeKey.booleanArrayKey(name), v))
       }
 
-      def setAttribute(name: String, values: Seq[Long])(implicit
+      override def setAttribute(name: String, values: Seq[Long])(implicit
         i1: DummyImplicit,
         i2: DummyImplicit
       ): UIO[Span] = {
@@ -378,7 +376,7 @@ object Tracing {
         getCurrentSpan.map(_.setAttribute(AttributeKey.longArrayKey(name), v))
       }
 
-      def setAttribute(name: String, values: Seq[Double])(implicit
+      override def setAttribute(name: String, values: Seq[Double])(implicit
         i1: DummyImplicit,
         i2: DummyImplicit,
         i3: DummyImplicit
@@ -387,18 +385,12 @@ object Tracing {
         getCurrentSpan.map(_.setAttribute(AttributeKey.doubleArrayKey(name), v))
       }
 
-      /**
-       * Sets a baggage entry in the current context
-       */
-      def setBaggage(name: String, value: String): UIO[Context] =
+      override def setBaggage(name: String, value: String): UIO[Context] =
         currentContext.updateAndGet(context =>
           Baggage.fromContext(context).toBuilder.put(name, value).build().storeInContext(context)
         )
 
-      /**
-       * Gets the baggage from current context
-       */
-      def getCurrentBaggage: UIO[Baggage] =
+      override def getCurrentBaggage: UIO[Baggage] =
         getCurrentContext.map(Baggage.fromContext)
 
       private def setErrorStatus[E](

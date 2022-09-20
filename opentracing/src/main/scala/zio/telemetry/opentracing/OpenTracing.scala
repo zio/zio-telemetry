@@ -11,10 +11,10 @@ import scala.jdk.CollectionConverters._
 
 trait OpenTracing {
 
-  @deprecated("The method will become private, use getCurrentSpan instead", "2.1.0")
+  @deprecated("The method will become private, use getCurrentSpan instead", "zio-opentracing 2.1.0")
   def currentSpan: FiberRef[Span]
   def getCurrentSpan: UIO[Span]
-  @deprecated("The method will be renamed to getCurrentSpanContext", "2.1.0")
+  @deprecated("The method will be renamed to getCurrentSpanContext", "zio-opentracing 2.1.0")
   def context: UIO[SpanContext]
   def getCurrentSpanContext: UIO[SpanContext]
   def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit]
@@ -53,32 +53,37 @@ object OpenTracing {
       rootSpan     <- FiberRef.make(span)
       currentMicros = Clock.currentTime(TimeUnit.MICROSECONDS)
     } yield new OpenTracing { self =>
-      val currentSpan: FiberRef[Span] = rootSpan
+      override val currentSpan: FiberRef[Span] = rootSpan
 
-      def getCurrentSpan: UIO[Span] = currentSpan.get
+      override def getCurrentSpan: UIO[Span] = currentSpan.get
 
-      def context: UIO[SpanContext] =
+      override def context: UIO[SpanContext] =
         getCurrentSpanContext
 
-      def getCurrentSpanContext: UIO[SpanContext] =
+      override def getCurrentSpanContext: UIO[SpanContext] =
         getCurrentSpan.map(_.context)
 
-      def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit] =
+      override def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit] =
         for {
           _ <- ZIO.succeed(span.setTag("error", true)).when(tagError)
           _ <- ZIO.succeed(span.log(Map("error.object" -> cause, "stack" -> cause.prettyPrint).asJava)).when(logError)
         } yield ()
 
-      def finish(span: Span): UIO[Unit] =
+      override def finish(span: Span): UIO[Unit] =
         currentMicros.flatMap(micros => ZIO.succeed(span.finish(micros)))
 
-      def log[R, E, A](zio: ZIO[R, E, A], fields: Map[String, _]): ZIO[R, E, A] =
+      override def log[R, E, A](zio: ZIO[R, E, A], fields: Map[String, _]): ZIO[R, E, A] =
         zio <* getCurrentSpan.zipWith(currentMicros)((span, now) => span.log(now, fields.asJava))
 
-      def log[R, E, A](zio: ZIO[R, E, A], msg: String): ZIO[R, E, A] =
+      override def log[R, E, A](zio: ZIO[R, E, A], msg: String): ZIO[R, E, A] =
         zio <* getCurrentSpan.zipWith(currentMicros)((span, now) => span.log(now, msg))
 
-      def root[R, E, A](zio: ZIO[R, E, A], operation: String, tagError: Boolean, logError: Boolean): ZIO[R, E, A] =
+      override def root[R, E, A](
+        zio: ZIO[R, E, A],
+        operation: String,
+        tagError: Boolean,
+        logError: Boolean
+      ): ZIO[R, E, A] =
         for {
           root    <- ZIO.succeed(tracer.buildSpan(operation).start())
           current <- getCurrentSpan
@@ -88,16 +93,21 @@ object OpenTracing {
                        .ensuring(finish(root) *> currentSpan.set(current))
         } yield res
 
-      def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A] =
+      override def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A] =
         zio <* getCurrentSpan.map(_.setBaggageItem(key, value))
 
-      def getBaggageItem(key: String): UIO[Option[String]] =
+      override def getBaggageItem(key: String): UIO[Option[String]] =
         for {
           span <- getCurrentSpan
           res  <- ZIO.succeed(span.getBaggageItem(key)).map(Option(_))
         } yield res
 
-      def span[R, E, A](zio: ZIO[R, E, A], operation: String, tagError: Boolean, logError: Boolean): ZIO[R, E, A] =
+      override def span[R, E, A](
+        zio: ZIO[R, E, A],
+        operation: String,
+        tagError: Boolean,
+        logError: Boolean
+      ): ZIO[R, E, A] =
         for {
           current <- getCurrentSpan
           child   <- ZIO.succeed(tracer.buildSpan(operation).asChildOf(current).start())
@@ -107,7 +117,7 @@ object OpenTracing {
                        .ensuring(finish(child) *> currentSpan.set(current))
         } yield res
 
-      def spanFrom[R, E, Span, C](
+      override def spanFrom[R, E, Span, C](
         format: Format[C],
         carrier: C,
         zio: ZIO[R, E, Span],
@@ -130,16 +140,16 @@ object OpenTracing {
               } yield res
           )
 
-      def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A] =
+      override def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A] =
         zio <* getCurrentSpan.map(_.setTag(key, value))
 
-      def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Int): ZIO[R, E, A] =
+      override def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Int): ZIO[R, E, A] =
         zio <* getCurrentSpan.map(_.setTag(key, value))
 
-      def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Boolean): ZIO[R, E, A] =
+      override def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Boolean): ZIO[R, E, A] =
         zio <* getCurrentSpan.map(_.setTag(key, value))
 
-      def inject[C](format: Format[C], carrier: C): UIO[Unit] =
+      override def inject[C](format: Format[C], carrier: C): UIO[Unit] =
         for {
           span <- getCurrentSpan
           _    <- ZIO.succeed(tracer.inject(span.context(), format, carrier))

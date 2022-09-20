@@ -62,9 +62,9 @@ object Tracing {
     val acquire = for {
       currentSpan <- FiberRef.make[Span](BlankSpan.INSTANCE)
     } yield new Tracing { self =>
-      def getCurrentSpan: UIO[Span] = currentSpan.get
+      override def getCurrentSpan: UIO[Span] = currentSpan.get
 
-      def span[R, E, A](
+      override def span[R, E, A](
         name: String,
         kind: Span.Kind = Span.Kind.SERVER,
         toErrorStatus: ErrorMapper[E],
@@ -78,7 +78,7 @@ object Tracing {
           } yield res
         }
 
-      def root[R, E, A](
+      override def root[R, E, A](
         name: String,
         kind: Span.Kind,
         toErrorStatus: ErrorMapper[E],
@@ -93,7 +93,7 @@ object Tracing {
           )
         }
 
-      def fromRemoteSpan[R, E, A](
+      override def fromRemoteSpan[R, E, A](
         remote: SpanContext,
         name: String,
         kind: Span.Kind,
@@ -109,7 +109,7 @@ object Tracing {
           )
         }
 
-      def fromRootSpan[C, R, E, A](
+      override def fromRootSpan[C, R, E, A](
         format: TextFormat,
         carrier: C,
         getter: TextFormat.Getter[C],
@@ -125,7 +125,7 @@ object Tracing {
             remote => fromRemoteSpan(remote, name, kind, toErrorStatus, attributes)(effect)
           )
 
-      def putAttributes(
+      override def putAttributes(
         attributes: Map[String, AttributeValue]
       ): UIO[Unit] =
         for {
@@ -135,7 +135,7 @@ object Tracing {
                      })
         } yield ()
 
-      def inject[C](
+      override def inject[C](
         format: TextFormat,
         carrier: C,
         setter: TextFormat.Setter[C]
