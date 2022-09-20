@@ -17,7 +17,7 @@ final case class BackendApp(tracing: Tracing) {
 
   val routes: HttpApp[Any, Throwable] =
     Http.collectZIO { case request @ Method.GET -> !! / "status" =>
-      tracing.spanFrom(propagator, request.headers, getter, "/status", SpanKind.SERVER, Map.empty) {
+      tracing.spanFrom(propagator, request.headers, getter, "/status", SpanKind.SERVER, Map.empty[Throwable, Nothing]) {
         for {
           _        <- tracing.addEvent("event from backend before response")
           response <- ZIO.succeed(Response.json(ServiceStatus.up("backend").toJson))
