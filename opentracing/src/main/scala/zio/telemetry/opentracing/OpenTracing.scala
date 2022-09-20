@@ -10,9 +10,12 @@ import zio._
 import scala.jdk.CollectionConverters._
 
 trait OpenTracing {
-  private[opentracing] val tracer: Tracer
 
+  @deprecated("The method will become private, use getCurrentSpan instead", "2.1.0")
   def currentSpan: FiberRef[Span]
+  def getCurrentSpan: UIO[Span]
+  @deprecated("The method will be renamed to getCurrentSpanContext", "2.1.0")
+  def context: UIO[SpanContext]
   def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit]
   def finish(span: Span): UIO[Unit]
   def log[R, E, A](zio: ZIO[R, E, A], fields: Map[String, _]): ZIO[R, E, A]
@@ -43,99 +46,106 @@ object OpenTracing {
   def live(tracer: Tracer, rootOperation: String = "ROOT"): ULayer[OpenTracing] =
     ZLayer.scoped(scoped(tracer, rootOperation))
 
-  def scoped(tracer0: Tracer, rootOperation: String): URIO[Scope, OpenTracing] =
-    ZIO.acquireRelease(
-      for {
-        span  <- ZIO.succeed(tracer0.buildSpan(rootOperation).start())
-        ref   <- FiberRef.make(span)
-        micros = Clock.currentTime(TimeUnit.MICROSECONDS)
-      } yield new OpenTracing { self =>
-        val tracer: Tracer = tracer0
+  def scoped(tracer: Tracer, rootOperation: String): URIO[Scope, OpenTracing] = {
+    val tracing: URIO[Scope, OpenTracing] = for {
+      span  <- ZIO.succeed(tracer.buildSpan(rootOperation).start())
+      ref   <- FiberRef.make(span)
+      micros = Clock.currentTime(TimeUnit.MICROSECONDS)
+    } yield new OpenTracing { self =>
+      val currentSpan: FiberRef[Span] = ref
 
-        val currentSpan: FiberRef[Span] = ref
+      def getCurrentSpan: UIO[Span] = currentSpan.get
 
-        def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit] =
-          for {
-            _ <- ZIO.succeed(span.setTag("error", true)).when(tagError)
-            _ <- ZIO.succeed(span.log(Map("error.object" -> cause, "stack" -> cause.prettyPrint).asJava)).when(logError)
-          } yield ()
+      def context: UIO[SpanContext] =
+        getCurrentSpan.map(_.context)
 
-        def finish(span: Span): UIO[Unit] = micros.map(span.finish)
+      def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit] =
+        for {
+          _ <- ZIO.succeed(span.setTag("error", true)).when(tagError)
+          _ <- ZIO.succeed(span.log(Map("error.object" -> cause, "stack" -> cause.prettyPrint).asJava)).when(logError)
+        } yield ()
 
-        def log[R, E, A](zio: ZIO[R, E, A], fields: Map[String, _]): ZIO[R, E, A] =
-          zio <* currentSpan.get.zipWith(micros)((span, now) => span.log(now, fields.asJava))
+      def finish(span: Span): UIO[Unit] = micros.map(span.finish)
 
-        def log[R, E, A](zio: ZIO[R, E, A], msg: String): ZIO[R, E, A] =
-          zio <* currentSpan.get.zipWith(micros)((span, now) => span.log(now, msg))
+      def log[R, E, A](zio: ZIO[R, E, A], fields: Map[String, _]): ZIO[R, E, A] =
+        zio <* getCurrentSpan.zipWith(micros)((span, now) => span.log(now, fields.asJava))
 
-        def root[R, E, A](zio: ZIO[R, E, A], operation: String, tagError: Boolean, logError: Boolean): ZIO[R, E, A] =
-          for {
-            root    <- ZIO.succeed(tracer.buildSpan(operation).start())
-            current <- currentSpan.get
-            _       <- currentSpan.set(root)
-            res     <- zio
-                         .catchAllCause(c => error(root, c, tagError, logError) *> ZIO.done(Exit.Failure(c)))
-                         .ensuring(finish(root) *> currentSpan.set(current))
-          } yield res
+      def log[R, E, A](zio: ZIO[R, E, A], msg: String): ZIO[R, E, A] =
+        zio <* getCurrentSpan.zipWith(micros)((span, now) => span.log(now, msg))
 
-        def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A] =
-          zio <* currentSpan.get.map(_.setBaggageItem(key, value))
+      def root[R, E, A](zio: ZIO[R, E, A], operation: String, tagError: Boolean, logError: Boolean): ZIO[R, E, A] =
+        for {
+          root    <- ZIO.succeed(tracer.buildSpan(operation).start())
+          current <- getCurrentSpan
+          _       <- currentSpan.set(root)
+          res     <- zio
+                       .catchAllCause(c => error(root, c, tagError, logError) *> ZIO.done(Exit.Failure(c)))
+                       .ensuring(finish(root) *> currentSpan.set(current))
+        } yield res
 
-        def getBaggageItem(key: String): UIO[Option[String]] =
-          for {
-            span <- currentSpan.get
-            res  <- ZIO.succeed(span.getBaggageItem(key)).map(Option(_))
-          } yield res
+      def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A] =
+        zio <* getCurrentSpan.map(_.setBaggageItem(key, value))
 
-        def span[R, E, A](zio: ZIO[R, E, A], operation: String, tagError: Boolean, logError: Boolean): ZIO[R, E, A] =
-          for {
-            current <- currentSpan.get
-            child   <- ZIO.succeed(tracer.buildSpan(operation).asChildOf(current).start())
-            _       <- currentSpan.set(child)
-            res     <- zio
-                         .catchAllCause(c => error(child, c, tagError, logError) *> ZIO.done(Exit.Failure(c)))
-                         .ensuring(finish(child) *> currentSpan.set(current))
-          } yield res
+      def getBaggageItem(key: String): UIO[Option[String]] =
+        for {
+          span <- getCurrentSpan
+          res  <- ZIO.succeed(span.getBaggageItem(key)).map(Option(_))
+        } yield res
 
-        def spanFrom[R, E, Span, C](
-          format: Format[C],
-          carrier: C,
-          zio: ZIO[R, E, Span],
-          operation: String,
-          tagError: Boolean = true,
-          logError: Boolean = true
-        ): ZIO[R, E, Span] =
-          ZIO
-            .attempt(tracer.extract(format, carrier))
-            .foldZIO(
-              _ => zio,
-              spanCtx =>
-                for {
-                  current <- currentSpan.get
-                  span    <- ZIO.succeed(tracer.buildSpan(operation).asChildOf(spanCtx).start())
-                  _       <- currentSpan.set(span)
-                  res     <- zio
-                               .catchAllCause(c => error(span, c, tagError, logError) *> ZIO.done(Exit.Failure(c)))
-                               .ensuring(finish(span) *> currentSpan.set(current))
-                } yield res
-            )
+      def span[R, E, A](zio: ZIO[R, E, A], operation: String, tagError: Boolean, logError: Boolean): ZIO[R, E, A] =
+        for {
+          current <- getCurrentSpan
+          child   <- ZIO.succeed(tracer.buildSpan(operation).asChildOf(current).start())
+          _       <- currentSpan.set(child)
+          res     <- zio
+                       .catchAllCause(c => error(child, c, tagError, logError) *> ZIO.done(Exit.Failure(c)))
+                       .ensuring(finish(child) *> currentSpan.set(current))
+        } yield res
 
-        def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A] =
-          zio <* currentSpan.get.map(_.setTag(key, value))
+      def spanFrom[R, E, Span, C](
+        format: Format[C],
+        carrier: C,
+        zio: ZIO[R, E, Span],
+        operation: String,
+        tagError: Boolean = true,
+        logError: Boolean = true
+      ): ZIO[R, E, Span] =
+        ZIO
+          .attempt(tracer.extract(format, carrier))
+          .foldZIO(
+            _ => zio,
+            spanCtx =>
+              for {
+                current <- getCurrentSpan
+                span    <- ZIO.succeed(tracer.buildSpan(operation).asChildOf(spanCtx).start())
+                _       <- currentSpan.set(span)
+                res     <- zio
+                             .catchAllCause(c => error(span, c, tagError, logError) *> ZIO.done(Exit.Failure(c)))
+                             .ensuring(finish(span) *> currentSpan.set(current))
+              } yield res
+          )
 
-        def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Int): ZIO[R, E, A] =
-          zio <* currentSpan.get.map(_.setTag(key, value))
+      def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A] =
+        zio <* getCurrentSpan.map(_.setTag(key, value))
 
-        def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Boolean): ZIO[R, E, A] =
-          zio <* currentSpan.get.map(_.setTag(key, value))
+      def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Int): ZIO[R, E, A] =
+        zio <* getCurrentSpan.map(_.setTag(key, value))
 
-        def inject[C](format: Format[C], carrier: C): UIO[Unit] =
-          for {
-            span <- currentSpan.get
-            _    <- ZIO.succeed(tracer.inject(span.context(), format, carrier))
-          } yield ()
-      }
-    )(_.currentSpan.get.flatMap(span => ZIO.succeed(span.finish())))
+      def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Boolean): ZIO[R, E, A] =
+        zio <* getCurrentSpan.map(_.setTag(key, value))
+
+      def inject[C](format: Format[C], carrier: C): UIO[Unit] =
+        for {
+          span <- getCurrentSpan
+          _    <- ZIO.succeed(tracer.inject(span.context(), format, carrier))
+        } yield ()
+    }
+
+    ZIO.acquireRelease(tracing)(_.getCurrentSpan.flatMap(span => ZIO.succeed(span.finish())))
+  }
+
+  def getCurrentSpan: URIO[OpenTracing, Span] =
+    ZIO.serviceWithZIO[OpenTracing](_.getCurrentSpan)
 
   def spanFrom[R, E, Span, C](
     format: Format[C],
@@ -148,7 +158,7 @@ object OpenTracing {
     ZIO.serviceWithZIO[OpenTracing](_.spanFrom(format, carrier, zio, operation, tagError, logError))
 
   def context: URIO[OpenTracing, SpanContext] =
-    ZIO.serviceWithZIO(_.currentSpan.get.map(_.context))
+    ZIO.serviceWithZIO[OpenTracing](_.context)
 
   def inject[C](format: Format[C], carrier: C): URIO[OpenTracing, Unit] =
     ZIO.serviceWithZIO[OpenTracing](_.inject(format, carrier))
