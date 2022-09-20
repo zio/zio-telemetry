@@ -154,17 +154,32 @@ trait Tracing {
    */
   def setAttribute(name: String, value: String): UIO[Span]
 
+  /**
+   * Sets an attribute of the current span.
+   */
   def setAttribute[T](key: AttributeKey[T], value: T): UIO[Span]
 
+  /**
+   * Sets an attribute of the current span.
+   */
   def setAttribute(name: String, values: Seq[String]): UIO[Span]
 
+  /**
+   * Sets an attribute of the current span.
+   */
   def setAttribute(name: String, values: Seq[Boolean])(implicit i1: DummyImplicit): UIO[Span]
 
+  /**
+   * Sets an attribute of the current span.
+   */
   def setAttribute(name: String, values: Seq[Long])(implicit
     i1: DummyImplicit,
     i2: DummyImplicit
   ): UIO[Span]
 
+  /**
+   * Sets an attribute of the current span.
+   */
   def setAttribute(name: String, values: Seq[Double])(implicit
     i1: DummyImplicit,
     i2: DummyImplicit,
@@ -477,10 +492,9 @@ object Tracing {
   def getCurrentSpan: URIO[Tracing, Span] =
     ZIO.serviceWithZIO(_.getCurrentSpan)
 
-  /**
-   * Extracts the span from carrier `C` and set its child span with name 'spanName' as the current span. Ends the span
-   * when the effect finishes.
-   */
+  def getCurrentSpanContext: URIO[Tracing, SpanContext] =
+    ZIO.serviceWithZIO[Tracing](_.getCurrentSpanContext)
+
   def spanFrom[C, R, E, A](
     propagator: TextMapPropagator,
     carrier: C,
@@ -491,10 +505,6 @@ object Tracing {
   )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
     ZIO.serviceWithZIO[Tracing](_.spanFrom(propagator, carrier, getter, spanName, spanKind, toErrorStatus)(effect))
 
-  /**
-   * Extracts the span from carrier `C` and unsafely set its child span with name 'spanName' as the current span. You
-   * need to make sure to call the finalize effect to end the span. Primarily useful for interop.
-   */
   def spanFromUnsafe[C](
     propagator: TextMapPropagator,
     carrier: C,
@@ -504,9 +514,6 @@ object Tracing {
   ): URIO[Tracing, (Span, URIO[Tracing, Any])] =
     ZIO.serviceWithZIO[Tracing](_.spanFromUnsafe(propagator, carrier, getter, spanName, spanKind))
 
-  /**
-   * Sets the current span to be the new root span with name 'spanName' Ends the span when the effect finishes.
-   */
   def root[R, E, A](
     spanName: String,
     spanKind: SpanKind,
@@ -514,10 +521,6 @@ object Tracing {
   )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
     ZIO.serviceWithZIO[Tracing](_.root(spanName, spanKind, toErrorStatus)(effect))
 
-  /**
-   * Sets the current span to be the child of the current span with name 'spanName' Ends the span when the effect
-   * finishes.
-   */
   def span[R, E, A](
     spanName: String,
     spanKind: SpanKind,
@@ -525,48 +528,21 @@ object Tracing {
   )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
     ZIO.serviceWithZIO[Tracing](_.span(spanName, spanKind, toErrorStatus)(effect))
 
-  /**
-   * Unsafely sets the current span to be the child of the current span with name 'spanName' You need to manually call
-   * the finalizer to end the span. Useful for interop.
-   */
   def spanUnsafe(
     spanName: String,
     spanKind: SpanKind
   ): URIO[Tracing, (Span, ZIO[Tracing, Nothing, Any])] =
     ZIO.serviceWithZIO[Tracing](_.spanUnsafe(spanName, spanKind))
 
-  /**
-   * Introduces a thread-local scope during the execution allowing for non-zio context propagation.
-   *
-   * Closes the scope when the effect finishes.
-   */
   def scopedEffect[A](effect: => A): ZIO[Tracing, Throwable, A] =
     ZIO.serviceWithZIO[Tracing](_.scopedEffect(effect))
 
-  /**
-   * Introduces a thread-local scope during the execution allowing for non-zio context propagation.
-   *
-   * Closes the scope when the effect finishes.
-   */
   def scopedEffectTotal[A](effect: => A): ZIO[Tracing, Nothing, A] =
     ZIO.serviceWithZIO[Tracing](_.scopedEffectTotal(effect))
 
-  /**
-   * Introduces a thread-local scope from the currently active zio span allowing for non-zio context propagation. This
-   * scope will only be active during Future creation, so another mechanism must be used to ensure that the scope is
-   * passed into the Future callbacks.
-   *
-   * The java auto instrumentation package provides such a mechanism out of the box, so one is not provided as a part of
-   * this method.
-   *
-   * CLoses the scope when the effect finishes
-   */
   def scopedEffectFromFuture[A](make: ExecutionContext => scala.concurrent.Future[A]): ZIO[Tracing, Throwable, A] =
     ZIO.serviceWithZIO[Tracing](_.scopedEffectFromFuture(make))
 
-  /**
-   * Injects the current span into carrier `C`
-   */
   def inject[C](
     propagator: TextMapPropagator,
     carrier: C,
@@ -574,9 +550,6 @@ object Tracing {
   ): URIO[Tracing, Unit] =
     ZIO.serviceWithZIO[Tracing](_.inject(propagator, carrier, setter))
 
-  /**
-   * Create a child of 'span' with name 'spanName' as the current span. Ends the span when the effect finishes.
-   */
   def inSpan[R, E, A](
     span: Span,
     spanName: String,
@@ -585,42 +558,24 @@ object Tracing {
   )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
     ZIO.serviceWithZIO[Tracing](_.inSpan(span, spanName, spanKind, toErrorStatus)(effect))
 
-  /**
-   * Adds an event to the current span
-   */
   def addEvent(name: String): URIO[Tracing, Span] =
     ZIO.serviceWithZIO[Tracing](_.addEvent(name))
 
-  /**
-   * Adds an event with attributes to the current span.
-   */
   def addEventWithAttributes(
     name: String,
     attributes: Attributes
   ): URIO[Tracing, Span] =
     ZIO.serviceWithZIO[Tracing](_.addEventWithAttributes(name, attributes))
 
-  /**
-   * Sets an attribute of the current span.
-   */
   def setAttribute(name: String, value: Boolean): URIO[Tracing, Span] =
     ZIO.serviceWithZIO[Tracing](_.setAttribute(name, value))
 
-  /**
-   * Sets an attribute of the current span.
-   */
   def setAttribute(name: String, value: Double): URIO[Tracing, Span] =
     ZIO.serviceWithZIO[Tracing](_.setAttribute(name, value))
 
-  /**
-   * Sets an attribute of the current span.
-   */
   def setAttribute(name: String, value: Long): URIO[Tracing, Span] =
     ZIO.serviceWithZIO[Tracing](_.setAttribute(name, value))
 
-  /**
-   * Sets an attribute of the current span.
-   */
   def setAttribute(name: String, value: String): URIO[Tracing, Span] =
     ZIO.serviceWithZIO[Tracing](_.setAttribute(name, value))
 
@@ -646,22 +601,10 @@ object Tracing {
   ): URIO[Tracing, Span] =
     ZIO.serviceWithZIO[Tracing](_.setAttribute(name, values)(i1, i2, i3))
 
-  /**
-   * Sets a baggage entry in the current context
-   */
   def setBaggage(name: String, value: String): URIO[Tracing, Context] =
     ZIO.serviceWithZIO[Tracing](_.setBaggage(name, value))
 
-  /**
-   * Gets the baggage from current context
-   */
   def getCurrentBaggage: URIO[Tracing, Baggage] =
     ZIO.serviceWithZIO[Tracing](_.getCurrentBaggage)
-
-  /**
-   * Gets the current SpanContext
-   */
-  def getCurrentSpanContext: URIO[Tracing, SpanContext] =
-    ZIO.serviceWithZIO[Tracing](_.getCurrentSpanContext)
 
 }
