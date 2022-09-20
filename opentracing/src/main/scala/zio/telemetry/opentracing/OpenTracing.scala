@@ -13,18 +13,30 @@ trait OpenTracing {
 
   @deprecated("The method will become private, use getCurrentSpan instead", "zio-opentracing 2.1.0")
   def currentSpan: FiberRef[Span]
+
   def getCurrentSpan: UIO[Span]
+
   @deprecated("The method will be renamed to getCurrentSpanContext", "zio-opentracing 2.1.0")
   def context: UIO[SpanContext]
+
   def getCurrentSpanContext: UIO[SpanContext]
+
   def error(span: Span, cause: Cause[_], tagError: Boolean, logError: Boolean): UIO[Unit]
+
   def finish(span: Span): UIO[Unit]
+
   def log[R, E, A](zio: ZIO[R, E, A], fields: Map[String, _]): ZIO[R, E, A]
+
   def log[R, E, A](zio: ZIO[R, E, A], msg: String): ZIO[R, E, A]
+
   def root[R, E, A](zio: ZIO[R, E, A], operation: String, tagError: Boolean, logError: Boolean): ZIO[R, E, A]
+
   def setBaggageItem[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A]
+
   def getBaggageItem(key: String): UIO[Option[String]]
+
   def span[R, E, A](zio: ZIO[R, E, A], operation: String, tagError: Boolean, logError: Boolean): ZIO[R, E, A]
+
   def spanFrom[R, E, Span, C](
     format: Format[C],
     carrier: C,
@@ -33,10 +45,15 @@ trait OpenTracing {
     tagError: Boolean = true,
     logError: Boolean = true
   ): ZIO[R, E, Span]
+
   def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: String): ZIO[R, E, A]
+
   def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Int): ZIO[R, E, A]
+
   def tag[R, E, A](zio: ZIO[R, E, A], key: String, value: Boolean): ZIO[R, E, A]
+
   def inject[C](format: Format[C], carrier: C): UIO[Unit]
+
 }
 
 object OpenTracing {
