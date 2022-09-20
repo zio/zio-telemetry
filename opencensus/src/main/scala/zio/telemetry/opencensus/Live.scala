@@ -1,7 +1,6 @@
 package zio.telemetry.opencensus
 
 import zio._
-
 import io.opencensus.trace.AttributeValue
 import io.opencensus.trace.BlankSpan
 import io.opencensus.trace.Span
@@ -9,6 +8,7 @@ import io.opencensus.trace.SpanContext
 import io.opencensus.trace.Status
 import io.opencensus.trace.propagation.TextFormat
 import io.opencensus.trace.Tracer
+import zio.telemetry.opencensus.Tracing.defaultMapper
 
 object Live {
   val live: URLayer[Tracer, Tracing] =
@@ -69,14 +69,40 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing {
       )
     }
 
+  def fromRootSpan[C, R, E, A](
+    format: TextFormat,
+    carrier: C,
+    getter: TextFormat.Getter[C],
+    name: String,
+    kind: Span.Kind = Span.Kind.SERVER,
+    toErrorStatus: ErrorMapper[E] = defaultMapper[E],
+    attributes: Map[String, AttributeValue] = Map()
+  )(effect: ZIO[R, E, A]): ZIO[R, E, A] =
+    ZIO
+      .attempt(format.extract(carrier, getter))
+      .foldZIO(
+        _ => root(name, kind, toErrorStatus)(effect),
+        remote => fromRemoteSpan(remote, name, kind, toErrorStatus, attributes)(effect)
+      )
+
   def putAttributes(
     attributes: Map[String, AttributeValue]
-  ): ZIO[Any, Nothing, Unit] =
+  ): UIO[Unit] =
     for {
       current <- currentSpan_.get
       _       <- ZIO.succeed(attributes.foreach { case (k, v) =>
                    current.putAttribute(k, v)
                  })
+    } yield ()
+
+  def inject[C](
+    format: TextFormat,
+    carrier: C,
+    setter: TextFormat.Setter[C]
+  ): UIO[Unit] =
+    for {
+      current <- currentSpan
+      _       <- ZIO.succeed(format.inject(current.getContext, carrier, setter))
     } yield ()
 
   private def createSpan(
@@ -116,16 +142,6 @@ class Live(tracer: Tracer, root: FiberRef[Span]) extends Tracing {
              .locally(span)(effect)
              .tapErrorCause(setErrorStatus(span, _, toErrorStatus))
     } yield r
-
-  def inject[C](
-    format: TextFormat,
-    carrier: C,
-    setter: TextFormat.Setter[C]
-  ): UIO[Unit] =
-    for {
-      current <- currentSpan
-      _       <- ZIO.succeed(format.inject(current.getContext, carrier, setter))
-    } yield ()
 
   private[opencensus] def end: UIO[Unit] =
     for {
