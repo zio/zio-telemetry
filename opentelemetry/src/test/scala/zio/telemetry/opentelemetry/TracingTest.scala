@@ -15,11 +15,9 @@ import scala.collection.mutable
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 import io.opentelemetry.context.Context
-import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapSetter }
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 
-import java.lang
 import zio.test.ZIOSpecDefault
 
 object TracingTest extends ZIOSpecDefault {
@@ -220,26 +218,14 @@ object TracingTest extends ZIOSpecDefault {
             val propagator                           = W3CTraceContextPropagator.getInstance()
             val carrier: mutable.Map[String, String] = mutable.Map().empty
 
-            // TODO: replace with [[zio.telemetry.opentelemetry.TextMapAdapter.type]] implementation
-            val getter: TextMapGetter[mutable.Map[String, String]] = new TextMapGetter[mutable.Map[String, String]] {
-              override def keys(carrier: mutable.Map[String, String]): lang.Iterable[String] =
-                carrier.keys.asJava
-
-              override def get(carrier: mutable.Map[String, String], key: String): String =
-                carrier.get(key).orNull
-            }
-
-            val setter: TextMapSetter[mutable.Map[String, String]] =
-              (carrier, key, value) => carrier.update(key, value)
-
             for {
               _     <- tracing.span("ROOT")(
                          for {
                            _ <- tracing.span("foo")(
-                                  tracing.inject(propagator, carrier, setter)
+                                  tracing.inject(propagator, carrier, setter = TextMapAdapter)
                                 )
                            _ <- tracing.span("bar")(
-                                  tracing.spanFrom(propagator, carrier, getter, "baz")(ZIO.unit)
+                                  tracing.spanFrom(propagator, carrier, getter = TextMapAdapter, "baz")(ZIO.unit)
                                 )
                          } yield ()
                        )
