@@ -6,7 +6,7 @@ import io.opentelemetry.api.trace._
 import io.opentelemetry.context.Context
 import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator, TextMapSetter }
 import zio._
-import zio.telemetry.opentelemetry.ContextPropagation.{ extractContext, injectContext }
+import zio.telemetry.opentelemetry.Tracing.defaultMapper
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
@@ -32,8 +32,8 @@ trait Tracing {
     carrier: C,
     getter: TextMapGetter[C],
     spanName: String,
-    spanKind: SpanKind,
-    toErrorStatus: PartialFunction[E, StatusCode]
+    spanKind: SpanKind = SpanKind.INTERNAL,
+    toErrorStatus: ErrorMapper[E] = defaultMapper[E]
   )(effect: ZIO[R, E, A]): ZIO[R, E, A]
 
   /**
@@ -49,26 +49,26 @@ trait Tracing {
   ): UIO[(Span, UIO[Any])]
 
   /**
-   * Sets the current span to be the new root span with name 'spanName' Ends the span when the effect finishes.
+   * Sets the current span to be the new root span with name 'spanName'. Ends the span when the effect finishes.
    */
   def root[R, E, A](
     spanName: String,
-    spanKind: SpanKind,
-    toErrorStatus: PartialFunction[E, StatusCode]
+    spanKind: SpanKind = SpanKind.INTERNAL,
+    toErrorStatus: ErrorMapper[E] = defaultMapper[E]
   )(effect: ZIO[R, E, A]): ZIO[R, E, A]
 
   /**
-   * Sets the current span to be the child of the current span with name 'spanName' Ends the span when the effect
+   * Sets the current span to be the child of the current span with name 'spanName'. Ends the span when the effect
    * finishes.
    */
   def span[R, E, A](
     spanName: String,
-    spanKind: SpanKind,
-    toErrorStatus: PartialFunction[E, StatusCode]
+    spanKind: SpanKind = SpanKind.INTERNAL,
+    toErrorStatus: ErrorMapper[E] = defaultMapper[E]
   )(effect: ZIO[R, E, A]): ZIO[R, E, A]
 
   /**
-   * Unsafely sets the current span to be the child of the current span with name 'spanName' You need to manually call
+   * Unsafely sets the current span to be the child of the current span with name 'spanName'. You need to manually call
    * the finalizer to end the span. Useful for interop.
    */
   def spanUnsafe(
@@ -112,13 +112,20 @@ trait Tracing {
   ): UIO[Unit]
 
   /**
-   * Create a child of 'span' with name 'spanName' as the current span. Ends the span when the effect finishes.
+   * Mark this effect as the child of an externally provided span. Ends the span when the effect finishes.
+   * zio-opentelemetry will mark the span as being the child of the external one.
+   *
+   * This is designed for use-cases where you are incrementally introducing zio & zio-telemetry in a project that
+   * already makes use of instrumentation, and you need to interoperate with futures-based code.
+   *
+   * The caller is solely responsible for managing the external span, including calling Span.end
    */
+
   def inSpan[R, E, A](
     span: Span,
     spanName: String,
-    spanKind: SpanKind,
-    toErrorStatus: PartialFunction[E, StatusCode]
+    spanKind: SpanKind = SpanKind.INTERNAL,
+    toErrorStatus: ErrorMapper[E] = defaultMapper[E]
   )(effect: ZIO[R, E, A]): ZIO[R, E, A]
 
   /**
@@ -221,8 +228,8 @@ object Tracing {
         carrier: C,
         getter: TextMapGetter[C],
         spanName: String,
-        spanKind: SpanKind,
-        toErrorStatus: PartialFunction[E, StatusCode]
+        spanKind: SpanKind = SpanKind.INTERNAL,
+        toErrorStatus: ErrorMapper[E] = defaultMapper[E]
       )(effect: ZIO[R, E, A]): ZIO[R, E, A] =
         extractContext(propagator, carrier, getter).flatMap { context =>
           ZIO.acquireReleaseWith {
@@ -251,8 +258,8 @@ object Tracing {
 
       override def root[R, E, A](
         spanName: String,
-        spanKind: SpanKind,
-        toErrorStatus: PartialFunction[E, StatusCode]
+        spanKind: SpanKind = SpanKind.INTERNAL,
+        toErrorStatus: ErrorMapper[E] = defaultMapper[E]
       )(effect: ZIO[R, E, A]): ZIO[R, E, A] =
         ZIO.acquireReleaseWith {
           createRoot(spanName, spanKind)
@@ -264,8 +271,8 @@ object Tracing {
 
       override def span[R, E, A](
         spanName: String,
-        spanKind: SpanKind,
-        toErrorStatus: PartialFunction[E, StatusCode]
+        spanKind: SpanKind = SpanKind.INTERNAL,
+        toErrorStatus: ErrorMapper[E] = defaultMapper[E]
       )(effect: ZIO[R, E, A]): ZIO[R, E, A] =
         getCurrentContext.flatMap { old =>
           ZIO.acquireReleaseWith {
@@ -332,8 +339,8 @@ object Tracing {
       override def inSpan[R, E, A](
         span: Span,
         spanName: String,
-        spanKind: SpanKind,
-        toErrorStatus: PartialFunction[E, StatusCode]
+        spanKind: SpanKind = SpanKind.INTERNAL,
+        toErrorStatus: ErrorMapper[E] = defaultMapper[E]
       )(effect: ZIO[R, E, A]): ZIO[R, E, A] =
         ZIO.acquireReleaseWith {
           createChildOf(Context.root().`with`(span), spanName, spanKind)
@@ -411,7 +418,7 @@ object Tracing {
       private def setErrorStatus[E](
         span: Span,
         cause: Cause[E],
-        toErrorStatus: PartialFunction[E, StatusCode]
+        toErrorStatus: ErrorMapper[E]
       ): UIO[Span] = {
         val errorStatus: StatusCode = cause.failureOption.flatMap(toErrorStatus.lift).getOrElse(StatusCode.UNSET)
         ZIO.succeed(span.setStatus(errorStatus, cause.prettyPrint))
@@ -424,7 +431,7 @@ object Tracing {
       private def finalizeSpanUsingEffect[R, E, A](
         effect: ZIO[R, E, A],
         context: Context,
-        toErrorStatus: PartialFunction[E, StatusCode]
+        toErrorStatus: ErrorMapper[E]
       ): ZIO[R, E, A] =
         currentContext
           .locally(context)(effect)
@@ -478,6 +485,29 @@ object Tracing {
       private def end: UIO[Any] =
         getCurrentSpan.flatMap(endSpan)
 
+      /**
+       * Extract and returns the context from carrier `C`.
+       */
+      private def extractContext[C](
+        propagator: TextMapPropagator,
+        carrier: C,
+        getter: TextMapGetter[C]
+      ): UIO[Context] =
+        ZIO.uninterruptible {
+          ZIO.succeed(propagator.extract(Context.root(), carrier, getter))
+        }
+
+      /**
+       * Injects the context into carrier `C`.
+       */
+      private def injectContext[C](
+        context: Context,
+        propagator: TextMapPropagator,
+        carrier: C,
+        setter: TextMapSetter[C]
+      ): UIO[Unit] =
+        ZIO.succeed(propagator.inject(context, carrier, setter))
+
     }
 
     def release(tracing: Tracing) =
@@ -486,125 +516,7 @@ object Tracing {
     ZIO.acquireRelease(acquire)(release)
   }
 
-  def getCurrentContext: URIO[Tracing, Context] =
-    ZIO.serviceWithZIO(_.getCurrentContext)
-
-  def getCurrentSpan: URIO[Tracing, Span] =
-    ZIO.serviceWithZIO(_.getCurrentSpan)
-
-  def getCurrentSpanContext: URIO[Tracing, SpanContext] =
-    ZIO.serviceWithZIO[Tracing](_.getCurrentSpanContext)
-
-  def spanFrom[C, R, E, A](
-    propagator: TextMapPropagator,
-    carrier: C,
-    getter: TextMapGetter[C],
-    spanName: String,
-    spanKind: SpanKind,
-    toErrorStatus: PartialFunction[E, StatusCode]
-  )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
-    ZIO.serviceWithZIO[Tracing](_.spanFrom(propagator, carrier, getter, spanName, spanKind, toErrorStatus)(effect))
-
-  def spanFromUnsafe[C](
-    propagator: TextMapPropagator,
-    carrier: C,
-    getter: TextMapGetter[C],
-    spanName: String,
-    spanKind: SpanKind
-  ): URIO[Tracing, (Span, URIO[Tracing, Any])] =
-    ZIO.serviceWithZIO[Tracing](_.spanFromUnsafe(propagator, carrier, getter, spanName, spanKind))
-
-  def root[R, E, A](
-    spanName: String,
-    spanKind: SpanKind,
-    toErrorStatus: PartialFunction[E, StatusCode]
-  )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
-    ZIO.serviceWithZIO[Tracing](_.root(spanName, spanKind, toErrorStatus)(effect))
-
-  def span[R, E, A](
-    spanName: String,
-    spanKind: SpanKind,
-    toErrorStatus: PartialFunction[E, StatusCode]
-  )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
-    ZIO.serviceWithZIO[Tracing](_.span(spanName, spanKind, toErrorStatus)(effect))
-
-  def spanUnsafe(
-    spanName: String,
-    spanKind: SpanKind
-  ): URIO[Tracing, (Span, ZIO[Tracing, Nothing, Any])] =
-    ZIO.serviceWithZIO[Tracing](_.spanUnsafe(spanName, spanKind))
-
-  def scopedEffect[A](effect: => A): ZIO[Tracing, Throwable, A] =
-    ZIO.serviceWithZIO[Tracing](_.scopedEffect(effect))
-
-  def scopedEffectTotal[A](effect: => A): ZIO[Tracing, Nothing, A] =
-    ZIO.serviceWithZIO[Tracing](_.scopedEffectTotal(effect))
-
-  def scopedEffectFromFuture[A](make: ExecutionContext => scala.concurrent.Future[A]): ZIO[Tracing, Throwable, A] =
-    ZIO.serviceWithZIO[Tracing](_.scopedEffectFromFuture(make))
-
-  def inject[C](
-    propagator: TextMapPropagator,
-    carrier: C,
-    setter: TextMapSetter[C]
-  ): URIO[Tracing, Unit] =
-    ZIO.serviceWithZIO[Tracing](_.inject(propagator, carrier, setter))
-
-  def inSpan[R, E, A](
-    span: Span,
-    spanName: String,
-    spanKind: SpanKind,
-    toErrorStatus: PartialFunction[E, StatusCode]
-  )(effect: ZIO[R, E, A]): ZIO[R with Tracing, E, A] =
-    ZIO.serviceWithZIO[Tracing](_.inSpan(span, spanName, spanKind, toErrorStatus)(effect))
-
-  def addEvent(name: String): URIO[Tracing, Span] =
-    ZIO.serviceWithZIO[Tracing](_.addEvent(name))
-
-  def addEventWithAttributes(
-    name: String,
-    attributes: Attributes
-  ): URIO[Tracing, Span] =
-    ZIO.serviceWithZIO[Tracing](_.addEventWithAttributes(name, attributes))
-
-  def setAttribute(name: String, value: Boolean): URIO[Tracing, Span] =
-    ZIO.serviceWithZIO[Tracing](_.setAttribute(name, value))
-
-  def setAttribute(name: String, value: Double): URIO[Tracing, Span] =
-    ZIO.serviceWithZIO[Tracing](_.setAttribute(name, value))
-
-  def setAttribute(name: String, value: Long): URIO[Tracing, Span] =
-    ZIO.serviceWithZIO[Tracing](_.setAttribute(name, value))
-
-  def setAttribute(name: String, value: String): URIO[Tracing, Span] =
-    ZIO.serviceWithZIO[Tracing](_.setAttribute(name, value))
-
-  def setAttribute[T](key: AttributeKey[T], value: T): URIO[Tracing, Span] =
-    ZIO.serviceWithZIO[Tracing](_.setAttribute(key, value))
-
-  def setAttribute(name: String, values: Seq[String]): URIO[Tracing, Span] =
-    ZIO.serviceWithZIO[Tracing](_.setAttribute(name, values))
-
-  def setAttribute(name: String, values: Seq[Boolean])(implicit i1: DummyImplicit): URIO[Tracing, Span] =
-    ZIO.serviceWithZIO[Tracing](_.setAttribute(name, values)(i1))
-
-  def setAttribute(name: String, values: Seq[Long])(implicit
-    i1: DummyImplicit,
-    i2: DummyImplicit
-  ): URIO[Tracing, Span] =
-    ZIO.serviceWithZIO[Tracing](_.setAttribute(name, values)(i1, i2))
-
-  def setAttribute(name: String, values: Seq[Double])(implicit
-    i1: DummyImplicit,
-    i2: DummyImplicit,
-    i3: DummyImplicit
-  ): URIO[Tracing, Span] =
-    ZIO.serviceWithZIO[Tracing](_.setAttribute(name, values)(i1, i2, i3))
-
-  def setBaggage(name: String, value: String): URIO[Tracing, Context] =
-    ZIO.serviceWithZIO[Tracing](_.setBaggage(name, value))
-
-  def getCurrentBaggage: URIO[Tracing, Baggage] =
-    ZIO.serviceWithZIO[Tracing](_.getCurrentBaggage)
+  def defaultMapper[E]: ErrorMapper[E] =
+    Map.empty
 
 }
