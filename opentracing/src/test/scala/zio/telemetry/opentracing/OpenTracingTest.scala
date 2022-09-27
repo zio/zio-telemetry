@@ -28,11 +28,7 @@ object OpenTracingTest extends ZIOSpecDefault {
         val tracer = new MockTracer
 
         ZIO
-          .scoped(
-            OpenTracing
-              .live(tracer, "ROOT")
-              .build
-          )
+          .scoped(OpenTracing.scoped(tracer, "ROOT"))
           .as(
             assert(tracer.finishedSpans.asScala)(hasSize(equalTo(1))) && assert(tracer.finishedSpans().get(0))(
               hasField[MockSpan, String](
