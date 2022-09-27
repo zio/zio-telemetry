@@ -1,25 +1,35 @@
 package zio.telemetry.opentracing.example
 
 import io.jaegertracing.Configuration
+import io.jaegertracing.internal
 import io.jaegertracing.internal.samplers.ConstSampler
 import io.jaegertracing.zipkin.ZipkinV2Reporter
+import io.opentracing.Tracer
 import org.apache.http.client.utils.URIBuilder
-import zio.ZLayer
-import zio.telemetry.opentracing.OpenTracing
+import zio._
+import zio.telemetry.opentracing.example.config.AppConfig
 import zipkin2.reporter.AsyncReporter
 import zipkin2.reporter.okhttp3.OkHttpSender
 
 object JaegerTracer {
 
-  def makeService(host: String, serviceName: String): ZLayer[Any, Throwable, OpenTracing] = {
-    val url           = new URIBuilder().setScheme("http").setHost(host).setPath("/api/v2/spans").build.toString
-    val senderBuilder = OkHttpSender.newBuilder.compressionEnabled(true).endpoint(url)
+  def live(serviceName: String): RLayer[AppConfig, Tracer] =
+    ZLayer.fromZIO {
+      for {
+        config <- ZIO.service[AppConfig]
+        tracer <- makeTracer(config.tracer.host, serviceName)
+      } yield tracer
+    }
 
-    val tracer = new Configuration(serviceName).getTracerBuilder
-      .withSampler(new ConstSampler(true))
-      .withReporter(new ZipkinV2Reporter(AsyncReporter.create(senderBuilder.build)))
-      .build
+  def makeTracer(host: String, serviceName: String): Task[internal.JaegerTracer] =
+    ZIO.attempt {
+      val url           = new URIBuilder().setScheme("http").setHost(host).setPath("/api/v2/spans").build.toString
+      val senderBuilder = OkHttpSender.newBuilder.compressionEnabled(true).endpoint(url)
 
-    OpenTracing.live(tracer)
-  }
+      new Configuration(serviceName).getTracerBuilder
+        .withSampler(new ConstSampler(true))
+        .withReporter(new ZipkinV2Reporter(AsyncReporter.create(senderBuilder.build)))
+        .build
+    }
+
 }

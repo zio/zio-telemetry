@@ -66,10 +66,10 @@ trait OpenTracing {
 object OpenTracing {
 
   lazy val noop: ULayer[OpenTracing] =
-    live(NoopTracerFactory.create())
+    ZLayer.succeed(NoopTracerFactory.create()) >>> live()
 
-  def live(tracer: Tracer, rootOperation: String = "ROOT"): ULayer[OpenTracing] =
-    ZLayer.scoped(scoped(tracer, rootOperation))
+  def live(rootOperation: String = "ROOT"): URLayer[Tracer, OpenTracing] =
+    ZLayer.scoped(ZIO.service[Tracer].flatMap(scoped(_, rootOperation)))
 
   def scoped(tracer: Tracer, rootOperation: String): URIO[Scope, OpenTracing] = {
     val acquire: URIO[Scope, OpenTracing] = for {

@@ -7,6 +7,7 @@ import sttp.model.Uri
 import zio.Task
 
 object Client {
+
   private val backend = AsyncHttpClientZioBackend()
 
   def status(
@@ -16,4 +17,5 @@ object Client {
     backend.flatMap { backend =>
       basicRequest.get(uri).headers(headers).response(asJson[Status]).send(backend)
     }
+
 }
