@@ -14,12 +14,19 @@ import zio.telemetry.opentelemetry.example.config.AppConfig
 object JaegerTracer {
 
   def live: RLayer[AppConfig, Tracer] =
-    ZLayer(for {
-      config         <- ZIO.service[AppConfig]
-      spanExporter   <- ZIO.attempt(JaegerGrpcSpanExporter.builder().setEndpoint(config.tracer.host).build())
+    ZLayer {
+      for {
+        config <- ZIO.service[AppConfig]
+        tracer <- makeTracer(config.tracer.host)
+      } yield tracer
+    }
+
+  def makeTracer(host: String): Task[Tracer] =
+    for {
+      spanExporter   <- ZIO.attempt(JaegerGrpcSpanExporter.builder().setEndpoint(host).build())
       spanProcessor  <- ZIO.succeed(SimpleSpanProcessor.create(spanExporter))
       tracerProvider <-
-        ZIO.succeed(
+        ZIO.attempt(
           SdkTracerProvider
             .builder()
             .setResource(Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, "opentelemetry-example")))
@@ -28,6 +35,6 @@ object JaegerTracer {
         )
       openTelemetry  <- ZIO.succeed(OpenTelemetrySdk.builder().setTracerProvider(tracerProvider).build())
       tracer         <- ZIO.succeed(openTelemetry.getTracer("zio.telemetry.opentelemetry.example.JaegerTracer"))
-    } yield tracer)
+    } yield tracer
 
 }

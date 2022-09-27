@@ -1,12 +1,12 @@
-package zio.telemetry.opentracing.example
+package zio.telemetry.opentelemetry.example
 
 import sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend
 import zio.config.magnolia._
 import zio.config.typesafe.TypesafeConfig
-import zio.telemetry.opentracing.example.config.AppConfig
-import zio.telemetry.opentracing.example.http.{ Client, ProxyHttpApp, ProxyHttpServer }
+import zio.telemetry.opentelemetry.Tracing
+import zio.telemetry.opentelemetry.example.config.AppConfig
+import zio.telemetry.opentelemetry.example.http.{ Client, ProxyHttpApp, ProxyHttpServer }
 import zio._
-import zio.telemetry.opentracing.OpenTracing
 
 object ProxyApp extends ZIOAppDefault {
 
@@ -26,8 +26,8 @@ object ProxyApp extends ZIOAppDefault {
         Client.live,
         ProxyHttpServer.live,
         ProxyHttpApp.live,
-        OpenTracing.live(),
-        JaegerTracer.live("zio-proxy")
+        Tracing.live,
+        JaegerTracer.live
       )
 
 }

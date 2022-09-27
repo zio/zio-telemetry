@@ -15,7 +15,7 @@ import java.nio.ByteBuffer
 object OpenTracingTest extends ZIOSpecDefault {
 
   val mockTracer: Layer[Nothing, MockTracer] =
-    ZLayer.fromZIO(ZIO.succeed(new MockTracer))
+    ZLayer(ZIO.succeed(new MockTracer))
 
   val testService: URLayer[MockTracer, OpenTracing] =
     ZLayer.scoped(ZIO.service[MockTracer].flatMap(OpenTracing.scoped(_, "ROOT")))

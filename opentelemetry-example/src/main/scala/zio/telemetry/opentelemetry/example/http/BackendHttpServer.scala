@@ -1,9 +1,9 @@
-package zio.telemetry.opentracing.example.http
+package zio.telemetry.opentelemetry.example.http
 
 import zhttp.service.Server
 import zio.Console.printLine
 import zio._
-import zio.telemetry.opentracing.example.config.AppConfig
+import zio.telemetry.opentelemetry.example.config.AppConfig
 
 case class BackendHttpServer(config: AppConfig, httpApp: BackendHttpApp) {
 

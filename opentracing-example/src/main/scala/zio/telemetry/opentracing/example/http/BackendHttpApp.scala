@@ -12,7 +12,7 @@ import scala.jdk.CollectionConverters._
 
 case class BackendHttpApp(tracing: OpenTracing) {
 
-  def status: HttpApp[Any, Throwable] =
+  def routes: HttpApp[Any, Throwable] =
     Http.collectZIO { case request @ Method.GET -> !! / "status" =>
       val headers = request.headers.toList.toMap
 

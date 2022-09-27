@@ -14,7 +14,7 @@ import zipkin2.reporter.okhttp3.OkHttpSender
 object JaegerTracer {
 
   def live(serviceName: String): RLayer[AppConfig, Tracer] =
-    ZLayer.fromZIO {
+    ZLayer {
       for {
         config <- ZIO.service[AppConfig]
         tracer <- makeTracer(config.tracer.host, serviceName)
@@ -22,14 +22,15 @@ object JaegerTracer {
     }
 
   def makeTracer(host: String, serviceName: String): Task[internal.JaegerTracer] =
-    ZIO.attempt {
-      val url           = new URIBuilder().setScheme("http").setHost(host).setPath("/api/v2/spans").build.toString
-      val senderBuilder = OkHttpSender.newBuilder.compressionEnabled(true).endpoint(url)
-
-      new Configuration(serviceName).getTracerBuilder
-        .withSampler(new ConstSampler(true))
-        .withReporter(new ZipkinV2Reporter(AsyncReporter.create(senderBuilder.build)))
-        .build
-    }
+    for {
+      url           <- ZIO.attempt(new URIBuilder().setScheme("http").setHost(host).setPath("/api/v2/spans").build.toString)
+      senderBuilder <- ZIO.attempt(OkHttpSender.newBuilder.compressionEnabled(true).endpoint(url))
+      tracer        <- ZIO.attempt(
+                         new Configuration(serviceName).getTracerBuilder
+                           .withSampler(new ConstSampler(true))
+                           .withReporter(new ZipkinV2Reporter(AsyncReporter.create(senderBuilder.build)))
+                           .build
+                       )
+    } yield tracer
 
 }
