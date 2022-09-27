@@ -4,7 +4,6 @@ import io.opentracing.propagation.Format.Builtin.{ HTTP_HEADERS => HttpHeadersFo
 import io.opentracing.propagation.TextMapAdapter
 import io.opentracing.tag.Tags
 import sttp.model.Method.GET
-import sttp.model.Uri
 import zhttp.http.{ !!, ->, /, Http, HttpApp, Method, Response }
 import zio.json.EncoderOps
 import zio.telemetry.opentracing.OpenTracing
