@@ -14,32 +14,34 @@ trait OpenTracing {
   @deprecated("The method will become private, use getCurrentSpan instead", "zio-opentracing 2.2.0")
   def currentSpan: FiberRef[Span]
 
-  def getCurrentSpan: UIO[Span]
+  def getCurrentSpan(implicit trace: Trace): UIO[Span]
 
   @deprecated("The method will be renamed to getCurrentSpanContext", "zio-opentracing 2.2.0")
-  def context: UIO[SpanContext]
+  def context(implicit trace: Trace): UIO[SpanContext]
 
-  def getCurrentSpanContext: UIO[SpanContext]
+  def getCurrentSpanContext(implicit trace: Trace): UIO[SpanContext]
 
-  def error(span: Span, cause: Cause[_], tagError: Boolean = true, logError: Boolean = true): UIO[Unit]
+  def error(span: Span, cause: Cause[_], tagError: Boolean = true, logError: Boolean = true)(implicit
+    trace: Trace
+  ): UIO[Unit]
 
-  def finish(span: Span): UIO[Unit]
+  def finish(span: Span)(implicit trace: Trace): UIO[Unit]
 
-  def log[R, E, A](fields: Map[String, _])(effect: => ZIO[R, E, A]): ZIO[R, E, A]
+  def log[R, E, A](fields: Map[String, _])(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
-  def log[R, E, A](msg: String)(effect: => ZIO[R, E, A]): ZIO[R, E, A]
+  def log[R, E, A](msg: String)(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   def root[R, E, A](
     operation: String,
     tagError: Boolean = true,
     logError: Boolean = true
-  )(effect: => ZIO[R, E, A]): ZIO[R, E, A]
+  )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   def span[R, E, A](
     operation: String,
     tagError: Boolean = true,
     logError: Boolean = true
-  )(effect: => ZIO[R, E, A]): ZIO[R, E, A]
+  )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   def spanFrom[R, E, Span, C](
     format: Format[C],
@@ -47,19 +49,19 @@ trait OpenTracing {
     operation: String,
     tagError: Boolean = true,
     logError: Boolean = true
-  )(effect: => ZIO[R, E, Span]): ZIO[R, E, Span]
+  )(effect: => ZIO[R, E, Span])(implicit trace: Trace): ZIO[R, E, Span]
 
-  def tag[R, E, A](key: String, value: String)(effect: => ZIO[R, E, A]): ZIO[R, E, A]
+  def tag[R, E, A](key: String, value: String)(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
-  def tag[R, E, A](key: String, value: Int)(effect: => ZIO[R, E, A]): ZIO[R, E, A]
+  def tag[R, E, A](key: String, value: Int)(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
-  def tag[R, E, A](key: String, value: Boolean)(effect: => ZIO[R, E, A]): ZIO[R, E, A]
+  def tag[R, E, A](key: String, value: Boolean)(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
-  def inject[C](format: Format[C], carrier: C): UIO[Unit]
+  def inject[C](format: Format[C], carrier: C)(implicit trace: Trace): UIO[Unit]
 
-  def setBaggageItem[R, E, A](key: String, value: String)(effect: => ZIO[R, E, A]): ZIO[R, E, A]
+  def setBaggageItem[R, E, A](key: String, value: String)(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
-  def getBaggageItem(key: String): UIO[Option[String]]
+  def getBaggageItem(key: String)(implicit trace: Trace): UIO[Option[String]]
 
 }
 
@@ -79,34 +81,36 @@ object OpenTracing {
     } yield new OpenTracing { self =>
       override val currentSpan: FiberRef[Span] = rootSpan
 
-      override def getCurrentSpan: UIO[Span] = currentSpan.get
+      override def getCurrentSpan(implicit trace: Trace): UIO[Span] = currentSpan.get
 
-      override def context: UIO[SpanContext] =
+      override def context(implicit trace: Trace): UIO[SpanContext] =
         getCurrentSpanContext
 
-      override def getCurrentSpanContext: UIO[SpanContext] =
+      override def getCurrentSpanContext(implicit trace: Trace): UIO[SpanContext] =
         getCurrentSpan.map(_.context)
 
-      override def error(span: Span, cause: Cause[_], tagError: Boolean = true, logError: Boolean = true): UIO[Unit] =
+      override def error(span: Span, cause: Cause[_], tagError: Boolean = true, logError: Boolean = true)(implicit
+        trace: Trace
+      ): UIO[Unit] =
         for {
           _ <- ZIO.succeed(span.setTag("error", true)).when(tagError)
           _ <- ZIO.succeed(span.log(Map("error.object" -> cause, "stack" -> cause.prettyPrint).asJava)).when(logError)
         } yield ()
 
-      override def finish(span: Span): UIO[Unit] =
+      override def finish(span: Span)(implicit trace: Trace): UIO[Unit] =
         currentMicros.flatMap(micros => ZIO.succeed(span.finish(micros)))
 
-      override def log[R, E, A](fields: Map[String, _])(effect: => ZIO[R, E, A]): ZIO[R, E, A] =
+      override def log[R, E, A](fields: Map[String, _])(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
         effect <* getCurrentSpan.zipWith(currentMicros)((span, now) => span.log(now, fields.asJava))
 
-      override def log[R, E, A](msg: String)(effect: => ZIO[R, E, A]): ZIO[R, E, A] =
+      override def log[R, E, A](msg: String)(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
         effect <* getCurrentSpan.zipWith(currentMicros)((span, now) => span.log(now, msg))
 
       override def root[R, E, A](
         operation: String,
         tagError: Boolean = true,
         logError: Boolean = true
-      )(effect: => ZIO[R, E, A]): ZIO[R, E, A] =
+      )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
         for {
           root    <- ZIO.succeed(tracer.buildSpan(operation).start())
           current <- getCurrentSpan
@@ -120,7 +124,7 @@ object OpenTracing {
         operation: String,
         tagError: Boolean = true,
         logError: Boolean = true
-      )(effect: => ZIO[R, E, A]): ZIO[R, E, A] =
+      )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
         for {
           current <- getCurrentSpan
           child   <- ZIO.succeed(tracer.buildSpan(operation).asChildOf(current).start())
@@ -136,7 +140,7 @@ object OpenTracing {
         operation: String,
         tagError: Boolean = true,
         logError: Boolean = true
-      )(effect: => ZIO[R, E, Span]): ZIO[R, E, Span] =
+      )(effect: => ZIO[R, E, Span])(implicit trace: Trace): ZIO[R, E, Span] =
         ZIO
           .attempt(tracer.extract(format, carrier))
           .foldZIO(
@@ -152,25 +156,31 @@ object OpenTracing {
               } yield res
           )
 
-      override def tag[R, E, A](key: String, value: String)(effect: => ZIO[R, E, A]): ZIO[R, E, A] =
+      override def tag[R, E, A](key: String, value: String)(effect: => ZIO[R, E, A])(implicit
+        trace: Trace
+      ): ZIO[R, E, A] =
         effect <* getCurrentSpan.map(_.setTag(key, value))
 
-      override def tag[R, E, A](key: String, value: Int)(effect: => ZIO[R, E, A]): ZIO[R, E, A] =
+      override def tag[R, E, A](key: String, value: Int)(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
         effect <* getCurrentSpan.map(_.setTag(key, value))
 
-      override def tag[R, E, A](key: String, value: Boolean)(effect: => ZIO[R, E, A]): ZIO[R, E, A] =
+      override def tag[R, E, A](key: String, value: Boolean)(effect: => ZIO[R, E, A])(implicit
+        trace: Trace
+      ): ZIO[R, E, A] =
         effect <* getCurrentSpan.map(_.setTag(key, value))
 
-      override def inject[C](format: Format[C], carrier: C): UIO[Unit] =
+      override def inject[C](format: Format[C], carrier: C)(implicit trace: Trace): UIO[Unit] =
         for {
           span <- getCurrentSpan
           _    <- ZIO.succeed(tracer.inject(span.context(), format, carrier))
         } yield ()
 
-      override def setBaggageItem[R, E, A](key: String, value: String)(effect: => ZIO[R, E, A]): ZIO[R, E, A] =
+      override def setBaggageItem[R, E, A](key: String, value: String)(effect: => ZIO[R, E, A])(implicit
+        trace: Trace
+      ): ZIO[R, E, A] =
         effect <* getCurrentSpan.map(_.setBaggageItem(key, value))
 
-      override def getBaggageItem(key: String): UIO[Option[String]] =
+      override def getBaggageItem(key: String)(implicit trace: Trace): UIO[Option[String]] =
         for {
           span <- getCurrentSpan
           res  <- ZIO.succeed(span.getBaggageItem(key)).map(Option(_))
