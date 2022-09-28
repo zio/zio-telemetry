@@ -14,14 +14,14 @@ trait Tracing {
     kind: Span.Kind = null,
     toErrorStatus: ErrorMapper[E] = defaultMapper[E],
     attributes: Map[String, AttributeValue] = Map()
-  )(effect: ZIO[R, E, A]): ZIO[R, E, A]
+  )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   def root[R, E, A](
     name: String,
     kind: Span.Kind = null,
     toErrorStatus: ErrorMapper[E] = defaultMapper[E],
     attributes: Map[String, AttributeValue] = Map()
-  )(effect: ZIO[R, E, A]): ZIO[R, E, A]
+  )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   def fromRemoteSpan[R, E, A](
     remote: SpanContext,
@@ -29,7 +29,7 @@ trait Tracing {
     kind: Span.Kind = Span.Kind.SERVER,
     toErrorStatus: ErrorMapper[E] = defaultMapper[E],
     attributes: Map[String, AttributeValue] = Map()
-  )(effect: ZIO[R, E, A]): ZIO[R, E, A]
+  )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   def fromRootSpan[C, R, E, A](
     format: TextFormat,
@@ -39,17 +39,17 @@ trait Tracing {
     kind: Span.Kind = Span.Kind.SERVER,
     toErrorStatus: ErrorMapper[E] = defaultMapper[E],
     attributes: Map[String, AttributeValue] = Map()
-  )(effect: ZIO[R, E, A]): ZIO[R, E, A]
+  )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   def inject[C](
     format: TextFormat,
     carrier: C,
     setter: TextFormat.Setter[C]
-  ): UIO[Unit]
+  )(implicit trace: Trace): UIO[Unit]
 
   def putAttributes(
     attrs: Map[String, AttributeValue]
-  ): UIO[Unit]
+  )(implicit trace: Trace): UIO[Unit]
 
 }
 
@@ -69,12 +69,12 @@ object Tracing {
         kind: Span.Kind = Span.Kind.SERVER,
         toErrorStatus: ErrorMapper[E],
         attributes: Map[String, AttributeValue]
-      )(effect: ZIO[R, E, A]): ZIO[R, E, A] =
+      )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
         ZIO.scoped[R] {
           for {
             parent <- getCurrentSpan
             span   <- createSpan(parent, name, kind)
-            res    <- finalizeSpanUsingEffect(putAttributes(attributes) *> effect, toErrorStatus)(span)
+            res    <- finalizeSpanUsingEffect(span, toErrorStatus)(putAttributes(attributes) *> effect)
           } yield res
         }
 
@@ -83,14 +83,13 @@ object Tracing {
         kind: Span.Kind,
         toErrorStatus: ErrorMapper[E],
         attributes: Map[String, AttributeValue]
-      )(effect: ZIO[R, E, A]): ZIO[R, E, A] =
+      )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
         ZIO.scoped[R] {
-          createSpan(BlankSpan.INSTANCE, name, kind).flatMap(span =>
-            finalizeSpanUsingEffect(
-              putAttributes(attributes) *> effect,
-              toErrorStatus
-            )(span)
-          )
+          createSpan(BlankSpan.INSTANCE, name, kind).flatMap { span =>
+            finalizeSpanUsingEffect(span, toErrorStatus)(
+              putAttributes(attributes) *> effect
+            )
+          }
         }
 
       override def fromRemoteSpan[R, E, A](
@@ -99,14 +98,13 @@ object Tracing {
         kind: Span.Kind,
         toErrorStatus: ErrorMapper[E],
         attributes: Map[String, AttributeValue]
-      )(effect: ZIO[R, E, A]): ZIO[R, E, A] =
+      )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
         ZIO.scoped[R] {
-          createSpanFromRemote(remote, name, kind).flatMap(span =>
-            finalizeSpanUsingEffect(
-              putAttributes(attributes) *> effect,
-              toErrorStatus
-            )(span)
-          )
+          createSpanFromRemote(remote, name, kind).flatMap { span =>
+            finalizeSpanUsingEffect(span, toErrorStatus)(
+              putAttributes(attributes) *> effect
+            )
+          }
         }
 
       override def fromRootSpan[C, R, E, A](
@@ -117,7 +115,7 @@ object Tracing {
         kind: Span.Kind = Span.Kind.SERVER,
         toErrorStatus: ErrorMapper[E] = defaultMapper[E],
         attributes: Map[String, AttributeValue] = Map()
-      )(effect: ZIO[R, E, A]): ZIO[R, E, A] =
+      )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
         ZIO
           .attempt(format.extract(carrier, getter))
           .foldZIO(
@@ -127,7 +125,7 @@ object Tracing {
 
       override def putAttributes(
         attributes: Map[String, AttributeValue]
-      ): UIO[Unit] =
+      )(implicit trace: Trace): UIO[Unit] =
         for {
           current <- getCurrentSpan
           _       <- ZIO.succeed(attributes.foreach { case (k, v) =>
@@ -139,7 +137,7 @@ object Tracing {
         format: TextFormat,
         carrier: C,
         setter: TextFormat.Setter[C]
-      ): UIO[Unit] =
+      )(implicit trace: Trace): UIO[Unit] =
         for {
           current <- getCurrentSpan
           _       <- ZIO.succeed(format.inject(current.getContext, carrier, setter))
@@ -149,7 +147,7 @@ object Tracing {
         parent: Span,
         name: String,
         kind: Span.Kind
-      ): URIO[Scope, Span] =
+      )(implicit trace: Trace): URIO[Scope, Span] =
         ZIO.acquireRelease(
           ZIO.succeed(
             tracer
@@ -163,7 +161,7 @@ object Tracing {
         parent: SpanContext,
         name: String,
         kind: Span.Kind
-      ): URIO[Scope, Span] =
+      )(implicit trace: Trace): URIO[Scope, Span] =
         ZIO.acquireRelease(
           ZIO.succeed(
             tracer
@@ -174,9 +172,9 @@ object Tracing {
         )(span => ZIO.succeed(span.end()))
 
       private def finalizeSpanUsingEffect[R, E, A](
-        effect: ZIO[R, E, A],
+        span: Span,
         toErrorStatus: ErrorMapper[E]
-      )(span: Span): ZIO[R, E, A] =
+      )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
         for {
           r <- currentSpan
                  .locally(span)(effect)
@@ -187,7 +185,7 @@ object Tracing {
         span: Span,
         cause: Cause[E],
         toErrorStatus: ErrorMapper[E]
-      ): UIO[Unit] = {
+      )(implicit trace: Trace): UIO[Unit] = {
         val errorStatus =
           cause.failureOption.flatMap(toErrorStatus.lift).getOrElse(Status.UNKNOWN)
         ZIO.succeed(span.setStatus(errorStatus))
