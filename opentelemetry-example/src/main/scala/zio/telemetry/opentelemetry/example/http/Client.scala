@@ -9,11 +9,16 @@ import zio.telemetry.opentelemetry.example.Backend
 
 case class Client(backend: Backend, config: AppConfig) {
 
+  private val backendUrl =
+    Uri
+      .safeApply(config.backend.host, config.backend.port)
+      .map(_.withPath("status"))
+      .left
+      .map(new IllegalArgumentException(_))
+
   def status(headers: Map[String, String]): Task[Statuses] =
     for {
-      url      <- ZIO
-                    .fromEither(Uri.safeApply(config.backend.host, config.backend.port))
-                    .mapError(new IllegalArgumentException(_))
+      url      <- ZIO.fromEither(backendUrl)
       response <- backend
                     .send(
                       basicRequest
