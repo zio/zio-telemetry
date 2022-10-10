@@ -119,11 +119,15 @@
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../index.html" class="extype" name="zio.telemetry">telemetry</a></dd></dl></div>
     </li><li class="current-entities indented3">
                         <span class="separator"></span>
+                        <a class="class" href="PropagatingSupervisor.html" title=""></a>
+                        <a href="PropagatingSupervisor.html" title="">PropagatingSupervisor</a>
+                      </li><li class="current-entities indented3">
+                        <span class="separator"></span>
                         <a class="object" href="TextMapAdapter$.html" title=""></a>
                         <a href="TextMapAdapter$.html" title="">TextMapAdapter</a>
                       </li><li class="current-entities indented3">
                         <a class="object" href="" title=""></a>
-                        <a class="trait" href="Tracing.html" title=""></a>
+                        <a class="class" href="Tracing.html" title=""></a>
                         <a href="Tracing.html" title="">Tracing</a>
                       </li><li class="current-entities indented3">
                         <span class="separator"></span>
@@ -136,15 +140,15 @@
           <div id="content">
             <body class="object value">
       <div id="definition">
-        <a href="Tracing.html" title="See companion trait"><div class="big-circle object-companion-trait">o</div></a>
+        <a href="Tracing.html" title="See companion class"><div class="big-circle object-companion-class">o</div></a>
         <p id="owner"><a href="../../index.html" class="extype" name="zio">zio</a>.<a href="../index.html" class="extype" name="zio.telemetry">telemetry</a>.<a href="index.html" class="extype" name="zio.telemetry.opentelemetry">opentelemetry</a></p>
-        <h1><a href="Tracing.html" title="See companion trait">Tracing</a><span class="permalink">
+        <h1><a href="Tracing.html" title="See companion class">Tracing</a><span class="permalink">
       <a href="../../../zio/telemetry/opentelemetry/Tracing$.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span></h1>
         <h3><span class="morelinks"><div>
-            Companion <a href="Tracing.html" title="See companion trait">trait Tracing</a>
+            Companion <a href="Tracing.html" title="See companion class">class Tracing</a>
           </div></span></h3>
       </div>
 
@@ -603,6 +607,24 @@
                 <span class="name">@IntrinsicCandidate</span><span class="args">()</span>
               
         </dd></dl></div>
+    </li><li name="zio.telemetry.opentelemetry.Tracing#propagating" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="propagating:zio.URLayer[io.opentelemetry.api.trace.Tracer,zio.telemetry.opentelemetry.Tracing]"></a><a id="propagating:URLayer[Tracer,Tracing]"></a>
+      <span class="permalink">
+      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#propagating:zio.URLayer[io.opentelemetry.api.trace.Tracer,zio.telemetry.opentelemetry.Tracing]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">propagating</span><span class="result">: <a href="../../index.html#URLayer[-RIn,+ROut]=zio.ZLayer[RIn,Nothing,ROut]" class="extmbr" name="zio.URLayer">URLayer</a>[<a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/Tracer.html#io.opentelemetry.api.trace.Tracer" class="extype" name="io.opentelemetry.api.trace.Tracer">Tracer</a>, <a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>]</span>
+      </span>
+      
+      <p class="shortcomment cmt">Tracing context will be bidirectionally propagated between ZIO and non-ZIO code.</p><div class="fullcomment"><div class="comment cmt"><p>Tracing context will be bidirectionally propagated between ZIO and non-ZIO code.</p><p>Since context propagation adds a performance overhead, it is recommended to use <a href="#live:zio.URLayer[io.opentelemetry.api.trace.Tracer,zio.telemetry.opentelemetry.Tracing]" class="extmbr" name="zio.telemetry.opentelemetry.Tracing#live">Tracing.live</a> in most cases.</p><p><a href="#propagating:zio.URLayer[io.opentelemetry.api.trace.Tracer,zio.telemetry.opentelemetry.Tracing]" class="extmbr" name="zio.telemetry.opentelemetry.Tracing#propagating">Tracing.propagating</a> should be used in combination with automatic instrumentation via OpenTelemetry JVM agent
+only.
+</p></div></div>
     </li><li name="zio.telemetry.opentelemetry.Tracing#root" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="root[R,E,A](spanName:String,spanKind:io.opentelemetry.api.trace.SpanKind,toErrorStatus:PartialFunction[E,io.opentelemetry.api.trace.StatusCode])(effect:zio.ZIO[R,E,A]):zio.ZIO[Rwithzio.telemetry.opentelemetry.Tracing,E,A]"></a><a id="root[R,E,A](String,SpanKind,PartialFunction[E,StatusCode])(ZIO[R,E,A]):ZIO[RwithTracing,E,A]"></a>
       <span class="permalink">

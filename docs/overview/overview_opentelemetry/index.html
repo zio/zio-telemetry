@@ -130,7 +130,34 @@ are not referentially transparent.</p>
     .spanFrom(propagator, carrier, getter, <span class="hljs-string">"baz"</span>)
     .span(<span class="hljs-string">"bar"</span>)
 </code></pre>
-</span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/zio-telemetry/docs/overview/overview_opencensus"><span class="arrow-prev">← </span><span class="function-name-prevnext">OpenCensus</span></a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#installation">Installation</a></li><li><a href="#usage">Usage</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/zio-telemetry/" class="nav-home"><img src="/zio-telemetry/img/sidebar_brand2x.png" alt="ZIO Telemetry"/></a><div><h5>GitHub</h5><a class="github-button" href="https://github.com/zio/zio-telemetry" data-icon="octicon-star" data-count-href="/zio/zio-telemetry/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star this project on GitHub">Star</a></div><div><h5>Chat with us on Discord</h5><a href="https://discord.gg/2ccFBr4"><img src="/zio-telemetry//img/discord.png" width="120" alt="discord"/></a></div><div><h5>Additional resources</h5><a href="/zio-telemetry/api/index.html">Scaladoc of zio-telemetry</a></div></section><section class="copyright">Copyright © 2022 ZIO Maintainers</section></footer></div><script type="text/javascript" src="https://cdn.jsdelivr.net/docsearch.js/1/docsearch.min.js"></script><script>
+<h3><a class="anchor" aria-hidden="true" id="experimental-usage-with-opentelemetry-automatic-instrumentation"></a><a href="#experimental-usage-with-opentelemetry-automatic-instrumentation" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>[Experimental] Usage with OpenTelemetry automatic instrumentation</h3>
+<p>OpenTelemetry provides
+a <a href="https://opentelemetry.io/docs/instrumentation/java/automatic/">JVM agent for automatic instrumentation</a> which
+supports
+many <a href="https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/supported-libraries.md">popular Java libraries</a>
+.</p>
+<p>This automatic instrumentation relies on the default OpenTelemetry context storage which is based on <code>ThreadLocal</code>. So
+it doesn't work with ZIO out of the box.</p>
+<p><code>zio-opentelemetry</code> provides an experimental version of <code>Tracing</code> which bidirectionally propagates tracing context
+between ZIO and non-ZIO code, enabling interoperability with <em>most</em> libraries that use the default OpenTelemetry context
+storage.</p>
+<p>To enable this experimental propagation, you will need to create <code>Tracing</code> using <code>Tracing.propagating</code> constructor (
+instead of <code>Tracing.live</code>).</p>
+<p>Please note that whether context propagation will work correctly depends on which specific ZIO wrappers around non-ZIO
+libraries you are using. So please, test your specific setup.</p>
+<p>It was reported that it works with:</p>
+<ul>
+<li><code>zhttp</code></li>
+<li><code>sttp</code> with Java 11+ HTTP client backend</li>
+<li><code>zio-kafka</code></li>
+<li><code>doobie</code></li>
+<li><code>redis4cats</code></li>
+</ul>
+<p>It was reported that it does not work with:</p>
+<ul>
+<li><code>sttp</code> with <code>armeria</code> backend</li>
+</ul>
+</span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/zio-telemetry/docs/overview/overview_opencensus"><span class="arrow-prev">← </span><span class="function-name-prevnext">OpenCensus</span></a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#installation">Installation</a></li><li><a href="#usage">Usage</a><ul class="toc-headings"><li><a href="#experimental-usage-with-opentelemetry-automatic-instrumentation">[Experimental] Usage with OpenTelemetry automatic instrumentation</a></li></ul></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/zio-telemetry/" class="nav-home"><img src="/zio-telemetry/img/sidebar_brand2x.png" alt="ZIO Telemetry"/></a><div><h5>GitHub</h5><a class="github-button" href="https://github.com/zio/zio-telemetry" data-icon="octicon-star" data-count-href="/zio/zio-telemetry/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star this project on GitHub">Star</a></div><div><h5>Chat with us on Discord</h5><a href="https://discord.gg/2ccFBr4"><img src="/zio-telemetry//img/discord.png" width="120" alt="discord"/></a></div><div><h5>Additional resources</h5><a href="/zio-telemetry/api/index.html">Scaladoc of zio-telemetry</a></div></section><section class="copyright">Copyright © 2022 ZIO Maintainers</section></footer></div><script type="text/javascript" src="https://cdn.jsdelivr.net/docsearch.js/1/docsearch.min.js"></script><script>
                 document.addEventListener('keyup', function(e) {
                   if (e.target !== document.body) {
                     return;
