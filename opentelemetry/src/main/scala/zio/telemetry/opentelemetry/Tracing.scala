@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters._
 
-final class Tracing private (tracer: Tracer, currentContext: ContextStorage) {
+trait Tracing {
 
   def getCurrentContext: UIO[Context] = currentContext.get
 
@@ -307,61 +307,23 @@ final class Tracing private (tracer: Tracer, currentContext: ContextStorage) {
       .locally(context)(effect)
       .tapErrorCause(setErrorStatus(Span.fromContext(context), _, toErrorStatus))
 
-  private def currentNanos: UIO[Long] = Clock.currentTime(TimeUnit.NANOSECONDS)
+  private[opentelemetry] def currentNanos: UIO[Long]
 
-  private def createRoot(spanName: String, spanKind: SpanKind): UIO[(UIO[Unit], Context)] =
-    for {
-      nanoSeconds <- currentNanos
-      span        <- ZIO.succeed(
-                       tracer
-                         .spanBuilder(spanName)
-                         .setNoParent()
-                         .setSpanKind(spanKind)
-                         .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
-                         .startSpan()
-                     )
-    } yield (endSpan(span), span.storeInContext(Context.root()))
+  private[opentelemetry] val currentContext: ContextStorage
 
-  private def createChildOf(
+  private[opentelemetry] def createRoot(spanName: String, spanKind: SpanKind): UIO[(UIO[Unit], Context)]
+
+  private[opentelemetry] def createChildOf(
     parent: Context,
     spanName: String,
     spanKind: SpanKind
-  ): UIO[(UIO[Unit], Context)] =
-    for {
-      nanoSeconds <- currentNanos
-      span        <- ZIO.succeed(
-                       tracer
-                         .spanBuilder(spanName)
-                         .setParent(parent)
-                         .setSpanKind(spanKind)
-                         .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
-                         .startSpan()
-                     )
-    } yield (endSpan(span), span.storeInContext(parent))
+  ): UIO[(UIO[Unit], Context)]
 
-  private def createChildOfUnsafe(parent: Context, spanName: String, spanKind: SpanKind): UIO[Context] =
-    for {
-      nanoSeconds <- currentNanos
-      span        <-
-        ZIO.succeed(
-          tracer
-            .spanBuilder(spanName)
-            .setParent(parent)
-            .setSpanKind(spanKind)
-            .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
-            .startSpan()
-        )
-    } yield span.storeInContext(parent)
+  private[opentelemetry] def createChildOfUnsafe(parent: Context, spanName: String, spanKind: SpanKind): UIO[Context]
 
-  private def end: UIO[Any] =
-    for {
-      nanos   <- currentNanos
-      context <- currentContext.get
-      span     = Span.fromContext(context)
-    } yield span.end(nanos, TimeUnit.NANOSECONDS)
+  private[opentelemetry] def getTracer: UIO[Tracer]
 
-  private def endSpan(span: Span): UIO[Unit] = currentNanos.map(span.end(_, TimeUnit.NANOSECONDS))
-
+  private[opentelemetry] def end: UIO[Any]
 }
 
 object Tracing {
@@ -557,11 +519,65 @@ object Tracing {
   def getCurrentSpanContext: URIO[Tracing, SpanContext] =
     ZIO.serviceWithZIO[Tracing](_.getCurrentSpanContext)
 
+  class Live(tracer: Tracer, val currentContext: ContextStorage) extends Tracing {
+    private def endSpan(span: Span): UIO[Unit] = currentNanos.map(span.end(_, TimeUnit.NANOSECONDS))
+
+    def currentNanos: UIO[Long] = Clock.currentTime(TimeUnit.NANOSECONDS)
+
+    def createRoot(spanName: String, spanKind: SpanKind): UIO[(UIO[Unit], Context)] =
+      for {
+        nanoSeconds <- currentNanos
+        span        <- ZIO.succeed(
+                         tracer
+                           .spanBuilder(spanName)
+                           .setNoParent()
+                           .setSpanKind(spanKind)
+                           .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
+                           .startSpan()
+                       )
+      } yield (endSpan(span), span.storeInContext(Context.root()))
+
+    def createChildOf(parent: Context, spanName: String, spanKind: SpanKind): UIO[(UIO[Unit], Context)] =
+      for {
+        nanoSeconds <- currentNanos
+        span        <- ZIO.succeed(
+                         tracer
+                           .spanBuilder(spanName)
+                           .setParent(parent)
+                           .setSpanKind(spanKind)
+                           .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
+                           .startSpan()
+                       )
+      } yield (endSpan(span), span.storeInContext(parent))
+
+    def createChildOfUnsafe(parent: Context, spanName: String, spanKind: SpanKind): UIO[Context] =
+      for {
+        nanoSeconds <- currentNanos
+        span        <-
+          ZIO.succeed(
+            tracer
+              .spanBuilder(spanName)
+              .setParent(parent)
+              .setSpanKind(spanKind)
+              .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
+              .startSpan()
+          )
+      } yield span.storeInContext(parent)
+
+    override private[opentelemetry] def end: UIO[Any] =
+      for {
+        nanos   <- currentNanos
+        context <- currentContext.get
+        span     = Span.fromContext(context)
+      } yield span.end(nanos, TimeUnit.NANOSECONDS)
+
+    override private[opentelemetry] def getTracer: UIO[Tracer] =
+      ZIO.succeed(tracer)
+  }
+
   def scoped(tracer: Tracer): URIO[Scope, Tracing] = {
     val tracing: URIO[Scope, Tracing] =
-      FiberRef
-        .make[Context](Context.root())
-        .map(ref => new Tracing(tracer, ContextStorage.fiberRef(ref)))
+      FiberRef.make[Context](Context.root()).map(ref => new Live(tracer, ContextStorage.fiberRef(ref)))
 
     ZIO.acquireRelease(tracing)(_.end)
   }
@@ -582,7 +598,7 @@ object Tracing {
 
   private def scopedPropagating(tracer: Tracer): URIO[Scope, Tracing] = {
     val tracing: URIO[Scope, Tracing] =
-      ZIO.succeed(new Tracing(tracer, ContextStorage.threadLocal))
+      ZIO.succeed(new Live(tracer, ContextStorage.threadLocal))
 
     ZIO.acquireRelease(tracing)(_.end)
   }
