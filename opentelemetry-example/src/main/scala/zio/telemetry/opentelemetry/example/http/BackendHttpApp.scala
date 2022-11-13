@@ -14,6 +14,8 @@ import scala.jdk.CollectionConverters._
 
 case class BackendHttpApp(tracing: Tracing) {
 
+  import tracing.aspects._
+
   val propagator: TextMapPropagator  = W3CTraceContextPropagator.getInstance()
   val getter: TextMapGetter[Headers] = new TextMapGetter[Headers] {
     override def keys(carrier: Headers): lang.Iterable[String] =
@@ -25,13 +27,11 @@ case class BackendHttpApp(tracing: Tracing) {
 
   val routes: HttpApp[Any, Throwable] =
     Http.collectZIO { case request @ Method.GET -> !! / "status" =>
-      tracing.spanFrom(propagator, request.headers, getter, "/status", SpanKind.SERVER)(
-        for {
-          _        <- tracing.addEvent("event from backend before response")
-          response <- ZIO.succeed(Response.json(ServiceStatus.up("backend").toJson))
-          _        <- tracing.addEvent("event from backend after response")
-        } yield response
-      )
+      (for {
+        _        <- tracing.addEvent("event from backend before response")
+        response <- ZIO.succeed(Response.json(ServiceStatus.up("backend").toJson))
+        _        <- tracing.addEvent("event from backend after response")
+      } yield response) @@ spanFrom(propagator, request.headers, getter, "/status", SpanKind.SERVER)
     }
 
 }

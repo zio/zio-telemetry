@@ -12,6 +12,8 @@ import scala.collection.mutable
 
 case class ProxyHttpApp(client: Client, tracing: Tracing) {
 
+  import tracing.aspects._
+
   private val propagator: TextMapPropagator =
     W3CTraceContextPropagator.getInstance()
 
@@ -22,15 +24,13 @@ case class ProxyHttpApp(client: Client, tracing: Tracing) {
 
   val routes: HttpApp[Any, Throwable] =
     Http.collectZIO { case Method.GET -> !! / "statuses" =>
-      tracing.root("/statuses", SpanKind.SERVER, errorMapper) {
-        for {
-          _        <- tracing.setAttribute("http.method", "get")
-          _        <- tracing.addEvent("proxy-event")
-          carrier   = mutable.Map.empty[String, String]
-          _        <- tracing.inject(propagator, carrier, setter)
-          statuses <- client.status(carrier.toMap)
-        } yield Response.json(statuses.toJson)
-      }
+      (for {
+        _        <- tracing.setAttribute("http.method", "get")
+        _        <- tracing.addEvent("proxy-event")
+        carrier   = mutable.Map.empty[String, String]
+        _        <- tracing.inject(propagator, carrier, setter)
+        statuses <- client.status(carrier.toMap)
+      } yield Response.json(statuses.toJson)) @@ root("/statuses", SpanKind.SERVER, errorMapper)
     }
 
 }
