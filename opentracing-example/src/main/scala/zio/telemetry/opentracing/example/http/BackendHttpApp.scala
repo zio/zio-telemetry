@@ -12,12 +12,13 @@ import scala.jdk.CollectionConverters._
 
 case class BackendHttpApp(tracing: OpenTracing) {
 
+  import tracing.aspects._
+
   def routes: HttpApp[Any, Throwable] =
     Http.collectZIO { case request @ Method.GET -> !! / "status" =>
       val headers = request.headers.toList.toMap
 
-      tracing
-        .spanFrom(HttpHeadersFormat, new TextMapAdapter(headers.asJava), "/status")(ZIO.unit)
+      (ZIO.unit @@ spanFrom(HttpHeadersFormat, new TextMapAdapter(headers.asJava), "/status"))
         .as(Response.json(ServiceStatus.up("backend").toJson))
     }
 

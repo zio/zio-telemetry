@@ -14,20 +14,19 @@ import scala.jdk.CollectionConverters._
 
 case class ProxyHttpApp(client: Client, tracing: OpenTracing) {
 
+  import tracing.aspects._
+
   def routes: HttpApp[Any, Throwable] =
     Http.collectZIO { case Method.GET -> !! / "statuses" =>
-      tracing
-        .root("/statuses")(
-          for {
-            _        <- tracing.tag(Tags.SPAN_KIND.getKey, Tags.SPAN_KIND_CLIENT)(ZIO.unit)
-            _        <- tracing.tag(Tags.HTTP_METHOD.getKey, GET.method)(ZIO.unit)
-            _        <- tracing.setBaggageItem("proxy-baggage-item-key", "proxy-baggage-item-value")(ZIO.unit)
-            carrier   = new TextMapAdapter(mutable.Map.empty[String, String].asJava)
-            _        <- tracing.inject(HttpHeadersFormat, carrier)
-            headers  <- extractHeaders(carrier)
-            statuses <- client.status(headers)
-          } yield Response.json(statuses.toJson)
-        )
+      (for {
+        _        <- ZIO.unit @@ tag(Tags.SPAN_KIND.getKey, Tags.SPAN_KIND_CLIENT)
+        _        <- ZIO.unit @@ tag(Tags.HTTP_METHOD.getKey, GET.method)
+        _        <- ZIO.unit @@ setBaggageItem("proxy-baggage-item-key", "proxy-baggage-item-value")
+        carrier   = new TextMapAdapter(mutable.Map.empty[String, String].asJava)
+        _        <- tracing.inject(HttpHeadersFormat, carrier)
+        headers  <- extractHeaders(carrier)
+        statuses <- client.status(headers)
+      } yield Response.json(statuses.toJson)) @@ root("/statuses")
     }
 
   private def extractHeaders(adapter: TextMapAdapter): UIO[Map[String, String]] = {
