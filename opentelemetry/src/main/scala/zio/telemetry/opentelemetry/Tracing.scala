@@ -204,6 +204,138 @@ trait Tracing { self =>
    */
   def getCurrentBaggage(implicit trace: Trace): UIO[Baggage]
 
+  object aspects {
+
+    def spanFrom[C, E1](
+      propagator: TextMapPropagator,
+      carrier: C,
+      getter: TextMapGetter[C],
+      spanName: String,
+      spanKind: SpanKind = SpanKind.INTERNAL,
+      toErrorStatus: ErrorMapper[E1] = ErrorMapper.default[E1]
+    ): ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] {
+        override def apply[R, E >: E1 <: E1, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.spanFrom(propagator, carrier, getter, spanName, spanKind, toErrorStatus)(zio)
+      }
+
+    def root[E1](
+      spanName: String,
+      spanKind: SpanKind = SpanKind.INTERNAL,
+      toErrorStatus: ErrorMapper[E1] = ErrorMapper.default[E1]
+    ): ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] {
+        override def apply[R, E >: E1 <: E1, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.root(spanName, spanKind, toErrorStatus)(zio)
+      }
+
+    def span[E1](
+      spanName: String,
+      spanKind: SpanKind = SpanKind.INTERNAL,
+      toErrorStatus: ErrorMapper[E1] = ErrorMapper.default[E1]
+    ): ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] {
+        override def apply[R, E >: E1 <: E1, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.span(spanName, spanKind, toErrorStatus)(zio)
+      }
+
+    def inSpan[E1](
+      span: Span,
+      spanName: String,
+      spanKind: SpanKind = SpanKind.INTERNAL,
+      toErrorStatus: ErrorMapper[E1] = ErrorMapper.default[E1]
+    ): ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] {
+        override def apply[R, E >: E1 <: E1, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.inSpan(span, spanName, spanKind, toErrorStatus)(zio)
+      }
+
+    def addEvent(name: String): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          zio <* self.addEvent(name)
+      }
+
+    def addEventWithAttributes(
+      name: String,
+      attributes: Attributes
+    ): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          zio <* self.addEventWithAttributes(name, attributes)
+      }
+
+    def setAttribute(name: String, value: Boolean): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          zio <* self.setAttribute(name, value)
+      }
+
+    def setAttribute(name: String, value: Double): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          zio <* self.setAttribute(name, value)
+      }
+
+    def setAttribute(name: String, value: Long): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          zio <* self.setAttribute(name, value)
+      }
+
+    def setAttribute(name: String, value: String): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          zio <* self.setAttribute(name, value)
+      }
+
+    def setAttribute[T](key: AttributeKey[T], value: T): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          zio <* self.setAttribute(key, value)
+      }
+
+    def setAttribute(name: String, values: Seq[String]): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          zio <* self.setAttribute(name, values)
+      }
+
+    def setAttribute(name: String, values: Seq[Boolean])(implicit
+      i1: DummyImplicit
+    ): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          zio <* self.setAttribute(name, values)
+      }
+
+    def setAttribute(name: String, values: Seq[Long])(implicit
+      i1: DummyImplicit,
+      i2: DummyImplicit
+    ): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          zio <* self.setAttribute(name, values)(i1, i2, trace)
+      }
+
+    def setAttribute(name: String, values: Seq[Double])(implicit
+      i1: DummyImplicit,
+      i2: DummyImplicit,
+      i3: DummyImplicit
+    ): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          zio <* self.setAttribute(name, values)(i1, i2, i3, trace)
+      }
+
+    def setBaggage(name: String, value: String): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          zio <* self.setBaggage(name, value)
+      }
+
+  }
+
 }
 
 object Tracing {
