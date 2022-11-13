@@ -4,7 +4,7 @@ import zio._
 import io.opencensus.trace._
 import io.opencensus.trace.propagation.TextFormat
 
-trait Tracing {
+trait Tracing { self =>
 
   def getCurrentSpan: UIO[Span]
 
@@ -49,6 +49,52 @@ trait Tracing {
   def putAttributes(
     attrs: Map[String, AttributeValue]
   )(implicit trace: Trace): UIO[Unit]
+
+  object aspects {
+
+    def span[E1](
+      name: String,
+      kind: Span.Kind = null,
+      toErrorStatus: ErrorMapper[E1] = ErrorMapper.default[E1],
+      attributes: Map[String, AttributeValue] = Map()
+    ): ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] {
+        override def apply[R, E >: E1 <: E1, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.span(name, kind, toErrorStatus, attributes)(zio)
+      }
+
+    def root[E1](
+      name: String,
+      kind: Span.Kind = null,
+      toErrorStatus: ErrorMapper[E1] = ErrorMapper.default[E1],
+      attributes: Map[String, AttributeValue] = Map()
+    ): ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] {
+        override def apply[R, E >: E1 <: E1, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.root(name, kind, toErrorStatus, attributes)(zio)
+      }
+
+    def fromRemoteSpan[E1](
+      remote: SpanContext,
+      name: String,
+      kind: Span.Kind = Span.Kind.SERVER,
+      toErrorStatus: ErrorMapper[E1] = ErrorMapper.default[E1],
+      attributes: Map[String, AttributeValue] = Map()
+    ): ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] {
+        override def apply[R, E >: E1 <: E1, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.fromRemoteSpan(remote, name, kind, toErrorStatus, attributes)(zio)
+      }
+
+    def withAttributes(
+      attrs: (String, AttributeValue)*
+    ): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.putAttributes(attrs.toMap) *> zio
+      }
+
+  }
 
 }
 
