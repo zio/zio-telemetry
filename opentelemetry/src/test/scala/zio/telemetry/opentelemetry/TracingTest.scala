@@ -53,10 +53,10 @@ object TracingTest extends ZIOSpecDefault {
       suite("spans")(
         test("childSpan") {
           ZIO.serviceWithZIO[Tracing] { tracing =>
+            import tracing.aspects._
+
             for {
-              _     <- tracing.span("Root")(
-                         tracing.span("Child")(ZIO.unit)
-                       )
+              _     <- ZIO.unit @@ span("Child") @@ span("Root")
               spans <- getFinishedSpans
               root   = spans.find(_.getName == "Root")
               child  = spans.find(_.getName == "Child")
@@ -74,17 +74,15 @@ object TracingTest extends ZIOSpecDefault {
         },
         test("scopedEffect") {
           ZIO.serviceWithZIO[Tracing] { tracing =>
+            import tracing.aspects._
+
             for {
-              _     <- tracing.span("Root")(
-                         tracing.span("Scoped")(
-                           tracing.scopedEffect {
-                             val span = Span.current()
-                             span.addEvent("In legacy code")
-                             if (Context.current() == Context.root()) throw new RuntimeException("Current context is root!")
-                             span.addEvent("Finishing legacy code")
-                           }
-                         )
-                       )
+              _     <- tracing.scopedEffect {
+                         val span = Span.current()
+                         span.addEvent("In legacy code")
+                         if (Context.current() == Context.root()) throw new RuntimeException("Current context is root!")
+                         span.addEvent("Finishing legacy code")
+                       } @@ span[Throwable]("Scoped") @@ span[Throwable]("Root")
               spans <- getFinishedSpans
               root   = spans.find(_.getName == "Root")
               scoped = spans.find(_.getName == "Scoped")
@@ -104,19 +102,17 @@ object TracingTest extends ZIOSpecDefault {
         },
         test("scopedEffectTotal") {
           ZIO.serviceWithZIO[Tracing] { tracing =>
+            import tracing.aspects._
+
             for {
-              _     <- tracing.span("Root")(
-                         tracing.span("Scoped")(
-                           tracing.scopedEffectTotal {
-                             val span = Span.current()
-                             span.addEvent("In legacy code")
-                             if (Context.current() == Context.root()) throw new RuntimeException("Current context is root!")
-                             Thread.sleep(10)
-                             if (Context.current() == Context.root()) throw new RuntimeException("Current context is root!")
-                             span.addEvent("Finishing legacy code")
-                           }
-                         )
-                       )
+              _     <- tracing.scopedEffectTotal {
+                         val span = Span.current()
+                         span.addEvent("In legacy code")
+                         if (Context.current() == Context.root()) throw new RuntimeException("Current context is root!")
+                         Thread.sleep(10)
+                         if (Context.current() == Context.root()) throw new RuntimeException("Current context is root!")
+                         span.addEvent("Finishing legacy code")
+                       } @@ span("Scoped") @@ span("Root")
               spans <- getFinishedSpans
               root   = spans.find(_.getName == "Root")
               scoped = spans.find(_.getName == "Scoped")
@@ -136,21 +132,19 @@ object TracingTest extends ZIOSpecDefault {
         },
         test("scopedEffectFromFuture") {
           ZIO.serviceWithZIO[Tracing] { tracing =>
+            import tracing.aspects._
+
             for {
-              result <- tracing.span("Root")(
-                          tracing.span("Scoped")(
-                            tracing.scopedEffectFromFuture { _ =>
-                              Future.successful {
-                                val span = Span.current()
-                                span.addEvent("In legacy code")
-                                if (Context.current() == Context.root())
-                                  throw new RuntimeException("Current context is root!")
-                                span.addEvent("Finishing legacy code")
-                                1
-                              }
-                            }
-                          )
-                        )
+              result <- tracing.scopedEffectFromFuture { _ =>
+                          Future.successful {
+                            val span = Span.current()
+                            span.addEvent("In legacy code")
+                            if (Context.current() == Context.root())
+                              throw new RuntimeException("Current context is root!")
+                            span.addEvent("Finishing legacy code")
+                            1
+                          }
+                        } @@ span[Throwable]("Scoped") @@ span[Throwable]("Root")
               spans  <- getFinishedSpans
               root    = spans.find(_.getName == "Root")
               scoped  = spans.find(_.getName == "Scoped")
@@ -171,10 +165,10 @@ object TracingTest extends ZIOSpecDefault {
         },
         test("rootSpan") {
           ZIO.serviceWithZIO[Tracing] { tracing =>
+            import tracing.aspects._
+
             for {
-              _     <- tracing.root("ROOT")(
-                         tracing.root("ROOT2")(ZIO.unit)
-                       )
+              _     <- ZIO.unit @@ root("ROOT2") @@ root("ROOT")
               spans <- getFinishedSpans
               root   = spans.find(_.getName == "ROOT")
               child  = spans.find(_.getName == "ROOT2")
@@ -192,12 +186,14 @@ object TracingTest extends ZIOSpecDefault {
         },
         test("inSpan") {
           ZIO.serviceWithZIO[Tracing] { tracing =>
+            import tracing.aspects._
+
             for {
               res                       <- inMemoryTracer
               (_, tracer)                = res
               externallyProvidedRootSpan = tracer.spanBuilder("external").startSpan()
               scope                      = externallyProvidedRootSpan.makeCurrent()
-              _                         <- tracing.inSpan(externallyProvidedRootSpan, "zio-otel-child")(ZIO.unit)
+              _                         <- ZIO.unit @@ inSpan(externallyProvidedRootSpan, "zio-otel-child")
               _                          = externallyProvidedRootSpan.end()
               _                          = scope.close()
               spans                     <- getFinishedSpans
@@ -215,20 +211,16 @@ object TracingTest extends ZIOSpecDefault {
         },
         test("inject - extract roundtrip") {
           ZIO.serviceWithZIO[Tracing] { tracing =>
+            import tracing.aspects._
+
             val propagator                           = W3CTraceContextPropagator.getInstance()
             val carrier: mutable.Map[String, String] = mutable.Map().empty
 
             for {
-              _     <- tracing.span("ROOT")(
-                         for {
-                           _ <- tracing.span("foo")(
-                                  tracing.inject(propagator, carrier, setter = TextMapAdapter)
-                                )
-                           _ <- tracing.span("bar")(
-                                  tracing.spanFrom(propagator, carrier, getter = TextMapAdapter, "baz")(ZIO.unit)
-                                )
-                         } yield ()
-                       )
+              _     <- (for {
+                         _ <- tracing.inject(propagator, carrier, setter = TextMapAdapter) @@ span("foo")
+                         _ <- ZIO.unit @@ spanFrom(propagator, carrier, getter = TextMapAdapter, "baz") @@ span("bar")
+                       } yield ()) @@ span("ROOT")
               spans <- getFinishedSpans
               root   = spans.find(_.getName == "ROOT")
               foo    = spans.find(_.getName == "foo")
@@ -245,17 +237,17 @@ object TracingTest extends ZIOSpecDefault {
         },
         test("tagging") {
           ZIO.serviceWithZIO[Tracing] { tracing =>
+            import tracing.aspects._
+
             for {
-              _     <- tracing.span("foo")(
-                         for {
-                           _ <- tracing.setAttribute("boolean", true)
-                           _ <- tracing.setAttribute("int", 1)
-                           _ <- tracing.setAttribute("string", "foo")
-                           _ <- tracing.setAttribute("booleans", Seq(true, false))
-                           _ <- tracing.setAttribute("longs", Seq(1L, 2L))
-                           _ <- tracing.setAttribute("strings", Seq("foo", "bar"))
-                         } yield ()
-                       )
+              _     <- (for {
+                         _ <- tracing.setAttribute("boolean", true)
+                         _ <- tracing.setAttribute("int", 1)
+                         _ <- tracing.setAttribute("string", "foo")
+                         _ <- tracing.setAttribute("booleans", Seq(true, false))
+                         _ <- tracing.setAttribute("longs", Seq(1L, 2L))
+                         _ <- tracing.setAttribute("strings", Seq("foo", "bar"))
+                       } yield ()) @@ span("foo")
               spans <- getFinishedSpans
               tags   = spans.head.getAttributes
             } yield assert(tags.get(AttributeKey.booleanKey("boolean")))(equalTo(Boolean.box(true))) &&
@@ -272,6 +264,8 @@ object TracingTest extends ZIOSpecDefault {
         },
         test("logging") {
           ZIO.serviceWithZIO[Tracing] { tracing =>
+            import tracing.aspects._
+
             val duration = 1000.micros
 
             val log = for {
@@ -289,10 +283,8 @@ object TracingTest extends ZIOSpecDefault {
             } yield ()
 
             for {
-              _     <- tracing.span("foo")(log)
-              _     <- tracing.span("Root")(
-                         tracing.span("Child")(ZIO.unit)
-                       )
+              _     <- log @@ span("foo")
+              _     <- ZIO.unit @@ span("Child") @@ span("Root")
               spans <- getFinishedSpans
               tags   = spans.collect {
                          case span if span.getName == "foo" =>
