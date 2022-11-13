@@ -9,15 +9,9 @@ import zio._
 
 import scala.jdk.CollectionConverters._
 
-trait OpenTracing {
-
-  @deprecated("The method will become private, use getCurrentSpan instead", "zio-opentracing 2.2.0")
-  def currentSpan: FiberRef[Span]
+trait OpenTracing { self =>
 
   def getCurrentSpan(implicit trace: Trace): UIO[Span]
-
-  @deprecated("The method will be renamed to getCurrentSpanContext", "zio-opentracing 2.2.0")
-  def context(implicit trace: Trace): UIO[SpanContext]
 
   def getCurrentSpanContext(implicit trace: Trace): UIO[SpanContext]
 
@@ -63,6 +57,78 @@ trait OpenTracing {
 
   def getBaggageItem(key: String)(implicit trace: Trace): UIO[Option[String]]
 
+  object aspects {
+
+    def root(
+      operation: String,
+      tagError: Boolean = true,
+      logError: Boolean = true
+    ): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.root(operation, tagError, logError)(zio)
+      }
+
+    def span(
+      operation: String,
+      tagError: Boolean = true,
+      logError: Boolean = true
+    ): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.span(operation, tagError, logError)(zio)
+      }
+
+    def spanFrom[C](
+      format: Format[C],
+      carrier: C,
+      operation: String,
+      tagError: Boolean = true,
+      logError: Boolean = true
+    ): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.spanFrom(format, carrier, operation, tagError, logError)(zio)
+      }
+
+    def setBaggageItem(key: String, value: String): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.setBaggageItem(key, value)(zio)
+      }
+
+    def tag(key: String, value: String): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.tag(key, value)(zio)
+      }
+
+    def tag(key: String, value: Int): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.tag(key, value)(zio)
+      }
+
+    def tag(key: String, value: Boolean): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.tag(key, value)(zio)
+      }
+
+    def log(fields: Map[String, _]): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.log(fields)(zio)
+      }
+
+    def log(msg: String): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.log(msg)(zio)
+      }
+
+  }
+
 }
 
 object OpenTracing {
@@ -76,15 +142,10 @@ object OpenTracing {
   def scoped(tracer: Tracer, rootOperation: String): URIO[Scope, OpenTracing] = {
     val acquire: URIO[Scope, OpenTracing] = for {
       span         <- ZIO.succeed(tracer.buildSpan(rootOperation).start())
-      rootSpan     <- FiberRef.make(span)
+      currentSpan  <- FiberRef.make(span)
       currentMicros = Clock.currentTime(TimeUnit.MICROSECONDS)
     } yield new OpenTracing { self =>
-      override val currentSpan: FiberRef[Span] = rootSpan
-
       override def getCurrentSpan(implicit trace: Trace): UIO[Span] = currentSpan.get
-
-      override def context(implicit trace: Trace): UIO[SpanContext] =
-        getCurrentSpanContext
 
       override def getCurrentSpanContext(implicit trace: Trace): UIO[SpanContext] =
         getCurrentSpan.map(_.context)
