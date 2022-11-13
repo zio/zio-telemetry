@@ -3,7 +3,6 @@ package zio.telemetry.opencensus
 import zio._
 import io.opencensus.trace._
 import io.opencensus.trace.propagation.TextFormat
-import zio.telemetry.opencensus.Tracing.defaultMapper
 
 trait Tracing {
 
@@ -12,14 +11,14 @@ trait Tracing {
   def span[R, E, A](
     name: String,
     kind: Span.Kind = null,
-    toErrorStatus: ErrorMapper[E] = defaultMapper[E],
+    toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E],
     attributes: Map[String, AttributeValue] = Map()
   )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   def root[R, E, A](
     name: String,
     kind: Span.Kind = null,
-    toErrorStatus: ErrorMapper[E] = defaultMapper[E],
+    toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E],
     attributes: Map[String, AttributeValue] = Map()
   )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
@@ -27,7 +26,7 @@ trait Tracing {
     remote: SpanContext,
     name: String,
     kind: Span.Kind = Span.Kind.SERVER,
-    toErrorStatus: ErrorMapper[E] = defaultMapper[E],
+    toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E],
     attributes: Map[String, AttributeValue] = Map()
   )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
@@ -37,7 +36,7 @@ trait Tracing {
     getter: TextFormat.Getter[C],
     name: String,
     kind: Span.Kind = Span.Kind.SERVER,
-    toErrorStatus: ErrorMapper[E] = defaultMapper[E],
+    toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E],
     attributes: Map[String, AttributeValue] = Map()
   )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
@@ -113,7 +112,7 @@ object Tracing {
         getter: TextFormat.Getter[C],
         name: String,
         kind: Span.Kind = Span.Kind.SERVER,
-        toErrorStatus: ErrorMapper[E] = defaultMapper[E],
+        toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E],
         attributes: Map[String, AttributeValue] = Map()
       )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
         ZIO
@@ -187,7 +186,7 @@ object Tracing {
         toErrorStatus: ErrorMapper[E]
       )(implicit trace: Trace): UIO[Unit] = {
         val errorStatus =
-          cause.failureOption.flatMap(toErrorStatus.lift).getOrElse(Status.UNKNOWN)
+          cause.failureOption.flatMap(toErrorStatus.body.lift).getOrElse(Status.UNKNOWN)
         ZIO.succeed(span.setStatus(errorStatus))
       }
 
@@ -198,8 +197,5 @@ object Tracing {
 
     ZIO.acquireRelease(acquire)(release)
   }
-
-  def defaultMapper[E]: ErrorMapper[E] =
-    Map.empty
 
 }

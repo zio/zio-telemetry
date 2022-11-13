@@ -6,13 +6,12 @@ import io.opentelemetry.api.trace._
 import io.opentelemetry.context.Context
 import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator, TextMapSetter }
 import zio._
-import zio.telemetry.opentelemetry.Tracing.defaultMapper
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters._
 
-trait Tracing {
+trait Tracing { self =>
 
   def getCurrentContext(implicit trace: Trace): UIO[Context]
 
@@ -33,7 +32,7 @@ trait Tracing {
     getter: TextMapGetter[C],
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
-    toErrorStatus: ErrorMapper[E] = defaultMapper[E]
+    toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
   )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   /**
@@ -54,7 +53,7 @@ trait Tracing {
   def root[R, E, A](
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
-    toErrorStatus: ErrorMapper[E] = defaultMapper[E]
+    toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
   )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   /**
@@ -64,7 +63,7 @@ trait Tracing {
   def span[R, E, A](
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
-    toErrorStatus: ErrorMapper[E] = defaultMapper[E]
+    toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
   )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   /**
@@ -125,7 +124,7 @@ trait Tracing {
     span: Span,
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
-    toErrorStatus: ErrorMapper[E] = defaultMapper[E]
+    toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
   )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   /**
@@ -231,7 +230,7 @@ object Tracing {
         getter: TextMapGetter[C],
         spanName: String,
         spanKind: SpanKind = SpanKind.INTERNAL,
-        toErrorStatus: ErrorMapper[E] = defaultMapper[E]
+        toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
       )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
         extractContext(propagator, carrier, getter).flatMap { context =>
           ZIO.acquireReleaseWith {
@@ -261,7 +260,7 @@ object Tracing {
       override def root[R, E, A](
         spanName: String,
         spanKind: SpanKind = SpanKind.INTERNAL,
-        toErrorStatus: ErrorMapper[E] = defaultMapper[E]
+        toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
       )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
         ZIO.acquireReleaseWith {
           createRoot(spanName, spanKind)
@@ -274,7 +273,7 @@ object Tracing {
       override def span[R, E, A](
         spanName: String,
         spanKind: SpanKind = SpanKind.INTERNAL,
-        toErrorStatus: ErrorMapper[E] = defaultMapper[E]
+        toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
       )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
         getCurrentContext.flatMap { old =>
           ZIO.acquireReleaseWith {
@@ -344,7 +343,7 @@ object Tracing {
         span: Span,
         spanName: String,
         spanKind: SpanKind = SpanKind.INTERNAL,
-        toErrorStatus: ErrorMapper[E] = defaultMapper[E]
+        toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
       )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
         ZIO.acquireReleaseWith {
           createChildOf(Context.root().`with`(span), spanName, spanKind)
@@ -429,7 +428,7 @@ object Tracing {
         cause: Cause[E],
         toErrorStatus: ErrorMapper[E]
       )(implicit trace: Trace): UIO[Span] = {
-        val errorStatus: StatusCode = cause.failureOption.flatMap(toErrorStatus.lift).getOrElse(StatusCode.UNSET)
+        val errorStatus: StatusCode = cause.failureOption.flatMap(toErrorStatus.body.lift).getOrElse(StatusCode.UNSET)
         ZIO.succeed(span.setStatus(errorStatus, cause.prettyPrint))
       }
 
@@ -528,8 +527,5 @@ object Tracing {
 
     ZIO.acquireRelease(acquire)(release)
   }
-
-  def defaultMapper[E]: ErrorMapper[E] =
-    Map.empty
 
 }
