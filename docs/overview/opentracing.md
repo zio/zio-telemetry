@@ -17,7 +17,7 @@ First, add the following dependency to your build.sbt:
 ## Usage
 
 To use ZIO Telemetry, you will need an `OpenTracing` service in your
-environment:
+environment. You also need to provide a `tracer` (for this example we use `JaegerTracer.live` from `opentracing-example` module) implementation:
 
 ```scala
 import zio.telemetry.opentracing.OpenTracing
