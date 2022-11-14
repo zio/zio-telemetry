@@ -15,14 +15,14 @@ docker run --rm -it \
   jaegertracing/all-in-one:1.36
 ```
 
-Then start the proxy server
+Then start the proxy application
 ```bash
-sbt "opentelemetryExample/runMain zio.telemetry.opentelemetry.example.ProxyServer"
+sbt "opentelemetryExample/runMain zio.telemetry.opentelemetry.example.ProxyApp"
 ```
-and the backend server
+and the backend application
 
 ```bash
-sbt "opentelemetryExample/runMain zio.telemetry.opentelemetry.example.BackendServer"
+sbt "opentelemetryExample/runMain zio.telemetry.opentelemetry.example.BackendApp"
 ```
 Now perform the following request:
 ```bash

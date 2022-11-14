@@ -20,7 +20,8 @@ case class ProxyHttpApp(client: Client, tracing: Tracing) {
   private val setter: TextMapSetter[mutable.Map[String, String]] =
     (carrier, key, value) => carrier.update(key, value)
 
-  private val errorMapper: ErrorMapper[Throwable] = ErrorMapper[Throwable] { case _ => StatusCode.UNSET }
+  private val errorMapper: ErrorMapper[Throwable] =
+    ErrorMapper[Throwable] { case _ => StatusCode.UNSET }
 
   val routes: HttpApp[Any, Throwable] =
     Http.collectZIO { case Method.GET -> !! / "statuses" =>
