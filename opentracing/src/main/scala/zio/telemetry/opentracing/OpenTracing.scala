@@ -130,6 +130,12 @@ trait OpenTracing { self =>
           self.log(msg)(zio)
       }
 
+    def inject[C](format: Format[C], carrier: C): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.inject(format, carrier) *> zio
+      }
+
   }
 
 }
