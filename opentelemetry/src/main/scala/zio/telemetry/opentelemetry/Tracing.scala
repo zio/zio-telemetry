@@ -13,8 +13,14 @@ import scala.jdk.CollectionConverters._
 
 trait Tracing { self =>
 
+  /**
+   * Gets current Context
+   */
   def getCurrentContext(implicit trace: Trace): UIO[Context]
 
+  /**
+   * Gets current Span
+   */
   def getCurrentSpan(implicit trace: Trace): UIO[Span]
 
   /**
@@ -33,7 +39,7 @@ trait Tracing { self =>
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
-  )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
+  )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   /**
    * Extracts the span from carrier `C` and unsafely set its child span with name 'spanName' as the current span. You
@@ -44,7 +50,7 @@ trait Tracing { self =>
     carrier: C,
     getter: TextMapGetter[C],
     spanName: String,
-    spanKind: SpanKind
+    spanKind: SpanKind = SpanKind.INTERNAL
   )(implicit trace: Trace): UIO[(Span, UIO[Any])]
 
   /**
@@ -54,7 +60,7 @@ trait Tracing { self =>
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
-  )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
+  )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   /**
    * Sets the current span to be the child of the current span with name 'spanName'. Ends the span when the effect
@@ -64,7 +70,7 @@ trait Tracing { self =>
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
-  )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
+  )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   /**
    * Unsafely sets the current span to be the child of the current span with name 'spanName'. You need to manually call
@@ -72,7 +78,7 @@ trait Tracing { self =>
    */
   def spanUnsafe(
     spanName: String,
-    spanKind: SpanKind
+    spanKind: SpanKind = SpanKind.INTERNAL
   )(implicit trace: Trace): UIO[(Span, UIO[Any])]
 
   /**
@@ -125,7 +131,7 @@ trait Tracing { self =>
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
-  )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
+  )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   /**
    * Adds an event to the current span
@@ -365,8 +371,7 @@ object Tracing {
   def scoped(tracer: Tracer, currentContext: ContextStorage): URIO[Scope, Tracing] = {
     val acquire: URIO[Scope, Tracing] =
       ZIO.succeed {
-        new Tracing {
-          self =>
+        new Tracing { self =>
           override def getCurrentContext(implicit trace: Trace): UIO[Context] =
             currentContext.get
 
@@ -383,7 +388,7 @@ object Tracing {
             spanName: String,
             spanKind: SpanKind = SpanKind.INTERNAL,
             toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
-          )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
             extractContext(propagator, carrier, getter).flatMap { context =>
               ZIO.acquireReleaseWith {
                 createChildOf(context, spanName, spanKind)
@@ -399,7 +404,7 @@ object Tracing {
             carrier: C,
             getter: TextMapGetter[C],
             spanName: String,
-            spanKind: SpanKind
+            spanKind: SpanKind = SpanKind.INTERNAL
           )(implicit trace: Trace): UIO[(Span, UIO[Any])] =
             for {
               context <- extractContext(propagator, carrier, getter)
@@ -413,7 +418,7 @@ object Tracing {
             spanName: String,
             spanKind: SpanKind = SpanKind.INTERNAL,
             toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
-          )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
             ZIO.acquireReleaseWith {
               createRoot(spanName, spanKind)
             } { case (r, _) =>
@@ -426,7 +431,7 @@ object Tracing {
             spanName: String,
             spanKind: SpanKind = SpanKind.INTERNAL,
             toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
-          )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
             getCurrentContext.flatMap { old =>
               ZIO.acquireReleaseWith {
                 createChildOf(old, spanName, spanKind)
@@ -439,7 +444,7 @@ object Tracing {
 
           override def spanUnsafe(
             spanName: String,
-            spanKind: SpanKind
+            spanKind: SpanKind = SpanKind.INTERNAL
           )(implicit trace: Trace): UIO[(Span, UIO[Any])] =
             for {
               old     <- getCurrentContext
@@ -496,7 +501,7 @@ object Tracing {
             spanName: String,
             spanKind: SpanKind = SpanKind.INTERNAL,
             toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
-          )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
             ZIO.acquireReleaseWith {
               createChildOf(Context.root().`with`(span), spanName, spanKind)
             } { case (r, _) =>
@@ -568,9 +573,14 @@ object Tracing {
           }
 
           override def setBaggage(name: String, value: String)(implicit trace: Trace): UIO[Context] =
-            currentContext.updateAndGet(context =>
-              Baggage.fromContext(context).toBuilder.put(name, value).build().storeInContext(context)
-            )
+            currentContext.updateAndGet { context =>
+              Baggage
+                .fromContext(context)
+                .toBuilder
+                .put(name, value)
+                .build()
+                .storeInContext(context)
+            }
 
           override def getCurrentBaggage(implicit trace: Trace): UIO[Baggage] =
             getCurrentContext.map(Baggage.fromContext)
@@ -580,8 +590,11 @@ object Tracing {
             cause: Cause[E],
             toErrorStatus: ErrorMapper[E]
           )(implicit trace: Trace): UIO[Span] = {
-            val errorStatus: StatusCode =
-              cause.failureOption.flatMap(toErrorStatus.body.lift).getOrElse(StatusCode.UNSET)
+            val errorStatus =
+              cause.failureOption
+                .flatMap(toErrorStatus.body.lift)
+                .getOrElse(StatusCode.UNSET)
+
             ZIO.succeed(span.setStatus(errorStatus, cause.prettyPrint))
           }
 
@@ -598,7 +611,8 @@ object Tracing {
               .locally(context)(effect)
               .tapErrorCause(setErrorStatus(Span.fromContext(context), _, toErrorStatus))
 
-          private def currentNanos(implicit trace: Trace): UIO[Long] = Clock.currentTime(TimeUnit.NANOSECONDS)
+          private def currentNanos(implicit trace: Trace): UIO[Long] =
+            Clock.currentTime(TimeUnit.NANOSECONDS)
 
           private def createRoot(spanName: String, spanKind: SpanKind)(implicit
             trace: Trace

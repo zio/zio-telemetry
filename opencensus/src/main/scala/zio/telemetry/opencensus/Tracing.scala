@@ -13,14 +13,14 @@ trait Tracing { self =>
     kind: Span.Kind = null,
     toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E],
     attributes: Map[String, AttributeValue] = Map()
-  )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
+  )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   def root[R, E, A](
     name: String,
     kind: Span.Kind = null,
     toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E],
     attributes: Map[String, AttributeValue] = Map()
-  )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
+  )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   def fromRemoteSpan[R, E, A](
     remote: SpanContext,
@@ -28,7 +28,7 @@ trait Tracing { self =>
     kind: Span.Kind = Span.Kind.SERVER,
     toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E],
     attributes: Map[String, AttributeValue] = Map()
-  )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
+  )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   def fromRootSpan[C, R, E, A](
     format: TextFormat,
@@ -38,7 +38,7 @@ trait Tracing { self =>
     kind: Span.Kind = Span.Kind.SERVER,
     toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E],
     attributes: Map[String, AttributeValue] = Map()
-  )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
+  )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   def inject[C](
     format: TextFormat,
@@ -114,7 +114,7 @@ object Tracing {
         kind: Span.Kind = Span.Kind.SERVER,
         toErrorStatus: ErrorMapper[E],
         attributes: Map[String, AttributeValue]
-      )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+      )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
         ZIO.scoped[R] {
           for {
             parent <- getCurrentSpan
@@ -128,7 +128,7 @@ object Tracing {
         kind: Span.Kind,
         toErrorStatus: ErrorMapper[E],
         attributes: Map[String, AttributeValue]
-      )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+      )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
         ZIO.scoped[R] {
           createSpan(BlankSpan.INSTANCE, name, kind).flatMap { span =>
             finalizeSpanUsingEffect(span, toErrorStatus)(
@@ -143,7 +143,7 @@ object Tracing {
         kind: Span.Kind,
         toErrorStatus: ErrorMapper[E],
         attributes: Map[String, AttributeValue]
-      )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+      )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
         ZIO.scoped[R] {
           createSpanFromRemote(remote, name, kind).flatMap { span =>
             finalizeSpanUsingEffect(span, toErrorStatus)(
@@ -160,7 +160,7 @@ object Tracing {
         kind: Span.Kind = Span.Kind.SERVER,
         toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E],
         attributes: Map[String, AttributeValue] = Map()
-      )(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+      )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
         ZIO
           .attempt(format.extract(carrier, getter))
           .foldZIO(

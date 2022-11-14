@@ -15,9 +15,12 @@ trait OpenTracing { self =>
 
   def getCurrentSpanContext(implicit trace: Trace): UIO[SpanContext]
 
-  def error(span: Span, cause: Cause[_], tagError: Boolean = true, logError: Boolean = true)(implicit
-    trace: Trace
-  ): UIO[Unit]
+  def error(
+    span: Span,
+    cause: Cause[_],
+    tagError: Boolean = true,
+    logError: Boolean = true
+  )(implicit trace: Trace): UIO[Unit]
 
   def finish(span: Span)(implicit trace: Trace): UIO[Unit]
 
@@ -145,14 +148,18 @@ object OpenTracing {
       currentSpan  <- FiberRef.make(span)
       currentMicros = Clock.currentTime(TimeUnit.MICROSECONDS)
     } yield new OpenTracing { self =>
-      override def getCurrentSpan(implicit trace: Trace): UIO[Span] = currentSpan.get
+      override def getCurrentSpan(implicit trace: Trace): UIO[Span] =
+        currentSpan.get
 
       override def getCurrentSpanContext(implicit trace: Trace): UIO[SpanContext] =
         getCurrentSpan.map(_.context)
 
-      override def error(span: Span, cause: Cause[_], tagError: Boolean = true, logError: Boolean = true)(implicit
-        trace: Trace
-      ): UIO[Unit] =
+      override def error(
+        span: Span,
+        cause: Cause[_],
+        tagError: Boolean = true,
+        logError: Boolean = true
+      )(implicit trace: Trace): UIO[Unit] =
         for {
           _ <- ZIO.succeed(span.setTag("error", true)).when(tagError)
           _ <- ZIO.succeed(span.log(Map("error.object" -> cause, "stack" -> cause.prettyPrint).asJava)).when(logError)
