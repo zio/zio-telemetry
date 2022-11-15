@@ -17,34 +17,47 @@ First, add the following dependency to your build.sbt:
 ## Usage
 
 To use ZIO Telemetry, you will need an `OpenTracing` service in your
-environment:
+environment. You also need to provide a `tracer` (for this example we use `JaegerTracer.live` from `opentracing-example` module) implementation:
 
 ```scala
-import io.opentracing.mock.MockTracer
-import io.opentracing.propagation._
+import zio.telemetry.opentracing.OpenTracing
+import zio.telemetry.opentracing.example.JaegerTracer
 import zio._
-import zio.telemetry.opentracing._
+import io.opentracing.tag.Tags
 
-val tracer = new MockTracer
+val app =
+  ZIO.serviceWithZIO[OpenTracing] { tracing =>
+    import tracing.aspects._
 
-val layer = OpenTracing.live(tracer)
+    (for {
+      _       <- ZIO.unit @@ tag(Tags.SPAN_KIND.getKey, Tags.SPAN_KIND_CLIENT)
+      _       <- ZIO.unit @@ tag(Tags.HTTP_METHOD.getKey, "GET")
+      _       <- ZIO.unit @@ setBaggageItem("proxy-baggage-item-key", "proxy-baggage-item-value")
+      message <- Console.readline
+      _       <- ZIO.unit @@ log("Message has been read")
+    } yield message) @@ root("/app")
+  }.provide(OpenTracing.live, JaegerTracer.live("my-app"))
 ```
 
-After importing `import zio.telemetry.opentracing._`, additional combinators
+After importing `import tracing.aspects._`, additional `ZIOAspect` combinators
 on `ZIO`s are available to support starting child spans, tagging, logging and
 managing baggage.
 
 ```scala
-// start a new root span and set some baggage item
-val zio = ZIO.unit
-             .setBaggage("foo", "bar")
-             .root("root span")
-          
-// start a child of the current span, set a tag and log a message
-val zio = ZIO.unit
-             .tag("http.status_code", 200)
-             .log("doing some serious work here!")
-             .span("child span")
+ZIO.serviceWithZIO[OpenTracing] { tracing =>
+  import tracing.aspects._
+  
+  // start a new root span and set some baggage item
+  val zio1 = ZIO.unit @@ 
+    setBaggage("foo", "bar") @@ 
+    root("root span")
+
+  // start a child of the current span, set a tag and log a message
+  val zio2 = ZIO.unit @@ 
+    tag("http.status_code", 200) @@ 
+    log("doing some serious work here!") @@ 
+    span("child span")
+}
 ```
 
 To propagate contexts across process boundaries, extraction and injection can be
@@ -58,9 +71,13 @@ Due to the use of the (mutable) OpenTracing carrier APIs, injection and extracti
 are not referentially transparent.
 
 ```scala
-val buffer = new TextMapAdapter(mutable.Map.empty.asJava)
-for {
-  _ <- zio.inject(Format.Builtin.TEXT_MAP, buffer)
-  _ <- zio.spanFrom(Format.Builtin.TEXT_MAP, buffer, "child of remote span")
-} yield buffer
+ZIO.serviceWithZIO[OpenTracing] { tracing =>
+  import tracing.aspects._
+  
+  val buffer = new TextMapAdapter(mutable.Map.empty.asJava)
+  for {
+    _ <- ZIO.unit @@ inject(Format.Builtin.TEXT_MAP, buffer)
+    _ <- ZIO.unit @@ spanFrom(Format.Builtin.TEXT_MAP, buffer, "child of remote span")
+  } yield buffer
+}
 ```

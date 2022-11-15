@@ -23,33 +23,36 @@ To check if it's running properly visit [Jaeger UI](http://localhost:16686/).
 More info can be found [here](https://www.jaegertracing.io/docs/1.6/getting-started/#all-in-one-docker-image).
 
 Our application contains two services:
- 1. [Proxy](https://github.com/zio/zio-telemetry/blob/master/opentracing-example/src/main/scala/zio/telemetry/opentracing/example/ProxyServer.scala) service
- 2. [Backend](https://github.com/zio/zio-telemetry/blob/master/opentracing-example/src/main/scala/zio/telemetry/opentracing/example/BackendServer.scala) service
+ 1. [Proxy](https://github.com/zio/zio-telemetry/blob/master/opentracing-example/src/main/scala/zio/telemetry/opentracing/example/ProxyApp.scala) service
+ 2. [Backend](https://github.com/zio/zio-telemetry/blob/master/opentracing-example/src/main/scala/zio/telemetry/opentracing/example/BackendApp.scala) service
 
 ### Proxy Service
 
 Represents the entry point of the distributed system example. It exposes the `/statuses` endpoint which returns a list of system's services statuses.
 
-The service consists of `ProxyServer` and `ProxyApp`.
+The service consists of `ProxyHttpServer` and `ProxyHttpApp`.
 
-#### ProxyServer
+#### ProxyApp
 
 In order to start the service run:
 ```bash
-sbt "opentracingExample/runMain zio.telemetry.opentracing.example.ProxyServer"
+sbt "opentracingExample/runMain zio.telemetry.opentracing.example.ProxyApp"
 ```
 
 The console should output
 ```bash
-ProxyServer started on port 8080
+running zio.telemetry.opentracing.example.ProxyApp
 ```
 if the server has been started properly.
 
-#### ProxyApp
+#### ProxyHttpApp
 
-Provides the implementation of the service, which returns the status of the backend service and the proxy service itself. `Client` is used to retrieve the status of the backend service.
+Provides the implementation of the service, which returns the status of the backend service and the proxy service itself. 
+`Client` is used to retrieve the status of the backend service.
 
-This is also where the tracing of the application is done, by collecting the timings and logging things such as the span type and the HTTP method. The context is injected into a carrier, and passed along to the backend through `Client`, where a child span is created, and logging of the backend service is done.
+This is also where the tracing of the application is done, by collecting the timings and logging things such as the span
+type and the HTTP method. The context is injected into a carrier, and passed along to the backend through `Client`, 
+where a child span is created, and logging of the backend service is done.
 
 ### Backend Service
 
@@ -57,20 +60,20 @@ Represents the "internal" service of the system. It exposes the `/status` endpoi
 
 The service consists of `BackendServer` and `BackendApp`.
 
-#### BackendServer
+#### BackendApp
 
 In order to start the service run:
 ```bash
-sbt "opentracingExample/runMain zio.telemetry.opentracing.example.BackendServer"
+sbt "opentracingExample/runMain zio.telemetry.opentracing.example.BackendApp"
 ```
 
 The console should output
 ```bash
-BackendServer started on port 9000
+running zio.telemetry.opentracing.example.BackendApp
 ```
 if the server has been started properly.
 
-#### BackendApp
+#### BackendHttpApp
 
 Provides the implementation of the service, which is to simply return the status of the backend service.
 

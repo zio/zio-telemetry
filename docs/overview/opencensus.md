@@ -17,16 +17,39 @@ First, add the following dependency to your build.sbt:
 
 To use ZIO Telemetry, you will need a `Tracing` service in your environment. You also need to provide a `tracer` implementation:
 
-After importing `import zio.telemetry.opencensus._`, additional combinators
+```scala
+import zio.telemetry.opencensus.Tracing
+import zio.telemetry.opencensus.implicits._
+import zio._
+import io.opencensus.trace.Status
+
+val tracerLayer = ZLayer.succeed(io.opencensus.trace.Tracing.getTracer)
+
+val errorMapper = ErrorMapper[Throwable] { case _ => Status.UNKNOWN }
+
+val app =
+  ZIO.serviceWithZIO[Tracing] { tracing =>
+    import tracing.aspects._
+
+    (for {
+      _       <- tracing.putAttributes(Map("foo" -> "bar"))
+      message <- Console.readline
+    } yield message) @@ root("/app")
+  }.provide(Tracing.live, tracerLayer)
+```
+
+After importing `import tracing.aspects._`, additional `ZIOAspect` combinators
 on `ZIO`s are available to support starting child spans and adding attributes.
 
 ```scala
-// start a new root span and set some attributes
-val zio = ZIO.unit
-             .root("root span", attributes = ("foo", "bar))
-// start a child of the current span
-val zio = ZIO.unit
-             .span("child span", attributes = Map.empty)
+ZIO.serviceWithZIO[Tracing] { tracing =>
+  import tracing.aspects._
+  
+  // start a new root span and set some attributes
+  val zio1 = ZIO.unit @@ root("root span", attributes = ("foo", "bar))
+  // start a child of the current span
+  val zio2 = ZIO.unit @@ span("child span", attributes = Map.empty)
+}
 ```
 
 To propagate contexts across process boundaries, extraction and injection can be
@@ -39,7 +62,10 @@ are not referentially transparent.
 
 
 ```scala
-val textFormat                           = Tracing.getPropagationComponent().getB3Format()
+ZIO.serviceWithZIO[Tracing] { tracing =>
+  import tracing.aspects._
+  
+  val textFormat                           = Tracing.getPropagationComponent().getB3Format()
   val carrier: mutable.Map[String, String] = mutable.Map().empty
 
   val getter: TextFormat.Getter[mutable.Map[String, String]] = new TextFormat.Getter[mutable.Map[String, String]] {
@@ -54,21 +80,12 @@ val textFormat                           = Tracing.getPropagationComponent().get
     override def put(carrier: mutable.Map[String, String], key: String, value: String): Unit =
       carrier.update(key, value)
   }
-
-  val injectExtract =
-    inject(
-      textFormat,
-      carrier,
-      setter
-    ).root("root span", attributes = Map.empty)
-  fromRootSpan(
-    textFormat,
-    carrier,
-    getter,
-    "foo",
-    attributes = Map.empty
-  ) {
-    ZIO.unit
-      .span("child span", attributes = Map(("foo", "bar")))
-  }
+  
+  val zio1 = tracing.inject(textFormat, carrier, setter) @@ 
+    root("root span", attributes = Map.empty)
+  
+  val zio2 = ZIO.unit @@ 
+    span("child span", attributes = Map(("foo", "bar"))) @@ 
+    fromRootSpan(textFormat, carrier, getter, "foo", attributes = Map.empty)
+}
 ```
