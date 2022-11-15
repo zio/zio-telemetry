@@ -69,29 +69,42 @@ and <a href="https://www.zipkin.io">Zipkin</a>.</p>
 </code></pre>
 <h2><a class="anchor" aria-hidden="true" id="usage"></a><a href="#usage" aria-hidden="true" class="hash-link"><svg class="hash-link-icon" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg></a>Usage</h2>
 <p>To use ZIO Telemetry, you will need an <code>OpenTracing</code> service in your
-environment:</p>
-<pre><code class="hljs css language-scala"><span class="hljs-keyword">import</span> io.opentracing.mock.<span class="hljs-type">MockTracer</span>
-<span class="hljs-keyword">import</span> io.opentracing.propagation._
+environment. You also need to provide a <code>tracer</code> (for this example we use <code>JaegerTracer.live</code> from <code>opentracing-example</code> module) implementation:</p>
+<pre><code class="hljs css language-scala"><span class="hljs-keyword">import</span> zio.telemetry.opentracing.<span class="hljs-type">OpenTracing</span>
+<span class="hljs-keyword">import</span> zio.telemetry.opentracing.example.<span class="hljs-type">JaegerTracer</span>
 <span class="hljs-keyword">import</span> zio._
-<span class="hljs-keyword">import</span> zio.telemetry.opentracing._
+<span class="hljs-keyword">import</span> io.opentracing.tag.<span class="hljs-type">Tags</span>
 
-<span class="hljs-keyword">val</span> tracer = <span class="hljs-keyword">new</span> <span class="hljs-type">MockTracer</span>
+<span class="hljs-keyword">val</span> app =
+  <span class="hljs-type">ZIO</span>.serviceWithZIO[<span class="hljs-type">OpenTracing</span>] { tracing =&gt;
+    <span class="hljs-keyword">import</span> tracing.aspects._
 
-<span class="hljs-keyword">val</span> layer = <span class="hljs-type">OpenTracing</span>.live(tracer)
+    (<span class="hljs-keyword">for</span> {
+      _       &lt;- <span class="hljs-type">ZIO</span>.unit @@ tag(<span class="hljs-type">Tags</span>.<span class="hljs-type">SPAN_KIND</span>.getKey, <span class="hljs-type">Tags</span>.<span class="hljs-type">SPAN_KIND_CLIENT</span>)
+      _       &lt;- <span class="hljs-type">ZIO</span>.unit @@ tag(<span class="hljs-type">Tags</span>.<span class="hljs-type">HTTP_METHOD</span>.getKey, <span class="hljs-string">"GET"</span>)
+      _       &lt;- <span class="hljs-type">ZIO</span>.unit @@ setBaggageItem(<span class="hljs-string">"proxy-baggage-item-key"</span>, <span class="hljs-string">"proxy-baggage-item-value"</span>)
+      message &lt;- <span class="hljs-type">Console</span>.readline
+      _       &lt;- <span class="hljs-type">ZIO</span>.unit @@ log(<span class="hljs-string">"Message has been read"</span>)
+    } <span class="hljs-keyword">yield</span> message) @@ root(<span class="hljs-string">"/app"</span>)
+  }.provide(<span class="hljs-type">OpenTracing</span>.live, <span class="hljs-type">JaegerTracer</span>.live(<span class="hljs-string">"my-app"</span>))
 </code></pre>
-<p>After importing <code>import zio.telemetry.opentracing._</code>, additional combinators
+<p>After importing <code>import tracing.aspects._</code>, additional <code>ZIOAspect</code> combinators
 on <code>ZIO</code>s are available to support starting child spans, tagging, logging and
 managing baggage.</p>
-<pre><code class="hljs css language-scala"><span class="hljs-comment">// start a new root span and set some baggage item</span>
-<span class="hljs-keyword">val</span> zio = <span class="hljs-type">ZIO</span>.unit
-             .setBaggage(<span class="hljs-string">"foo"</span>, <span class="hljs-string">"bar"</span>)
-             .root(<span class="hljs-string">"root span"</span>)
-          
-<span class="hljs-comment">// start a child of the current span, set a tag and log a message</span>
-<span class="hljs-keyword">val</span> zio = <span class="hljs-type">ZIO</span>.unit
-             .tag(<span class="hljs-string">"http.status_code"</span>, <span class="hljs-number">200</span>)
-             .log(<span class="hljs-string">"doing some serious work here!"</span>)
-             .span(<span class="hljs-string">"child span"</span>)
+<pre><code class="hljs css language-scala"><span class="hljs-type">ZIO</span>.serviceWithZIO[<span class="hljs-type">OpenTracing</span>] { tracing =&gt;
+  <span class="hljs-keyword">import</span> tracing.aspects._
+  
+  <span class="hljs-comment">// start a new root span and set some baggage item</span>
+  <span class="hljs-keyword">val</span> zio1 = <span class="hljs-type">ZIO</span>.unit @@ 
+    setBaggage(<span class="hljs-string">"foo"</span>, <span class="hljs-string">"bar"</span>) @@ 
+    root(<span class="hljs-string">"root span"</span>)
+
+  <span class="hljs-comment">// start a child of the current span, set a tag and log a message</span>
+  <span class="hljs-keyword">val</span> zio2 = <span class="hljs-type">ZIO</span>.unit @@ 
+    tag(<span class="hljs-string">"http.status_code"</span>, <span class="hljs-number">200</span>) @@ 
+    log(<span class="hljs-string">"doing some serious work here!"</span>) @@ 
+    span(<span class="hljs-string">"child span"</span>)
+}
 </code></pre>
 <p>To propagate contexts across process boundaries, extraction and injection can be
 used. The current span context is injected into a carrier, which is passed
@@ -101,11 +114,15 @@ carrier. For details about extraction and injection, please refer to
 <a href="https://opentracing.io/docs/overview/inject-extract/">OpenTracing Documentation</a>.</p>
 <p>Due to the use of the (mutable) OpenTracing carrier APIs, injection and extraction
 are not referentially transparent.</p>
-<pre><code class="hljs css language-scala"><span class="hljs-keyword">val</span> buffer = <span class="hljs-keyword">new</span> <span class="hljs-type">TextMapAdapter</span>(mutable.<span class="hljs-type">Map</span>.empty.asJava)
-<span class="hljs-keyword">for</span> {
-  _ &lt;- zio.inject(<span class="hljs-type">Format</span>.<span class="hljs-type">Builtin</span>.<span class="hljs-type">TEXT_MAP</span>, buffer)
-  _ &lt;- zio.spanFrom(<span class="hljs-type">Format</span>.<span class="hljs-type">Builtin</span>.<span class="hljs-type">TEXT_MAP</span>, buffer, <span class="hljs-string">"child of remote span"</span>)
-} <span class="hljs-keyword">yield</span> buffer
+<pre><code class="hljs css language-scala"><span class="hljs-type">ZIO</span>.serviceWithZIO[<span class="hljs-type">OpenTracing</span>] { tracing =&gt;
+  <span class="hljs-keyword">import</span> tracing.aspects._
+  
+  <span class="hljs-keyword">val</span> buffer = <span class="hljs-keyword">new</span> <span class="hljs-type">TextMapAdapter</span>(mutable.<span class="hljs-type">Map</span>.empty.asJava)
+  <span class="hljs-keyword">for</span> {
+    _ &lt;- <span class="hljs-type">ZIO</span>.unit @@ inject(<span class="hljs-type">Format</span>.<span class="hljs-type">Builtin</span>.<span class="hljs-type">TEXT_MAP</span>, buffer)
+    _ &lt;- <span class="hljs-type">ZIO</span>.unit @@ spanFrom(<span class="hljs-type">Format</span>.<span class="hljs-type">Builtin</span>.<span class="hljs-type">TEXT_MAP</span>, buffer, <span class="hljs-string">"child of remote span"</span>)
+  } <span class="hljs-keyword">yield</span> buffer
+}
 </code></pre>
 </span></div></article></div><div class="docs-prevnext"><a class="docs-prev button" href="/zio-telemetry/docs/overview/overview_index"><span class="arrow-prev">← </span><span>Contents</span></a><a class="docs-next button" href="/zio-telemetry/docs/overview/overview_opencensus"><span class="function-name-prevnext">OpenCensus</span><span class="arrow-next"> →</span></a></div></div></div><nav class="onPageNav"><ul class="toc-headings"><li><a href="#installation">Installation</a></li><li><a href="#usage">Usage</a></li></ul></nav></div><footer class="nav-footer" id="footer"><section class="sitemap"><a href="/zio-telemetry/" class="nav-home"><img src="/zio-telemetry/img/sidebar_brand2x.png" alt="ZIO Telemetry"/></a><div><h5>GitHub</h5><a class="github-button" href="https://github.com/zio/zio-telemetry" data-icon="octicon-star" data-count-href="/zio/zio-telemetry/stargazers" data-show-count="true" data-count-aria-label="# stargazers on GitHub" aria-label="Star this project on GitHub">Star</a></div><div><h5>Chat with us on Discord</h5><a href="https://discord.gg/2ccFBr4"><img src="/zio-telemetry//img/discord.png" width="120" alt="discord"/></a></div><div><h5>Additional resources</h5><a href="/zio-telemetry/api/index.html">Scaladoc of zio-telemetry</a></div></section><section class="copyright">Copyright © 2022 ZIO Maintainers</section></footer></div><script type="text/javascript" src="https://cdn.jsdelivr.net/docsearch.js/1/docsearch.min.js"></script><script>
                 document.addEventListener('keyup', function(e) {

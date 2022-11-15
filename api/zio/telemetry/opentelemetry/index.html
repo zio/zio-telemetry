@@ -134,6 +134,10 @@
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../index.html" class="extype" name="zio.telemetry">telemetry</a></dd></dl></div>
     </li><li class="current-entities indented3">
+                        <a class="object" href="ErrorMapper$.html" title=""></a>
+                        <a class="class" href="ErrorMapper.html" title=""></a>
+                        <a href="ErrorMapper.html" title="">ErrorMapper</a>
+                      </li><li class="current-entities indented3">
                         <span class="separator"></span>
                         <a class="class" href="PropagatingSupervisor.html" title=""></a>
                         <a href="PropagatingSupervisor.html" title="">PropagatingSupervisor</a>
@@ -143,12 +147,8 @@
                         <a href="TextMapAdapter$.html" title="">TextMapAdapter</a>
                       </li><li class="current-entities indented3">
                         <a class="object" href="Tracing$.html" title=""></a>
-                        <a class="class" href="Tracing.html" title=""></a>
+                        <a class="trait" href="Tracing.html" title=""></a>
                         <a href="Tracing.html" title="">Tracing</a>
-                      </li><li class="current-entities indented3">
-                        <span class="separator"></span>
-                        <a class="object" href="TracingSyntax$.html" title=""></a>
-                        <a href="TracingSyntax$.html" title="">TracingSyntax</a>
                       </li><li name="zio.telemetry.opentracing" visbl="pub" class="indented3 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="opentracing"></a><a id="opentracing:opentracing"></a>
       <span class="permalink">
@@ -228,7 +228,23 @@
 
         <div id="types" class="types members">
               <h3>Type Members</h3>
-              <ol><li name="zio.telemetry.opentelemetry.PropagatingSupervisor" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
+              <ol><li name="zio.telemetry.opentelemetry.ErrorMapper" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ErrorMapper[E]extendsProductwithSerializable"></a><a id="ErrorMapper[E]:ErrorMapper[E]"></a>
+      <span class="permalink">
+      <a href="../../../zio/telemetry/opentelemetry/ErrorMapper.html" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a title="" href="ErrorMapper.html"><span class="name">ErrorMapper</span></a><span class="tparams">[<span name="E">E</span>]</span><span class="params">(<span name="body">body: <a href="https://www.scala-lang.org/api/2.12.16/scala/PartialFunction.html#scala.PartialFunction" class="extype" name="scala.PartialFunction">PartialFunction</a>[<span class="extype" name="zio.telemetry.opentelemetry.ErrorMapper.E">E</span>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/StatusCode.html#io.opentelemetry.api.trace.StatusCode" class="extype" name="io.opentelemetry.api.trace.StatusCode">StatusCode</a>]</span>)</span><span class="result"> extends <a href="https://www.scala-lang.org/api/2.12.16/scala/Product.html#scala.Product" class="extype" name="scala.Product">Product</a> with <a href="https://www.scala-lang.org/api/2.12.16/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></span>
+      </span>
+      
+      
+    </li><li name="zio.telemetry.opentelemetry.PropagatingSupervisor" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="PropagatingSupervisorextendsSupervisor[Unit]"></a><a id="PropagatingSupervisor:PropagatingSupervisor"></a>
       <span class="permalink">
       <a href="../../../zio/telemetry/opentelemetry/PropagatingSupervisor.html" title="Permalink">
@@ -247,7 +263,7 @@
                 <span class="name">@nowarn</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li name="zio.telemetry.opentelemetry.Tracing" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="zio.telemetry.opentelemetry.Tracing" visbl="pub" class="indented0 " data-isabs="true" fullComment="no" group="Ungrouped">
       <a id="TracingextendsAnyRef"></a><a id="Tracing:Tracing"></a>
       <span class="permalink">
       <a href="../../../zio/telemetry/opentelemetry/Tracing.html" title="Permalink">
@@ -255,8 +271,8 @@
       </a>
     </span>
       <span class="modifier_kind">
-        <span class="modifier">final </span>
-        <span class="kind">class</span>
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
       </span>
       <span class="symbol">
         <a title="" href="Tracing.html"><span class="name">Tracing</span></a><span class="result"> extends <a href="https://www.scala-lang.org/api/2.12.16/scala/AnyRef.html#scala.AnyRef" class="extype" name="scala.AnyRef">AnyRef</a></span>
@@ -271,7 +287,23 @@
         <div class="values members">
               <h3>Value Members</h3>
               <ol>
-                <li name="zio.telemetry.opentelemetry.TextMapAdapter" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+                <li name="zio.telemetry.opentelemetry.ErrorMapper" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ErrorMapper"></a><a id="ErrorMapper:ErrorMapper"></a>
+      <span class="permalink">
+      <a href="../../../zio/telemetry/opentelemetry/ErrorMapper$.html" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a title="" href="ErrorMapper$.html"><span class="name">ErrorMapper</span></a><span class="result"> extends <a href="https://www.scala-lang.org/api/2.12.16/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></span>
+      </span>
+      
+      
+    </li><li name="zio.telemetry.opentelemetry.TextMapAdapter" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="TextMapAdapter"></a><a id="TextMapAdapter:TextMapAdapter"></a>
       <span class="permalink">
       <a href="../../../zio/telemetry/opentelemetry/TextMapAdapter$.html" title="Permalink">
@@ -300,22 +332,6 @@
       </span>
       <span class="symbol">
         <a title="" href="Tracing$.html"><span class="name">Tracing</span></a>
-      </span>
-      
-      
-    </li><li name="zio.telemetry.opentelemetry.TracingSyntax" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="TracingSyntax"></a><a id="TracingSyntax:TracingSyntax"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/TracingSyntax$.html" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">object</span>
-      </span>
-      <span class="symbol">
-        <a title="" href="TracingSyntax$.html"><span class="name">TracingSyntax</span></a>
       </span>
       
       

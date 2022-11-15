@@ -118,6 +118,10 @@
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../index.html" class="extype" name="zio.telemetry">telemetry</a></dd></dl></div>
     </li><li class="current-entities indented3">
+                        <a class="object" href="ErrorMapper$.html" title=""></a>
+                        <a class="class" href="ErrorMapper.html" title=""></a>
+                        <a href="ErrorMapper.html" title="">ErrorMapper</a>
+                      </li><li class="current-entities indented3">
                         <span class="separator"></span>
                         <a class="class" href="PropagatingSupervisor.html" title=""></a>
                         <a href="PropagatingSupervisor.html" title="">PropagatingSupervisor</a>
@@ -127,12 +131,8 @@
                         <a href="TextMapAdapter$.html" title="">TextMapAdapter</a>
                       </li><li class="current-entities indented3">
                         <a class="object" href="" title=""></a>
-                        <a class="class" href="Tracing.html" title=""></a>
+                        <a class="trait" href="Tracing.html" title=""></a>
                         <a href="Tracing.html" title="">Tracing</a>
-                      </li><li class="current-entities indented3">
-                        <span class="separator"></span>
-                        <a class="object" href="TracingSyntax$.html" title=""></a>
-                        <a href="TracingSyntax$.html" title="">TracingSyntax</a>
                       </li>
               </ul>
             </div>
@@ -140,15 +140,15 @@
           <div id="content">
             <body class="object value">
       <div id="definition">
-        <a href="Tracing.html" title="See companion class"><div class="big-circle object-companion-class">o</div></a>
+        <a href="Tracing.html" title="See companion trait"><div class="big-circle object-companion-trait">o</div></a>
         <p id="owner"><a href="../../index.html" class="extype" name="zio">zio</a>.<a href="../index.html" class="extype" name="zio.telemetry">telemetry</a>.<a href="index.html" class="extype" name="zio.telemetry.opentelemetry">opentelemetry</a></p>
-        <h1><a href="Tracing.html" title="See companion class">Tracing</a><span class="permalink">
+        <h1><a href="Tracing.html" title="See companion trait">Tracing</a><span class="permalink">
       <a href="../../../zio/telemetry/opentelemetry/Tracing$.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span></h1>
         <h3><span class="morelinks"><div>
-            Companion <a href="Tracing.html" title="See companion class">class Tracing</a>
+            Companion <a href="Tracing.html" title="See companion trait">trait Tracing</a>
           </div></span></h3>
       </div>
 
@@ -268,39 +268,6 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="zio.telemetry.opentelemetry.Tracing#addEvent" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="addEvent(name:String):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.Span]"></a><a id="addEvent(String):URIO[Tracing,Span]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#addEvent(name:String):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.Span]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">addEvent</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/Span.html#io.opentelemetry.api.trace.Span" class="extype" name="io.opentelemetry.api.trace.Span">Span</a>]</span>
-      </span>
-      
-      <p class="shortcomment cmt">Adds an event to the current span
-</p>
-    </li><li name="zio.telemetry.opentelemetry.Tracing#addEventWithAttributes" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="addEventWithAttributes(name:String,attributes:io.opentelemetry.api.common.Attributes):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.Span]"></a><a id="addEventWithAttributes(String,Attributes):URIO[Tracing,Span]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#addEventWithAttributes(name:String,attributes:io.opentelemetry.api.common.Attributes):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.Span]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">addEventWithAttributes</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="attributes">attributes: <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/common/Attributes.html#io.opentelemetry.api.common.Attributes" class="extype" name="io.opentelemetry.api.common.Attributes">Attributes</a></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/Span.html#io.opentelemetry.api.trace.Span" class="extype" name="io.opentelemetry.api.trace.Span">Span</a>]</span>
-      </span>
-      
-      <p class="shortcomment cmt">Adds an event with attributes to the current span.</p>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <span class="permalink">
@@ -396,72 +363,6 @@
                 <span class="name">@IntrinsicCandidate</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li name="zio.telemetry.opentelemetry.Tracing#getCurrentBaggage" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="getCurrentBaggage:zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.baggage.Baggage]"></a><a id="getCurrentBaggage:URIO[Tracing,Baggage]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#getCurrentBaggage:zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.baggage.Baggage]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getCurrentBaggage</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/baggage/Baggage.html#io.opentelemetry.api.baggage.Baggage" class="extype" name="io.opentelemetry.api.baggage.Baggage">Baggage</a>]</span>
-      </span>
-      
-      <p class="shortcomment cmt">Gets the baggage from current context
-</p>
-    </li><li name="zio.telemetry.opentelemetry.Tracing#getCurrentContext" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="getCurrentContext:zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.context.Context]"></a><a id="getCurrentContext:URIO[Tracing,Context]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#getCurrentContext:zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.context.Context]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getCurrentContext</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-context/1.18.0/io/opentelemetry/context/Context.html#io.opentelemetry.context.Context" class="extype" name="io.opentelemetry.context.Context">Context</a>]</span>
-      </span>
-      
-      
-    </li><li name="zio.telemetry.opentelemetry.Tracing#getCurrentSpan" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="getCurrentSpan:zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.Span]"></a><a id="getCurrentSpan:URIO[Tracing,Span]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#getCurrentSpan:zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.Span]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getCurrentSpan</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/Span.html#io.opentelemetry.api.trace.Span" class="extype" name="io.opentelemetry.api.trace.Span">Span</a>]</span>
-      </span>
-      
-      
-    </li><li name="zio.telemetry.opentelemetry.Tracing#getCurrentSpanContext" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="getCurrentSpanContext:zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.SpanContext]"></a><a id="getCurrentSpanContext:URIO[Tracing,SpanContext]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#getCurrentSpanContext:zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.SpanContext]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">getCurrentSpanContext</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/SpanContext.html#io.opentelemetry.api.trace.SpanContext" class="extype" name="io.opentelemetry.api.trace.SpanContext">SpanContext</a>]</span>
-      </span>
-      
-      <p class="shortcomment cmt">Gets the current SpanContext
-</p>
     </li><li name="scala.AnyRef#hashCode" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="hashCode():Int"></a>
       <span class="permalink">
@@ -483,40 +384,6 @@
                 <span class="name">@IntrinsicCandidate</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li name="zio.telemetry.opentelemetry.Tracing#inSpan" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="inSpan[R,E,A](span:io.opentelemetry.api.trace.Span,spanName:String,spanKind:io.opentelemetry.api.trace.SpanKind,toErrorStatus:PartialFunction[E,io.opentelemetry.api.trace.StatusCode])(effect:zio.ZIO[R,E,A]):zio.ZIO[Rwithzio.telemetry.opentelemetry.Tracing,E,A]"></a><a id="inSpan[R,E,A](Span,String,SpanKind,PartialFunction[E,StatusCode])(ZIO[R,E,A]):ZIO[RwithTracing,E,A]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#inSpan[R,E,A](span:io.opentelemetry.api.trace.Span,spanName:String,spanKind:io.opentelemetry.api.trace.SpanKind,toErrorStatus:PartialFunction[E,io.opentelemetry.api.trace.StatusCode])(effect:zio.ZIO[R,E,A]):zio.ZIO[Rwithzio.telemetry.opentelemetry.Tracing,E,A]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">inSpan</span><span class="tparams">[<span name="R">R</span>, <span name="E">E</span>, <span name="A">A</span>]</span><span class="params">(<span name="span">span: <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/Span.html#io.opentelemetry.api.trace.Span" class="extype" name="io.opentelemetry.api.trace.Span">Span</a></span>, <span name="spanName">spanName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="spanKind">spanKind: <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/SpanKind.html#io.opentelemetry.api.trace.SpanKind" class="extype" name="io.opentelemetry.api.trace.SpanKind">SpanKind</a></span>, <span name="toErrorStatus">toErrorStatus: <a href="https://www.scala-lang.org/api/2.12.16/scala/PartialFunction.html#scala.PartialFunction" class="extype" name="scala.PartialFunction">PartialFunction</a>[<span class="extype" name="zio.telemetry.opentelemetry.Tracing.inSpan.E">E</span>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/StatusCode.html#io.opentelemetry.api.trace.StatusCode" class="extype" name="io.opentelemetry.api.trace.StatusCode">StatusCode</a>]</span>)</span><span class="params">(<span name="effect">effect: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.2/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentelemetry.Tracing.inSpan.R">R</span>, <span class="extype" name="zio.telemetry.opentelemetry.Tracing.inSpan.E">E</span>, <span class="extype" name="zio.telemetry.opentelemetry.Tracing.inSpan.A">A</span>]</span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.2/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentelemetry.Tracing.inSpan.R">R</span> with <a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <span class="extype" name="zio.telemetry.opentelemetry.Tracing.inSpan.E">E</span>, <span class="extype" name="zio.telemetry.opentelemetry.Tracing.inSpan.A">A</span>]</span>
-      </span>
-      
-      <p class="shortcomment cmt">Create a child of 'span' with name 'spanName' as the current span.</p><div class="fullcomment"><div class="comment cmt"><p>Create a child of 'span' with name 'spanName' as the current span. Ends the span when the effect finishes.
-</p></div></div>
-    </li><li name="zio.telemetry.opentelemetry.Tracing#inject" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="inject[C](propagator:io.opentelemetry.context.propagation.TextMapPropagator,carrier:C,setter:io.opentelemetry.context.propagation.TextMapSetter[C]):zio.URIO[zio.telemetry.opentelemetry.Tracing,Unit]"></a><a id="inject[C](TextMapPropagator,C,TextMapSetter[C]):URIO[Tracing,Unit]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#inject[C](propagator:io.opentelemetry.context.propagation.TextMapPropagator,carrier:C,setter:io.opentelemetry.context.propagation.TextMapSetter[C]):zio.URIO[zio.telemetry.opentelemetry.Tracing,Unit]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">inject</span><span class="tparams">[<span name="C">C</span>]</span><span class="params">(<span name="propagator">propagator: <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-context/1.18.0/io/opentelemetry/context/propagation/TextMapPropagator.html#io.opentelemetry.context.propagation.TextMapPropagator" class="extype" name="io.opentelemetry.context.propagation.TextMapPropagator">TextMapPropagator</a></span>, <span name="carrier">carrier: <span class="extype" name="zio.telemetry.opentelemetry.Tracing.inject.C">C</span></span>, <span name="setter">setter: <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-context/1.18.0/io/opentelemetry/context/propagation/TextMapSetter.html#io.opentelemetry.context.propagation.TextMapSetter" class="extype" name="io.opentelemetry.context.propagation.TextMapSetter">TextMapSetter</a>[<span class="extype" name="zio.telemetry.opentelemetry.Tracing.inject.C">C</span>]</span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <a href="https://www.scala-lang.org/api/2.12.16/scala/Unit.html#scala.Unit" class="extype" name="scala.Unit">Unit</a>]</span>
-      </span>
-      
-      <p class="shortcomment cmt">Injects the current span into carrier <code>C</code>
-</p>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <span class="permalink">
@@ -625,26 +492,10 @@
       <p class="shortcomment cmt">Tracing context will be bidirectionally propagated between ZIO and non-ZIO code.</p><div class="fullcomment"><div class="comment cmt"><p>Tracing context will be bidirectionally propagated between ZIO and non-ZIO code.</p><p>Since context propagation adds a performance overhead, it is recommended to use <a href="#live:zio.URLayer[io.opentelemetry.api.trace.Tracer,zio.telemetry.opentelemetry.Tracing]" class="extmbr" name="zio.telemetry.opentelemetry.Tracing#live">Tracing.live</a> in most cases.</p><p><a href="#propagating:zio.URLayer[io.opentelemetry.api.trace.Tracer,zio.telemetry.opentelemetry.Tracing]" class="extmbr" name="zio.telemetry.opentelemetry.Tracing#propagating">Tracing.propagating</a> should be used in combination with automatic instrumentation via OpenTelemetry JVM agent
 only.
 </p></div></div>
-    </li><li name="zio.telemetry.opentelemetry.Tracing#root" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="root[R,E,A](spanName:String,spanKind:io.opentelemetry.api.trace.SpanKind,toErrorStatus:PartialFunction[E,io.opentelemetry.api.trace.StatusCode])(effect:zio.ZIO[R,E,A]):zio.ZIO[Rwithzio.telemetry.opentelemetry.Tracing,E,A]"></a><a id="root[R,E,A](String,SpanKind,PartialFunction[E,StatusCode])(ZIO[R,E,A]):ZIO[RwithTracing,E,A]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#root[R,E,A](spanName:String,spanKind:io.opentelemetry.api.trace.SpanKind,toErrorStatus:PartialFunction[E,io.opentelemetry.api.trace.StatusCode])(effect:zio.ZIO[R,E,A]):zio.ZIO[Rwithzio.telemetry.opentelemetry.Tracing,E,A]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">root</span><span class="tparams">[<span name="R">R</span>, <span name="E">E</span>, <span name="A">A</span>]</span><span class="params">(<span name="spanName">spanName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="spanKind">spanKind: <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/SpanKind.html#io.opentelemetry.api.trace.SpanKind" class="extype" name="io.opentelemetry.api.trace.SpanKind">SpanKind</a></span>, <span name="toErrorStatus">toErrorStatus: <a href="https://www.scala-lang.org/api/2.12.16/scala/PartialFunction.html#scala.PartialFunction" class="extype" name="scala.PartialFunction">PartialFunction</a>[<span class="extype" name="zio.telemetry.opentelemetry.Tracing.root.E">E</span>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/StatusCode.html#io.opentelemetry.api.trace.StatusCode" class="extype" name="io.opentelemetry.api.trace.StatusCode">StatusCode</a>]</span>)</span><span class="params">(<span name="effect">effect: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.2/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentelemetry.Tracing.root.R">R</span>, <span class="extype" name="zio.telemetry.opentelemetry.Tracing.root.E">E</span>, <span class="extype" name="zio.telemetry.opentelemetry.Tracing.root.A">A</span>]</span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.2/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentelemetry.Tracing.root.R">R</span> with <a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <span class="extype" name="zio.telemetry.opentelemetry.Tracing.root.E">E</span>, <span class="extype" name="zio.telemetry.opentelemetry.Tracing.root.A">A</span>]</span>
-      </span>
-      
-      <p class="shortcomment cmt">Sets the current span to be the new root span with name 'spanName' Ends the span when the effect finishes.</p>
     </li><li name="zio.telemetry.opentelemetry.Tracing#scoped" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="scoped(tracer:io.opentelemetry.api.trace.Tracer):zio.URIO[zio.Scope,zio.telemetry.opentelemetry.Tracing]"></a><a id="scoped(Tracer):URIO[Scope,Tracing]"></a>
+      <a id="scoped(tracer:io.opentelemetry.api.trace.Tracer,currentContext:zio.telemetry.opentelemetry.ContextStorage):zio.URIO[zio.Scope,zio.telemetry.opentelemetry.Tracing]"></a><a id="scoped(Tracer,ContextStorage):URIO[Scope,Tracing]"></a>
       <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#scoped(tracer:io.opentelemetry.api.trace.Tracer):zio.URIO[zio.Scope,zio.telemetry.opentelemetry.Tracing]" title="Permalink">
+      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#scoped(tracer:io.opentelemetry.api.trace.Tracer,currentContext:zio.telemetry.opentelemetry.ContextStorage):zio.URIO[zio.Scope,zio.telemetry.opentelemetry.Tracing]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -653,297 +504,10 @@ only.
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">scoped</span><span class="params">(<span name="tracer">tracer: <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/Tracer.html#io.opentelemetry.api.trace.Tracer" class="extype" name="io.opentelemetry.api.trace.Tracer">Tracer</a></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.2/zio/Scope.html#zio.Scope" class="extype" name="zio.Scope">Scope</a>, <a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>]</span>
+        <span class="name">scoped</span><span class="params">(<span name="tracer">tracer: <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/Tracer.html#io.opentelemetry.api.trace.Tracer" class="extype" name="io.opentelemetry.api.trace.Tracer">Tracer</a></span>, <span name="currentContext">currentContext: <span class="extype" name="zio.telemetry.opentelemetry.ContextStorage">ContextStorage</span></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.2/zio/Scope.html#zio.Scope" class="extype" name="zio.Scope">Scope</a>, <a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>]</span>
       </span>
       
       
-    </li><li name="zio.telemetry.opentelemetry.Tracing#scopedEffect" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="scopedEffect[A](effect:=&gt;A):zio.ZIO[zio.telemetry.opentelemetry.Tracing,Throwable,A]"></a><a id="scopedEffect[A](⇒A):ZIO[Tracing,Throwable,A]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#scopedEffect[A](effect:=&gt;A):zio.ZIO[zio.telemetry.opentelemetry.Tracing,Throwable,A]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">scopedEffect</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="effect">effect: ⇒ <span class="extype" name="zio.telemetry.opentelemetry.Tracing.scopedEffect.A">A</span></span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.2/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <span class="extype" name="scala.Throwable">Throwable</span>, <span class="extype" name="zio.telemetry.opentelemetry.Tracing.scopedEffect.A">A</span>]</span>
-      </span>
-      
-      <p class="shortcomment cmt">Introduces a thread-local scope during the execution allowing for non-zio context propagation.</p><div class="fullcomment"><div class="comment cmt"><p>Introduces a thread-local scope during the execution allowing for non-zio context propagation.</p><p>Closes the scope when the effect finishes.
-</p></div></div>
-    </li><li name="zio.telemetry.opentelemetry.Tracing#scopedEffectFromFuture" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="scopedEffectFromFuture[A](make:scala.concurrent.ExecutionContext=&gt;scala.concurrent.Future[A]):zio.ZIO[zio.telemetry.opentelemetry.Tracing,Throwable,A]"></a><a id="scopedEffectFromFuture[A]((ExecutionContext)⇒Future[A]):ZIO[Tracing,Throwable,A]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#scopedEffectFromFuture[A](make:scala.concurrent.ExecutionContext=&gt;scala.concurrent.Future[A]):zio.ZIO[zio.telemetry.opentelemetry.Tracing,Throwable,A]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">scopedEffectFromFuture</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="make">make: (<a href="https://www.scala-lang.org/api/2.12.16/scala/concurrent/ExecutionContext.html#scala.concurrent.ExecutionContext" class="extype" name="scala.concurrent.ExecutionContext">ExecutionContext</a>) ⇒ <a href="https://www.scala-lang.org/api/2.12.16/scala/concurrent/Future.html#scala.concurrent.Future" class="extype" name="scala.concurrent.Future">Future</a>[<span class="extype" name="zio.telemetry.opentelemetry.Tracing.scopedEffectFromFuture.A">A</span>]</span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.2/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <span class="extype" name="scala.Throwable">Throwable</span>, <span class="extype" name="zio.telemetry.opentelemetry.Tracing.scopedEffectFromFuture.A">A</span>]</span>
-      </span>
-      
-      <p class="shortcomment cmt">Introduces a thread-local scope from the currently active zio span allowing for non-zio context propagation.</p><div class="fullcomment"><div class="comment cmt"><p>Introduces a thread-local scope from the currently active zio span allowing for non-zio context propagation. This
-scope will only be active during Future creation, so another mechanism must be used to ensure that the scope is
-passed into the Future callbacks.</p><p>The java auto instrumentation package provides such a mechanism out of the box, so one is not provided as a part of
-this method.</p><p>CLoses the scope when the effect finishes
-</p></div></div>
-    </li><li name="zio.telemetry.opentelemetry.Tracing#scopedEffectTotal" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="scopedEffectTotal[A](effect:=&gt;A):zio.ZIO[zio.telemetry.opentelemetry.Tracing,Nothing,A]"></a><a id="scopedEffectTotal[A](⇒A):ZIO[Tracing,Nothing,A]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#scopedEffectTotal[A](effect:=&gt;A):zio.ZIO[zio.telemetry.opentelemetry.Tracing,Nothing,A]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">scopedEffectTotal</span><span class="tparams">[<span name="A">A</span>]</span><span class="params">(<span name="effect">effect: ⇒ <span class="extype" name="zio.telemetry.opentelemetry.Tracing.scopedEffectTotal.A">A</span></span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.2/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <a href="https://www.scala-lang.org/api/2.12.16/scala/Nothing.html#scala.Nothing" class="extype" name="scala.Nothing">Nothing</a>, <span class="extype" name="zio.telemetry.opentelemetry.Tracing.scopedEffectTotal.A">A</span>]</span>
-      </span>
-      
-      <p class="shortcomment cmt">Introduces a thread-local scope during the execution allowing for non-zio context propagation.</p><div class="fullcomment"><div class="comment cmt"><p>Introduces a thread-local scope during the execution allowing for non-zio context propagation.</p><p>Closes the scope when the effect finishes.
-</p></div></div>
-    </li><li name="zio.telemetry.opentelemetry.Tracing#setAttribute" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="setAttribute(name:String,values:Seq[Double])(impliciti1:DummyImplicit,impliciti2:DummyImplicit,impliciti3:DummyImplicit):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.Span]"></a><a id="setAttribute(String,Seq[Double])(DummyImplicit,DummyImplicit,DummyImplicit):URIO[Tracing,Span]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#setAttribute(name:String,values:Seq[Double])(impliciti1:DummyImplicit,impliciti2:DummyImplicit,impliciti3:DummyImplicit):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.Span]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setAttribute</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="values">values: <span class="extype" name="scala.Seq">Seq</span>[<a href="https://www.scala-lang.org/api/2.12.16/scala/Double.html#scala.Double" class="extype" name="scala.Double">Double</a>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="i1">i1: <span class="extype" name="scala.Predef.DummyImplicit">DummyImplicit</span></span>, <span name="i2">i2: <span class="extype" name="scala.Predef.DummyImplicit">DummyImplicit</span></span>, <span name="i3">i3: <span class="extype" name="scala.Predef.DummyImplicit">DummyImplicit</span></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/Span.html#io.opentelemetry.api.trace.Span" class="extype" name="io.opentelemetry.api.trace.Span">Span</a>]</span>
-      </span>
-      
-      
-    </li><li name="zio.telemetry.opentelemetry.Tracing#setAttribute" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="setAttribute(name:String,values:Seq[Long])(impliciti1:DummyImplicit,impliciti2:DummyImplicit):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.Span]"></a><a id="setAttribute(String,Seq[Long])(DummyImplicit,DummyImplicit):URIO[Tracing,Span]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#setAttribute(name:String,values:Seq[Long])(impliciti1:DummyImplicit,impliciti2:DummyImplicit):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.Span]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setAttribute</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="values">values: <span class="extype" name="scala.Seq">Seq</span>[<a href="https://www.scala-lang.org/api/2.12.16/scala/Long.html#scala.Long" class="extype" name="scala.Long">Long</a>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="i1">i1: <span class="extype" name="scala.Predef.DummyImplicit">DummyImplicit</span></span>, <span name="i2">i2: <span class="extype" name="scala.Predef.DummyImplicit">DummyImplicit</span></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/Span.html#io.opentelemetry.api.trace.Span" class="extype" name="io.opentelemetry.api.trace.Span">Span</a>]</span>
-      </span>
-      
-      
-    </li><li name="zio.telemetry.opentelemetry.Tracing#setAttribute" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="setAttribute(name:String,values:Seq[Boolean])(impliciti1:DummyImplicit):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.Span]"></a><a id="setAttribute(String,Seq[Boolean])(DummyImplicit):URIO[Tracing,Span]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#setAttribute(name:String,values:Seq[Boolean])(impliciti1:DummyImplicit):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.Span]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setAttribute</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="values">values: <span class="extype" name="scala.Seq">Seq</span>[<a href="https://www.scala-lang.org/api/2.12.16/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="i1">i1: <span class="extype" name="scala.Predef.DummyImplicit">DummyImplicit</span></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/Span.html#io.opentelemetry.api.trace.Span" class="extype" name="io.opentelemetry.api.trace.Span">Span</a>]</span>
-      </span>
-      
-      
-    </li><li name="zio.telemetry.opentelemetry.Tracing#setAttribute" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="setAttribute(name:String,values:Seq[String]):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.Span]"></a><a id="setAttribute(String,Seq[String]):URIO[Tracing,Span]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#setAttribute(name:String,values:Seq[String]):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.Span]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setAttribute</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="values">values: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/Span.html#io.opentelemetry.api.trace.Span" class="extype" name="io.opentelemetry.api.trace.Span">Span</a>]</span>
-      </span>
-      
-      
-    </li><li name="zio.telemetry.opentelemetry.Tracing#setAttribute" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="setAttribute[T](key:io.opentelemetry.api.common.AttributeKey[T],value:T):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.Span]"></a><a id="setAttribute[T](AttributeKey[T],T):URIO[Tracing,Span]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#setAttribute[T](key:io.opentelemetry.api.common.AttributeKey[T],value:T):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.Span]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setAttribute</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="key">key: <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/common/AttributeKey.html#io.opentelemetry.api.common.AttributeKey" class="extype" name="io.opentelemetry.api.common.AttributeKey">AttributeKey</a>[<span class="extype" name="zio.telemetry.opentelemetry.Tracing.setAttribute.T">T</span>]</span>, <span name="value">value: <span class="extype" name="zio.telemetry.opentelemetry.Tracing.setAttribute.T">T</span></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/Span.html#io.opentelemetry.api.trace.Span" class="extype" name="io.opentelemetry.api.trace.Span">Span</a>]</span>
-      </span>
-      
-      
-    </li><li name="zio.telemetry.opentelemetry.Tracing#setAttribute" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="setAttribute(name:String,value:String):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.Span]"></a><a id="setAttribute(String,String):URIO[Tracing,Span]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#setAttribute(name:String,value:String):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.Span]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setAttribute</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/Span.html#io.opentelemetry.api.trace.Span" class="extype" name="io.opentelemetry.api.trace.Span">Span</a>]</span>
-      </span>
-      
-      <p class="shortcomment cmt">Sets an attribute of the current span.</p>
-    </li><li name="zio.telemetry.opentelemetry.Tracing#setAttribute" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="setAttribute(name:String,value:Long):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.Span]"></a><a id="setAttribute(String,Long):URIO[Tracing,Span]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#setAttribute(name:String,value:Long):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.Span]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setAttribute</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <a href="https://www.scala-lang.org/api/2.12.16/scala/Long.html#scala.Long" class="extype" name="scala.Long">Long</a></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/Span.html#io.opentelemetry.api.trace.Span" class="extype" name="io.opentelemetry.api.trace.Span">Span</a>]</span>
-      </span>
-      
-      <p class="shortcomment cmt">Sets an attribute of the current span.</p>
-    </li><li name="zio.telemetry.opentelemetry.Tracing#setAttribute" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="setAttribute(name:String,value:Double):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.Span]"></a><a id="setAttribute(String,Double):URIO[Tracing,Span]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#setAttribute(name:String,value:Double):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.Span]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setAttribute</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <a href="https://www.scala-lang.org/api/2.12.16/scala/Double.html#scala.Double" class="extype" name="scala.Double">Double</a></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/Span.html#io.opentelemetry.api.trace.Span" class="extype" name="io.opentelemetry.api.trace.Span">Span</a>]</span>
-      </span>
-      
-      <p class="shortcomment cmt">Sets an attribute of the current span.</p>
-    </li><li name="zio.telemetry.opentelemetry.Tracing#setAttribute" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="setAttribute(name:String,value:Boolean):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.Span]"></a><a id="setAttribute(String,Boolean):URIO[Tracing,Span]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#setAttribute(name:String,value:Boolean):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.api.trace.Span]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setAttribute</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <a href="https://www.scala-lang.org/api/2.12.16/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/Span.html#io.opentelemetry.api.trace.Span" class="extype" name="io.opentelemetry.api.trace.Span">Span</a>]</span>
-      </span>
-      
-      <p class="shortcomment cmt">Sets an attribute of the current span.</p>
-    </li><li name="zio.telemetry.opentelemetry.Tracing#setBaggage" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="setBaggage(name:String,value:String):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.context.Context]"></a><a id="setBaggage(String,String):URIO[Tracing,Context]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#setBaggage(name:String,value:String):zio.URIO[zio.telemetry.opentelemetry.Tracing,io.opentelemetry.context.Context]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">setBaggage</span><span class="params">(<span name="name">name: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="value">value: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-context/1.18.0/io/opentelemetry/context/Context.html#io.opentelemetry.context.Context" class="extype" name="io.opentelemetry.context.Context">Context</a>]</span>
-      </span>
-      
-      <p class="shortcomment cmt">Sets a baggage entry in the current context
-</p>
-    </li><li name="zio.telemetry.opentelemetry.Tracing#span" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="span[R,E,A](spanName:String,spanKind:io.opentelemetry.api.trace.SpanKind,toErrorStatus:PartialFunction[E,io.opentelemetry.api.trace.StatusCode])(effect:zio.ZIO[R,E,A]):zio.ZIO[Rwithzio.telemetry.opentelemetry.Tracing,E,A]"></a><a id="span[R,E,A](String,SpanKind,PartialFunction[E,StatusCode])(ZIO[R,E,A]):ZIO[RwithTracing,E,A]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#span[R,E,A](spanName:String,spanKind:io.opentelemetry.api.trace.SpanKind,toErrorStatus:PartialFunction[E,io.opentelemetry.api.trace.StatusCode])(effect:zio.ZIO[R,E,A]):zio.ZIO[Rwithzio.telemetry.opentelemetry.Tracing,E,A]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">span</span><span class="tparams">[<span name="R">R</span>, <span name="E">E</span>, <span name="A">A</span>]</span><span class="params">(<span name="spanName">spanName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="spanKind">spanKind: <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/SpanKind.html#io.opentelemetry.api.trace.SpanKind" class="extype" name="io.opentelemetry.api.trace.SpanKind">SpanKind</a></span>, <span name="toErrorStatus">toErrorStatus: <a href="https://www.scala-lang.org/api/2.12.16/scala/PartialFunction.html#scala.PartialFunction" class="extype" name="scala.PartialFunction">PartialFunction</a>[<span class="extype" name="zio.telemetry.opentelemetry.Tracing.span.E">E</span>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/StatusCode.html#io.opentelemetry.api.trace.StatusCode" class="extype" name="io.opentelemetry.api.trace.StatusCode">StatusCode</a>]</span>)</span><span class="params">(<span name="effect">effect: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.2/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentelemetry.Tracing.span.R">R</span>, <span class="extype" name="zio.telemetry.opentelemetry.Tracing.span.E">E</span>, <span class="extype" name="zio.telemetry.opentelemetry.Tracing.span.A">A</span>]</span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.2/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentelemetry.Tracing.span.R">R</span> with <a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <span class="extype" name="zio.telemetry.opentelemetry.Tracing.span.E">E</span>, <span class="extype" name="zio.telemetry.opentelemetry.Tracing.span.A">A</span>]</span>
-      </span>
-      
-      <p class="shortcomment cmt">Sets the current span to be the child of the current span with name 'spanName' Ends the span when the effect
-finishes.</p>
-    </li><li name="zio.telemetry.opentelemetry.Tracing#spanFrom" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="spanFrom[C,R,E,A](propagator:io.opentelemetry.context.propagation.TextMapPropagator,carrier:C,getter:io.opentelemetry.context.propagation.TextMapGetter[C],spanName:String,spanKind:io.opentelemetry.api.trace.SpanKind,toErrorStatus:PartialFunction[E,io.opentelemetry.api.trace.StatusCode])(effect:zio.ZIO[R,E,A]):zio.ZIO[Rwithzio.telemetry.opentelemetry.Tracing,E,A]"></a><a id="spanFrom[C,R,E,A](TextMapPropagator,C,TextMapGetter[C],String,SpanKind,PartialFunction[E,StatusCode])(ZIO[R,E,A]):ZIO[RwithTracing,E,A]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#spanFrom[C,R,E,A](propagator:io.opentelemetry.context.propagation.TextMapPropagator,carrier:C,getter:io.opentelemetry.context.propagation.TextMapGetter[C],spanName:String,spanKind:io.opentelemetry.api.trace.SpanKind,toErrorStatus:PartialFunction[E,io.opentelemetry.api.trace.StatusCode])(effect:zio.ZIO[R,E,A]):zio.ZIO[Rwithzio.telemetry.opentelemetry.Tracing,E,A]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">spanFrom</span><span class="tparams">[<span name="C">C</span>, <span name="R">R</span>, <span name="E">E</span>, <span name="A">A</span>]</span><span class="params">(<span name="propagator">propagator: <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-context/1.18.0/io/opentelemetry/context/propagation/TextMapPropagator.html#io.opentelemetry.context.propagation.TextMapPropagator" class="extype" name="io.opentelemetry.context.propagation.TextMapPropagator">TextMapPropagator</a></span>, <span name="carrier">carrier: <span class="extype" name="zio.telemetry.opentelemetry.Tracing.spanFrom.C">C</span></span>, <span name="getter">getter: <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-context/1.18.0/io/opentelemetry/context/propagation/TextMapGetter.html#io.opentelemetry.context.propagation.TextMapGetter" class="extype" name="io.opentelemetry.context.propagation.TextMapGetter">TextMapGetter</a>[<span class="extype" name="zio.telemetry.opentelemetry.Tracing.spanFrom.C">C</span>]</span>, <span name="spanName">spanName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="spanKind">spanKind: <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/SpanKind.html#io.opentelemetry.api.trace.SpanKind" class="extype" name="io.opentelemetry.api.trace.SpanKind">SpanKind</a></span>, <span name="toErrorStatus">toErrorStatus: <a href="https://www.scala-lang.org/api/2.12.16/scala/PartialFunction.html#scala.PartialFunction" class="extype" name="scala.PartialFunction">PartialFunction</a>[<span class="extype" name="zio.telemetry.opentelemetry.Tracing.spanFrom.E">E</span>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/StatusCode.html#io.opentelemetry.api.trace.StatusCode" class="extype" name="io.opentelemetry.api.trace.StatusCode">StatusCode</a>]</span>)</span><span class="params">(<span name="effect">effect: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.2/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentelemetry.Tracing.spanFrom.R">R</span>, <span class="extype" name="zio.telemetry.opentelemetry.Tracing.spanFrom.E">E</span>, <span class="extype" name="zio.telemetry.opentelemetry.Tracing.spanFrom.A">A</span>]</span>)</span><span class="result">: <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.2/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<span class="extype" name="zio.telemetry.opentelemetry.Tracing.spanFrom.R">R</span> with <a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <span class="extype" name="zio.telemetry.opentelemetry.Tracing.spanFrom.E">E</span>, <span class="extype" name="zio.telemetry.opentelemetry.Tracing.spanFrom.A">A</span>]</span>
-      </span>
-      
-      <p class="shortcomment cmt">Extracts the span from carrier <code>C</code> and set its child span with name 'spanName' as the current span.</p><div class="fullcomment"><div class="comment cmt"><p>Extracts the span from carrier <code>C</code> and set its child span with name 'spanName' as the current span. Ends the span
-when the effect finishes.
-</p></div></div>
-    </li><li name="zio.telemetry.opentelemetry.Tracing#spanFromUnsafe" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="spanFromUnsafe[C](propagator:io.opentelemetry.context.propagation.TextMapPropagator,carrier:C,getter:io.opentelemetry.context.propagation.TextMapGetter[C],spanName:String,spanKind:io.opentelemetry.api.trace.SpanKind):zio.URIO[zio.telemetry.opentelemetry.Tracing,(io.opentelemetry.api.trace.Span,zio.URIO[zio.telemetry.opentelemetry.Tracing,Any])]"></a><a id="spanFromUnsafe[C](TextMapPropagator,C,TextMapGetter[C],String,SpanKind):URIO[Tracing,(Span,URIO[Tracing,Any])]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#spanFromUnsafe[C](propagator:io.opentelemetry.context.propagation.TextMapPropagator,carrier:C,getter:io.opentelemetry.context.propagation.TextMapGetter[C],spanName:String,spanKind:io.opentelemetry.api.trace.SpanKind):zio.URIO[zio.telemetry.opentelemetry.Tracing,(io.opentelemetry.api.trace.Span,zio.URIO[zio.telemetry.opentelemetry.Tracing,Any])]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">spanFromUnsafe</span><span class="tparams">[<span name="C">C</span>]</span><span class="params">(<span name="propagator">propagator: <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-context/1.18.0/io/opentelemetry/context/propagation/TextMapPropagator.html#io.opentelemetry.context.propagation.TextMapPropagator" class="extype" name="io.opentelemetry.context.propagation.TextMapPropagator">TextMapPropagator</a></span>, <span name="carrier">carrier: <span class="extype" name="zio.telemetry.opentelemetry.Tracing.spanFromUnsafe.C">C</span></span>, <span name="getter">getter: <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-context/1.18.0/io/opentelemetry/context/propagation/TextMapGetter.html#io.opentelemetry.context.propagation.TextMapGetter" class="extype" name="io.opentelemetry.context.propagation.TextMapGetter">TextMapGetter</a>[<span class="extype" name="zio.telemetry.opentelemetry.Tracing.spanFromUnsafe.C">C</span>]</span>, <span name="spanName">spanName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="spanKind">spanKind: <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/SpanKind.html#io.opentelemetry.api.trace.SpanKind" class="extype" name="io.opentelemetry.api.trace.SpanKind">SpanKind</a></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, (<a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/Span.html#io.opentelemetry.api.trace.Span" class="extype" name="io.opentelemetry.api.trace.Span">Span</a>, <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <a href="https://www.scala-lang.org/api/2.12.16/scala/Any.html#scala.Any" class="extype" name="scala.Any">Any</a>])]</span>
-      </span>
-      
-      <p class="shortcomment cmt">Extracts the span from carrier <code>C</code> and unsafely set its child span with name 'spanName' as the current span.</p><div class="fullcomment"><div class="comment cmt"><p>Extracts the span from carrier <code>C</code> and unsafely set its child span with name 'spanName' as the current span. You
-need to make sure to call the finalize effect to end the span. Primarily useful for interop.
-</p></div></div>
-    </li><li name="zio.telemetry.opentelemetry.Tracing#spanUnsafe" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="spanUnsafe(spanName:String,spanKind:io.opentelemetry.api.trace.SpanKind):zio.URIO[zio.telemetry.opentelemetry.Tracing,(io.opentelemetry.api.trace.Span,zio.ZIO[zio.telemetry.opentelemetry.Tracing,Nothing,Any])]"></a><a id="spanUnsafe(String,SpanKind):URIO[Tracing,(Span,ZIO[Tracing,Nothing,Any])]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opentelemetry/Tracing$.html#spanUnsafe(spanName:String,spanKind:io.opentelemetry.api.trace.SpanKind):zio.URIO[zio.telemetry.opentelemetry.Tracing,(io.opentelemetry.api.trace.Span,zio.ZIO[zio.telemetry.opentelemetry.Tracing,Nothing,Any])]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">spanUnsafe</span><span class="params">(<span name="spanName">spanName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="spanKind">spanKind: <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/SpanKind.html#io.opentelemetry.api.trace.SpanKind" class="extype" name="io.opentelemetry.api.trace.SpanKind">SpanKind</a></span>)</span><span class="result">: <a href="../../index.html#URIO[-R,+A]=zio.ZIO[R,Nothing,A]" class="extmbr" name="zio.URIO">URIO</a>[<a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, (<a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/Span.html#io.opentelemetry.api.trace.Span" class="extype" name="io.opentelemetry.api.trace.Span">Span</a>, <a href="https://javadoc.io/page/dev.zio/zio_2.12/2.0.2/zio/ZIO.html#zio.ZIO" class="extype" name="zio.ZIO">ZIO</a>[<a href="Tracing.html" class="extype" name="zio.telemetry.opentelemetry.Tracing">Tracing</a>, <a href="https://www.scala-lang.org/api/2.12.16/scala/Nothing.html#scala.Nothing" class="extype" name="scala.Nothing">Nothing</a>, <a href="https://www.scala-lang.org/api/2.12.16/scala/Any.html#scala.Any" class="extype" name="scala.Any">Any</a>])]</span>
-      </span>
-      
-      <p class="shortcomment cmt">Unsafely sets the current span to be the child of the current span with name 'spanName' You need to manually call
-the finalizer to end the span.</p><div class="fullcomment"><div class="comment cmt"><p>Unsafely sets the current span to be the child of the current span with name 'spanName' You need to manually call
-the finalizer to end the span. Useful for interop.
-</p></div></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a><a id="synchronized[T0](⇒T0):T0"></a>
       <span class="permalink">

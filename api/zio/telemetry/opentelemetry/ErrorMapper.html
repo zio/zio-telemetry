@@ -101,10 +101,10 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../../index.html" class="extype" name="zio">zio</a></dd></dl></div>
-    </li><li name="zio.telemetry.opencensus" visbl="pub" class="indented3 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="opencensus"></a><a id="opencensus:opencensus"></a>
+    </li><li name="zio.telemetry.opentelemetry" visbl="pub" class="indented3 " data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="opentelemetry"></a><a id="opentelemetry:opentelemetry"></a>
       <span class="permalink">
-      <a href="../../../zio/telemetry/opencensus/index.html" title="Permalink">
+      <a href="../../../zio/telemetry/opentelemetry/index.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -113,56 +113,52 @@
         <span class="kind">package</span>
       </span>
       <span class="symbol">
-        <a title="" href="index.html"><span class="name">opencensus</span></a>
+        <a title="" href="index.html"><span class="name">opentelemetry</span></a>
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="../index.html" class="extype" name="zio.telemetry">telemetry</a></dd></dl></div>
     </li><li class="current-entities indented3">
-                        <span class="separator"></span>
-                        <a class="object" href="Attributes$.html" title=""></a>
-                        <a href="Attributes$.html" title="">Attributes</a>
+                        <a class="object" href="ErrorMapper$.html" title=""></a>
+                        <a class="class" href="" title=""></a>
+                        <a href="" title="">ErrorMapper</a>
                       </li><li class="current-entities indented3">
-                        <a class="object" href="" title=""></a>
-                        <a class="class" href="Live.html" title=""></a>
-                        <a href="Live.html" title="">Live</a>
+                        <span class="separator"></span>
+                        <a class="class" href="PropagatingSupervisor.html" title=""></a>
+                        <a href="PropagatingSupervisor.html" title="">PropagatingSupervisor</a>
+                      </li><li class="current-entities indented3">
+                        <span class="separator"></span>
+                        <a class="object" href="TextMapAdapter$.html" title=""></a>
+                        <a href="TextMapAdapter$.html" title="">TextMapAdapter</a>
                       </li><li class="current-entities indented3">
                         <a class="object" href="Tracing$.html" title=""></a>
                         <a class="trait" href="Tracing.html" title=""></a>
                         <a href="Tracing.html" title="">Tracing</a>
-                      </li><li class="current-entities indented3">
-                        <span class="separator"></span>
-                        <a class="object" href="package$$implicits$.html" title=""></a>
-                        <a href="package$$implicits$.html" title="">implicits</a>
-                      </li><li class="current-entities indented3">
-                        <span class="separator"></span>
-                        <a class="object" href="syntax$.html" title=""></a>
-                        <a href="syntax$.html" title="">syntax</a>
                       </li>
               </ul>
             </div>
           </div>
           <div id="content">
-            <body class="object value">
+            <body class="class type">
       <div id="definition">
-        <a href="Live.html" title="See companion class"><div class="big-circle object-companion-class">o</div></a>
-        <p id="owner"><a href="../../index.html" class="extype" name="zio">zio</a>.<a href="../index.html" class="extype" name="zio.telemetry">telemetry</a>.<a href="index.html" class="extype" name="zio.telemetry.opencensus">opencensus</a></p>
-        <h1><a href="Live.html" title="See companion class">Live</a><span class="permalink">
-      <a href="../../../zio/telemetry/opencensus/Live$.html" title="Permalink">
+        <a href="ErrorMapper$.html" title="See companion object"><div class="big-circle class-companion-object">c</div></a>
+        <p id="owner"><a href="../../index.html" class="extype" name="zio">zio</a>.<a href="../index.html" class="extype" name="zio.telemetry">telemetry</a>.<a href="index.html" class="extype" name="zio.telemetry.opentelemetry">opentelemetry</a></p>
+        <h1><a href="ErrorMapper$.html" title="See companion object">ErrorMapper</a><span class="permalink">
+      <a href="../../../zio/telemetry/opentelemetry/ErrorMapper.html" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span></h1>
         <h3><span class="morelinks"><div>
-            Companion <a href="Live.html" title="See companion class">class Live</a>
+            Companion <a href="ErrorMapper$.html" title="See companion object">object ErrorMapper</a>
           </div></span></h3>
       </div>
 
       <h4 id="signature" class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">object</span>
+        <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <span class="name">Live</span>
+        <span class="name">ErrorMapper</span><span class="tparams">[<span name="E">E</span>]</span><span class="params">(<span name="body">body: <a href="https://www.scala-lang.org/api/2.12.16/scala/PartialFunction.html#scala.PartialFunction" class="extype" name="scala.PartialFunction">PartialFunction</a>[<span class="extype" name="zio.telemetry.opentelemetry.ErrorMapper.E">E</span>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/StatusCode.html#io.opentelemetry.api.trace.StatusCode" class="extype" name="io.opentelemetry.api.trace.StatusCode">StatusCode</a>]</span>)</span><span class="result"> extends <a href="https://www.scala-lang.org/api/2.12.16/scala/Product.html#scala.Product" class="extype" name="scala.Product">Product</a> with <a href="https://www.scala-lang.org/api/2.12.16/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></span>
       </span>
       </h4>
 
@@ -171,7 +167,7 @@
           <span class="toggle">
             Linear Supertypes
           </span>
-          <div class="superTypes hiddenContent"><a href="https://www.scala-lang.org/api/2.12.16/scala/AnyRef.html#scala.AnyRef" class="extype" name="scala.AnyRef">AnyRef</a>, <a href="https://www.scala-lang.org/api/2.12.16/scala/Any.html#scala.Any" class="extype" name="scala.Any">Any</a></div>
+          <div class="superTypes hiddenContent"><a href="https://www.scala-lang.org/api/2.12.16/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a>, <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/io/Serializable.html#java.io.Serializable" class="extype" name="java.io.Serializable">Serializable</a>, <a href="https://www.scala-lang.org/api/2.12.16/scala/Product.html#scala.Product" class="extype" name="scala.Product">Product</a>, <a href="https://www.scala-lang.org/api/2.12.16/scala/Equals.html#scala.Equals" class="extype" name="scala.Equals">Equals</a>, <a href="https://www.scala-lang.org/api/2.12.16/scala/AnyRef.html#scala.AnyRef" class="extype" name="scala.AnyRef">AnyRef</a>, <a href="https://www.scala-lang.org/api/2.12.16/scala/Any.html#scala.Any" class="extype" name="scala.Any">Any</a></div>
         </div></div>
         
 
@@ -197,7 +193,7 @@
                   <span class="filtertype">Inherited<br />
                   </span>
                   <ol id="linearization">
-                    <li class="in" name="zio.telemetry.opencensus.Live"><span>Live</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                    <li class="in" name="zio.telemetry.opentelemetry.ErrorMapper"><span>ErrorMapper</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.Product"><span>Product</span></li><li class="in" name="scala.Equals"><span>Equals</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                   </ol>
                 </div><div class="ancestors">
               <span class="filtertype"></span>
@@ -215,7 +211,26 @@
 
       <div id="template">
         <div id="allMembers">
-        
+        <div id="constructors" class="members">
+              <h3>Instance Constructors</h3>
+              <ol><li name="zio.telemetry.opentelemetry.ErrorMapper#&lt;init&gt;" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="&lt;init&gt;(body:PartialFunction[E,io.opentelemetry.api.trace.StatusCode]):zio.telemetry.opentelemetry.ErrorMapper[E]"></a><a id="&lt;init&gt;:ErrorMapper[E]"></a>
+      <span class="permalink">
+      <a href="../../../zio/telemetry/opentelemetry/ErrorMapper.html#&lt;init&gt;(body:PartialFunction[E,io.opentelemetry.api.trace.StatusCode]):zio.telemetry.opentelemetry.ErrorMapper[E]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">new</span>
+      </span>
+      <span class="symbol">
+        <span class="name">ErrorMapper</span><span class="params">(<span name="body">body: <a href="https://www.scala-lang.org/api/2.12.16/scala/PartialFunction.html#scala.PartialFunction" class="extype" name="scala.PartialFunction">PartialFunction</a>[<span class="extype" name="zio.telemetry.opentelemetry.ErrorMapper.E">E</span>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/StatusCode.html#io.opentelemetry.api.trace.StatusCode" class="extype" name="io.opentelemetry.api.trace.StatusCode">StatusCode</a>]</span>)</span>
+      </span>
+      
+      
+    </li></ol>
+            </div>
 
         
 
@@ -227,7 +242,7 @@
                 <li name="scala.AnyRef#!=" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="!=(x$1:Any):Boolean"></a><a id="!=(Any):Boolean"></a>
       <span class="permalink">
-      <a href="../../../zio/telemetry/opencensus/Live$.html#!=(x$1:Any):Boolean" title="Permalink">
+      <a href="../../../zio/telemetry/opentelemetry/ErrorMapper.html#!=(x$1:Any):Boolean" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -243,7 +258,7 @@
     </li><li name="scala.AnyRef###" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="##():Int"></a>
       <span class="permalink">
-      <a href="../../../zio/telemetry/opencensus/Live$.html###():Int" title="Permalink">
+      <a href="../../../zio/telemetry/opentelemetry/ErrorMapper.html###():Int" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -259,7 +274,7 @@
     </li><li name="scala.AnyRef#==" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="==(x$1:Any):Boolean"></a><a id="==(Any):Boolean"></a>
       <span class="permalink">
-      <a href="../../../zio/telemetry/opencensus/Live$.html#==(x$1:Any):Boolean" title="Permalink">
+      <a href="../../../zio/telemetry/opentelemetry/ErrorMapper.html#==(x$1:Any):Boolean" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -275,7 +290,7 @@
     </li><li name="scala.Any#asInstanceOf" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <span class="permalink">
-      <a href="../../../zio/telemetry/opencensus/Live$.html#asInstanceOf[T0]:T0" title="Permalink">
+      <a href="../../../zio/telemetry/opentelemetry/ErrorMapper.html#asInstanceOf[T0]:T0" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -288,10 +303,26 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="zio.telemetry.opentelemetry.ErrorMapper#body" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="body:PartialFunction[E,io.opentelemetry.api.trace.StatusCode]"></a><a id="body:PartialFunction[E,StatusCode]"></a>
+      <span class="permalink">
+      <a href="../../../zio/telemetry/opentelemetry/ErrorMapper.html#body:PartialFunction[E,io.opentelemetry.api.trace.StatusCode]" title="Permalink">
+        <i class="material-icons"></i>
+      </a>
+    </span>
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">body</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.16/scala/PartialFunction.html#scala.PartialFunction" class="extype" name="scala.PartialFunction">PartialFunction</a>[<span class="extype" name="zio.telemetry.opentelemetry.ErrorMapper.E">E</span>, <a href="https://javadoc.io/page/io.opentelemetry/opentelemetry-api/1.18.0/io/opentelemetry/api/trace/StatusCode.html#io.opentelemetry.api.trace.StatusCode" class="extype" name="io.opentelemetry.api.trace.StatusCode">StatusCode</a>]</span>
+      </span>
+      
+      
     </li><li name="scala.AnyRef#clone" visbl="prt" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="clone():Object"></a><a id="clone():AnyRef"></a>
       <span class="permalink">
-      <a href="../../../zio/telemetry/opencensus/Live$.html#clone():Object" title="Permalink">
+      <a href="../../../zio/telemetry/opentelemetry/ErrorMapper.html#clone():Object" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -317,7 +348,7 @@
     </li><li name="scala.AnyRef#eq" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="eq(x$1:AnyRef):Boolean"></a><a id="eq(AnyRef):Boolean"></a>
       <span class="permalink">
-      <a href="../../../zio/telemetry/opencensus/Live$.html#eq(x$1:AnyRef):Boolean" title="Permalink">
+      <a href="../../../zio/telemetry/opentelemetry/ErrorMapper.html#eq(x$1:AnyRef):Boolean" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -330,26 +361,10 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="scala.AnyRef#equals" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="equals(x$1:Any):Boolean"></a><a id="equals(Any):Boolean"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opencensus/Live$.html#equals(x$1:Any):Boolean" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">equals</span><span class="params">(<span name="arg0">arg0: <a href="https://www.scala-lang.org/api/2.12.16/scala/Any.html#scala.Any" class="extype" name="scala.Any">Any</a></span>)</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.16/scala/Boolean.html#scala.Boolean" class="extype" name="scala.Boolean">Boolean</a></span>
-      </span>
-      
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="scala.AnyRef#getClass" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="getClass():Class[_]"></a>
       <span class="permalink">
-      <a href="../../../zio/telemetry/opencensus/Live$.html#getClass():Class[_]" title="Permalink">
+      <a href="../../../zio/telemetry/opentelemetry/ErrorMapper.html#getClass():Class[_]" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -367,31 +382,10 @@
                 <span class="name">@IntrinsicCandidate</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li name="scala.AnyRef#hashCode" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="hashCode():Int"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opencensus/Live$.html#hashCode():Int" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">hashCode</span><span class="params">()</span><span class="result">: <a href="https://www.scala-lang.org/api/2.12.16/scala/Int.html#scala.Int" class="extype" name="scala.Int">Int</a></span>
-      </span>
-      
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd><dt>Annotations</dt><dd>
-                <span class="name">@native</span><span class="args">()</span>
-              
-                <span class="name">@IntrinsicCandidate</span><span class="args">()</span>
-              
-        </dd></dl></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <span class="permalink">
-      <a href="../../../zio/telemetry/opencensus/Live$.html#isInstanceOf[T0]:Boolean" title="Permalink">
+      <a href="../../../zio/telemetry/opentelemetry/ErrorMapper.html#isInstanceOf[T0]:Boolean" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -404,26 +398,10 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="zio.telemetry.opencensus.Live#live" visbl="pub" class="indented0 " data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="live:zio.URLayer[io.opencensus.trace.Tracer,zio.telemetry.opencensus.Tracing]"></a><a id="live:URLayer[Tracer,Tracing]"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opencensus/Live$.html#live:zio.URLayer[io.opencensus.trace.Tracer,zio.telemetry.opencensus.Tracing]" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">live</span><span class="result">: <a href="../../index.html#URLayer[-RIn,+ROut]=zio.ZLayer[RIn,Nothing,ROut]" class="extmbr" name="zio.URLayer">URLayer</a>[<a href="https://javadoc.io/page/io.opencensus/opencensus-api/0.31.1/io/opencensus/trace/Tracer.html#io.opencensus.trace.Tracer" class="extype" name="io.opencensus.trace.Tracer">Tracer</a>, <a href="Tracing.html" class="extype" name="zio.telemetry.opencensus.Tracing">Tracing</a>]</span>
-      </span>
-      
-      
     </li><li name="scala.AnyRef#ne" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a><a id="ne(AnyRef):Boolean"></a>
       <span class="permalink">
-      <a href="../../../zio/telemetry/opencensus/Live$.html#ne(x$1:AnyRef):Boolean" title="Permalink">
+      <a href="../../../zio/telemetry/opentelemetry/ErrorMapper.html#ne(x$1:AnyRef):Boolean" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -439,7 +417,7 @@
     </li><li name="scala.AnyRef#notify" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notify():Unit"></a>
       <span class="permalink">
-      <a href="../../../zio/telemetry/opencensus/Live$.html#notify():Unit" title="Permalink">
+      <a href="../../../zio/telemetry/opentelemetry/ErrorMapper.html#notify():Unit" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -460,7 +438,7 @@
     </li><li name="scala.AnyRef#notifyAll" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="notifyAll():Unit"></a>
       <span class="permalink">
-      <a href="../../../zio/telemetry/opencensus/Live$.html#notifyAll():Unit" title="Permalink">
+      <a href="../../../zio/telemetry/opentelemetry/ErrorMapper.html#notifyAll():Unit" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -481,7 +459,7 @@
     </li><li name="scala.AnyRef#synchronized" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a><a id="synchronized[T0](⇒T0):T0"></a>
       <span class="permalink">
-      <a href="../../../zio/telemetry/opencensus/Live$.html#synchronized[T0](x$1:=&gt;T0):T0" title="Permalink">
+      <a href="../../../zio/telemetry/opentelemetry/ErrorMapper.html#synchronized[T0](x$1:=&gt;T0):T0" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -494,26 +472,10 @@
       </span>
       
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="scala.AnyRef#toString" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="toString():String"></a>
-      <span class="permalink">
-      <a href="../../../zio/telemetry/opencensus/Live$.html#toString():String" title="Permalink">
-        <i class="material-icons"></i>
-      </a>
-    </span>
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">toString</span><span class="params">()</span><span class="result">: <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/String.html#java.lang.String" class="extype" name="java.lang.String">String</a></span>
-      </span>
-      
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait(x$1:Long,x$2:Int):Unit"></a><a id="wait(Long,Int):Unit"></a>
       <span class="permalink">
-      <a href="../../../zio/telemetry/opencensus/Live$.html#wait(x$1:Long,x$2:Int):Unit" title="Permalink">
+      <a href="../../../zio/telemetry/opentelemetry/ErrorMapper.html#wait(x$1:Long,x$2:Int):Unit" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -535,7 +497,7 @@
     </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait(x$1:Long):Unit"></a><a id="wait(Long):Unit"></a>
       <span class="permalink">
-      <a href="../../../zio/telemetry/opencensus/Live$.html#wait(x$1:Long):Unit" title="Permalink">
+      <a href="../../../zio/telemetry/opentelemetry/ErrorMapper.html#wait(x$1:Long):Unit" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -559,7 +521,7 @@
     </li><li name="scala.AnyRef#wait" visbl="pub" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <span class="permalink">
-      <a href="../../../zio/telemetry/opencensus/Live$.html#wait():Unit" title="Permalink">
+      <a href="../../../zio/telemetry/opentelemetry/ErrorMapper.html#wait():Unit" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -589,7 +551,7 @@
               <ol><li name="scala.AnyRef#finalize" visbl="prt" class="indented0 " data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="finalize():Unit"></a>
       <span class="permalink">
-      <a href="../../../zio/telemetry/opencensus/Live$.html#finalize():Unit" title="Permalink">
+      <a href="../../../zio/telemetry/opentelemetry/ErrorMapper.html#finalize():Unit" title="Permalink">
         <i class="material-icons"></i>
       </a>
     </span>
@@ -615,7 +577,15 @@
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="scala.AnyRef">
+        <div class="parent" name="scala.Serializable">
+              <h3>Inherited from <a href="https://www.scala-lang.org/api/2.12.16/scala/Serializable.html#scala.Serializable" class="extype" name="scala.Serializable">Serializable</a></h3>
+            </div><div class="parent" name="java.io.Serializable">
+              <h3>Inherited from <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/io/Serializable.html#java.io.Serializable" class="extype" name="java.io.Serializable">Serializable</a></h3>
+            </div><div class="parent" name="scala.Product">
+              <h3>Inherited from <a href="https://www.scala-lang.org/api/2.12.16/scala/Product.html#scala.Product" class="extype" name="scala.Product">Product</a></h3>
+            </div><div class="parent" name="scala.Equals">
+              <h3>Inherited from <a href="https://www.scala-lang.org/api/2.12.16/scala/Equals.html#scala.Equals" class="extype" name="scala.Equals">Equals</a></h3>
+            </div><div class="parent" name="scala.AnyRef">
               <h3>Inherited from <a href="https://www.scala-lang.org/api/2.12.16/scala/AnyRef.html#scala.AnyRef" class="extype" name="scala.AnyRef">AnyRef</a></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <a href="https://www.scala-lang.org/api/2.12.16/scala/Any.html#scala.Any" class="extype" name="scala.Any">Any</a></h3>

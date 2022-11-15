@@ -68,11 +68,11 @@
   -p 14250:14250 \
   jaegertracing/all-in-one:1.36
 </code></pre>
-<p>Then start the proxy server</p>
-<pre><code class="hljs css language-bash">sbt <span class="hljs-string">"opentelemetryExample/runMain zio.telemetry.opentelemetry.example.ProxyServer"</span>
+<p>Then start the proxy application</p>
+<pre><code class="hljs css language-bash">sbt <span class="hljs-string">"opentelemetryExample/runMain zio.telemetry.opentelemetry.example.ProxyApp"</span>
 </code></pre>
-<p>and the backend server</p>
-<pre><code class="hljs css language-bash">sbt <span class="hljs-string">"opentelemetryExample/runMain zio.telemetry.opentelemetry.example.BackendServer"</span>
+<p>and the backend application</p>
+<pre><code class="hljs css language-bash">sbt <span class="hljs-string">"opentelemetryExample/runMain zio.telemetry.opentelemetry.example.BackendApp"</span>
 </code></pre>
 <p>Now perform the following request:</p>
 <pre><code class="hljs css language-bash">curl -X GET http://localhost:8080/statuses
