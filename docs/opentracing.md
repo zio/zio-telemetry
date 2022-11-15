@@ -1,17 +1,17 @@
 ---
-id: overview_opentracing
+id: opentracing
 title: "OpenTracing"
 ---
 
 OpenTracing is a standard and API for distributed tracing, i.e. collecting timings,
-and logs across process boundaries. Well known implementations are [Jaeger](https://www.jaegertracing.io)
-and [Zipkin](https://www.zipkin.io).
+and logs across process boundaries. Well known implementations are [Jaeger](https://www.jaegertracing.io) and [Zipkin](https://www.zipkin.io).
 
 ## Installation
 
 First, add the following dependency to your build.sbt:
+
 ```
-"dev.zio" %% "zio-opentracing" % <version>
+"dev.zio" %% "zio-opentracing" % "@VERSION@"
 ```
 
 ## Usage

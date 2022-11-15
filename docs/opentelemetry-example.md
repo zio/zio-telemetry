@@ -1,11 +1,11 @@
 ---
-id: usecases_opentelemetry
+id: opentelemetry-example
 title: "OpenTelemetry Example"
 ---
 
 You can find the source code [here](https://github.com/zio/zio-telemetry/tree/master/opentracing-example).
 
-For an explanation in more detail, check the [OpenTracing Example](opentracing_example.md).
+For an explanation in more detail, check the [OpenTracing Example](opentracing-example.md).
 
 Firstly, start Jaeger by running the following command:
 ```bash
