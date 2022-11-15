@@ -1,5 +1,5 @@
 ---
-id: usecases_opentracing
+id: opentracing-example
 title: "OpenTracing Example"
 ---
 

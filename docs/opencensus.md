@@ -1,5 +1,5 @@
 ---
-id: overview_opencensus
+id: opencensus
 title: "OpenCensus"
 ---
 
@@ -10,7 +10,7 @@ and [Zipkin](https://www.zipkin.io).
 
 First, add the following dependency to your build.sbt:
 ```
-"dev.zio" %% "zio-opencensus" % <version>
+"dev.zio" %% "zio-opencensus" % "@VERSION@"
 ```
 
 ## Usage

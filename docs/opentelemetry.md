@@ -1,5 +1,5 @@
 ---
-id: overview_opentelemetry
+id: opentelemetry
 title: "OpenTelemetry"
 ---
 
@@ -10,7 +10,7 @@ and [Zipkin](https://www.zipkin.io).
 
 First, add the following dependency to your build.sbt:
 ```
-"dev.zio" %% "zio-opentelemetry" % <version>
+"dev.zio" %% "zio-opentelemetry" % "@VERSION@"
 ```
 
 ## Usage
