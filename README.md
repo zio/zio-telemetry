@@ -12,7 +12,7 @@ ZIO telemetry is purely-functional and type-safe. It provides clients for [OpenT
 
 ## Documentation
 
-[ZIO Telemetry Microsite](https://zio.github.io/zio-telemetry/)
+[ZIO Telemetry Microsite](https://zio.dev/zio-telemetry/)
 
 ## Contributing
 
