@@ -40,13 +40,13 @@ trait OpenTracing { self =>
     logError: Boolean = true
   )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
-  def spanFrom[R, E, Span, C](
+  def spanFrom[R, E, S, C](
     format: Format[C],
     carrier: C,
     operation: String,
     tagError: Boolean = true,
     logError: Boolean = true
-  )(effect: => ZIO[R, E, Span])(implicit trace: Trace): ZIO[R, E, Span]
+  )(effect: => ZIO[R, E, S])(implicit trace: Trace): ZIO[R, E, S]
 
   def tag[R, E, A](key: String, value: String)(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
@@ -208,13 +208,13 @@ object OpenTracing {
                        .ensuring(finish(child) *> currentSpan.set(current))
         } yield res
 
-      override def spanFrom[R, E, Span, C](
+      override def spanFrom[R, E, S, C](
         format: Format[C],
         carrier: C,
         operation: String,
         tagError: Boolean = true,
         logError: Boolean = true
-      )(effect: => ZIO[R, E, Span])(implicit trace: Trace): ZIO[R, E, Span] =
+      )(effect: => ZIO[R, E, S])(implicit trace: Trace): ZIO[R, E, S] =
         ZIO
           .attempt(tracer.extract(format, carrier))
           .foldZIO(
