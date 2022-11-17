@@ -51,7 +51,7 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Check Website Generation
-        run: ./sbt docs/docusaurusCreateSite
+        run: ./sbt compileDocs
 
   test:
     runs-on: ubuntu-20.04
