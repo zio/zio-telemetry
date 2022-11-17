@@ -3,7 +3,7 @@ import BuildHelper._
 inThisBuild(
   List(
     organization  := "dev.zio",
-    homepage      := Some(url("https://github.com/zio/zio-telemetry/")),
+    homepage      := Some(url("https://zio.dev/zio-telemetry/")),
     licenses      := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
     developers    := List(
       Developer(
@@ -42,7 +42,7 @@ lazy val root =
   project
     .in(file("."))
     .settings(publish / skip := true)
-    .aggregate(opentracing, opentelemetry, opencensus)
+    .aggregate(opentracing, opentelemetry, opencensus, docs)
 
 lazy val opentracing =
   project
@@ -83,15 +83,10 @@ lazy val docs =
   project
     .in(file("zio-telemetry-docs"))
     .settings(
-      publish / skip                             := true,
-      moduleName                                 := "zio-telemetry-docs",
+      publish / skip := true,
+      moduleName     := "zio-telemetry-docs",
       scalacOptions -= "-Yno-imports",
-      scalacOptions -= "-Xfatal-warnings",
-      ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(opentracing, opentelemetry, opencensus),
-      ScalaUnidoc / unidoc / target              := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
-      cleanFiles += (ScalaUnidoc / unidoc / target).value,
-      docusaurusCreateSite                       := docusaurusCreateSite.dependsOn(Compile / unidoc).value,
-      docusaurusPublishGhpages                   := docusaurusPublishGhpages.dependsOn(Compile / unidoc).value
+      scalacOptions -= "-Xfatal-warnings"
     )
     .dependsOn(opentracing, opentelemetry, opencensus)
-    .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)
+    .enablePlugins(WebsitePlugin)

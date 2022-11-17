@@ -1,5 +1,5 @@
 ---
-id: overview_opentelemetry
+id: opentelemetry
 title: "OpenTelemetry"
 ---
 
@@ -10,49 +10,55 @@ and [Zipkin](https://www.zipkin.io).
 
 First, add the following dependency to your build.sbt:
 ```
-"dev.zio" %% "zio-opentelemetry" % <version>
+"dev.zio" %% "zio-opentelemetry" % "@VERSION@"
 ```
 
 ## Usage
 
-To use ZIO Telemetry, you will need a `Tracing` service in your environment. You also need to provide a `tracer` implementation:
+To use ZIO Telemetry, you will need a `Tracing` service in your environment. You also need to provide a `tracer` 
+(for this example we use `JaegerTracer.live` from `opentelemetry-example` module) implementation:
 
 ```scala
+import zio.telemetry.opentelemetry.Tracing
+import zio.telemetry.opentelemetry.example.JaegerTracer
 import io.opentelemetry.api.trace.{ SpanKind, StatusCode }
 import zio._
-import zio.telemetry.opentelemetry.Tracing
-import zio.telemetry.opentelemetry.Tracing.root
 
-val errorMapper = { case _ => StatusCode.UNSET }
+val errorMapper = ErrorMapper[Throwable]{ case _ => StatusCode.UNSET }
 
-val app = 
-  //start root span that lasts until the effect finishes
-  root("root span", SpanKind.INTERNAL, errorMapper) {
-    for {
+val app =
+  ZIO.serviceWithZIO[Tracing] { tracing =>
+    import tracing.aspects._
+
+    (for {
       //sets an attribute to the current span
-      _ <- Tracing.setAttribute("foo", "bar")
+      _       <- tracing.setAttribute("foo", "bar")
       //adds an event to the current span
-      _       <- Tracing.addEvent("foo")
+      _       <- tracing.addEvent("foo")
       message <- Console.readline
-      _       <- Tracing.addEvent("bar")
-    } yield message
-  }.provideLayer(tracer >>> Tracing.live)
+      _       <- tracing.addEvent("bar")
+    } yield message) @@ root("root span", SpanKind.INTERNAL, errorMapper)
+  }.provide(Tracing.live, JaegerTracer.live)
 ```
 
-After importing `import zio.telemetry.opentelemetry._`, additional combinators
+After importing `import tracing.aspects._`, additional `ZIOAspect` combinators
 on `ZIO`s are available to support starting child spans, adding events and setting attributes.
 
 ```scala
-// start a new root span and set some attribute
-val zio = ZIO.unit
-             .setAttribute("foo", "bar")
-             .root("root span")
-          
-// start a child of the current span, set an attribute and add an event
-val zio = ZIO.unit
-             .setAttribute("http.status_code", 200)
-             .addEvent("doing some serious work here!")
-             .span("child span")
+ZIO.serviceWithZIO[Tracing] { tracing => 
+  import tracing.aspects._
+  
+  // start a new root span and set some attribute
+  val zio1 = ZIO.unit @@
+    setAttribute("foo", "bar") @@
+    root("root span")
+
+  // start a child of the current span, set an attribute and add an event
+  val zio2 = ZIO.unit @@
+    setAttribute("http.status_code", 200) @@
+    addEvent("doing some serious work here!") @@
+    span("child span")
+}
 ```
 
 To propagate contexts across process boundaries, extraction and injection can be
@@ -64,28 +70,26 @@ Due to the use of the (mutable) OpenTelemetry carrier APIs, injection and extrac
 are not referentially transparent.
 
 ```scala
-val propagator                           = W3CTraceContextPropagator.getInstance()
-val carrier: mutable.Map[String, String] = mutable.Map().empty
+ZIO.serviceWithZIO[Tracing] { tracing =>
+  import tracing.aspects._
+  
+  val propagator                           = W3CTraceContextPropagator.getInstance()
+  val carrier: mutable.Map[String, String] = mutable.Map().empty
 
-val getter: TextMapGetter[mutable.Map[String, String]] = new TextMapGetter[mutable.Map[String, String]] {
-  override def keys(carrier: mutable.Map[String, String]): lang.Iterable[String] =
-    carrier.keys.asJava
+  val getter: TextMapGetter[mutable.Map[String, String]] = new TextMapGetter[mutable.Map[String, String]] {
+    override def keys(carrier: mutable.Map[String, String]): lang.Iterable[String] =
+      carrier.keys.asJava
 
-  override def get(carrier: mutable.Map[String, String], key: String): String =
-    carrier.get(key).orNull
+    override def get(carrier: mutable.Map[String, String], key: String): String =
+      carrier.get(key).orNull
+  }
+
+  val setter: TextMapSetter[mutable.Map[String, String]] =
+    (carrier, key, value) => carrier.update(key, value)
+  
+  tracing.inject(propagator, carrier, setter) @@ span("foo") *> 
+    ZIO.unit @@ spanFrom(propagator, carrier, getter, "baz") @@ span("bar")
 }
-
-val setter: TextMapSetter[mutable.Map[String, String]] =
-  (carrier, key, value) => carrier.update(key, value)
-
-val injectExtract =
-  inject(
-    propagator,
-    carrier,
-    setter
-  ).span("foo") *> ZIO.unit
-    .spanFrom(propagator, carrier, getter, "baz")
-    .span("bar")
 ```
 
 ### [Experimental] Usage with OpenTelemetry automatic instrumentation

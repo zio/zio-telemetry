@@ -3,6 +3,7 @@ package zio.telemetry.opencensus
 import io.opencensus.trace.AttributeValue
 
 object Attributes {
+
   trait implicits {
     import scala.language.implicitConversions
 
@@ -18,4 +19,5 @@ object Attributes {
     implicit def doubleToAttribute(d: Double): AttributeValue =
       AttributeValue.doubleAttributeValue(d)
   }
+
 }
