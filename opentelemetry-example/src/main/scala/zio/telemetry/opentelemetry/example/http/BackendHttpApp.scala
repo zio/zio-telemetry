@@ -3,11 +3,11 @@ package zio.telemetry.opentelemetry.example.http
 import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator }
-import zio.telemetry.opentelemetry.Tracing
 import zio.telemetry.opentelemetry.example.http.{ Status => ServiceStatus }
 import zhttp.http.{ !!, ->, /, Headers, Http, HttpApp, Method, Response }
 import zio.json.EncoderOps
 import zio._
+import zio.telemetry.opentelemetry.tracing.Tracing
 
 import java.lang
 import scala.jdk.CollectionConverters._

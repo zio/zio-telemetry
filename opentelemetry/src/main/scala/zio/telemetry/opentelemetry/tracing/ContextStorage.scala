@@ -1,4 +1,4 @@
-package zio.telemetry.opentelemetry
+package zio.telemetry.opentelemetry.tracing
 
 import io.opentelemetry.context.Context
 import zio.{ FiberRef, UIO, ZIO }

@@ -4,9 +4,9 @@ import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.api.trace.{ SpanKind, StatusCode }
 import io.opentelemetry.context.propagation.{ TextMapPropagator, TextMapSetter }
 import zio._
-import zio.telemetry.opentelemetry.{ ErrorMapper, Tracing }
 import zhttp.http.{ !!, ->, /, Http, HttpApp, Method, Response }
 import zio.json.EncoderOps
+import zio.telemetry.opentelemetry.tracing.{ErrorMapper, Tracing}
 
 import scala.collection.mutable
 

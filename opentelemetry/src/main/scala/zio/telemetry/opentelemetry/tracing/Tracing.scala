@@ -1,4 +1,4 @@
-package zio.telemetry.opentelemetry
+package zio.telemetry.opentelemetry.tracing
 
 import io.opentelemetry.api.baggage.Baggage
 import io.opentelemetry.api.common.{ AttributeKey, Attributes }

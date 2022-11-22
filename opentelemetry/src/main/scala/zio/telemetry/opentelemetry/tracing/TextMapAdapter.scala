@@ -1,6 +1,6 @@
-package zio.telemetry.opentelemetry
+package zio.telemetry.opentelemetry.tracing
 
-import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapSetter }
+import io.opentelemetry.context.propagation.{TextMapGetter, TextMapSetter}
 
 import java.lang
 import scala.collection.mutable
