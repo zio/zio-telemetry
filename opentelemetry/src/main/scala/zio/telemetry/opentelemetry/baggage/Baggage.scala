@@ -10,52 +10,67 @@ import scala.jdk.CollectionConverters._
 trait Baggage { self =>
 
   /**
-   * Gets the baggage from current context
+   * Gets the baggage from current context.
+   *
+   * @param trace
+   * @return
    */
   def getCurrentBaggage(implicit trace: Trace): UIO[Baggaje]
 
   /**
-   * Gets the value by a given name
+   * Gets the value by a given name.
+   *
    * @param name
+   * @param trace
    * @return
    *   value
    */
   def get(name: String)(implicit trace: Trace): UIO[String]
 
   /**
-   * Gets all values
+   * Gets all values.
+   *
+   * @param trace
    * @return
    *   all values
    */
   def getAll(implicit trace: Trace): UIO[Map[String, String]]
 
   /**
-   * Gets all values accompanied by metadata
+   * Gets all values accompanied by metadata.
+   *
+   * @param trace
    * @return
    */
   def getAllWithMetadata(implicit trace: Trace): UIO[Map[String, (String, String)]]
 
   /**
-   * Sets the new value for a given name
+   * Sets the new value for a given name.
+   *
    * @param name
    * @param value
+   * @param trace
    * @return
    */
   def set(name: String, value: String)(implicit trace: Trace): UIO[Unit]
 
   /**
-   * Sets the new value and metadata for a given name
+   * Sets the new value and metadata for a given name.
+   *
    * @param name
    * @param value
    * @param metadata
    *   opaque string
+   * @param trace
    * @return
    */
   def setWithMetadata(name: String, value: String, metadata: String)(implicit trace: Trace): UIO[Unit]
 
   /**
-   * Removes the name/value by a given name
+   * Removes the name/value by a given name.
+   *
    * @param name
+   * @param trace
    * @return
    */
   def remove(name: String)(implicit trace: Trace): UIO[Unit]

@@ -13,23 +13,55 @@ import scala.jdk.CollectionConverters._
 trait Tracing { self =>
 
   /**
-   * Gets current Context
+   * Gets the current Context
+   *
+   * @param trace
+   * @return
    */
   def getCurrentContext(implicit trace: Trace): UIO[Context]
 
   /**
-   * Gets current Span
+   * Gets the current Span.
+   *
+   * @param trace
+   * @return
    */
   def getCurrentSpan(implicit trace: Trace): UIO[Span]
 
   /**
-   * Gets the current SpanContext
+   * Gets the current SpanContext.
+   *
+   * @param trace
+   * @return
    */
   def getCurrentSpanContext(implicit trace: Trace): UIO[SpanContext]
 
   /**
-   * Extracts the span from carrier `C` and set its child span with name 'spanName' as the current span. Ends the span
-   * when the effect finishes.
+   * Extracts the span from carrier `C` and set its child span with name 'spanName' as the current span.
+   *
+   * Ends the span when the effect finishes.
+   *
+   * @param propagator
+   *   implementation of [[TextMapPropagator]]
+   * @param carrier
+   *   mutable data from which the parent span is extracted
+   * @param getter
+   *   implementation of [[TextMapGetter]] which extracts the context from the `carrier`
+   * @param spanName
+   *   name of the child span
+   * @param spanKind
+   *   kind of the child span
+   * @param toErrorStatus
+   *   error mapper
+   * @param effect
+   *   body of the child span
+   * @param trace
+   * @tparam C
+   *   carrier
+   * @tparam R
+   * @tparam E
+   * @tparam A
+   * @return
    */
   def spanFrom[C, R, E, A](
     propagator: TextMapPropagator,
@@ -41,8 +73,26 @@ trait Tracing { self =>
   )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   /**
-   * Extracts the span from carrier `C` and unsafely set its child span with name 'spanName' as the current span. You
-   * need to make sure to call the finalize effect to end the span. Primarily useful for interop.
+   * Extracts the span from carrier `C` and unsafely set its child span with name 'spanName' as the current span.
+   *
+   * You need to make sure to call the finalize effect to end the span.
+   *
+   * Primarily useful for interop.
+   *
+   * @param propagator
+   *   implementation of [[TextMapPropagator]]
+   * @param carrier
+   *   mutable data from which the parent span is extracted
+   * @param getter
+   *   implementation of [[TextMapGetter]] which extracts the context from the `carrier`
+   * @param spanName
+   *   name of the child span
+   * @param spanKind
+   *   kind of the child span
+   * @param trace
+   * @tparam C
+   *   carrier
+   * @return
    */
   def spanFromUnsafe[C](
     propagator: TextMapPropagator,
@@ -53,7 +103,23 @@ trait Tracing { self =>
   )(implicit trace: Trace): UIO[(Span, UIO[Any])]
 
   /**
-   * Sets the current span to be the new root span with name 'spanName'. Ends the span when the effect finishes.
+   * Sets the current span to be the new root span with name 'spanName'.
+   *
+   * Ends the span when the effect finishes.
+   *
+   * @param spanName
+   *   name of the new root span
+   * @param spanKind
+   *   name of the new root span
+   * @param toErrorStatus
+   *   error mapper
+   * @param effect
+   *   body of the new root span
+   * @param trace
+   * @tparam R
+   * @tparam E
+   * @tparam A
+   * @return
    */
   def root[R, E, A](
     spanName: String,
@@ -62,8 +128,23 @@ trait Tracing { self =>
   )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   /**
-   * Sets the current span to be the child of the current span with name 'spanName'. Ends the span when the effect
-   * finishes.
+   * Sets the current span to be the child of the current span with name 'spanName'.
+   *
+   * Ends the span when the effect finishes.
+   *
+   * @param spanName
+   *   name of the child span
+   * @param spanKind
+   *   kind of the child span
+   * @param toErrorStatus
+   *   error mapper
+   * @param effect
+   *   body of the child span
+   * @param trace
+   * @tparam R
+   * @tparam E
+   * @tparam A
+   * @return
    */
   def span[R, E, A](
     spanName: String,
@@ -72,8 +153,16 @@ trait Tracing { self =>
   )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   /**
-   * Unsafely sets the current span to be the child of the current span with name 'spanName'. You need to manually call
-   * the finalizer to end the span. Useful for interop.
+   * Unsafely sets the current span to be the child of the current span with name 'spanName'.
+   *
+   * You need to manually call the finalizer to end the span. Useful for interop.
+   *
+   * @param spanName
+   *   name of the child span
+   * @param spanKind
+   *   kind of the child span
+   * @param trace
+   * @return
    */
   def spanUnsafe(
     spanName: String,
@@ -84,6 +173,12 @@ trait Tracing { self =>
    * Introduces a thread-local scope during the execution allowing for non-zio context propagation.
    *
    * Closes the scope when the effect finishes.
+   *
+   * @param effect
+   *   piece of code to execute in the current context
+   * @param trace
+   * @tparam A
+   * @return
    */
   def scopedEffect[A](effect: => A)(implicit trace: Trace): Task[A]
 
@@ -91,6 +186,12 @@ trait Tracing { self =>
    * Introduces a thread-local scope during the execution allowing for non-zio context propagation.
    *
    * Closes the scope when the effect finishes.
+   *
+   * @param effect
+   *   piece of code to execute in the current context
+   * @param trace
+   * @tparam A
+   * @return
    */
   def scopedEffectTotal[A](effect: => A)(implicit trace: Trace): UIO[A]
 
@@ -102,18 +203,38 @@ trait Tracing { self =>
    * The java auto instrumentation package provides such a mechanism out of the box, so one is not provided as a part of
    * this method.
    *
-   * CLoses the scope when the effect finishes
+   * CLoses the scope when the effect finishes.
+   *
+   * @param make
+   *   function for providing a [[Future]] by a given [[ExecutionContext]] to execute in the current context
+   * @param trace
+   * @tparam A
+   * @return
    */
   def scopedEffectFromFuture[A](make: ExecutionContext => scala.concurrent.Future[A])(implicit trace: Trace): Task[A]
 
   /**
-   * Injects the current span into carrier `C`
+   * Injects the current span into carrier `C`.
+   *
+   * @param propagator
+   *   implementation of [[TextMapPropagator]]
+   * @param carrier
+   *   mutable data from which the parent span is extracted
+   * @param setter
+   *   implementation of [[TextMapSetter]] which sets propagated fields into a `carrier`
+   * @param trace
+   * @tparam C
+   *   carrier
+   * @return
    */
   def inject[C](
     propagator: TextMapPropagator,
     carrier: C,
     setter: TextMapSetter[C]
   )(implicit trace: Trace): UIO[Unit]
+
+  /**
+   */
 
   /**
    * Mark this effect as the child of an externally provided span. Ends the span when the effect finishes.
@@ -123,8 +244,23 @@ trait Tracing { self =>
    * already makes use of instrumentation, and you need to interoperate with futures-based code.
    *
    * The caller is solely responsible for managing the external span, including calling Span.end
+   *
+   * @param span
+   *   externally provided span
+   * @param spanName
+   *   name of the child span
+   * @param spanKind
+   *   kind of the child span
+   * @param toErrorStatus
+   *   error mapper
+   * @param effect
+   *   body of the child span
+   * @param trace
+   * @tparam R
+   * @tparam E
+   * @tparam A
+   * @return
    */
-
   def inSpan[R, E, A](
     span: Span,
     spanName: String,
@@ -133,12 +269,22 @@ trait Tracing { self =>
   )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   /**
-   * Adds an event to the current span
+   * Adds an event to the current span.
+   *
+   * @param name
+   * @param trace
+   * @return
    */
   def addEvent(name: String)(implicit trace: Trace): UIO[Span]
 
   /**
    * Adds an event with attributes to the current span.
+   *
+   * @param name
+   * @param attributes
+   *   event attributes
+   * @param trace
+   * @return
    */
   def addEventWithAttributes(
     name: String,
@@ -147,41 +293,88 @@ trait Tracing { self =>
 
   /**
    * Sets an attribute of the current span.
+   *
+   * @param name
+   * @param value
+   * @param trace
+   * @return
    */
   def setAttribute(name: String, value: Boolean)(implicit trace: Trace): UIO[Span]
 
   /**
    * Sets an attribute of the current span.
+   *
+   * @param name
+   * @param value
+   * @param trace
+   * @return
    */
   def setAttribute(name: String, value: Double)(implicit trace: Trace): UIO[Span]
 
   /**
    * Sets an attribute of the current span.
+   *
+   * @param name
+   * @param value
+   * @param trace
+   * @return
    */
   def setAttribute(name: String, value: Long)(implicit trace: Trace): UIO[Span]
 
   /**
    * Sets an attribute of the current span.
+   *
+   * @param name
+   * @param value
+   * @param trace
+   * @return
    */
   def setAttribute(name: String, value: String)(implicit trace: Trace): UIO[Span]
 
   /**
    * Sets an attribute of the current span.
+   *
+   * @param key
+   * @param value
+   * @param trace
+   * @tparam T
+   * @return
    */
   def setAttribute[T](key: AttributeKey[T], value: T)(implicit trace: Trace): UIO[Span]
 
   /**
    * Sets an attribute of the current span.
+   *
+   * @param name
+   * @param values
+   * @param trace
+   * @return
    */
   def setAttribute(name: String, values: Seq[String])(implicit trace: Trace): UIO[Span]
 
   /**
    * Sets an attribute of the current span.
+   *
+   * @param name
+   * @param values
+   * @param i1
+   *   dummy implicit value to disambiguate the method calls
+   * @param trace
+   * @return
    */
   def setAttribute(name: String, values: Seq[Boolean])(implicit i1: DummyImplicit, trace: Trace): UIO[Span]
 
   /**
    * Sets an attribute of the current span.
+   *
+   * @param name
+   * @param values
+   * @param i1
+   *   dummy implicit value to disambiguate the method calls
+   * @param i2
+   *   dummy implicit value to disambiguate the method calls
+   * @param trace
+   * @return
    */
   def setAttribute(name: String, values: Seq[Long])(implicit
     i1: DummyImplicit,
@@ -191,6 +384,17 @@ trait Tracing { self =>
 
   /**
    * Sets an attribute of the current span.
+   *
+   * @param name
+   * @param values
+   * @param i1
+   *   dummy implicit value to disambiguate the method calls
+   * @param i2
+   *   dummy implicit value to disambiguate the method calls
+   * @param i3
+   *   dummy implicit value to disambiguate the method calls
+   * @param trace
+   * @return
    */
   def setAttribute(name: String, values: Seq[Double])(implicit
     i1: DummyImplicit,
@@ -297,8 +501,8 @@ object Tracing {
             extractContext(propagator, carrier, getter).flatMap { context =>
               ZIO.acquireReleaseWith {
                 createChildOf(context, spanName, spanKind)
-              } { case (r, _) =>
-                r
+              } { case (endSpan, _) =>
+                endSpan
               } { case (_, ctx) =>
                 finalizeSpanUsingEffect(effect, ctx, toErrorStatus)
               }
@@ -326,8 +530,8 @@ object Tracing {
           )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
             ZIO.acquireReleaseWith {
               createRoot(spanName, spanKind)
-            } { case (r, _) =>
-              r
+            } { case (endSpan, _) =>
+              endSpan
             } { case (_, ctx) =>
               finalizeSpanUsingEffect(effect, ctx, toErrorStatus)
             }
@@ -340,8 +544,8 @@ object Tracing {
             getCurrentContext.flatMap { old =>
               ZIO.acquireReleaseWith {
                 createChildOf(old, spanName, spanKind)
-              } { case (r, _) =>
-                r
+              } { case (endSpan, _) =>
+                endSpan
               } { case (_, ctx) =>
                 finalizeSpanUsingEffect(effect, ctx, toErrorStatus)
               }
@@ -362,34 +566,34 @@ object Tracing {
           override def scopedEffect[A](effect: => A)(implicit trace: Trace): Task[A] =
             for {
               currentContext <- getCurrentContext
-              eff            <- ZIO.attempt {
+              effect         <- ZIO.attempt {
                                   val scope = currentContext.makeCurrent()
                                   try effect
                                   finally scope.close()
                                 }
-            } yield eff
+            } yield effect
 
           override def scopedEffectTotal[A](effect: => A)(implicit trace: Trace): UIO[A] =
             for {
               currentContext <- getCurrentContext
-              eff            <- ZIO.succeed {
+              effect         <- ZIO.succeed {
                                   val scope = currentContext.makeCurrent()
                                   try effect
                                   finally scope.close()
                                 }
-            } yield eff
+            } yield effect
 
           override def scopedEffectFromFuture[A](
             make: ExecutionContext => scala.concurrent.Future[A]
           )(implicit trace: Trace): Task[A] =
             for {
               currentContext <- getCurrentContext
-              eff            <- ZIO.fromFuture { implicit ec =>
+              effect         <- ZIO.fromFuture { implicit ec =>
                                   val scope = currentContext.makeCurrent()
                                   try make(ec)
                                   finally scope.close()
                                 }
-            } yield eff
+            } yield effect
 
           override def inject[C](
             propagator: TextMapPropagator,
@@ -409,8 +613,8 @@ object Tracing {
           )(effect: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
             ZIO.acquireReleaseWith {
               createChildOf(Context.root().`with`(span), spanName, spanKind)
-            } { case (r, _) =>
-              r
+            } { case (endSpan, _) =>
+              endSpan
             } { case (_, ctx) =>
               finalizeSpanUsingEffect(effect, ctx, toErrorStatus)
             }
