@@ -26,15 +26,18 @@ case class ProxyHttpApp(client: Client, tracing: Tracing, baggage: Baggage) {
 
   val routes: HttpApp[Any, Throwable] =
     Http.collectZIO { case Method.GET -> !! / "statuses" =>
-      (for {
-        _        <- tracing.setAttribute("http.method", "get")
-        _        <- tracing.addEvent("proxy-event")
-        _        <- baggage.set("proxy-baggage", "proxy-baggage-value")
-        carrier   = mutable.Map.empty[String, String]
-        _        <- tracing.inject(propagator, carrier, setter)
-        statuses <- client.status(carrier.toMap)
-      } yield Response.json(statuses.toJson)) @@ root("/statuses", SpanKind.SERVER, errorMapper)
+      statuses @@ root("/statuses", SpanKind.SERVER, errorMapper)
     }
+
+  def statuses: Task[Response] =
+    for {
+      _        <- tracing.setAttribute("http.method", "get")
+      _        <- tracing.addEvent("proxy-event")
+      _        <- baggage.set("proxy-baggage", "proxy-baggage-value")
+      carrier   = mutable.Map.empty[String, String]
+      _        <- tracing.inject(propagator, carrier, setter)
+      statuses <- client.status(carrier.toMap)
+    } yield Response.json(statuses.toJson)
 
 }
 
