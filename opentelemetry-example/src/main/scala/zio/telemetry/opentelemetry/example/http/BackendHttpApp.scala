@@ -7,12 +7,13 @@ import zio.telemetry.opentelemetry.example.http.{ Status => ServiceStatus }
 import zhttp.http.{ !!, ->, /, Headers, Http, HttpApp, Method, Response }
 import zio.json.EncoderOps
 import zio._
+import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.tracing.Tracing
 
 import java.lang
 import scala.jdk.CollectionConverters._
 
-case class BackendHttpApp(tracing: Tracing) {
+case class BackendHttpApp(tracing: Tracing, baggage: Baggage) {
 
   import tracing.aspects._
 
@@ -28,9 +29,11 @@ case class BackendHttpApp(tracing: Tracing) {
   val routes: HttpApp[Any, Throwable] =
     Http.collectZIO { case request @ Method.GET -> !! / "status" =>
       (for {
-        _        <- tracing.addEvent("event from backend before response")
-        response <- ZIO.succeed(Response.json(ServiceStatus.up("backend").toJson))
-        _        <- tracing.addEvent("event from backend after response")
+        proxyBaggage <- baggage.get("proxy-baggage")
+        _            <- tracing.setAttribute("proxy-baggage", proxyBaggage.getOrElse("NO BAGGAGE"))
+        _            <- tracing.addEvent("event from backend before response")
+        response     <- ZIO.succeed(Response.json(ServiceStatus.up("backend").toJson))
+        _            <- tracing.addEvent("event from backend after response")
       } yield response) @@ spanFrom(propagator, request.headers, getter, "/status", SpanKind.SERVER)
     }
 
@@ -38,7 +41,7 @@ case class BackendHttpApp(tracing: Tracing) {
 
 object BackendHttpApp {
 
-  val live: URLayer[Tracing, BackendHttpApp] =
+  val live: URLayer[Tracing with Baggage, BackendHttpApp] =
     ZLayer.fromFunction(BackendHttpApp.apply _)
 
 }

@@ -1,4 +1,4 @@
-package zio.telemetry.opentelemetry.tracing
+package zio.telemetry.opentelemetry.internal
 
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.context.Context
@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap
 import scala.annotation.nowarn
 
 @nowarn("msg=discarded non-Unit value")
-final class PropagatingSupervisor extends Supervisor[Unit] {
+private[opentelemetry] final class PropagatingSupervisor extends Supervisor[Unit] {
 
   private val storage = new ConcurrentHashMap[FiberId, Span]()
 

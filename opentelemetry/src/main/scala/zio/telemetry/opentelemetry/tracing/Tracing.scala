@@ -5,6 +5,8 @@ import io.opentelemetry.api.trace._
 import io.opentelemetry.context.Context
 import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator, TextMapSetter }
 import zio._
+import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.internal.PropagatingSupervisor
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
@@ -455,12 +457,14 @@ trait Tracing { self =>
 
 object Tracing {
 
-  def live: URLayer[Tracer, Tracing] =
-    ZLayer.scoped(ZIO.service[Tracer].flatMap { tracer =>
-      FiberRef
-        .make[Context](Context.root())
-        .flatMap(ref => scoped(tracer, ContextStorage.fiberRef(ref)))
-    })
+  def live: URLayer[Tracer with ContextStorage, Tracing] =
+    ZLayer.scoped {
+      for {
+        tracer         <- ZIO.service[Tracer]
+        contextStorage <- ZIO.service[ContextStorage]
+        tracing        <- scoped(tracer, contextStorage)
+      } yield tracing
+    }
 
   /**
    * Tracing context will be bidirectionally propagated between ZIO and non-ZIO code.
@@ -470,12 +474,8 @@ object Tracing {
    * [[Tracing.propagating]] should be used in combination with automatic instrumentation via OpenTelemetry JVM agent
    * only.
    */
-  def propagating: URLayer[Tracer, Tracing] =
-    Runtime.addSupervisor(new PropagatingSupervisor) ++
-      ZLayer.scoped(ZIO.service[Tracer].flatMap(scopedPropagating))
-
-  private def scopedPropagating(tracer: Tracer): URIO[Scope, Tracing] =
-    scoped(tracer, ContextStorage.threadLocal)
+  def propagating: URLayer[Tracer with ContextStorage, Tracing] =
+    Runtime.addSupervisor(new PropagatingSupervisor) ++ live
 
   def scoped(tracer: Tracer, currentContext: ContextStorage): URIO[Scope, Tracing] = {
     val acquire: URIO[Scope, Tracing] =

@@ -9,6 +9,7 @@ import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import io.opentelemetry.sdk.trace.data.SpanData
 import zio._
+import zio.telemetry.opentelemetry.context.ContextStorage
 import zio.test.Assertion._
 import zio.test.{ assert, TestClock, ZIOSpecDefault }
 
@@ -25,10 +26,10 @@ object TracingTest extends ZIOSpecDefault {
     tracer          = tracerProvider.get("TracingTest")
   } yield (spanExporter, tracer)
 
-  val inMemoryTracerLayer: ULayer[InMemorySpanExporter with Tracer] =
+  val inMemoryTracerLayer: ULayer[InMemorySpanExporter with Tracer with ContextStorage] =
     ZLayer.fromZIOEnvironment(inMemoryTracer.map { case (inMemorySpanExporter, tracer) =>
       ZEnvironment(inMemorySpanExporter).add(tracer)
-    })
+    }) ++ ContextStorage.fiberRef
 
   val tracingMockLayer: ULayer[Tracing with InMemorySpanExporter with Tracer] =
     inMemoryTracerLayer >>> (Tracing.live ++ inMemoryTracerLayer)
@@ -39,7 +40,12 @@ object TracingTest extends ZIOSpecDefault {
       .map(_.getFinishedSpanItems.asScala.toList)
 
   def spec =
-    suite("zio opentelemetry")(creationSpec, spansSpec)
+    suite("zio opentelemetry")(
+      suite("Tracing")(
+        creationSpec,
+        spansSpec
+      )
+    )
 
   def creationSpec =
     suite("creation")(
@@ -308,15 +314,6 @@ object TracingTest extends ZIOSpecDefault {
             )
             assert(tags)(equalTo(expected))
           }
-        }
-      },
-      test("baggaging") {
-        ZIO.serviceWithZIO[Tracing] { tracing =>
-          for {
-            _         <- tracing.setBaggage("some", "thing")
-            baggage   <- tracing.getCurrentBaggage
-            entryValue = Option(baggage.getEntryValue("some"))
-          } yield assert(entryValue)(equalTo(Some("thing")))
         }
       },
       test("resources") {

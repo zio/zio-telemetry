@@ -5,6 +5,8 @@ import zio.config.typesafe.TypesafeConfig
 import zio.telemetry.opentelemetry.example.config.AppConfig
 import zio.telemetry.opentelemetry.example.http.{ BackendHttpApp, BackendHttpServer }
 import zio._
+import zio.telemetry.opentelemetry.baggage.Baggage
+import zio.telemetry.opentelemetry.context.ContextStorage
 import zio.telemetry.opentelemetry.tracing.Tracing
 
 object BackendApp extends ZIOAppDefault {
@@ -19,6 +21,8 @@ object BackendApp extends ZIOAppDefault {
         BackendHttpServer.live,
         BackendHttpApp.live,
         Tracing.live,
+        Baggage.live,
+        ContextStorage.fiberRef,
         JaegerTracer.live
       )
 

@@ -6,11 +6,12 @@ import io.opentelemetry.context.propagation.{ TextMapPropagator, TextMapSetter }
 import zio._
 import zhttp.http.{ !!, ->, /, Http, HttpApp, Method, Response }
 import zio.json.EncoderOps
-import zio.telemetry.opentelemetry.tracing.{ErrorMapper, Tracing}
+import zio.telemetry.opentelemetry.baggage.Baggage
+import zio.telemetry.opentelemetry.tracing.{ ErrorMapper, Tracing }
 
 import scala.collection.mutable
 
-case class ProxyHttpApp(client: Client, tracing: Tracing) {
+case class ProxyHttpApp(client: Client, tracing: Tracing, baggage: Baggage) {
 
   import tracing.aspects._
 
@@ -28,6 +29,7 @@ case class ProxyHttpApp(client: Client, tracing: Tracing) {
       (for {
         _        <- tracing.setAttribute("http.method", "get")
         _        <- tracing.addEvent("proxy-event")
+        _        <- baggage.set("proxy-baggage", "proxy-baggage-value")
         carrier   = mutable.Map.empty[String, String]
         _        <- tracing.inject(propagator, carrier, setter)
         statuses <- client.status(carrier.toMap)
@@ -38,7 +40,7 @@ case class ProxyHttpApp(client: Client, tracing: Tracing) {
 
 object ProxyHttpApp {
 
-  val live: URLayer[Client with Tracing, ProxyHttpApp] =
+  val live: URLayer[Client with Tracing with Baggage, ProxyHttpApp] =
     ZLayer.fromFunction(ProxyHttpApp.apply _)
 
 }

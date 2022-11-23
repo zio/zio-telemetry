@@ -3,7 +3,7 @@ package zio.telemetry.opentelemetry.baggage
 import io.opentelemetry.api.baggage.{ Baggage => Baggaje, BaggageBuilder, BaggageEntryMetadata }
 import io.opentelemetry.context.Context
 import zio._
-import zio.telemetry.opentelemetry.tracing.ContextStorage
+import zio.telemetry.opentelemetry.context.ContextStorage
 
 import scala.jdk.CollectionConverters._
 
@@ -25,7 +25,7 @@ trait Baggage { self =>
    * @return
    *   value
    */
-  def get(name: String)(implicit trace: Trace): UIO[String]
+  def get(name: String)(implicit trace: Trace): UIO[Option[String]]
 
   /**
    * Gets all values.
@@ -79,12 +79,13 @@ trait Baggage { self =>
 
 object Baggage {
 
-  def live: ULayer[Baggage] =
-    ZLayer.scoped(
-      FiberRef
-        .make[Context](Context.root())
-        .flatMap(ref => scoped(ContextStorage.fiberRef(ref)))
-    )
+  def live: URLayer[ContextStorage, Baggage] =
+    ZLayer.scoped {
+      for {
+        contextStorage <- ZIO.service[ContextStorage]
+        baggage        <- scoped(contextStorage)
+      } yield baggage
+    }
 
   def scoped(currentContext: ContextStorage): URIO[Scope, Baggage] =
     ZIO.succeed {
@@ -92,8 +93,8 @@ object Baggage {
         override def getCurrentBaggage(implicit trace: Trace): UIO[Baggaje] =
           currentContext.get.map(Baggaje.fromContext)
 
-        override def get(name: String)(implicit trace: Trace): UIO[String] =
-          getCurrentBaggage.map(_.getEntryValue(name))
+        override def get(name: String)(implicit trace: Trace): UIO[Option[String]] =
+          getCurrentBaggage.map(baggage => Option(baggage.getEntryValue(name)))
 
         override def getAll(implicit trace: Trace): UIO[Map[String, String]] =
           getCurrentBaggage.map(_.asMap().asScala.toMap.mapValues(_.getValue))
