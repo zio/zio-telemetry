@@ -128,11 +128,11 @@ object Baggage {
       } yield baggage
     }
 
-  def scoped(currentContext: ContextStorage): URIO[Scope, Baggage] =
+  def scoped(ctxStorage: ContextStorage): URIO[Scope, Baggage] =
     ZIO.succeed {
       new Baggage { self =>
         override def getCurrentBaggage(implicit trace: Trace): UIO[Baggaje] =
-          currentContext.get.map(Baggaje.fromContext)
+          ctxStorage.get.map(Baggaje.fromContext)
 
         override def get(name: String)(implicit trace: Trace): UIO[Option[String]] =
           getCurrentBaggage.map(baggage => Option(baggage.getEntryValue(name)))
@@ -169,16 +169,18 @@ object Baggage {
           carrier: C,
           getter: TextMapGetter[C]
         )(implicit trace: Trace): UIO[Unit] =
-          modify(ctx => propagator.extract(ctx, carrier, getter)).unit
+          ZIO.uninterruptible {
+            modifyContext(ctx => propagator.extract(ctx, carrier, getter)).unit
+          }
 
         private def getCurrentContext(implicit trace: Trace): UIO[Context] =
-          currentContext.get
+          ctxStorage.get
 
-        private def modify(body: Context => Context): UIO[Context] =
-          currentContext.updateAndGet(body)
+        private def modifyContext(body: Context => Context): UIO[Context] =
+          ctxStorage.updateAndGet(body)
 
         private def modifyBuilder(body: BaggageBuilder => BaggageBuilder)(implicit trace: Trace): UIO[Context] =
-          modify { ctx =>
+          modifyContext { ctx =>
             body(Baggaje.fromContext(ctx).toBuilder)
               .build()
               .storeInContext(ctx)
