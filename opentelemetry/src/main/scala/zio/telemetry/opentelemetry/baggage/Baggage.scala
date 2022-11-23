@@ -2,6 +2,7 @@ package zio.telemetry.opentelemetry.baggage
 
 import io.opentelemetry.api.baggage.{ Baggage => Baggaje, BaggageBuilder, BaggageEntryMetadata }
 import io.opentelemetry.context.Context
+import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator, TextMapSetter }
 import zio._
 import zio.telemetry.opentelemetry.context.ContextStorage
 
@@ -75,6 +76,46 @@ trait Baggage { self =>
    */
   def remove(name: String)(implicit trace: Trace): UIO[Unit]
 
+  /**
+   * Injects the baggage data from the current context into carrier `C`
+   *
+   * @param propagator
+   *   implementation of [[TextMapPropagator]]
+   * @param carrier
+   *   mutable data from which the parent span is extracted
+   * @param setter
+   *   implementation of [[TextMapSetter]] which extracts the baggage data from the current context into carrier `C`
+   * @param Trace
+   * @tparam C
+   *   carrier
+   * @return
+   */
+  def inject[C](
+    propagator: TextMapPropagator,
+    carrier: C,
+    setter: TextMapSetter[C]
+  )(implicit trace: Trace): UIO[Unit]
+
+  /**
+   * Extracts the baggage data from carrier `C` into the current context
+   *
+   * @param propagator
+   *   implementation of [[TextMapPropagator]]
+   * @param carrier
+   *   mutable data from which the parent span is extracted
+   * @param getter
+   *   implementation of [[TextMapGetter]] which injects the baggage data from carrier `C` into the current context
+   * @param trace
+   * @tparam C
+   *   carrier
+   * @return
+   */
+  def extract[C](
+    propagator: TextMapPropagator,
+    carrier: C,
+    getter: TextMapGetter[C]
+  )(implicit trace: Trace): UIO[Unit]
+
 }
 
 object Baggage {
@@ -105,19 +146,42 @@ object Baggage {
           )
 
         override def set(name: String, value: String)(implicit trace: Trace): UIO[Unit] =
-          modify(_.put(name, value)).unit
+          modifyBuilder(_.put(name, value)).unit
 
         override def setWithMetadata(name: String, value: String, metadata: String)(implicit trace: Trace): UIO[Unit] =
-          modify(_.put(name, value, BaggageEntryMetadata.create(metadata))).unit
+          modifyBuilder(_.put(name, value, BaggageEntryMetadata.create(metadata))).unit
 
         override def remove(name: String)(implicit trace: Trace): UIO[Unit] =
-          modify(_.remove(name)).unit
+          modifyBuilder(_.remove(name)).unit
 
-        private def modify(body: BaggageBuilder => BaggageBuilder)(implicit trace: Trace): UIO[Context] =
-          currentContext.updateAndGet { context =>
-            body(Baggaje.fromContext(context).toBuilder)
+        override def inject[C](
+          propagator: TextMapPropagator,
+          carrier: C,
+          setter: TextMapSetter[C]
+        )(implicit trace: Trace): UIO[Unit] =
+          for {
+            ctx <- getCurrentContext
+            _   <- ZIO.succeed(propagator.inject(ctx, carrier, setter))
+          } yield ()
+
+        override def extract[C](
+          propagator: TextMapPropagator,
+          carrier: C,
+          getter: TextMapGetter[C]
+        )(implicit trace: Trace): UIO[Unit] =
+          modify(ctx => propagator.extract(ctx, carrier, getter)).unit
+
+        private def getCurrentContext(implicit trace: Trace): UIO[Context] =
+          currentContext.get
+
+        private def modify(body: Context => Context): UIO[Context] =
+          currentContext.updateAndGet(body)
+
+        private def modifyBuilder(body: BaggageBuilder => BaggageBuilder)(implicit trace: Trace): UIO[Context] =
+          modify { ctx =>
+            body(Baggaje.fromContext(ctx).toBuilder)
               .build()
-              .storeInContext(context)
+              .storeInContext(ctx)
           }
 
       }

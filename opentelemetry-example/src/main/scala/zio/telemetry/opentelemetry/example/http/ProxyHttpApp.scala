@@ -1,13 +1,14 @@
 package zio.telemetry.opentelemetry.example.http
 
+import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.api.trace.{ SpanKind, StatusCode }
-import io.opentelemetry.context.propagation.{ TextMapPropagator, TextMapSetter }
+import io.opentelemetry.context.propagation.TextMapPropagator
 import zio._
 import zhttp.http.{ !!, ->, /, Http, HttpApp, Method, Response }
 import zio.json.EncoderOps
 import zio.telemetry.opentelemetry.baggage.Baggage
-import zio.telemetry.opentelemetry.tracing.{ ErrorMapper, Tracing }
+import zio.telemetry.opentelemetry.tracing.{ ErrorMapper, TextMapAdapter, Tracing }
 
 import scala.collection.mutable
 
@@ -15,11 +16,11 @@ case class ProxyHttpApp(client: Client, tracing: Tracing, baggage: Baggage) {
 
   import tracing.aspects._
 
-  private val propagator: TextMapPropagator =
+  private val tracePropagator: TextMapPropagator =
     W3CTraceContextPropagator.getInstance()
 
-  private val setter: TextMapSetter[mutable.Map[String, String]] =
-    (carrier, key, value) => carrier.update(key, value)
+  private val baggagePropagator: TextMapPropagator =
+    W3CBaggagePropagator.getInstance()
 
   private val errorMapper: ErrorMapper[Throwable] =
     ErrorMapper[Throwable] { case _ => StatusCode.UNSET }
@@ -29,15 +30,18 @@ case class ProxyHttpApp(client: Client, tracing: Tracing, baggage: Baggage) {
       statuses @@ root("/statuses", SpanKind.SERVER, errorMapper)
     }
 
-  def statuses: Task[Response] =
+  def statuses: Task[Response] = {
+    val carrier = mutable.Map.empty[String, String]
+
     for {
       _        <- tracing.setAttribute("http.method", "get")
       _        <- tracing.addEvent("proxy-event")
-      _        <- baggage.set("proxy-baggage", "proxy-baggage-value")
-      carrier   = mutable.Map.empty[String, String]
-      _        <- tracing.inject(propagator, carrier, setter)
+      _        <- baggage.set("proxy-baggage", "value from proxy")
+      _        <- tracing.inject(tracePropagator, carrier, TextMapAdapter)
+      _        <- baggage.inject(baggagePropagator, carrier, TextMapAdapter)
       statuses <- client.status(carrier.toMap)
     } yield Response.json(statuses.toJson)
+  }
 
 }
 
