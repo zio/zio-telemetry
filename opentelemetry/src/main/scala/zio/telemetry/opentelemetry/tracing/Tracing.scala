@@ -65,7 +65,7 @@ trait Tracing { self =>
    * @tparam A
    * @return
    */
-  def spanFrom[C, R, E, A](
+  def extractSpan[C, R, E, A](
     propagator: TextMapPropagator,
     carrier: C,
     getter: TextMapGetter[C],
@@ -96,7 +96,7 @@ trait Tracing { self =>
    *   carrier
    * @return
    */
-  def spanFromUnsafe[C](
+  def extractSpanUnsafe[C](
     propagator: TextMapPropagator,
     carrier: C,
     getter: TextMapGetter[C],
@@ -157,7 +157,9 @@ trait Tracing { self =>
   /**
    * Unsafely sets the current span to be the child of the current span with name 'spanName'.
    *
-   * You need to manually call the finalizer to end the span. Useful for interop.
+   * You need to manually call the finalizer to end the span.
+   *
+   * Primarily useful for interop.
    *
    * @param spanName
    *   name of the child span
@@ -246,6 +248,16 @@ trait Tracing { self =>
    * already makes use of instrumentation, and you need to interoperate with futures-based code.
    *
    * The caller is solely responsible for managing the external span, including calling Span.end
+   *
+   * It also could be useful in the combination with `extractSpanUnsafe` or `spanUnsafe`:
+   * {{{
+   *   for {
+   *     (span, finalize) <- tracing.spanUnsafe("unsafe-span")
+   *     // run some logic that would be wrapped in the span
+   *     // modify the span
+   *     _                <- zio @@ tracing.inSpan(span, "child-of-unsafe-span")
+   *   } yield ()
+   * }}}
    *
    * @param span
    *   externally provided span
@@ -417,7 +429,7 @@ trait Tracing { self =>
     ): ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] =
       new ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] {
         override def apply[R, E >: E1 <: E1, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
-          self.spanFrom(propagator, carrier, getter, spanName, spanKind, toErrorStatus)(zio)
+          self.extractSpan(propagator, carrier, getter, spanName, spanKind, toErrorStatus)(zio)
       }
 
     def root[E1](
@@ -490,7 +502,7 @@ object Tracing {
           override def getCurrentSpanContext(implicit trace: Trace): UIO[SpanContext] =
             getCurrentSpan.map(_.getSpanContext())
 
-          override def spanFrom[C, R, E, A](
+          override def extractSpan[C, R, E, A](
             propagator: TextMapPropagator,
             carrier: C,
             getter: TextMapGetter[C],
@@ -500,7 +512,7 @@ object Tracing {
           )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
             extractContext(propagator, carrier, getter).flatMap { context =>
               ZIO.acquireReleaseWith {
-                createChildOf(context, spanName, spanKind)
+                createChild(context, spanName, spanKind)
               } { case (endSpan, _) =>
                 endSpan
               } { case (_, ctx) =>
@@ -508,7 +520,7 @@ object Tracing {
               }
             }
 
-          override def spanFromUnsafe[C](
+          override def extractSpanUnsafe[C](
             propagator: TextMapPropagator,
             carrier: C,
             getter: TextMapGetter[C],
@@ -517,7 +529,7 @@ object Tracing {
           )(implicit trace: Trace): UIO[(Span, UIO[Any])] =
             for {
               ctx        <- extractContext(propagator, carrier, getter)
-              updatedCtx <- createChildOfUnsafe(ctx, spanName, spanKind)
+              updatedCtx <- createChildUnsafe(ctx, spanName, spanKind)
               oldCtx     <- ctxStorage.getAndSet(updatedCtx)
               span       <- getCurrentSpan
               finalize    = end *> ctxStorage.set(oldCtx)
@@ -543,7 +555,7 @@ object Tracing {
           )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
             getCurrentContext.flatMap { old =>
               ZIO.acquireReleaseWith {
-                createChildOf(old, spanName, spanKind)
+                createChild(old, spanName, spanKind)
               } { case (endSpan, _) =>
                 endSpan
               } { case (_, ctx) =>
@@ -557,7 +569,7 @@ object Tracing {
           )(implicit trace: Trace): UIO[(Span, UIO[Any])] =
             for {
               ctx        <- getCurrentContext
-              updatedCtx <- createChildOfUnsafe(ctx, spanName, spanKind)
+              updatedCtx <- createChildUnsafe(ctx, spanName, spanKind)
               _          <- ctxStorage.set(updatedCtx)
               span       <- getCurrentSpan
               finalize    = end *> ctxStorage.set(ctx)
@@ -612,7 +624,7 @@ object Tracing {
             toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
           )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
             ZIO.acquireReleaseWith {
-              createChildOf(Context.root().`with`(span), spanName, spanKind)
+              createChild(Context.root().`with`(span), spanName, spanKind)
             } { case (endSpan, _) =>
               endSpan
             } { case (_, ctx) =>
@@ -621,18 +633,18 @@ object Tracing {
 
           override def addEvent(name: String)(implicit trace: Trace): UIO[Span] =
             for {
-              nanoSeconds <- currentNanos
-              span        <- getCurrentSpan
-            } yield span.addEvent(name, nanoSeconds, TimeUnit.NANOSECONDS)
+              nanos <- currentNanos
+              span  <- getCurrentSpan
+            } yield span.addEvent(name, nanos, TimeUnit.NANOSECONDS)
 
           override def addEventWithAttributes(
             name: String,
             attributes: Attributes
           )(implicit trace: Trace): UIO[Span] =
             for {
-              nanoSeconds <- currentNanos
-              span        <- getCurrentSpan
-            } yield span.addEvent(name, attributes, nanoSeconds, TimeUnit.NANOSECONDS)
+              nanos <- currentNanos
+              span  <- getCurrentSpan
+            } yield span.addEvent(name, attributes, nanos, TimeUnit.NANOSECONDS)
 
           override def setAttribute(name: String, value: Boolean)(implicit trace: Trace): UIO[Span] =
             getCurrentSpan.map(_.setAttribute(name, value))
@@ -699,12 +711,12 @@ object Tracing {
            * any potential failure of effect.
            */
           private def finalizeSpanUsingEffect[R, E, A](
-            effect: ZIO[R, E, A],
+            zio: ZIO[R, E, A],
             ctx: Context,
             toErrorStatus: ErrorMapper[E]
           )(implicit trace: Trace): ZIO[R, E, A] =
             ctxStorage
-              .locally(ctx)(effect)
+              .locally(ctx)(zio)
               .tapErrorCause(setErrorStatus(Span.fromContext(ctx), _, toErrorStatus))
 
           private def currentNanos(implicit trace: Trace): UIO[Long] =
@@ -715,48 +727,48 @@ object Tracing {
             spanKind: SpanKind
           )(implicit trace: Trace): UIO[(UIO[Unit], Context)] =
             for {
-              nanoSeconds <- currentNanos
-              span        <- ZIO.succeed(
-                               tracer
-                                 .spanBuilder(spanName)
-                                 .setNoParent()
-                                 .setSpanKind(spanKind)
-                                 .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
-                                 .startSpan()
-                             )
+              nanos <- currentNanos
+              span  <- ZIO.succeed(
+                         tracer
+                           .spanBuilder(spanName)
+                           .setNoParent()
+                           .setSpanKind(spanKind)
+                           .setStartTimestamp(nanos, TimeUnit.NANOSECONDS)
+                           .startSpan()
+                       )
             } yield (endSpan(span), Context.root().`with`(span))
 
-          private def createChildOf(
+          private def createChild(
             parentCtx: Context,
             spanName: String,
             spanKind: SpanKind
           )(implicit trace: Trace): UIO[(UIO[Unit], Context)] =
             for {
-              nanoSeconds <- currentNanos
-              span        <- ZIO.succeed(
-                               tracer
-                                 .spanBuilder(spanName)
-                                 .setParent(parentCtx)
-                                 .setSpanKind(spanKind)
-                                 .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
-                                 .startSpan()
-                             )
+              nanos <- currentNanos
+              span  <- ZIO.succeed(
+                         tracer
+                           .spanBuilder(spanName)
+                           .setParent(parentCtx)
+                           .setSpanKind(spanKind)
+                           .setStartTimestamp(nanos, TimeUnit.NANOSECONDS)
+                           .startSpan()
+                       )
             } yield (endSpan(span), parentCtx.`with`(span))
 
-          private def createChildOfUnsafe(
+          private def createChildUnsafe(
             parentCtx: Context,
             spanName: String,
             spanKind: SpanKind
           )(implicit trace: Trace): UIO[Context] =
             for {
-              nanoSeconds <- currentNanos
-              span        <-
+              nanos <- currentNanos
+              span  <-
                 ZIO.succeed(
                   tracer
                     .spanBuilder(spanName)
                     .setParent(parentCtx)
                     .setSpanKind(spanKind)
-                    .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
+                    .setStartTimestamp(nanos, TimeUnit.NANOSECONDS)
                     .startSpan()
                 )
             } yield parentCtx.`with`(span)

@@ -77,7 +77,7 @@ trait Baggage { self =>
   def remove(name: String)(implicit trace: Trace): UIO[Unit]
 
   /**
-   * Injects the baggage data from the current context into carrier `C`
+   * Injects the baggage data from the current context into carrier `C`.
    *
    * @param propagator
    *   implementation of [[TextMapPropagator]]
@@ -97,7 +97,7 @@ trait Baggage { self =>
   )(implicit trace: Trace): UIO[Unit]
 
   /**
-   * Extracts the baggage data from carrier `C` into the current context
+   * Extracts the baggage data from carrier `C` into the current context.
    *
    * @param propagator
    *   implementation of [[TextMapPropagator]]

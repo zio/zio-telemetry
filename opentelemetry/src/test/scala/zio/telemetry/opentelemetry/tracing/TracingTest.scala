@@ -59,7 +59,7 @@ object TracingTest extends ZIOSpecDefault {
 
   def spansSpec =
     suite("spans")(
-      test("childSpan") {
+      test("span") {
         ZIO.serviceWithZIO[Tracing] { tracing =>
           import tracing.aspects._
 
@@ -78,6 +78,52 @@ object TracingTest extends ZIOSpecDefault {
                 )
               )
             )
+        }
+      },
+      test("root") {
+        ZIO.serviceWithZIO[Tracing] { tracing =>
+          import tracing.aspects._
+
+          for {
+            _     <- ZIO.unit @@ root("ROOT2") @@ root("ROOT")
+            spans <- getFinishedSpans
+            root   = spans.find(_.getName == "ROOT")
+            child  = spans.find(_.getName == "ROOT2")
+          } yield assert(root)(isSome(anything)) &&
+            assert(child)(
+              isSome(
+                hasField[SpanData, String](
+                  "parent",
+                  _.getParentSpanId,
+                  equalTo(SpanId.getInvalid)
+                )
+              )
+            )
+        }
+      },
+      test("inSpan") {
+        ZIO.serviceWithZIO[Tracing] { tracing =>
+          import tracing.aspects._
+
+          for {
+            res                       <- inMemoryTracer
+            (_, tracer)                = res
+            externallyProvidedRootSpan = tracer.spanBuilder("external").startSpan()
+            scope                      = externallyProvidedRootSpan.makeCurrent()
+            _                         <- ZIO.unit @@ inSpan(externallyProvidedRootSpan, "zio-otel-child")
+            _                          = externallyProvidedRootSpan.end()
+            _                          = scope.close()
+            spans                     <- getFinishedSpans
+            child                      = spans.find(_.getName == "zio-otel-child")
+          } yield assert(child)(
+            isSome(
+              hasField[SpanData, String](
+                "parent",
+                _.getParentSpanId,
+                equalTo(externallyProvidedRootSpan.getSpanContext.getSpanId)
+              )
+            )
+          )
         }
       },
       test("scopedEffect") {
@@ -171,52 +217,6 @@ object TracingTest extends ZIOSpecDefault {
             assert(tags)(equalTo(List("In legacy code", "Finishing legacy code")))
         }
       },
-      test("rootSpan") {
-        ZIO.serviceWithZIO[Tracing] { tracing =>
-          import tracing.aspects._
-
-          for {
-            _     <- ZIO.unit @@ root("ROOT2") @@ root("ROOT")
-            spans <- getFinishedSpans
-            root   = spans.find(_.getName == "ROOT")
-            child  = spans.find(_.getName == "ROOT2")
-          } yield assert(root)(isSome(anything)) &&
-            assert(child)(
-              isSome(
-                hasField[SpanData, String](
-                  "parent",
-                  _.getParentSpanId,
-                  equalTo(SpanId.getInvalid)
-                )
-              )
-            )
-        }
-      },
-      test("inSpan") {
-        ZIO.serviceWithZIO[Tracing] { tracing =>
-          import tracing.aspects._
-
-          for {
-            res                       <- inMemoryTracer
-            (_, tracer)                = res
-            externallyProvidedRootSpan = tracer.spanBuilder("external").startSpan()
-            scope                      = externallyProvidedRootSpan.makeCurrent()
-            _                         <- ZIO.unit @@ inSpan(externallyProvidedRootSpan, "zio-otel-child")
-            _                          = externallyProvidedRootSpan.end()
-            _                          = scope.close()
-            spans                     <- getFinishedSpans
-            child                      = spans.find(_.getName == "zio-otel-child")
-          } yield assert(child)(
-            isSome(
-              hasField[SpanData, String](
-                "parent",
-                _.getParentSpanId,
-                equalTo(externallyProvidedRootSpan.getSpanContext.getSpanId)
-              )
-            )
-          )
-        }
-      },
       test("inject - extract roundtrip") {
         ZIO.serviceWithZIO[Tracing] { tracing =>
           import tracing.aspects._
@@ -243,7 +243,7 @@ object TracingTest extends ZIOSpecDefault {
             assert(baz.get.getParentSpanId)(equalTo(foo.get.getSpanId))
         }
       },
-      test("tagging") {
+      test("setAttribute") {
         ZIO.serviceWithZIO[Tracing] { tracing =>
           import tracing.aspects._
 
@@ -270,7 +270,7 @@ object TracingTest extends ZIOSpecDefault {
             assert(tags.get(AttributeKey.stringArrayKey("strings")))(equalTo(Seq("foo", "bar").asJava))
         }
       },
-      test("logging") {
+      test("addEvent & addEventWithAttributes") {
         ZIO.serviceWithZIO[Tracing] { tracing =>
           import tracing.aspects._
 

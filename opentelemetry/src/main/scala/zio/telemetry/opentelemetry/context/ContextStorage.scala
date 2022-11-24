@@ -13,14 +13,14 @@ trait ContextStorage {
 
   def updateAndGet(f: Context => Context)(implicit trace: Trace): UIO[Context]
 
-  def locally[R, E, A](context: Context)(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
+  def locally[R, E, A](context: Context)(zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
 }
 
 object ContextStorage {
 
   /**
-   * Use provided [[FiberRef]] as a [[ContextStorage]].
+   * The main one. Uses [[FiberRef]] as a [[ContextStorage]].
    */
   def fiberRef: ULayer[ContextStorage] =
     ZLayer.scoped(
@@ -41,17 +41,17 @@ object ContextStorage {
               override def updateAndGet(f: Context => Context)(implicit trace: Trace): UIO[Context] =
                 ref.updateAndGet(f)
 
-              override def locally[R, E, A](context: Context)(effect: ZIO[R, E, A])(implicit
+              override def locally[R, E, A](context: Context)(zio: ZIO[R, E, A])(implicit
                 trace: Trace
               ): ZIO[R, E, A] =
-                ref.locally(context)(effect)
+                ref.locally(context)(zio)
             }
           }
         }
     )
 
   /**
-   * Use OpenTelemetry's default context storage which is backed by a [[ThreadLocal]]. This makes sense only if
+   * Uses OpenTelemetry's default context storage which is backed by a [[ThreadLocal]]. This makes sense only if
    * [[PropagatingSupervisor]] is used.
    */
   def threadLocal: ULayer[ContextStorage] =
@@ -75,8 +75,8 @@ object ContextStorage {
             updated
           }.uninterruptible
 
-        override def locally[R, E, A](context: Context)(effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
-          ZIO.acquireReleaseWith(get <* set(context))(set)(_ => effect)
+        override def locally[R, E, A](context: Context)(zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          ZIO.acquireReleaseWith(get <* set(context))(set)(_ => zio)
       }
     }
 
