@@ -3,10 +3,10 @@ package zio.telemetry.opentelemetry.tracing
 import io.opentelemetry.api.common.{ AttributeKey, Attributes }
 import io.opentelemetry.api.trace._
 import io.opentelemetry.context.Context
-import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator, TextMapSetter }
 import zio._
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.context.{ ContextStorage, IngoingContextCarrier, OutgoingContextCarrier }
 import zio.telemetry.opentelemetry.internal.PropagatingSupervisor
+import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
@@ -66,9 +66,8 @@ trait Tracing { self =>
    * @return
    */
   def extractSpan[C, R, E, A](
-    propagator: TextMapPropagator,
-    carrier: C,
-    getter: TextMapGetter[C],
+    propagator: TraceContextPropagator,
+    carrier: IngoingContextCarrier[C],
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
@@ -97,9 +96,8 @@ trait Tracing { self =>
    * @return
    */
   def extractSpanUnsafe[C](
-    propagator: TextMapPropagator,
-    carrier: C,
-    getter: TextMapGetter[C],
+    propagator: TraceContextPropagator,
+    carrier: IngoingContextCarrier[C],
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL
   )(implicit trace: Trace): UIO[(Span, UIO[Any])]
@@ -232,9 +230,8 @@ trait Tracing { self =>
    * @return
    */
   def inject[C](
-    propagator: TextMapPropagator,
-    carrier: C,
-    setter: TextMapSetter[C]
+    propagator: TraceContextPropagator,
+    carrier: OutgoingContextCarrier[C]
   )(implicit trace: Trace): UIO[Unit]
 
   /**
@@ -419,17 +416,16 @@ trait Tracing { self =>
 
   object aspects {
 
-    def spanFrom[C, E1](
-      propagator: TextMapPropagator,
-      carrier: C,
-      getter: TextMapGetter[C],
+    def extractSpan[C, E1](
+      propagator: TraceContextPropagator,
+      carrier: IngoingContextCarrier[C],
       spanName: String,
       spanKind: SpanKind = SpanKind.INTERNAL,
       toErrorStatus: ErrorMapper[E1] = ErrorMapper.default[E1]
     ): ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] =
       new ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] {
         override def apply[R, E >: E1 <: E1, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
-          self.extractSpan(propagator, carrier, getter, spanName, spanKind, toErrorStatus)(zio)
+          self.extractSpan(propagator, carrier, spanName, spanKind, toErrorStatus)(zio)
       }
 
     def root[E1](
@@ -503,14 +499,13 @@ object Tracing {
             getCurrentSpan.map(_.getSpanContext())
 
           override def extractSpan[C, R, E, A](
-            propagator: TextMapPropagator,
-            carrier: C,
-            getter: TextMapGetter[C],
+            propagator: TraceContextPropagator,
+            carrier: IngoingContextCarrier[C],
             spanName: String,
             spanKind: SpanKind = SpanKind.INTERNAL,
             toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
           )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
-            extractContext(propagator, carrier, getter).flatMap { context =>
+            extractContext(propagator, carrier).flatMap { context =>
               ZIO.acquireReleaseWith {
                 createChild(context, spanName, spanKind)
               } { case (endSpan, _) =>
@@ -521,14 +516,13 @@ object Tracing {
             }
 
           override def extractSpanUnsafe[C](
-            propagator: TextMapPropagator,
-            carrier: C,
-            getter: TextMapGetter[C],
+            propagator: TraceContextPropagator,
+            carrier: IngoingContextCarrier[C],
             spanName: String,
             spanKind: SpanKind = SpanKind.INTERNAL
           )(implicit trace: Trace): UIO[(Span, UIO[Any])] =
             for {
-              ctx        <- extractContext(propagator, carrier, getter)
+              ctx        <- extractContext(propagator, carrier)
               updatedCtx <- createChildUnsafe(ctx, spanName, spanKind)
               oldCtx     <- ctxStorage.getAndSet(updatedCtx)
               span       <- getCurrentSpan
@@ -608,13 +602,12 @@ object Tracing {
             } yield effect
 
           override def inject[C](
-            propagator: TextMapPropagator,
-            carrier: C,
-            setter: TextMapSetter[C]
+            propagator: TraceContextPropagator,
+            carrier: OutgoingContextCarrier[C]
           )(implicit trace: Trace): UIO[Unit] =
             for {
               ctx <- getCurrentContext
-              _   <- injectContext(ctx, propagator, carrier, setter)
+              _   <- injectContext(ctx, propagator, carrier)
             } yield ()
 
           override def inSpan[R, E, A](
@@ -783,12 +776,11 @@ object Tracing {
            * Extract and returns the context from carrier `C`.
            */
           private def extractContext[C](
-            propagator: TextMapPropagator,
-            carrier: C,
-            getter: TextMapGetter[C]
+            propagator: TraceContextPropagator,
+            carrier: IngoingContextCarrier[C]
           )(implicit trace: Trace): UIO[Context] =
             ZIO.uninterruptible {
-              ZIO.succeed(propagator.extract(Context.root(), carrier, getter))
+              ZIO.succeed(propagator.impl.extract(Context.root(), carrier.kernel, carrier))
             }
 
           /**
@@ -796,11 +788,10 @@ object Tracing {
            */
           private def injectContext[C](
             ctx: Context,
-            propagator: TextMapPropagator,
-            carrier: C,
-            setter: TextMapSetter[C]
+            propagator: TraceContextPropagator,
+            carrier: OutgoingContextCarrier[C]
           )(implicit trace: Trace): UIO[Unit] =
-            ZIO.succeed(propagator.inject(ctx, carrier, setter))
+            ZIO.succeed(propagator.impl.inject(ctx, carrier.kernel, carrier))
 
         }
       }

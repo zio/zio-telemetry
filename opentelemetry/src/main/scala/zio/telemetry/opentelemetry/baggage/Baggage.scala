@@ -2,9 +2,9 @@ package zio.telemetry.opentelemetry.baggage
 
 import io.opentelemetry.api.baggage.{ Baggage => Baggaje, BaggageBuilder, BaggageEntryMetadata }
 import io.opentelemetry.context.Context
-import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator, TextMapSetter }
 import zio._
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator
+import zio.telemetry.opentelemetry.context.{ ContextStorage, IngoingContextCarrier, OutgoingContextCarrier }
 
 import scala.jdk.CollectionConverters._
 
@@ -91,9 +91,8 @@ trait Baggage { self =>
    * @return
    */
   def inject[C](
-    propagator: TextMapPropagator,
-    carrier: C,
-    setter: TextMapSetter[C]
+    propagator: BaggagePropagator,
+    carrier: OutgoingContextCarrier[C]
   )(implicit trace: Trace): UIO[Unit]
 
   /**
@@ -111,9 +110,8 @@ trait Baggage { self =>
    * @return
    */
   def extract[C](
-    propagator: TextMapPropagator,
-    carrier: C,
-    getter: TextMapGetter[C]
+    propagator: BaggagePropagator,
+    carrier: IngoingContextCarrier[C]
   )(implicit trace: Trace): UIO[Unit]
 
 }
@@ -155,22 +153,20 @@ object Baggage {
           modifyBuilder(_.remove(name)).unit
 
         override def inject[C](
-          propagator: TextMapPropagator,
-          carrier: C,
-          setter: TextMapSetter[C]
+          propagator: BaggagePropagator,
+          carrier: OutgoingContextCarrier[C]
         )(implicit trace: Trace): UIO[Unit] =
           for {
             ctx <- getCurrentContext
-            _   <- ZIO.succeed(propagator.inject(ctx, carrier, setter))
+            _   <- ZIO.succeed(propagator.impl.inject(ctx, carrier.kernel, carrier))
           } yield ()
 
         override def extract[C](
-          propagator: TextMapPropagator,
-          carrier: C,
-          getter: TextMapGetter[C]
+          propagator: BaggagePropagator,
+          carrier: IngoingContextCarrier[C]
         )(implicit trace: Trace): UIO[Unit] =
           ZIO.uninterruptible {
-            modifyContext(ctx => propagator.extract(ctx, carrier, getter)).unit
+            modifyContext(ctx => propagator.impl.extract(ctx, carrier.kernel, carrier)).unit
           }
 
         private def getCurrentContext(implicit trace: Trace): UIO[Context] =

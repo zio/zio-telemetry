@@ -1,26 +1,20 @@
 package zio.telemetry.opentelemetry.example.http
 
-import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator
-import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.api.trace.{ SpanKind, StatusCode }
-import io.opentelemetry.context.propagation.TextMapPropagator
 import zio._
 import zhttp.http.{ !!, ->, /, Http, HttpApp, Method, Response }
 import zio.json.EncoderOps
 import zio.telemetry.opentelemetry.baggage.Baggage
-import zio.telemetry.opentelemetry.tracing.{ ErrorMapper, TextMapAdapter, Tracing }
+import zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator
+import zio.telemetry.opentelemetry.context.OutgoingContextCarrier
+import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
+import zio.telemetry.opentelemetry.tracing.{ ErrorMapper, Tracing }
 
 import scala.collection.mutable
 
 case class ProxyHttpApp(client: Client, tracing: Tracing, baggage: Baggage) {
 
   import tracing.aspects._
-
-  private val tracePropagator: TextMapPropagator =
-    W3CTraceContextPropagator.getInstance()
-
-  private val baggagePropagator: TextMapPropagator =
-    W3CBaggagePropagator.getInstance()
 
   private val errorMapper: ErrorMapper[Throwable] =
     ErrorMapper[Throwable] { case _ => StatusCode.UNSET }
@@ -37,8 +31,8 @@ case class ProxyHttpApp(client: Client, tracing: Tracing, baggage: Baggage) {
       _        <- tracing.setAttribute("http.method", "get")
       _        <- tracing.addEvent("proxy-event")
       _        <- baggage.set("proxy-baggage", "value from proxy")
-      _        <- tracing.inject(tracePropagator, carrier, TextMapAdapter)
-      _        <- baggage.inject(baggagePropagator, carrier, TextMapAdapter)
+      _        <- tracing.inject(TraceContextPropagator.default, OutgoingContextCarrier.default(carrier))
+      _        <- baggage.inject(BaggagePropagator.default, OutgoingContextCarrier.default(carrier))
       statuses <- client.status(carrier.toMap)
     } yield Response.json(statuses.toJson)
   }

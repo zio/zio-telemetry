@@ -1,42 +1,36 @@
 package zio.telemetry.opentelemetry.example.http
 
-import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator
 import io.opentelemetry.api.trace.SpanKind
-import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
-import io.opentelemetry.context.propagation.{ TextMapGetter, TextMapPropagator }
 import zio.telemetry.opentelemetry.example.http.{ Status => ServiceStatus }
 import zhttp.http.{ !!, ->, /, Headers, Http, HttpApp, Method, Response }
 import zio.json.EncoderOps
 import zio._
 import zio.telemetry.opentelemetry.baggage.Baggage
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator
+import zio.telemetry.opentelemetry.context.IngoingContextCarrier
 import zio.telemetry.opentelemetry.tracing.Tracing
-
-import java.lang
-import scala.jdk.CollectionConverters._
+import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 
 case class BackendHttpApp(tracing: Tracing, baggage: Baggage) {
 
   import tracing.aspects._
 
-  val tracePropagator: TextMapPropagator =
-    W3CTraceContextPropagator.getInstance()
+  def headersCarrier(initial: Headers): IngoingContextCarrier[Headers] =
+    new IngoingContextCarrier[Headers] {
+      override val kernel: Headers = initial
 
-  val baggagePropagator: TextMapPropagator =
-    W3CBaggagePropagator.getInstance()
+      override def getAllKeys(carrier: Headers): Iterable[String] =
+        carrier.headers.headersAsList.map(_._1)
 
-  val getter: TextMapGetter[Headers] = new TextMapGetter[Headers] {
-    override def keys(carrier: Headers): lang.Iterable[String] =
-      carrier.headers.headersAsList.map(_._1).asJava
+      override def getByKey(carrier: Headers, key: String): Option[String] =
+        carrier.headers.headerValue(key)
 
-    override def get(carrier: Headers, key: String): String =
-      carrier.headers.headerValue(key).orNull
-  }
+    }
 
   val routes: HttpApp[Any, Throwable] =
     Http.collectZIO { case request @ Method.GET -> !! / "status" =>
-      (baggage.extract(baggagePropagator, request.headers, getter) *> status) @@
-        spanFrom(tracePropagator, request.headers, getter, "/status", SpanKind.SERVER)
+      (baggage.extract(BaggagePropagator.default, headersCarrier(request.headers)) *> status) @@
+        extractSpan(TraceContextPropagator.default, headersCarrier(request.headers), "/status", SpanKind.SERVER)
     }
 
   def status: UIO[Response] =

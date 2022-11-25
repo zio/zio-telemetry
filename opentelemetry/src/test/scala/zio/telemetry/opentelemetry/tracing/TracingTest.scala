@@ -1,7 +1,6 @@
 package zio.telemetry.opentelemetry.tracing
 
 import io.opentelemetry.api.common.{ AttributeKey, Attributes }
-import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.api.trace.{ Span, SpanId, Tracer }
 import io.opentelemetry.context.Context
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
@@ -9,7 +8,8 @@ import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import io.opentelemetry.sdk.trace.data.SpanData
 import zio._
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.context.{ ContextStorage, IngoingContextCarrier, OutgoingContextCarrier }
+import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 import zio.test.Assertion._
 import zio.test.{ assert, TestClock, ZIOSpecDefault }
 
@@ -221,14 +221,18 @@ object TracingTest extends ZIOSpecDefault {
         ZIO.serviceWithZIO[Tracing] { tracing =>
           import tracing.aspects._
 
-          val propagator                           = W3CTraceContextPropagator.getInstance()
           val carrier: mutable.Map[String, String] = mutable.Map().empty
 
           for {
-            _     <- (for {
-                       _ <- tracing.inject(propagator, carrier, setter = TextMapAdapter) @@ span("foo")
-                       _ <- ZIO.unit @@ spanFrom(propagator, carrier, getter = TextMapAdapter, "baz") @@ span("bar")
-                     } yield ()) @@ span("ROOT")
+            _     <-
+              (for {
+                _ <-
+                  tracing.inject(TraceContextPropagator.default, OutgoingContextCarrier.default(carrier)) @@ span("foo")
+                _ <-
+                  ZIO.unit @@
+                    extractSpan(TraceContextPropagator.default, IngoingContextCarrier.default(carrier), "baz") @@
+                    span("bar")
+              } yield ()) @@ span("ROOT")
             spans <- getFinishedSpans
             root   = spans.find(_.getName == "ROOT")
             foo    = spans.find(_.getName == "foo")

@@ -1,9 +1,8 @@
 package zio.telemetry.opentelemetry.baggage
 
-import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator
 import zio._
-import zio.telemetry.opentelemetry.context.ContextStorage
-import zio.telemetry.opentelemetry.tracing.TextMapAdapter
+import zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator
+import zio.telemetry.opentelemetry.context.{ ContextStorage, IngoingContextCarrier, OutgoingContextCarrier }
 import zio.test._
 import zio.test.Assertion._
 
@@ -47,21 +46,23 @@ object BaggageTest extends ZIOSpecDefault {
   def propagationSpec =
     suite("propagation")(
       test("inject/extract") {
-        val propagator    = W3CBaggagePropagator.getInstance()
         val injectCarrier = mutable.Map.empty[String, String]
 
         def setAndInject: URIO[Baggage, Map[String, String]] =
           ZIO.serviceWithZIO[Baggage] { baggage =>
             for {
               _ <- baggage.set("some", "thing")
-              _ <- baggage.inject(propagator, injectCarrier, TextMapAdapter)
+              _ <- baggage.inject(BaggagePropagator.default, OutgoingContextCarrier.default(injectCarrier))
             } yield injectCarrier.toMap
           }
 
         def extractAndGet(extractCarrier: Map[String, String]): URIO[Baggage, Option[String]] =
           ZIO.serviceWithZIO[Baggage] { baggage =>
             for {
-              _     <- baggage.extract(propagator, mutable.Map.empty ++ extractCarrier, TextMapAdapter)
+              _     <- baggage.extract(
+                         BaggagePropagator.default,
+                         IngoingContextCarrier.default(mutable.Map.empty ++ extractCarrier)
+                       )
               thing <- baggage.get("some")
             } yield thing
           }
