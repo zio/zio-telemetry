@@ -29,8 +29,10 @@ case class BackendHttpApp(tracing: Tracing, baggage: Baggage) {
 
   val routes: HttpApp[Any, Throwable] =
     Http.collectZIO { case request @ Method.GET -> !! / "status" =>
-      (baggage.extract(BaggagePropagator.default, headersCarrier(request.headers)) *> status) @@
-        extractSpan(TraceContextPropagator.default, headersCarrier(request.headers), "/status", SpanKind.SERVER)
+      val carrier = headersCarrier(request.headers)
+
+      (baggage.extract(BaggagePropagator.default, carrier) *> status) @@
+        extractSpan(TraceContextPropagator.default, carrier, "/status", SpanKind.SERVER)
     }
 
   def status: UIO[Response] =

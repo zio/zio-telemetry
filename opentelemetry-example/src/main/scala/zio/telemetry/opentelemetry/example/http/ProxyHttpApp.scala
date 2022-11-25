@@ -25,15 +25,15 @@ case class ProxyHttpApp(client: Client, tracing: Tracing, baggage: Baggage) {
     }
 
   def statuses: Task[Response] = {
-    val carrier = mutable.Map.empty[String, String]
+    val carrier = OutgoingContextCarrier.default(mutable.Map.empty[String, String])
 
     for {
       _        <- tracing.setAttribute("http.method", "get")
       _        <- tracing.addEvent("proxy-event")
       _        <- baggage.set("proxy-baggage", "value from proxy")
-      _        <- tracing.inject(TraceContextPropagator.default, OutgoingContextCarrier.default(carrier))
-      _        <- baggage.inject(BaggagePropagator.default, OutgoingContextCarrier.default(carrier))
-      statuses <- client.status(carrier.toMap)
+      _        <- tracing.inject(TraceContextPropagator.default, carrier)
+      _        <- baggage.inject(BaggagePropagator.default, carrier)
+      statuses <- client.status(carrier.kernel.toMap)
     } yield Response.json(statuses.toJson)
   }
 

@@ -246,7 +246,7 @@ trait Tracing { self =>
    *
    * The caller is solely responsible for managing the external span, including calling Span.end
    *
-   * It also could be useful in the combination with `extractSpanUnsafe` or `spanUnsafe`:
+   * It also could be useful in combination with `extractSpanUnsafe` or `spanUnsafe`:
    * {{{
    *   for {
    *     (span, finalize) <- tracing.spanUnsafe("unsafe-span")
