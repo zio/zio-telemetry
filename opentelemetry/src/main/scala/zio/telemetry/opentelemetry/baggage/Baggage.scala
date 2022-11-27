@@ -158,7 +158,7 @@ object Baggage {
         )(implicit trace: Trace): UIO[Unit] =
           for {
             ctx <- getCurrentContext
-            _   <- ZIO.succeed(propagator.impl.inject(ctx, carrier.kernel, carrier))
+            _   <- ZIO.succeed(propagator.instance.inject(ctx, carrier.kernel, carrier))
           } yield ()
 
         override def extract[C](
@@ -166,7 +166,7 @@ object Baggage {
           carrier: IngoingContextCarrier[C]
         )(implicit trace: Trace): UIO[Unit] =
           ZIO.uninterruptible {
-            modifyContext(ctx => propagator.impl.extract(ctx, carrier.kernel, carrier)).unit
+            modifyContext(ctx => propagator.instance.extract(ctx, carrier.kernel, carrier)).unit
           }
 
         private def getCurrentContext(implicit trace: Trace): UIO[Context] =

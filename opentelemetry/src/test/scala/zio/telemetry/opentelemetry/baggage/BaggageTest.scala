@@ -13,7 +13,15 @@ object BaggageTest extends ZIOSpecDefault {
   def baggageLayer: ULayer[Baggage] =
     ContextStorage.fiberRef >>> Baggage.live
 
-  def operationsSpec =
+  def spec =
+    suite("zio opentelemetry")(
+      suite("Baggage")(
+        operationsSpec,
+        propagationSpec
+      )
+    )
+
+  private def operationsSpec =
     suite("operations")(
       test("set/get") {
         ZIO.serviceWithZIO[Baggage] { baggage =>
@@ -43,7 +51,7 @@ object BaggageTest extends ZIOSpecDefault {
       }.provideLayer(baggageLayer)
     )
 
-  def propagationSpec =
+  private def propagationSpec =
     suite("propagation")(
       test("inject/extract") {
         val injectCarrier = mutable.Map.empty[String, String]
@@ -72,14 +80,6 @@ object BaggageTest extends ZIOSpecDefault {
           thing   <- extractAndGet(carrier).provideLayer(baggageLayer)
         } yield assert(thing)(isSome(equalTo("thing")))
       }
-    )
-
-  def spec =
-    suite("zio opentelemetry")(
-      suite("Baggage")(
-        operationsSpec,
-        propagationSpec
-      )
     )
 
 }

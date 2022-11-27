@@ -8,9 +8,15 @@ trait TraceContextPropagator extends Propagator
 
 object TraceContextPropagator {
 
+  /**
+   * Instance of W3C Trace Context Propagator.
+   *
+   * @see
+   *   <a href="https://www.w3.org/TR/trace-context/">Trace Context</a>
+   */
   val default: TraceContextPropagator =
     new TraceContextPropagator {
-      override val impl: TextMapPropagator =
+      override val instance: TextMapPropagator =
         W3CTraceContextPropagator.getInstance()
     }
 

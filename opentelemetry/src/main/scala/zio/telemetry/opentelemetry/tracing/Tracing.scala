@@ -780,7 +780,7 @@ object Tracing {
             carrier: IngoingContextCarrier[C]
           )(implicit trace: Trace): UIO[Context] =
             ZIO.uninterruptible {
-              ZIO.succeed(propagator.impl.extract(Context.root(), carrier.kernel, carrier))
+              ZIO.succeed(propagator.instance.extract(Context.root(), carrier.kernel, carrier))
             }
 
           /**
@@ -791,7 +791,7 @@ object Tracing {
             propagator: TraceContextPropagator,
             carrier: OutgoingContextCarrier[C]
           )(implicit trace: Trace): UIO[Unit] =
-            ZIO.succeed(propagator.impl.inject(ctx, carrier.kernel, carrier))
+            ZIO.succeed(propagator.instance.inject(ctx, carrier.kernel, carrier))
 
         }
       }

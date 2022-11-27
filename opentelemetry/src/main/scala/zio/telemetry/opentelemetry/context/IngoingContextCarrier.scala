@@ -7,6 +7,11 @@ import scala.jdk.CollectionConverters._
 import java.lang
 import scala.collection.mutable
 
+/**
+ * The wrapper for the context data from the external process.
+ *
+ * @tparam T
+ */
 trait IngoingContextCarrier[T] extends ContextCarrier[T] with TextMapGetter[T] {
 
   override def keys(carrier: T): lang.Iterable[String] =
@@ -15,14 +20,39 @@ trait IngoingContextCarrier[T] extends ContextCarrier[T] with TextMapGetter[T] {
   override def get(carrier: T, key: String): String =
     getByKey(carrier, key).orNull
 
+  /**
+   * Scala API for the [[keys]] method.
+   *
+   * @param carrier
+   *   the context data
+   * @return
+   *   all the keys saved in the current context
+   */
   def getAllKeys(carrier: T): Iterable[String]
 
+  /**
+   * Scala API for the [[get]] method.
+   *
+   * @param carrier
+   *   the context data
+   * @param key
+   * @return
+   *   optional value by the given key saved in the current context
+   */
   def getByKey(carrier: T, key: String): Option[String]
 
 }
 
 object IngoingContextCarrier {
 
+  /**
+   * Default implementation of the [[IngoingContextCarrier]] where the type of the [[ContextCarrier.kernel]] is a
+   * mutable `Map[String, String]``.
+   *
+   * @param initial
+   *   initial kernel
+   * @return
+   */
   def default(
     initial: mutable.Map[String, String] = mutable.Map.empty
   ): IngoingContextCarrier[mutable.Map[String, String]] =

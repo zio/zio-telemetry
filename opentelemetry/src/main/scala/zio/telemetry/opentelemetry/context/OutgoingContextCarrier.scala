@@ -5,10 +5,24 @@ import zio.telemetry.opentelemetry.internal.ContextCarrier
 
 import scala.collection.mutable
 
+/**
+ * The wrapper for the context data to propagate to an external process.
+ *
+ * @tparam T
+ *   must be mutable
+ */
 trait OutgoingContextCarrier[T] extends ContextCarrier[T] with TextMapSetter[T]
 
 object OutgoingContextCarrier {
 
+  /**
+   * Default implementation of the [[OutgoingContextCarrier]] where the type of the [[ContextCarrier.kernel]] is a
+   * mutable `Map[String, String]``.
+   *
+   * @param initial
+   *   initial kernel
+   * @return
+   */
   def default(
     initial: mutable.Map[String, String] = mutable.Map.empty
   ): OutgoingContextCarrier[mutable.Map[String, String]] =

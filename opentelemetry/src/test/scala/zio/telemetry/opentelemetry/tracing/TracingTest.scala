@@ -47,7 +47,7 @@ object TracingTest extends ZIOSpecDefault {
       )
     )
 
-  def creationSpec =
+  private def creationSpec =
     suite("creation")(
       test("live") {
         for {
@@ -57,7 +57,7 @@ object TracingTest extends ZIOSpecDefault {
       }.provideLayer(inMemoryTracerLayer)
     )
 
-  def spansSpec =
+  private def spansSpec =
     suite("spans")(
       test("span") {
         ZIO.serviceWithZIO[Tracing] { tracing =>
