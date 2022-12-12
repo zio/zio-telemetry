@@ -136,11 +136,11 @@ object Baggage {
           getCurrentBaggage.map(baggage => Option(baggage.getEntryValue(name)))
 
         override def getAll(implicit trace: Trace): UIO[Map[String, String]] =
-          getCurrentBaggage.map(_.asMap().asScala.toMap.mapValues(_.getValue))
+          getCurrentBaggage.map(_.asMap().asScala.toMap.mapValues(_.getValue).toMap)
 
         override def getAllWithMetadata(implicit trace: Trace): UIO[Map[String, (String, String)]] =
           getCurrentBaggage.map(
-            _.asMap().asScala.toMap.mapValues(e => e.getValue -> e.getMetadata.getValue)
+            _.asMap().asScala.toMap.mapValues(e => e.getValue -> e.getMetadata.getValue).toMap
           )
 
         override def set(name: String, value: String)(implicit trace: Trace): UIO[Unit] =

@@ -10,8 +10,6 @@ import zio.telemetry.opentelemetry.context.OutgoingContextCarrier
 import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 import zio.telemetry.opentelemetry.tracing.{ ErrorMapper, Tracing }
 
-import scala.collection.mutable
-
 case class ProxyHttpApp(client: Client, tracing: Tracing, baggage: Baggage) {
 
   import tracing.aspects._
@@ -25,7 +23,7 @@ case class ProxyHttpApp(client: Client, tracing: Tracing, baggage: Baggage) {
     }
 
   def statuses: Task[Response] = {
-    val carrier = OutgoingContextCarrier.default(mutable.Map.empty[String, String])
+    val carrier = OutgoingContextCarrier.default()
 
     for {
       _        <- tracing.setAttribute("http.method", "get")

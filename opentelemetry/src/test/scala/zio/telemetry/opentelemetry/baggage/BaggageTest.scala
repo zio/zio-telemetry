@@ -54,14 +54,14 @@ object BaggageTest extends ZIOSpecDefault {
   private def propagationSpec =
     suite("propagation")(
       test("inject/extract") {
-        val injectCarrier = mutable.Map.empty[String, String]
-
         def setAndInject: URIO[Baggage, Map[String, String]] =
           ZIO.serviceWithZIO[Baggage] { baggage =>
+            val carrier = OutgoingContextCarrier.default()
+
             for {
               _ <- baggage.set("some", "thing")
-              _ <- baggage.inject(BaggagePropagator.default, OutgoingContextCarrier.default(injectCarrier))
-            } yield injectCarrier.toMap
+              _ <- baggage.inject(BaggagePropagator.default, carrier)
+            } yield carrier.kernel.toMap
           }
 
         def extractAndGet(extractCarrier: Map[String, String]): URIO[Baggage, Option[String]] =
