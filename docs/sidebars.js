@@ -6,7 +6,6 @@ const sidebars = {
       collapsed: false,
       link: { type: "doc", id: "index" },
       items: [
-        "index",
         "opentracing",
         "opentracing-example",
         "opencensus",
