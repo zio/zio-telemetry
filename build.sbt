@@ -83,18 +83,14 @@ lazy val docs =
   project
     .in(file("zio-telemetry-docs"))
     .settings(
-      publish / skip    := true,
-      moduleName        := "zio-telemetry-docs",
+      moduleName                                 := "zio-telemetry-docs",
       scalacOptions -= "-Yno-imports",
       scalacOptions -= "-Xfatal-warnings",
-      projectName       := "ZIO Telemetry",
-      badgeInfo         := Some(
-        BadgeInfo(
-          artifact = "zio-telemetry_2.12",
-          projectStage = ProjectStage.ProductionReady
-        )
-      ),
-      docsPublishBranch := "series/2.x"
+      projectName                                := "ZIO Telemetry",
+      mainModuleName                             := (opentracing / moduleName).value,
+      projectStage                               := ProjectStage.ProductionReady,
+      ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(opentracing, opentelemetry, opencensus),
+      docsPublishBranch                          := "series/2.x"
     )
     .dependsOn(opentracing, opentelemetry, opencensus)
     .enablePlugins(WebsitePlugin)
