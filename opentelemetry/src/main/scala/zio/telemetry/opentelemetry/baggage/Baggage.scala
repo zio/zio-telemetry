@@ -80,11 +80,9 @@ trait Baggage { self =>
    * Injects the baggage data from the current context into carrier `C`.
    *
    * @param propagator
-   *   implementation of [[TextMapPropagator]]
+   *   implementation of [[zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator]]
    * @param carrier
    *   mutable data from which the parent span is extracted
-   * @param setter
-   *   implementation of [[TextMapSetter]] which extracts the baggage data from the current context into carrier `C`
    * @param Trace
    * @tparam C
    *   carrier
@@ -99,11 +97,9 @@ trait Baggage { self =>
    * Extracts the baggage data from carrier `C` into the current context.
    *
    * @param propagator
-   *   implementation of [[TextMapPropagator]]
+   *   implementation of [[zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator]]
    * @param carrier
    *   mutable data from which the parent span is extracted
-   * @param getter
-   *   implementation of [[TextMapGetter]] which injects the baggage data from carrier `C` into the current context
    * @param trace
    * @tparam C
    *   carrier
@@ -172,7 +168,7 @@ object Baggage {
         private def getCurrentContext(implicit trace: Trace): UIO[Context] =
           ctxStorage.get
 
-        private def modifyContext(body: Context => Context): UIO[Context] =
+        private def modifyContext(body: Context => Context)(implicit trace: Trace): UIO[Context] =
           ctxStorage.updateAndGet(body)
 
         private def modifyBuilder(body: BaggageBuilder => BaggageBuilder)(implicit trace: Trace): UIO[Context] =

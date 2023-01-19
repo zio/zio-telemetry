@@ -44,11 +44,9 @@ trait Tracing { self =>
    * Ends the span when the effect finishes.
    *
    * @param propagator
-   *   implementation of [[TextMapPropagator]]
+   *   implementation of [[zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator]]
    * @param carrier
    *   mutable data from which the parent span is extracted
-   * @param getter
-   *   implementation of [[TextMapGetter]] which extracts the context from the `carrier`
    * @param spanName
    *   name of the child span
    * @param spanKind
@@ -81,11 +79,9 @@ trait Tracing { self =>
    * Primarily useful for interop.
    *
    * @param propagator
-   *   implementation of [[TextMapPropagator]]
+   *   implementation of [[zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator]]
    * @param carrier
    *   mutable data from which the parent span is extracted
-   * @param getter
-   *   implementation of [[TextMapGetter]] which extracts the context from the `carrier`
    * @param spanName
    *   name of the child span
    * @param spanKind
@@ -208,7 +204,8 @@ trait Tracing { self =>
    * CLoses the scope when the effect finishes.
    *
    * @param make
-   *   function for providing a [[Future]] by a given [[ExecutionContext]] to execute in the current context
+   *   function for providing a [[scala.concurrent.Future]] by a given [[scala.concurrent.ExecutionContext]] to execute
+   *   in the current context
    * @param trace
    * @tparam A
    * @return
@@ -219,11 +216,9 @@ trait Tracing { self =>
    * Injects the current span into carrier `C`.
    *
    * @param propagator
-   *   implementation of [[TextMapPropagator]]
+   *   implementation of [[zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator]]
    * @param carrier
    *   mutable data from which the parent span is extracted
-   * @param setter
-   *   implementation of [[TextMapSetter]] which sets propagated fields into a `carrier`
    * @param trace
    * @tparam C
    *   carrier

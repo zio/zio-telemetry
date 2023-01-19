@@ -46,7 +46,7 @@ trait IngoingContextCarrier[T] extends ContextCarrier[T] with TextMapGetter[T] {
 object IngoingContextCarrier {
 
   /**
-   * Default implementation of the [[IngoingContextCarrier]] where the type of the [[ContextCarrier.kernel]] is a
+   * Default implementation of the [[IngoingContextCarrier]] where the type of the [[IngoingContextCarrier.kernel]] is a
    * mutable `Map[String, String]``.
    *
    * @param initial

@@ -51,8 +51,8 @@ object ContextStorage {
     )
 
   /**
-   * Uses OpenTelemetry's default context storage which is backed by a [[ThreadLocal]]. This makes sense only if
-   * [[PropagatingSupervisor]] is used.
+   * Uses OpenTelemetry's default context storage which is backed by a [[java.lang.ThreadLocal]]. This makes sense only
+   * if `zio.telemetry.opentelemetry.internal.PropagatingSupervisor` is used.
    */
   def threadLocal: ULayer[ContextStorage] =
     ZLayer.succeed {

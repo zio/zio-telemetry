@@ -16,8 +16,8 @@ trait OutgoingContextCarrier[T] extends ContextCarrier[T] with TextMapSetter[T]
 object OutgoingContextCarrier {
 
   /**
-   * Default implementation of the [[OutgoingContextCarrier]] where the type of the [[ContextCarrier.kernel]] is a
-   * mutable `Map[String, String]``.
+   * Default implementation of the [[OutgoingContextCarrier]] where the type of the [[OutgoingContextCarrier.kernel]] is
+   * a mutable `Map[String, String]``.
    *
    * @param initial
    *   initial kernel
