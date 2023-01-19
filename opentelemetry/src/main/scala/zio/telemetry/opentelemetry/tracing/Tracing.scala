@@ -481,7 +481,7 @@ object Tracing {
     Runtime.addSupervisor(new PropagatingSupervisor) ++ live
 
   def scoped(tracer: Tracer, ctxStorage: ContextStorage): URIO[Scope, Tracing] = {
-    val acquire: URIO[Scope, Tracing] =
+    val acquire =
       ZIO.succeed {
         new Tracing { self =>
           override def getCurrentContext(implicit trace: Trace): UIO[Context] =

@@ -115,16 +115,11 @@ trait Baggage { self =>
 object Baggage {
 
   def live: URLayer[ContextStorage, Baggage] =
-    ZLayer.scoped {
+    ZLayer {
       for {
-        contextStorage <- ZIO.service[ContextStorage]
-        baggage        <- scoped(contextStorage)
-      } yield baggage
-    }
-
-  def scoped(ctxStorage: ContextStorage): URIO[Scope, Baggage] =
-    ZIO.succeed {
-      new Baggage { self =>
+        ctxStorage <- ZIO.service[ContextStorage]
+      } yield new Baggage {
+        self =>
         override def getCurrentBaggage(implicit trace: Trace): UIO[Baggaje] =
           ctxStorage.get.map(Baggaje.fromContext)
 
