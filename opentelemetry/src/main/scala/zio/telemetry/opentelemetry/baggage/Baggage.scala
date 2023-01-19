@@ -120,7 +120,7 @@ object Baggage {
         ctxStorage <- ZIO.service[ContextStorage]
       } yield new Baggage { self =>
         override def getCurrentBaggage(implicit trace: Trace): UIO[Baggaje] =
-          ctxStorage.get.map(Baggaje.fromContext)
+          getCurrentContext.map(Baggaje.fromContext)
 
         override def get(name: String)(implicit trace: Trace): UIO[Option[String]] =
           getCurrentBaggage.map(baggage => Option(baggage.getEntryValue(name)))
