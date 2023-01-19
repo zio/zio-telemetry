@@ -118,8 +118,7 @@ object Baggage {
     ZLayer {
       for {
         ctxStorage <- ZIO.service[ContextStorage]
-      } yield new Baggage {
-        self =>
+      } yield new Baggage { self =>
         override def getCurrentBaggage(implicit trace: Trace): UIO[Baggaje] =
           ctxStorage.get.map(Baggaje.fromContext)
 
