@@ -31,9 +31,9 @@ val app =
     import tracing.aspects._
 
     (for {
-      //sets an attribute to the current span
+      // sets an attribute to the current span
       _       <- tracing.setAttribute("foo", "bar")
-      //adds an event to the current span
+      // adds an event to the current span
       _       <- tracing.addEvent("foo")
       message <- Console.readline
       _       <- tracing.addEvent("bar")
@@ -73,22 +73,11 @@ are not referentially transparent.
 ZIO.serviceWithZIO[Tracing] { tracing =>
   import tracing.aspects._
   
-  val propagator                           = W3CTraceContextPropagator.getInstance()
-  val carrier: mutable.Map[String, String] = mutable.Map().empty
-
-  val getter: TextMapGetter[mutable.Map[String, String]] = new TextMapGetter[mutable.Map[String, String]] {
-    override def keys(carrier: mutable.Map[String, String]): lang.Iterable[String] =
-      carrier.keys.asJava
-
-    override def get(carrier: mutable.Map[String, String], key: String): String =
-      carrier.get(key).orNull
-  }
-
-  val setter: TextMapSetter[mutable.Map[String, String]] =
-    (carrier, key, value) => carrier.update(key, value)
+  val propagator = TraceContextPropagator.default
+  val kernel     = mutable.Map().empty
   
-  tracing.inject(propagator, carrier, setter) @@ span("foo") *> 
-    ZIO.unit @@ spanFrom(propagator, carrier, getter, "baz") @@ span("bar")
+  tracing.inject(propagator, OutgoingContextCarrier.default(kernel)) @@ span("foo") *>
+    extractSpan(propagator, IngoingContextCarrier.default(kernel), "bar")
 }
 ```
 
