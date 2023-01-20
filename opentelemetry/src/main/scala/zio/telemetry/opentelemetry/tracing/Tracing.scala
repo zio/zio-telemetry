@@ -4,7 +4,7 @@ import io.opentelemetry.api.common.{ AttributeKey, Attributes }
 import io.opentelemetry.api.trace._
 import io.opentelemetry.context.Context
 import zio._
-import zio.telemetry.opentelemetry.context.{ ContextStorage, IngoingContextCarrier, OutgoingContextCarrier }
+import zio.telemetry.opentelemetry.context.{ ContextStorage, IncomingContextCarrier, OutgoingContextCarrier }
 import zio.telemetry.opentelemetry.internal.PropagatingSupervisor
 import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 
@@ -65,7 +65,7 @@ trait Tracing { self =>
    */
   def extractSpan[C, R, E, A](
     propagator: TraceContextPropagator,
-    carrier: IngoingContextCarrier[C],
+    carrier: IncomingContextCarrier[C],
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
@@ -93,7 +93,7 @@ trait Tracing { self =>
    */
   def extractSpanUnsafe[C](
     propagator: TraceContextPropagator,
-    carrier: IngoingContextCarrier[C],
+    carrier: IncomingContextCarrier[C],
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL
   )(implicit trace: Trace): UIO[(Span, UIO[Any])]
@@ -413,7 +413,7 @@ trait Tracing { self =>
 
     def extractSpan[C, E1](
       propagator: TraceContextPropagator,
-      carrier: IngoingContextCarrier[C],
+      carrier: IncomingContextCarrier[C],
       spanName: String,
       spanKind: SpanKind = SpanKind.INTERNAL,
       toErrorStatus: ErrorMapper[E1] = ErrorMapper.default[E1]
@@ -495,7 +495,7 @@ object Tracing {
 
           override def extractSpan[C, R, E, A](
             propagator: TraceContextPropagator,
-            carrier: IngoingContextCarrier[C],
+            carrier: IncomingContextCarrier[C],
             spanName: String,
             spanKind: SpanKind = SpanKind.INTERNAL,
             toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
@@ -512,7 +512,7 @@ object Tracing {
 
           override def extractSpanUnsafe[C](
             propagator: TraceContextPropagator,
-            carrier: IngoingContextCarrier[C],
+            carrier: IncomingContextCarrier[C],
             spanName: String,
             spanKind: SpanKind = SpanKind.INTERNAL
           )(implicit trace: Trace): UIO[(Span, UIO[Any])] =
@@ -772,7 +772,7 @@ object Tracing {
            */
           private def extractContext[C](
             propagator: TraceContextPropagator,
-            carrier: IngoingContextCarrier[C]
+            carrier: IncomingContextCarrier[C]
           )(implicit trace: Trace): UIO[Context] =
             ZIO.uninterruptible {
               ZIO.succeed(propagator.instance.extract(Context.root(), carrier.kernel, carrier))

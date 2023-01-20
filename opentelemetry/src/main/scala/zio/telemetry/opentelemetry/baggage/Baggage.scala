@@ -4,7 +4,7 @@ import io.opentelemetry.api.baggage.{ Baggage => Baggaje, BaggageBuilder, Baggag
 import io.opentelemetry.context.Context
 import zio._
 import zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator
-import zio.telemetry.opentelemetry.context.{ ContextStorage, IngoingContextCarrier, OutgoingContextCarrier }
+import zio.telemetry.opentelemetry.context.{ ContextStorage, IncomingContextCarrier, OutgoingContextCarrier }
 
 import scala.jdk.CollectionConverters._
 
@@ -107,7 +107,7 @@ trait Baggage { self =>
    */
   def extract[C](
     propagator: BaggagePropagator,
-    carrier: IngoingContextCarrier[C]
+    carrier: IncomingContextCarrier[C]
   )(implicit trace: Trace): UIO[Unit]
 
 }
@@ -153,7 +153,7 @@ object Baggage {
 
         override def extract[C](
           propagator: BaggagePropagator,
-          carrier: IngoingContextCarrier[C]
+          carrier: IncomingContextCarrier[C]
         )(implicit trace: Trace): UIO[Unit] =
           ZIO.uninterruptible {
             modifyContext(ctx => propagator.instance.extract(ctx, carrier.kernel, carrier)).unit

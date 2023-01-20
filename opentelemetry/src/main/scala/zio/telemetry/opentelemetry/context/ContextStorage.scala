@@ -22,7 +22,7 @@ object ContextStorage {
   /**
    * The main one. Uses [[FiberRef]] as a [[ContextStorage]].
    */
-  def fiberRef: ULayer[ContextStorage] =
+  val fiberRef: ULayer[ContextStorage] =
     ZLayer.scoped(
       FiberRef
         .make[Context](Context.root())
@@ -54,7 +54,7 @@ object ContextStorage {
    * Uses OpenTelemetry's default context storage which is backed by a [[java.lang.ThreadLocal]]. This makes sense only
    * if `zio.telemetry.opentelemetry.internal.PropagatingSupervisor` is used.
    */
-  def threadLocal: ULayer[ContextStorage] =
+  val threadLocal: ULayer[ContextStorage] =
     ZLayer.succeed {
       new ContextStorage {
         override def get(implicit trace: Trace): UIO[Context] = ZIO.succeed(Context.current())

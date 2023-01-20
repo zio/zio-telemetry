@@ -7,7 +7,7 @@ import zio.json.EncoderOps
 import zio._
 import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator
-import zio.telemetry.opentelemetry.context.IngoingContextCarrier
+import zio.telemetry.opentelemetry.context.IncomingContextCarrier
 import zio.telemetry.opentelemetry.tracing.Tracing
 import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 
@@ -15,8 +15,8 @@ case class BackendHttpApp(tracing: Tracing, baggage: Baggage) {
 
   import tracing.aspects._
 
-  def headersCarrier(initial: Headers): IngoingContextCarrier[Headers] =
-    new IngoingContextCarrier[Headers] {
+  def headersCarrier(initial: Headers): IncomingContextCarrier[Headers] =
+    new IncomingContextCarrier[Headers] {
       override val kernel: Headers = initial
 
       override def getAllKeys(carrier: Headers): Iterable[String] =

@@ -2,7 +2,7 @@ package zio.telemetry.opentelemetry.baggage
 
 import zio._
 import zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator
-import zio.telemetry.opentelemetry.context.{ ContextStorage, IngoingContextCarrier, OutgoingContextCarrier }
+import zio.telemetry.opentelemetry.context.{ ContextStorage, IncomingContextCarrier, OutgoingContextCarrier }
 import zio.test._
 import zio.test.Assertion._
 
@@ -69,7 +69,7 @@ object BaggageTest extends ZIOSpecDefault {
             for {
               _     <- baggage.extract(
                          BaggagePropagator.default,
-                         IngoingContextCarrier.default(mutable.Map.empty ++ extractCarrier)
+                         IncomingContextCarrier.default(mutable.Map.empty ++ extractCarrier)
                        )
               thing <- baggage.get("some")
             } yield thing

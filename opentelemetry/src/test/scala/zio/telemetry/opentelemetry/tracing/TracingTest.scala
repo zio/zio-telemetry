@@ -8,7 +8,7 @@ import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import io.opentelemetry.sdk.trace.data.SpanData
 import zio._
-import zio.telemetry.opentelemetry.context.{ ContextStorage, IngoingContextCarrier, OutgoingContextCarrier }
+import zio.telemetry.opentelemetry.context.{ ContextStorage, IncomingContextCarrier, OutgoingContextCarrier }
 import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 import zio.test.Assertion._
 import zio.test.{ assert, TestClock, ZIOSpecDefault }
@@ -230,7 +230,7 @@ object TracingTest extends ZIOSpecDefault {
                   tracing.inject(TraceContextPropagator.default, OutgoingContextCarrier.default(carrier)) @@ span("foo")
                 _ <-
                   ZIO.unit @@
-                    extractSpan(TraceContextPropagator.default, IngoingContextCarrier.default(carrier), "baz") @@
+                    extractSpan(TraceContextPropagator.default, IncomingContextCarrier.default(carrier), "baz") @@
                     span("bar")
               } yield ()) @@ span("ROOT")
             spans <- getFinishedSpans

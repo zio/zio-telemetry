@@ -12,7 +12,7 @@ import scala.collection.mutable
  *
  * @tparam T
  */
-trait IngoingContextCarrier[T] extends ContextCarrier[T] with TextMapGetter[T] {
+trait IncomingContextCarrier[T] extends ContextCarrier[T] with TextMapGetter[T] {
 
   override def keys(carrier: T): lang.Iterable[String] =
     getAllKeys(carrier).asJava
@@ -43,20 +43,21 @@ trait IngoingContextCarrier[T] extends ContextCarrier[T] with TextMapGetter[T] {
 
 }
 
-object IngoingContextCarrier {
+object IncomingContextCarrier {
 
   /**
-   * Default implementation of the [[IngoingContextCarrier]] where the type of the [[IngoingContextCarrier.kernel]] is a
+   * Default implementation of the [[IncomingContextCarrier]] where the type of the [[IncomingContextCarrier.kernel]] is a
    * mutable `Map[String, String]``.
    *
+ *
    * @param initial
    *   initial kernel
    * @return
    */
   def default(
     initial: mutable.Map[String, String] = mutable.Map.empty
-  ): IngoingContextCarrier[mutable.Map[String, String]] =
-    new IngoingContextCarrier[mutable.Map[String, String]] {
+  ): IncomingContextCarrier[mutable.Map[String, String]] =
+    new IncomingContextCarrier[mutable.Map[String, String]] {
 
       override val kernel: mutable.Map[String, String] = initial
 
