@@ -75,7 +75,7 @@ import zio._
     
     for {
       // extract current baggage data from the carrier
-      _    <- baggage.extract(BaggagePropagator.default, IngoingContextCarrier.default(carrier.kernel))  
+      _    <- baggage.extract(BaggagePropagator.default, IncomingContextCarrier.default(carrier.kernel))  
       // get value from the extracted baggage
       data <- baggage.get("zio")
     } yield data
@@ -100,7 +100,7 @@ ZIO.serviceWithZIO[Tracing] { tracing =>
   val kernel     = mutable.Map().empty
   
   tracing.inject(propagator, OutgoingContextCarrier.default(kernel)) @@ root("span of upstream service") *>
-    extractSpan(propagator, IngoingContextCarrier.default(kernel), "span of downstream service")
+    extractSpan(propagator, IncomingContextCarrier.default(kernel), "span of downstream service")
 }
 ```
 
