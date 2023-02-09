@@ -253,7 +253,7 @@ object TracingTest extends ZIOSpecDefault {
 
           for {
             _     <- (for {
-                       _ <- tracing.setAttribute("boolean", true)
+                       _ <- tracing.setAttribute("boolean", value = true)
                        _ <- tracing.setAttribute("int", 1)
                        _ <- tracing.setAttribute("string", "foo")
                        _ <- tracing.setAttribute("booleans", Seq(true, false))

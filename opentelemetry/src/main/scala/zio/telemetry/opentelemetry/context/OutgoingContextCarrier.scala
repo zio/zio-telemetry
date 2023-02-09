@@ -17,7 +17,7 @@ object OutgoingContextCarrier {
 
   /**
    * Default implementation of the [[OutgoingContextCarrier]] where the type of the [[OutgoingContextCarrier.kernel]] is
-   * a mutable `Map[String, String]``.
+   * a mutable `Map[String, String]`.
    *
    * @param initial
    *   initial kernel
