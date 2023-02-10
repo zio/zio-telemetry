@@ -15,11 +15,14 @@ First, add the following dependency to your build.sbt:
 
 ## Usage
 
-To use ZIO Telemetry, you will need a `Tracing` service in your environment. You also need to provide a `tracer` 
-(for this example we use `JaegerTracer.live` from `opentelemetry-example` module) implementation:
+### Tracing
+
+To use ZIO Telemetry, you will need a `Tracing` service in your environment. You also need to provide a `Tracer`
+(for this example we use `JaegerTracer.live` from `opentelemetry-example` module) and `ContextStorage` implementation.
 
 ```scala
-import zio.telemetry.opentelemetry.Tracing
+import zio.telemetry.opentelemetry.tracing.Tracing
+import zio.telemetry.opentelemetry.context.ContextStorage
 import zio.telemetry.opentelemetry.example.JaegerTracer
 import io.opentelemetry.api.trace.{ SpanKind, StatusCode }
 import zio._
@@ -28,42 +31,62 @@ val errorMapper = ErrorMapper[Throwable]{ case _ => StatusCode.UNSET }
 
 val app =
   ZIO.serviceWithZIO[Tracing] { tracing =>
+    // import available aspects to create spans conveniently
     import tracing.aspects._
 
-    (for {
-      //sets an attribute to the current span
-      _       <- tracing.setAttribute("foo", "bar")
-      //adds an event to the current span
-      _       <- tracing.addEvent("foo")
+    val zio = for {
+      // set an attribute to the current span
+      _       <- tracing.setAttribute("zio", "telemetry")
+      // add an event to the current span
+      _       <- tracing.addEvent("before readline")
+      // some logic
       message <- Console.readline
-      _       <- tracing.addEvent("bar")
-    } yield message) @@ root("root span", SpanKind.INTERNAL, errorMapper)
-  }.provide(Tracing.live, JaegerTracer.live)
+      // add another event to the current span
+      _       <- tracing.addEvent("after readline")
+    } yield message
+    
+    // create a root span out of `zio`
+    zio @@ root("root span", SpanKind.INTERNAL, errorMapper)
+    
+  }.provide(Tracing.live, ContextStorage.fiberRef, JaegerTracer.live)
 ```
 
-After importing `import tracing.aspects._`, additional `ZIOAspect` combinators
-on `ZIO`s are available to support starting child spans, adding events and setting attributes.
+### Baggage
+
+To use Baggage API, you also will need a `Baggage` service in your environment. You also need to provide 
+`ContextStorage` implementation.
 
 ```scala
-ZIO.serviceWithZIO[Tracing] { tracing => 
-  import tracing.aspects._
-  
-  // start a new root span and set some attribute
-  val zio1 = ZIO.unit @@
-    setAttribute("foo", "bar") @@
-    root("root span")
+import zio.telemetry.opentelemetry.baggage.Baggage
+import zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator
+import zio.telemetry.opentelemetry.context.ContextStorage
+import zio._
 
-  // start a child of the current span, set an attribute and add an event
-  val zio2 = ZIO.unit @@
-    setAttribute("http.status_code", 200) @@
-    addEvent("doing some serious work here!") @@
-    span("child span")
-}
+ val app = 
+  ZIO.serviceWithZIO[Baggage] { baggage => 
+    val carrier = OutgoingContextCarrier.default()
+  
+    for {
+      // add new key/value into the baggage of current tracing context
+      _ <- baggage.set("zio", "telemetry")
+      // import current baggage data into carrier so it can be used by downstream consumer
+      _ <- baggage.inject(BaggagePropagator.default, carrier)
+    } yield ()
+    
+    for {
+      // extract current baggage data from the carrier
+      _    <- baggage.extract(BaggagePropagator.default, IncomingContextCarrier.default(carrier.kernel))  
+      // get value from the extracted baggage
+      data <- baggage.get("zio")
+    } yield data
+  }.provide(Baggage.live, ContextStorage.fiberRef)
 ```
+
+### Context Propagation
 
 To propagate contexts across process boundaries, extraction and injection can be
 used. The current span context is injected into a carrier, which is passed
-through some side channel to the next process. There it is injected back and a
+through some side channel to the next process. There it is extracted back and a
 child span of it is started.
 
 Due to the use of the (mutable) OpenTelemetry carrier APIs, injection and extraction
@@ -73,22 +96,11 @@ are not referentially transparent.
 ZIO.serviceWithZIO[Tracing] { tracing =>
   import tracing.aspects._
   
-  val propagator                           = W3CTraceContextPropagator.getInstance()
-  val carrier: mutable.Map[String, String] = mutable.Map().empty
-
-  val getter: TextMapGetter[mutable.Map[String, String]] = new TextMapGetter[mutable.Map[String, String]] {
-    override def keys(carrier: mutable.Map[String, String]): lang.Iterable[String] =
-      carrier.keys.asJava
-
-    override def get(carrier: mutable.Map[String, String], key: String): String =
-      carrier.get(key).orNull
-  }
-
-  val setter: TextMapSetter[mutable.Map[String, String]] =
-    (carrier, key, value) => carrier.update(key, value)
+  val propagator = TraceContextPropagator.default
+  val kernel     = mutable.Map().empty
   
-  tracing.inject(propagator, carrier, setter) @@ span("foo") *> 
-    ZIO.unit @@ spanFrom(propagator, carrier, getter, "baz") @@ span("bar")
+  tracing.inject(propagator, OutgoingContextCarrier.default(kernel)) @@ root("span of upstream service") *>
+    extractSpan(propagator, IncomingContextCarrier.default(kernel), "span of downstream service")
 }
 ```
 

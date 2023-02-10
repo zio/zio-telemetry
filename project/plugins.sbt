@@ -6,7 +6,7 @@ addSbtPlugin("io.github.davidgregory084"         % "sbt-tpolecat"     % "0.4.1")
 addSbtPlugin("org.scalameta"                     % "sbt-scalafmt"     % "2.4.6")
 addSbtPlugin("org.scalameta"                     % "sbt-mdoc"         % "2.3.3")
 addSbtPlugin("org.scoverage"                     % "sbt-scoverage"    % "2.0.2")
-addSbtPlugin("dev.zio"                           % "zio-sbt-website"  % "0.1.5+28-4b5b0374-SNAPSHOT")
+addSbtPlugin("dev.zio"                           % "zio-sbt-website"  % "0.3.6")
 
 libraryDependencies += "org.snakeyaml" % "snakeyaml-engine" % "2.4"
 
