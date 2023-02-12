@@ -47,7 +47,7 @@ object IncomingContextCarrier {
 
   /**
    * Default implementation of the [[IncomingContextCarrier]] where the type of the [[IncomingContextCarrier.kernel]] is
-   * a mutable `Map[String, String]``.
+   * a mutable `Map[String, String]`.
    *
    * @param initial
    *   initial kernel
