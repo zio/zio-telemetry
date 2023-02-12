@@ -11,13 +11,17 @@ import scala.collection.mutable
 object BaggageTest extends ZIOSpecDefault {
 
   def baggageLayer: ULayer[Baggage] =
-    ContextStorage.fiberRef >>> Baggage.live
+    ContextStorage.fiberRef >>> Baggage.live()
+
+  def logAnnotatedBaggageLayer: ULayer[Baggage] =
+    (ContextStorage.fiberRef >>> Baggage.logAnnotated)
 
   def spec =
     suite("zio opentelemetry")(
       suite("Baggage")(
         operationsSpec,
-        propagationSpec
+        propagationSpec,
+        logAnnotatedSpec
       )
     )
 
@@ -81,5 +85,67 @@ object BaggageTest extends ZIOSpecDefault {
         } yield assert(thing)(isSome(equalTo("thing")))
       }
     )
+
+  private def logAnnotatedSpec =
+    suite("log annotated")(
+      test("get") {
+        ZIO.serviceWithZIO[Baggage] { baggage =>
+          ZIO.logAnnotate("zio", "annotation") {
+            for {
+              result <- baggage.get("zio")
+            } yield assert(result)(isSome(equalTo("annotation")))
+          }
+        }
+      },
+      test("getAll") {
+        ZIO.serviceWithZIO[Baggage] { baggage =>
+          ZIO.logAnnotate(LogAnnotation("foo", "bar"), LogAnnotation("dog", "fox")) {
+            for {
+              result <- baggage.getAll
+            } yield assert(result)(equalTo(Map("foo" -> "bar", "dog" -> "fox")))
+          }
+        }
+      },
+      test("set overrides a value of a key taken from log annotations") {
+        ZIO.serviceWithZIO[Baggage] { baggage =>
+          ZIO.logAnnotate(LogAnnotation("foo", "bar"), LogAnnotation("dog", "fox")) {
+            for {
+              _      <- baggage.set("some", "thing")
+              _      <- baggage.set("foo", "bark")
+              result <- baggage.getAll
+            } yield assert(result)(equalTo(Map("foo" -> "bark", "dog" -> "fox", "some" -> "thing")))
+          }
+        }
+      },
+      test("remove doesn't work for keys provided by log annotations") {
+        ZIO.serviceWithZIO[Baggage] { baggage =>
+          ZIO.logAnnotate(LogAnnotation("foo", "bar")) {
+            for {
+              _      <- baggage.remove("foo")
+              result <- baggage.getAll
+            } yield assert(result)(equalTo(Map("foo" -> "bar")))
+          }
+        }
+      },
+      test("getAllWithMetadata returns a metadata provided by log annotations") {
+        ZIO.serviceWithZIO[Baggage] { baggage =>
+          ZIO.logAnnotate(LogAnnotation("foo", "bar")) {
+            for {
+              result <- baggage.getAllWithMetadata
+            } yield assert(result)(equalTo(Map("foo" -> ("bar" -> "zio log annotation"))))
+          }
+        }
+      },
+      test("setWithMetadata overrides a value with metadata taken from log annotations") {
+        ZIO.serviceWithZIO[Baggage] { baggage =>
+          ZIO.logAnnotate(LogAnnotation("foo", "bar")) {
+            for {
+              _      <- baggage.setWithMetadata("foo", "bar", "baz")
+              result <- baggage.getAllWithMetadata
+            } yield assert(result)(equalTo(Map("foo" -> ("bar" -> "baz"))))
+          }
+        }
+      }
+    ).provideLayer(logAnnotatedBaggageLayer)
 
 }
