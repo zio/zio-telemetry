@@ -54,7 +54,7 @@ object BaggageTest extends ZIOSpecDefault {
   private def propagationSpec =
     suite("propagation")(
       test("inject/extract") {
-        def setAndInject: URIO[Baggage, Map[String, String]] =
+        def setAndInject(): URIO[Baggage, Map[String, String]] =
           ZIO.serviceWithZIO[Baggage] { baggage =>
             val carrier = OutgoingContextCarrier.default()
 
@@ -76,7 +76,7 @@ object BaggageTest extends ZIOSpecDefault {
           }
 
         for {
-          carrier <- setAndInject.provideLayer(baggageLayer)
+          carrier <- setAndInject().provideLayer(baggageLayer)
           thing   <- extractAndGet(carrier).provideLayer(baggageLayer)
         } yield assert(thing)(isSome(equalTo("thing")))
       }
