@@ -4,7 +4,7 @@ object Dependencies {
 
   object Versions {
     val opentracing           = "0.33.0"
-    val opentelemetry         = "1.22.0"
+    val opentelemetry         = "1.23.0"
     val opencensus            = "0.31.1"
     val scalaCollectionCompat = "2.9.0"
     val zio                   = "2.0.8"
