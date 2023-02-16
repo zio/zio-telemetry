@@ -18,7 +18,7 @@ import scala.jdk.CollectionConverters._
 object Tracing {
   trait Service {
     private[opentelemetry] def currentNanos: UIO[Long]
-    private[opentelemetry] val currentContext: FiberRef[Context]
+    private[opentelemetry] val currentContext: ContextStorage
     private[opentelemetry] def createRoot(spanName: String, spanKind: SpanKind): UManaged[Context]
     private[opentelemetry] def createChildOf(parent: Context, spanName: String, spanKind: SpanKind): UManaged[Context]
     private[opentelemetry] def createChildOfUnsafe(parent: Context, spanName: String, spanKind: SpanKind): UIO[Context]
@@ -29,7 +29,7 @@ object Tracing {
   private def currentNanos: URIO[Tracing, Long] =
     ZIO.serviceWith[Tracing.Service](_.currentNanos)
 
-  private def currentContext: URIO[Tracing, FiberRef[Context]] =
+  private def currentContext: URIO[Tracing, ContextStorage] =
     ZIO.access[Tracing](_.get.currentContext)
 
   private def createRoot(spanName: String, spanKind: SpanKind): URManaged[Tracing, Context] =
@@ -331,78 +331,87 @@ object Tracing {
     getCurrentSpan.map(_.getSpanContext())
 
   def managed(tracer: Tracer): URManaged[Clock, Service] = {
-    class Live(defaultContext: FiberRef[Context], clock: Clock.Service) extends Service {
-      private def endSpan(span: Span): UIO[Unit] = currentNanos.map(span.end(_, TimeUnit.NANOSECONDS))
-
-      def currentNanos: UIO[Long] = clock.currentTime(TimeUnit.NANOSECONDS)
-
-      def createRoot(spanName: String, spanKind: SpanKind): UManaged[Context] =
-        for {
-          nanoSeconds <- currentNanos.toManaged_
-          span        <- ZManaged.make(
-                           UIO(
-                             tracer
-                               .spanBuilder(spanName)
-                               .setNoParent()
-                               .setSpanKind(spanKind)
-                               .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
-                               .startSpan()
-                           )
-                         )(endSpan)
-        } yield span.storeInContext(Context.root())
-
-      def createChildOf(parent: Context, spanName: String, spanKind: SpanKind): UManaged[Context] =
-        for {
-          nanoSeconds <- currentNanos.toManaged_
-          span        <- ZManaged.make(
-                           UIO(
-                             tracer
-                               .spanBuilder(spanName)
-                               .setParent(parent)
-                               .setSpanKind(spanKind)
-                               .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
-                               .startSpan()
-                           )
-                         )(endSpan)
-        } yield span.storeInContext(parent)
-
-      def createChildOfUnsafe(parent: Context, spanName: String, spanKind: SpanKind): UIO[Context] =
-        for {
-          nanoSeconds <- currentNanos
-          span        <-
-            UIO(
-              tracer
-                .spanBuilder(spanName)
-                .setParent(parent)
-                .setSpanKind(spanKind)
-                .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
-                .startSpan()
-            )
-        } yield span.storeInContext(parent)
-
-      override private[opentelemetry] def end: UIO[Any] =
-        for {
-          nanos   <- currentNanos
-          context <- currentContext.get
-          span     = Span.fromContext(context)
-        } yield span.end(nanos, TimeUnit.NANOSECONDS)
-
-      override private[opentelemetry] def getTracer: UIO[Tracer] =
-        UIO.succeed(tracer)
-
-      val currentContext: FiberRef[Context] = defaultContext
-    }
-
     val tracing: URIO[Clock, Service] =
       for {
-        clock          <- ZIO.access[Clock](_.get)
-        defaultContext <- FiberRef.make[Context](Context.root())
-      } yield new Live(defaultContext, clock)
+        clock      <- ZIO.access[Clock](_.get)
+        contextRef <- FiberRef.make[Context](Context.root())
+      } yield new Live(tracer, ContextStorage.fiberRef(contextRef), clock)
 
     ZManaged.make(tracing)(_.end)
   }
 
-  def live: URLayer[Clock with Has[Tracer], Tracing] = ZLayer.fromManaged(
-    ZIO.access[Has[Tracer]](_.get).toManaged_.flatMap(managed)
-  )
+  def live: URLayer[Clock with Has[Tracer], Tracing] =
+    ZLayer.fromManaged(ZIO.service[Tracer].toManaged_.flatMap(managed))
+
+  def propagating: URLayer[Clock with Has[Tracer], Tracing] = {
+    val tracing = for {
+      clock  <- ZIO.access[Clock](_.get)
+      tracer <- ZIO.service[Tracer]
+    } yield new Live(tracer, ContextStorage.threadLocal, clock)
+
+    ZLayer.fromManaged(ZManaged.make(tracing)(_.end))
+  }
+
+  private class Live(tracer: Tracer, defaultContext: ContextStorage, clock: Clock.Service) extends Service {
+    private def endSpan(span: Span): UIO[Unit] = currentNanos.map(span.end(_, TimeUnit.NANOSECONDS))
+
+    def currentNanos: UIO[Long] = clock.currentTime(TimeUnit.NANOSECONDS)
+
+    def createRoot(spanName: String, spanKind: SpanKind): UManaged[Context] =
+      for {
+        nanoSeconds <- currentNanos.toManaged_
+        span        <- ZManaged.make(
+                         UIO(
+                           tracer
+                             .spanBuilder(spanName)
+                             .setNoParent()
+                             .setSpanKind(spanKind)
+                             .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
+                             .startSpan()
+                         )
+                       )(endSpan)
+      } yield span.storeInContext(Context.root())
+
+    def createChildOf(parent: Context, spanName: String, spanKind: SpanKind): UManaged[Context] =
+      for {
+        nanoSeconds <- currentNanos.toManaged_
+        span        <- ZManaged.make(
+                         UIO(
+                           tracer
+                             .spanBuilder(spanName)
+                             .setParent(parent)
+                             .setSpanKind(spanKind)
+                             .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
+                             .startSpan()
+                         )
+                       )(endSpan)
+      } yield span.storeInContext(parent)
+
+    def createChildOfUnsafe(parent: Context, spanName: String, spanKind: SpanKind): UIO[Context] =
+      for {
+        nanoSeconds <- currentNanos
+        span        <-
+          UIO(
+            tracer
+              .spanBuilder(spanName)
+              .setParent(parent)
+              .setSpanKind(spanKind)
+              .setStartTimestamp(nanoSeconds, TimeUnit.NANOSECONDS)
+              .startSpan()
+          )
+      } yield span.storeInContext(parent)
+
+    override private[opentelemetry] def end: UIO[Any] =
+      for {
+        nanos   <- currentNanos
+        context <- currentContext.get
+        span     = Span.fromContext(context)
+      } yield span.end(nanos, TimeUnit.NANOSECONDS)
+
+    override private[opentelemetry] def getTracer: UIO[Tracer] =
+      UIO.succeed(tracer)
+
+    val currentContext: ContextStorage = defaultContext
+  }
+
 }
