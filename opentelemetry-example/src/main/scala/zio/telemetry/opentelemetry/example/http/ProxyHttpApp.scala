@@ -19,7 +19,7 @@ case class ProxyHttpApp(client: Client, tracing: Tracing, baggage: Baggage) {
 
   val routes: HttpApp[Any, Throwable] =
     Http.collectZIO { case Method.GET -> _ / "statuses" =>
-      statuses @@ root("/statuses", SpanKind.SERVER, errorMapper)
+      statuses @@ root("/statuses", SpanKind.SERVER, toErrorStatus = errorMapper)
     }
 
   def statuses: Task[Response] = {
