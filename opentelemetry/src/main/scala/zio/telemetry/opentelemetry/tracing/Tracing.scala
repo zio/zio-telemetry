@@ -729,7 +729,7 @@ object Tracing {
           private def createRoot(
             spanName: String,
             spanKind: SpanKind,
-            attributes: Attributes = Attributes.empty(),
+            attributes: Attributes
           )(implicit trace: Trace): UIO[(UIO[Unit], Context)] =
             for {
               nanos <- currentNanos
