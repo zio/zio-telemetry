@@ -36,7 +36,10 @@ Global / testFrameworks       := Seq(new TestFramework("zio.test.sbt.ZTestFramew
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
-addCommandAlias("compileExamples", "opentracingExample/compile;opentelemetryExample/compile")
+addCommandAlias(
+  "compileExamples",
+  "opentracingExample/compile;opentelemetryExample/compile;opentelemetryInstrumentationExample/compile"
+)
 
 lazy val root =
   project
@@ -78,6 +81,19 @@ lazy val opentelemetryExample =
     .settings(onlyWithScala2)
     .settings(libraryDependencies := Dependencies.opentelemetryExample)
     .dependsOn(opentelemetry)
+
+lazy val opentelemetryInstrumentationExample =
+  project
+    .in(file("opentelemetry-instrumentation-example"))
+    .settings(stdSettings("opentelemetry-instrumentation-example"))
+    .settings(publish / skip := true)
+    .settings(onlyWithScala2)
+    .settings(libraryDependencies := Dependencies.opentelemetryInstrumentationExample)
+    .dependsOn(opentelemetry)
+    .enablePlugins(JavaAgent)
+    .settings(
+      javaAgents += "io.opentelemetry.javaagent" % "opentelemetry-javaagent" % Dependencies.Versions.opentelemetry % "compile;runtime"
+    )
 
 lazy val docs =
   project

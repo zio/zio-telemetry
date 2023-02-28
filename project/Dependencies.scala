@@ -89,4 +89,10 @@ object Dependencies {
     Orgs.grpc          % "grpc-netty-shaded"             % ExampleVersions.grpcNetty
   )
 
+  lazy val opentelemetryInstrumentationExample = example ++ Seq(
+    Orgs.opentelemetry % "opentelemetry-exporter-jaeger" % Versions.opentelemetry,
+    Orgs.opentelemetry % "opentelemetry-sdk"             % Versions.opentelemetry,
+    Orgs.grpc          % "grpc-netty-shaded"             % ExampleVersions.grpcNetty
+  )
+
 }
