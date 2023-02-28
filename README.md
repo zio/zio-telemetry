@@ -6,7 +6,7 @@
 
 [ZIO telemetry](https://github.com/zio/zio-telemetry) is purely-functional and type-safe. It provides clients for [OpenTracing](https://opentracing.io/), [OpenCensus](https://opencensus.io/) and [OpenTelemetry](https://opentelemetry.io/).
 
-[![Production Ready](https://img.shields.io/badge/Project%20Stage-Production%20Ready-brightgreen.svg)](https://github.com/zio/zio/wiki/Project-Stages) ![CI Badge](https://github.com/zio/zio-telemetry/workflows/CI/badge.svg) [![Sonatype Releases](https://img.shields.io/nexus/r/https/oss.sonatype.org/dev.zio/zio-opentracing_2.12.svg?label=Sonatype%20Release)](https://oss.sonatype.org/content/repositories/releases/dev/zio/zio-opentracing_2.12/) [![Sonatype Snapshots](https://img.shields.io/nexus/s/https/oss.sonatype.org/dev.zio/zio-opentracing_2.12.svg?label=Sonatype%20Snapshot)](https://oss.sonatype.org/content/repositories/snapshots/dev/zio/zio-opentracing_2.12/) [![javadoc](https://javadoc.io/badge2/dev.zio/zio-telemetry-docs_2.12/javadoc.svg)](https://javadoc.io/doc/dev.zio/zio-telemetry-docs_2.12) [![ZIO Telemetry](https://img.shields.io/github/stars/zio/zio-telemetry?style=social)](https://github.com/zio/zio-telemetry)
+[![Production Ready](https://img.shields.io/badge/Project%20Stage-Production%20Ready-brightgreen.svg)](https://github.com/zio/zio/wiki/Project-Stages) ![CI Badge](https://github.com/zio/zio-telemetry/workflows/CI/badge.svg) [![Sonatype Snapshots](https://img.shields.io/nexus/s/https/oss.sonatype.org/com.pagero/zio-opentracing_2.12.svg?label=Sonatype%20Snapshot)](https://oss.sonatype.org/content/repositories/snapshots/com/pagero/zio-opentracing_2.12/) [![ZIO Telemetry](https://img.shields.io/github/stars/zio/zio-telemetry?style=social)](https://github.com/zio/zio-telemetry)
 
 ZIO Telemetry consists of the following projects:
 
@@ -25,13 +25,13 @@ ZIO Telemetry is a purely functional client which helps up propagate context bet
 In order to use this library, we need to add the following line in our `build.sbt` file if we want to use [OpenTelemetry](https://opentelemetry.io/) client:
 
 ```scala
-libraryDependencies += "dev.zio" %% "zio-telemetry" % "3.0.0-RC2"
+libraryDependencies += "dev.zio" %% "zio-telemetry" % "<version>"
 ```
 
 And for using [OpenTracing](https://opentracing.io/) client we should add the following line in our `build.sbt` file:
 
 ```scala
-libraryDependencies += "dev.zio" %% "zio-opentracing" % "3.0.0-RC2"
+libraryDependencies += "dev.zio" %% "zio-opentracing" % "<version>"
 ```
 
 ## Example
