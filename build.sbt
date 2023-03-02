@@ -35,7 +35,10 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 Global / testFrameworks       := Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
-addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
+addCommandAlias(
+  "check",
+  "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck docs/checkReadme docs/checkGithubWorkflow"
+)
 addCommandAlias("compileExamples", "opentracingExample/compile;opentelemetryExample/compile")
 
 lazy val root =
