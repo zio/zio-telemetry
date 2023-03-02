@@ -22,13 +22,13 @@ object OpenTracingTest extends ZIOSpecDefault {
 
   val customLayer: ULayer[MockTracer with OpenTracing] = mockTracer ++ (mockTracer >>> testService)
 
-  def spec =
+  def spec: Spec[Scope, Any] =
     suite("zio opentracing")(
       test("managedService") {
         val tracer = new MockTracer
 
         ZIO
-          .scoped(OpenTracing.scoped(tracer, "ROOT"))
+          .scoped[Scope](OpenTracing.scoped(tracer, "ROOT"))
           .as(
             assert(tracer.finishedSpans.asScala)(hasSize(equalTo(1))) && assert(tracer.finishedSpans().get(0))(
               hasField[MockSpan, String](
@@ -167,7 +167,7 @@ object OpenTracingTest extends ZIOSpecDefault {
 
             for {
               tracer <- ZIO.service[MockTracer]
-              _      <- ZIO.unit @@ tag("boolean", true) @@ tag("int", 1) @@ tag("string", "foo") @@ span("foo")
+              _      <- ZIO.unit @@ tag("boolean", value = true) @@ tag("int", 1) @@ tag("string", "foo") @@ span("foo")
             } yield {
               val tags     = tracer.finishedSpans().asScala.head.tags.asScala.toMap
               val expected = Map[String, Any]("boolean" -> true, "int" -> 1, "string" -> "foo")

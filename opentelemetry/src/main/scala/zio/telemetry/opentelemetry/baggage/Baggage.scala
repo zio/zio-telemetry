@@ -83,7 +83,7 @@ trait Baggage { self =>
    *   implementation of [[zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator]]
    * @param carrier
    *   mutable data from which the parent span is extracted
-   * @param Trace
+   * @param trace
    * @tparam C
    *   carrier
    * @return

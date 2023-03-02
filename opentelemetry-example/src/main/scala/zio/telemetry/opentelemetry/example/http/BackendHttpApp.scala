@@ -1,13 +1,13 @@
 package zio.telemetry.opentelemetry.example.http
 
 import io.opentelemetry.api.trace.SpanKind
-import zio.telemetry.opentelemetry.example.http.{ Status => ServiceStatus }
-import zhttp.http.{ !!, ->, /, Headers, Http, HttpApp, Method, Response }
-import zio.json.EncoderOps
+import zhttp.http.{->, /, Headers, Http, HttpApp, Method, Response}
 import zio._
+import zio.json.EncoderOps
 import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator
 import zio.telemetry.opentelemetry.context.IncomingContextCarrier
+import zio.telemetry.opentelemetry.example.http.{Status => ServiceStatus}
 import zio.telemetry.opentelemetry.tracing.Tracing
 import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 
@@ -28,7 +28,7 @@ case class BackendHttpApp(tracing: Tracing, baggage: Baggage) {
     }
 
   val routes: HttpApp[Any, Throwable] =
-    Http.collectZIO { case request @ Method.GET -> !! / "status" =>
+    Http.collectZIO { case request @ Method.GET -> _ / "status" =>
       val carrier = headersCarrier(request.headers)
 
       (baggage.extract(BaggagePropagator.default, carrier) *> status) @@
