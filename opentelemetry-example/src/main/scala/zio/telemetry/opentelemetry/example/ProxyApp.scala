@@ -29,7 +29,7 @@ object ProxyApp extends ZIOAppDefault {
         ProxyHttpServer.live,
         ProxyHttpApp.live,
         Tracing.live,
-        Baggage.live,
+        Baggage.live(),
         ContextStorage.fiberRef,
         JaegerTracer.live
       )
