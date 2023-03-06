@@ -1,6 +1,6 @@
 package zio.telemetry.opentracing.example.http
 
-import io.opentracing.propagation.Format.Builtin.{HTTP_HEADERS => HttpHeadersFormat}
+import io.opentracing.propagation.Format.Builtin.{ HTTP_HEADERS => HttpHeadersFormat }
 import io.opentracing.propagation.TextMapAdapter
 import io.opentracing.tag.Tags
 import sttp.model.Method.GET
