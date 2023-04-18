@@ -25,13 +25,13 @@ ZIO Telemetry is a purely functional client which helps up propagate context bet
 In order to use this library, we need to add the following line in our `build.sbt` file if we want to use [OpenTelemetry](https://opentelemetry.io/) client:
 
 ```scala
-libraryDependencies += "dev.zio" %% "zio-telemetry" % "3.0.0-RC6"
+libraryDependencies += "dev.zio" %% "zio-telemetry" % "3.0.0-RC7"
 ```
 
 And for using [OpenTracing](https://opentracing.io/) client we should add the following line in our `build.sbt` file:
 
 ```scala
-libraryDependencies += "dev.zio" %% "zio-opentracing" % "3.0.0-RC6"
+libraryDependencies += "dev.zio" %% "zio-opentracing" % "3.0.0-RC7"
 ```
 
 ## Example
