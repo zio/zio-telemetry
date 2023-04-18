@@ -5,7 +5,6 @@ import zio.config.typesafe.TypesafeConfig
 import zio.config.magnolia._
 import zio.telemetry.opentelemetry.instrumentation.example.config.AppConfig
 import zio.telemetry.opentelemetry.instrumentation.example.http.HttpServer
-import zio.telemetry.opentelemetry.context.ContextStorage
 
 object ServerApp extends ZIOAppDefault {
 
@@ -16,8 +15,7 @@ object ServerApp extends ZIOAppDefault {
       .serviceWithZIO[HttpServer](_.start.exitCode)
       .provide(
         configLayer,
-        HttpServer.live,
-        ContextStorage.fiberRef
+        HttpServer.live
       )
 
 }

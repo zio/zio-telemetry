@@ -92,10 +92,10 @@ lazy val opentelemetryInstrumentationExample =
     .settings(onlyWithScala2)
     .settings(libraryDependencies := Dependencies.opentelemetryInstrumentationExample)
     .dependsOn(opentelemetry)
-    .enablePlugins(JavaAgent)
-    .settings(
-      javaAgents += "io.opentelemetry.javaagent" % "opentelemetry-javaagent" % Dependencies.Versions.opentelemetry % "compile;runtime"
-    )
+//    .enablePlugins(JavaAgent)
+//    .settings(
+//      javaAgents += "io.opentelemetry.javaagent" % "opentelemetry-javaagent" % Dependencies.Versions.opentelemetry % "compile;runtime"
+//    )
 
 lazy val docs =
   project
