@@ -44,6 +44,12 @@ And for using [OpenCensus](https://opencensus.io/) client we should add the foll
 libraryDependencies += "dev.zio" %% "zio-opencensus" % "<version>"
 ```
 
+## Examples
+
+You can find examples with full source code and instructions of how to run by following the links:
+- [OpenTelemetry Example](docs/https://github.com/zio/zio-telemetry/blob/series/2.x/docs/opentelemetry-example.md)
+- [OpenTracing Example](docs/https://github.com/zio/zio-telemetry/blob/series/2.x/docs/opentracing-example.md)
+
 ## Articles
 
 - [Trace your microservices with ZIO](https://kadek-marek.medium.com/trace-your-microservices-with-zio-telemetry-5f88d69cb26b) by Marek Kadek (September 2021)
