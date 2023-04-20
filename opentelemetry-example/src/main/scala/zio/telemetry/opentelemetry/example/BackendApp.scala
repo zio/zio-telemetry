@@ -21,7 +21,7 @@ object BackendApp extends ZIOAppDefault {
         BackendHttpServer.live,
         BackendHttpApp.live,
         Tracing.live,
-        Baggage.live,
+        Baggage.live(),
         ContextStorage.fiberRef,
         JaegerTracer.live
       )
