@@ -10,7 +10,7 @@ and [Zipkin](https://www.zipkin.io).
 
 First, add the following dependency to your build.sbt:
 ```
-"dev.zio" %% "zio-opentelemetry" % "@VERSION@"
+"dev.zio" %% "zio-opentelemetry" % "<version>"
 ```
 
 ## Usage
