@@ -11,7 +11,7 @@ and logs across process boundaries. Well known implementations are [Jaeger](http
 First, add the following dependency to your build.sbt:
 
 ```
-"dev.zio" %% "zio-opentracing" % "@VERSION@"
+"dev.zio" %% "zio-opentracing" % "<version>"
 ```
 
 ## Usage
