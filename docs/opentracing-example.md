@@ -3,7 +3,7 @@ id: opentracing-example
 title: "OpenTracing Example"
 ---
 
-You can find the source code [here](https://github.com/zio/zio-telemetry/tree/master/opentracing-example).
+You can find the source code [here](https://github.com/zio/zio-telemetry/tree/series/2.x/opentracing-example).
 
 Firstly, start [Jaeger](https://www.jaegertracing.io) by running the following command:
 ```bash
@@ -23,8 +23,8 @@ To check if it's running properly visit [Jaeger UI](http://localhost:16686/).
 More info can be found [here](https://www.jaegertracing.io/docs/1.6/getting-started/#all-in-one-docker-image).
 
 Our application contains two services:
- 1. [Proxy](https://github.com/zio/zio-telemetry/blob/master/opentracing-example/src/main/scala/zio/telemetry/opentracing/example/ProxyApp.scala) service
- 2. [Backend](https://github.com/zio/zio-telemetry/blob/master/opentracing-example/src/main/scala/zio/telemetry/opentracing/example/BackendApp.scala) service
+ 1. [Proxy](https://github.com/zio/zio-telemetry/blob/series/2.x/opentracing-example/src/main/scala/zio/telemetry/opentracing/example/ProxyApp.scala) service
+ 2. [Backend](https://github.com/zio/zio-telemetry/blob/series/2.x/opentracing-example/src/main/scala/zio/telemetry/opentracing/example/BackendApp.scala) service
 
 ### Proxy Service
 
