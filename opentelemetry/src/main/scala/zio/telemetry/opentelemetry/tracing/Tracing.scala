@@ -5,7 +5,6 @@ import io.opentelemetry.api.trace._
 import io.opentelemetry.context.Context
 import zio._
 import zio.telemetry.opentelemetry.context.{ ContextStorage, IncomingContextCarrier, OutgoingContextCarrier }
-import zio.telemetry.opentelemetry.internal.PropagatingSupervisor
 import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 
 import java.util.concurrent.TimeUnit
@@ -478,17 +477,6 @@ object Tracing {
         tracing        <- scoped(tracer, contextStorage)
       } yield tracing
     }
-
-  /**
-   * Tracing context will be bidirectionally propagated between ZIO and non-ZIO code.
-   *
-   * Since context propagation adds a performance overhead, it is recommended to use [[Tracing.live]] in most cases.
-   *
-   * [[Tracing.propagating]] should be used in combination with automatic instrumentation via OpenTelemetry JVM agent
-   * only.
-   */
-  def propagating: URLayer[Tracer with ContextStorage, Tracing] =
-    Runtime.addSupervisor(new PropagatingSupervisor) ++ live
 
   def scoped(tracer: Tracer, ctxStorage: ContextStorage): URIO[Scope, Tracing] = {
     val acquire =

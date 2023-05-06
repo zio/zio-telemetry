@@ -104,35 +104,35 @@ ZIO.serviceWithZIO[Tracing] { tracing =>
 }
 ```
 
-### [Experimental] Usage with OpenTelemetry automatic instrumentation
+### Usage with OpenTelemetry automatic instrumentation
 
 OpenTelemetry provides
 a [JVM agent for automatic instrumentation](https://opentelemetry.io/docs/instrumentation/java/automatic/) which
 supports
-many [popular Java libraries](https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/supported-libraries.md)
-.
+many [popular Java libraries](https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/supported-libraries.md).
 
-This automatic instrumentation relies on the default OpenTelemetry context storage which is based on `ThreadLocal`. So
-it doesn't work with ZIO out of the box.
+Since [version 1.25.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.25.0)
+OpenTelemetry JVM agent supports ZIO.
 
-`zio-opentelemetry` provides an experimental version of `Tracing` which bidirectionally propagates tracing context
-between ZIO and non-ZIO code, enabling interoperability with _most_ libraries that use the default OpenTelemetry context
-storage.
+To enable interoperability between automatic instrumentation and `zio-opentelemetry`, `Tracing` has to be created
+using `ContextStorage` backed by OpenTelemetry's `Context`.
 
-To enable this experimental propagation, you will need to create `Tracing` using `Tracing.propagating` constructor (
-instead of `Tracing.live`).
+```scala
+import zio.telemetry.opentelemetry.tracing.Tracing
+import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.example.JaegerTracer
+import io.opentelemetry.api.trace.{SpanKind, StatusCode}
+import zio._
 
-Please note that whether context propagation will work correctly depends on which specific ZIO wrappers around non-ZIO
-libraries you are using. So please, test your specific setup.
+val errorMapper = ErrorMapper[Throwable] { case _ => StatusCode.UNSET }
 
-It was reported that it works with:
-
-* `zhttp`
-* `sttp` with Java 11+ HTTP client backend
-* `zio-kafka`
-* `doobie`
-* `redis4cats`
-
-It was reported that it does not work with:
-
-* `sttp` with `armeria` backend
+val app =
+  ZIO.serviceWithZIO[Tracing] { tracing =>
+    import tracing.aspects._
+    ZIO.logInfo("Hello") @@ root("root span", SpanKind.INTERNAL, errorMapper)
+  }.provide(
+    Tracing.live,
+    ContextStorage.openTelemetryContext, // <<<
+    JaegerTracer.live
+  )
+```
