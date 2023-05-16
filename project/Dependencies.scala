@@ -57,9 +57,10 @@ object Dependencies {
   )
 
   lazy val opencensus = zio ++ Seq(
-    Orgs.opencensus % "opencensus-api"               % Versions.opencensus,
-    Orgs.opencensus % "opencensus-impl"              % Versions.opencensus,
-    Orgs.opencensus % "opencensus-contrib-http-util" % Versions.opencensus
+    Orgs.opencensus        % "opencensus-api"               % Versions.opencensus,
+    Orgs.opencensus        % "opencensus-impl"              % Versions.opencensus,
+    Orgs.opencensus        % "opencensus-contrib-http-util" % Versions.opencensus,
+    Orgs.scalaLangModules %% "scala-collection-compat"      % Versions.scalaCollectionCompat % Test
   )
 
   lazy val example = Seq(
