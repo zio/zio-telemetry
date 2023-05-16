@@ -7,7 +7,7 @@ import zio._
 import zio.test.Assertion._
 import zio.test._
 
-object OpenCensusTracingTest extends ZIOSpecDefault {
+object TracingTest extends ZIOSpecDefault {
 
   private def getFinishedSpans =
     ZIO.serviceWithZIO[Ref[List[SpanData]]] { x =>
