@@ -1,6 +1,6 @@
 package zio.telemetry.opentelemetry.instrumentation.example
 
-import sttp.client3.asynchttpclient.zio.AsyncHttpClientZioBackend
+import sttp.client3.httpclient.zio.HttpClientZioBackend
 import zio.config.magnolia.descriptor
 import zio.config.typesafe.TypesafeConfig
 import zio.telemetry.opentelemetry.instrumentation.example.config.AppConfig
@@ -13,12 +13,12 @@ object ClientApp extends ZIOAppDefault {
 
   private val httpBackendLayer: TaskLayer[Backend] =
     ZLayer.scoped {
-      ZIO.acquireRelease(AsyncHttpClientZioBackend())(_.close().ignore)
+      ZIO.acquireRelease(HttpClientZioBackend())(_.close().ignore)
     }
 
   override def run: Task[ExitCode] =
     ZIO
-      .serviceWithZIO[HttpClient](_.health.flatMap(r => Console.printLine(s"Health: $r")).exitCode)
+      .serviceWithZIO[HttpClient](_.health.exitCode)
       .provide(
         configLayer,
         httpBackendLayer,

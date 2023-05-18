@@ -69,6 +69,7 @@ object Dependencies {
     Orgs.jaegertracing            % "jaeger-client"                 % ExampleVersions.jaeger,
     Orgs.jaegertracing            % "jaeger-zipkin"                 % ExampleVersions.jaeger,
     Orgs.softwaremillSttpClient3 %% "async-http-client-backend-zio" % ExampleVersions.sttp3,
+    Orgs.softwaremillSttpClient3 %% "zio"                           % ExampleVersions.sttp3,
     Orgs.softwaremillSttpClient3 %% "zio-json"                      % ExampleVersions.sttp3,
     Orgs.d11                     %% "zhttp"                         % ExampleVersions.zioHttp,
     Orgs.zio                     %% "zio-json"                      % ExampleVersions.zioJson,
@@ -90,10 +91,6 @@ object Dependencies {
     Orgs.grpc          % "grpc-netty-shaded"             % ExampleVersions.grpcNetty
   )
 
-  lazy val opentelemetryInstrumentationExample = example ++ Seq(
-    Orgs.opentelemetry % "opentelemetry-exporter-jaeger" % Versions.opentelemetry,
-    Orgs.opentelemetry % "opentelemetry-sdk"             % Versions.opentelemetry,
-    Orgs.grpc          % "grpc-netty-shaded"             % ExampleVersions.grpcNetty
-  )
+  lazy val opentelemetryInstrumentationExample = example
 
 }
