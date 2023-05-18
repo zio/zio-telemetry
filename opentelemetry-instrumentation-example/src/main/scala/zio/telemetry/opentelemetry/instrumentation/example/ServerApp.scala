@@ -3,8 +3,10 @@ package zio.telemetry.opentelemetry.instrumentation.example
 import zio._
 import zio.config.typesafe.TypesafeConfig
 import zio.config.magnolia._
+import zio.telemetry.opentelemetry.context.ContextStorage
 import zio.telemetry.opentelemetry.instrumentation.example.config.AppConfig
-import zio.telemetry.opentelemetry.instrumentation.example.http.HttpServer
+import zio.telemetry.opentelemetry.instrumentation.example.http.{ HttpServer, HttpServerApp }
+import zio.telemetry.opentelemetry.tracing.Tracing
 
 object ServerApp extends ZIOAppDefault {
 
@@ -15,7 +17,11 @@ object ServerApp extends ZIOAppDefault {
       .serviceWithZIO[HttpServer](_.start.exitCode)
       .provide(
         configLayer,
-        HttpServer.live
+        HttpServer.live,
+        HttpServerApp.live,
+        Tracing.live,
+        JaegerTracer.live,
+        ContextStorage.openTelemetryContext
       )
 
 }

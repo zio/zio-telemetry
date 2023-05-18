@@ -11,6 +11,7 @@ import zio._
 import zio.telemetry.opentelemetry.context.{ ContextStorage, IncomingContextCarrier, OutgoingContextCarrier }
 import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 import zio.test.Assertion._
+import zio.test.TestAspect
 import zio.test.{ assert, TestClock, ZIOSpecDefault }
 
 import scala.collection.mutable
@@ -29,7 +30,7 @@ object TracingTest extends ZIOSpecDefault {
   val inMemoryTracerLayer: ULayer[InMemorySpanExporter with Tracer with ContextStorage] =
     ZLayer.fromZIOEnvironment(inMemoryTracer.map { case (inMemorySpanExporter, tracer) =>
       ZEnvironment(inMemorySpanExporter).add(tracer)
-    }) ++ ContextStorage.fiberRef
+    }) ++ ContextStorage.openTelemetryContext
 
   val tracingMockLayer: ULayer[Tracing with InMemorySpanExporter with Tracer] =
     inMemoryTracerLayer >>> (Tracing.live ++ inMemoryTracerLayer)
@@ -223,16 +224,19 @@ object TracingTest extends ZIOSpecDefault {
 
           val carrier: mutable.Map[String, String] = mutable.Map().empty
 
+          val roundtrip =
+            (for {
+              _ <-
+                tracing.inject(TraceContextPropagator.default, OutgoingContextCarrier.default(carrier)) @@
+                  span("foo")
+              _ <-
+                ZIO.unit @@
+                  extractSpan(TraceContextPropagator.default, IncomingContextCarrier.default(carrier), "baz") @@
+                  span("bar")
+            } yield ()) @@ span("ROOT")
+
           for {
-            _     <-
-              (for {
-                _ <-
-                  tracing.inject(TraceContextPropagator.default, OutgoingContextCarrier.default(carrier)) @@ span("foo")
-                _ <-
-                  ZIO.unit @@
-                    extractSpan(TraceContextPropagator.default, IncomingContextCarrier.default(carrier), "baz") @@
-                    span("bar")
-              } yield ()) @@ span("ROOT")
+            _     <- roundtrip
             spans <- getFinishedSpans
             root   = spans.find(_.getName == "ROOT")
             foo    = spans.find(_.getName == "foo")
@@ -331,6 +335,6 @@ object TracingTest extends ZIOSpecDefault {
           } yield assert(released)(isFalse)
         }
       }
-    ).provideLayer(tracingMockLayer)
+    ).provideLayer(tracingMockLayer) @@ TestAspect.sequential
 
 }

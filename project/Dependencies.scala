@@ -64,33 +64,38 @@ object Dependencies {
   )
 
   lazy val example = Seq(
-    Orgs.typelevel               %% "cats-core"                     % ExampleVersions.cats,
-    Orgs.jaegertracing            % "jaeger-core"                   % ExampleVersions.jaeger,
-    Orgs.jaegertracing            % "jaeger-client"                 % ExampleVersions.jaeger,
-    Orgs.jaegertracing            % "jaeger-zipkin"                 % ExampleVersions.jaeger,
-    Orgs.softwaremillSttpClient3 %% "async-http-client-backend-zio" % ExampleVersions.sttp3,
-    Orgs.softwaremillSttpClient3 %% "zio"                           % ExampleVersions.sttp3,
-    Orgs.softwaremillSttpClient3 %% "zio-json"                      % ExampleVersions.sttp3,
-    Orgs.d11                     %% "zhttp"                         % ExampleVersions.zioHttp,
-    Orgs.zio                     %% "zio-json"                      % ExampleVersions.zioJson,
-    Orgs.zio                     %% "zio-config"                    % ExampleVersions.zioConfig,
-    Orgs.zio                     %% "zio-config-magnolia"           % ExampleVersions.zioConfig,
-    Orgs.zio                     %% "zio-config-typesafe"           % ExampleVersions.zioConfig,
+    Orgs.typelevel               %% "cats-core"           % ExampleVersions.cats,
+    Orgs.jaegertracing            % "jaeger-core"         % ExampleVersions.jaeger,
+    Orgs.jaegertracing            % "jaeger-client"       % ExampleVersions.jaeger,
+    Orgs.jaegertracing            % "jaeger-zipkin"       % ExampleVersions.jaeger,
+    Orgs.softwaremillSttpClient3 %% "zio-json"            % ExampleVersions.sttp3,
+    Orgs.d11                     %% "zhttp"               % ExampleVersions.zioHttp,
+    Orgs.zio                     %% "zio-json"            % ExampleVersions.zioJson,
+    Orgs.zio                     %% "zio-config"          % ExampleVersions.zioConfig,
+    Orgs.zio                     %% "zio-config-magnolia" % ExampleVersions.zioConfig,
+    Orgs.zio                     %% "zio-config-typesafe" % ExampleVersions.zioConfig,
     // runtime to avoid warning in examples
-    Orgs.slf4j                    % "slf4j-simple"                  % ExampleVersions.slf4j % Runtime
+    Orgs.slf4j                    % "slf4j-simple"        % ExampleVersions.slf4j % Runtime
   )
 
   lazy val opentracingExample = example ++ Seq(
-    "io.zipkin.reporter2" % "zipkin-reporter"       % ExampleVersions.zipkin,
-    "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % ExampleVersions.zipkin
+    Orgs.softwaremillSttpClient3 %% "async-http-client-backend-zio" % ExampleVersions.sttp3,
+    "io.zipkin.reporter2"         % "zipkin-reporter"               % ExampleVersions.zipkin,
+    "io.zipkin.reporter2"         % "zipkin-sender-okhttp3"         % ExampleVersions.zipkin
   )
 
   lazy val opentelemetryExample = example ++ Seq(
-    Orgs.opentelemetry % "opentelemetry-exporter-jaeger" % Versions.opentelemetry,
-    Orgs.opentelemetry % "opentelemetry-sdk"             % Versions.opentelemetry,
-    Orgs.grpc          % "grpc-netty-shaded"             % ExampleVersions.grpcNetty
+    Orgs.softwaremillSttpClient3 %% "async-http-client-backend-zio" % ExampleVersions.sttp3,
+    Orgs.opentelemetry            % "opentelemetry-exporter-jaeger" % Versions.opentelemetry,
+    Orgs.opentelemetry            % "opentelemetry-sdk"             % Versions.opentelemetry,
+    Orgs.grpc                     % "grpc-netty-shaded"             % ExampleVersions.grpcNetty
   )
 
-  lazy val opentelemetryInstrumentationExample = example
+  lazy val opentelemetryInstrumentationExample = example ++ Seq(
+    Orgs.softwaremillSttpClient3 %% "zio"                           % ExampleVersions.sttp3,
+    Orgs.opentelemetry            % "opentelemetry-exporter-jaeger" % Versions.opentelemetry,
+    Orgs.opentelemetry            % "opentelemetry-sdk"             % Versions.opentelemetry,
+    Orgs.grpc                     % "grpc-netty-shaded"             % ExampleVersions.grpcNetty
+  )
 
 }
