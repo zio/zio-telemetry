@@ -4,10 +4,10 @@ object Dependencies {
 
   object Versions {
     val opentracing           = "0.33.0"
-    val opentelemetry         = "1.24.0"
+    val opentelemetry         = "1.26.0"
     val opencensus            = "0.31.1"
-    val scalaCollectionCompat = "2.9.0"
-    val zio                   = "2.0.10"
+    val scalaCollectionCompat = "2.10.0"
+    val zio                   = "2.0.13"
   }
 
   object Orgs {
@@ -57,9 +57,10 @@ object Dependencies {
   )
 
   lazy val opencensus = zio ++ Seq(
-    Orgs.opencensus % "opencensus-api"               % Versions.opencensus,
-    Orgs.opencensus % "opencensus-impl"              % Versions.opencensus,
-    Orgs.opencensus % "opencensus-contrib-http-util" % Versions.opencensus
+    Orgs.opencensus        % "opencensus-api"               % Versions.opencensus,
+    Orgs.opencensus        % "opencensus-impl"              % Versions.opencensus,
+    Orgs.opencensus        % "opencensus-contrib-http-util" % Versions.opencensus,
+    Orgs.scalaLangModules %% "scala-collection-compat"      % Versions.scalaCollectionCompat % Test
   )
 
   lazy val example = Seq(

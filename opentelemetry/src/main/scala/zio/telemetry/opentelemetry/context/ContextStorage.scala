@@ -51,10 +51,10 @@ object ContextStorage {
     )
 
   /**
-   * Uses OpenTelemetry's default context storage which is backed by a [[java.lang.ThreadLocal]]. This makes sense only
-   * if `zio.telemetry.opentelemetry.internal.PropagatingSupervisor` is used.
+   * Uses OpenTelemetry's context storage which is backed by a [[java.lang.ThreadLocal]]. This makes sense only if
+   * [[https://github.com/open-telemetry/opentelemetry-java-instrumentation OTEL instrumentation agent]] is used.
    */
-  val threadLocal: ULayer[ContextStorage] =
+  val openTelemetryContext: ULayer[ContextStorage] =
     ZLayer.succeed {
       new ContextStorage {
         override def get(implicit trace: Trace): UIO[Context] = ZIO.succeed(Context.current())

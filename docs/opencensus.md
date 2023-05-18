@@ -10,7 +10,7 @@ and [Zipkin](https://www.zipkin.io).
 
 First, add the following dependency to your build.sbt:
 ```
-"dev.zio" %% "zio-opencensus" % "@VERSION@"
+"dev.zio" %% "zio-opencensus" % "<version>"
 ```
 
 ## Usage
