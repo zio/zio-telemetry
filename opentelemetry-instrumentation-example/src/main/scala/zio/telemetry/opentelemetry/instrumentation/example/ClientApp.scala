@@ -5,11 +5,13 @@ import zio.config.magnolia.descriptor
 import zio.config.typesafe.TypesafeConfig
 import zio.telemetry.opentelemetry.instrumentation.example.config.AppConfig
 import zio._
+import zio.config.ReadError
 import zio.telemetry.opentelemetry.instrumentation.example.http.HttpClient
 
 object ClientApp extends ZIOAppDefault {
 
-  private val configLayer = TypesafeConfig.fromResourcePath(descriptor[AppConfig])
+  private val configLayer: Layer[ReadError[String], AppConfig] =
+    TypesafeConfig.fromResourcePath(descriptor[AppConfig])
 
   private val httpBackendLayer: TaskLayer[Backend] =
     ZLayer.scoped {

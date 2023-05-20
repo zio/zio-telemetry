@@ -66,19 +66,22 @@ import zio._
   ZIO.serviceWithZIO[Baggage] { baggage => 
     val carrier = OutgoingContextCarrier.default()
   
-    for {
+    val upstream = for {
       // add new key/value into the baggage of current tracing context
       _ <- baggage.set("zio", "telemetry")
       // import current baggage data into carrier so it can be used by downstream consumer
       _ <- baggage.inject(BaggagePropagator.default, carrier)
     } yield ()
     
-    for {
+    val downstream = for {
       // extract current baggage data from the carrier
       _    <- baggage.extract(BaggagePropagator.default, IncomingContextCarrier.default(carrier.kernel))  
       // get value from the extracted baggage
       data <- baggage.get("zio")
     } yield data
+    
+    upstream *> downstream
+    
   }.provide(Baggage.live, ContextStorage.fiberRef)
 ```
 
@@ -99,9 +102,15 @@ ZIO.serviceWithZIO[Tracing] { tracing =>
   val propagator = TraceContextPropagator.default
   val kernel     = mutable.Map().empty
   
-  tracing.inject(propagator, OutgoingContextCarrier.default(kernel)) @@ root("span of upstream service") *>
+  val upstream =
+    tracing.inject(propagator, OutgoingContextCarrier.default(kernel)) @@ root("span of upstream service")
+    
+  val downstream =
     extractSpan(propagator, IncomingContextCarrier.default(kernel), "span of downstream service")
-}
+    
+  upstream *> downstream
+  
+}.provide(Tracing.live, ContextStorage.fiberRef, JaegerTracer.live)
 ```
 
 ### Usage with OpenTelemetry automatic instrumentation
@@ -115,7 +124,7 @@ Since [version 1.25.0](https://github.com/open-telemetry/opentelemetry-java-inst
 OpenTelemetry JVM agent supports ZIO.
 
 To enable interoperability between automatic instrumentation and `zio-opentelemetry`, `Tracing` has to be created
-using `ContextStorage` backed by OpenTelemetry's `Context`.
+using `ContextStorage` backed by OpenTelemetry's `Context` and `Tracer` provided by globally registered `TracerProvider`.
 
 ```scala
 import zio.telemetry.opentelemetry.tracing.Tracing
@@ -132,7 +141,7 @@ val app =
     ZIO.logInfo("Hello") @@ root("root span", SpanKind.INTERNAL, errorMapper)
   }.provide(
     Tracing.live,
-    ContextStorage.openTelemetryContext, // <<<
-    JaegerTracer.live
+    ContextStorage.openTelemetryContext, // <<< ContextStorage
+    ZLayer.fromZIO(ZIO.attempt(GlobalOpenTelemetry.getTracer("hello"))) // <<< Tracer
   )
 ```

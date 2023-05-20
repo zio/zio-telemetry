@@ -1,7 +1,9 @@
 package zio.telemetry.opentelemetry.instrumentation.example
 
 import io.opentelemetry.api.GlobalOpenTelemetry
+import io.opentelemetry.api.trace.Tracer
 import zio._
+import zio.config.ReadError
 import zio.config.typesafe.TypesafeConfig
 import zio.config.magnolia._
 import zio.telemetry.opentelemetry.context.ContextStorage
@@ -11,10 +13,13 @@ import zio.telemetry.opentelemetry.tracing.Tracing
 
 object ServerApp extends ZIOAppDefault {
 
-  private val configLayer = TypesafeConfig.fromResourcePath(descriptor[AppConfig])
+  private val configLayer: Layer[ReadError[String], AppConfig] =
+    TypesafeConfig.fromResourcePath(descriptor[AppConfig])
 
-  private val globalTracerLayer =
-    ZLayer.succeed(GlobalOpenTelemetry.getTracer("zio.telemetry.opentelemetry.instrumentation.example.ServerApp"))
+  private val globalTracerLayer: TaskLayer[Tracer] =
+    ZLayer.fromZIO(
+      ZIO.attempt(GlobalOpenTelemetry.getTracer("zio.telemetry.opentelemetry.instrumentation.example.ServerApp"))
+    )
 
   override def run: Task[ExitCode] =
     ZIO

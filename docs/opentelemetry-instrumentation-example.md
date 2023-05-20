@@ -3,6 +3,8 @@ id: opentelemetry-instrumentation-example
 title: "OpenTelemetry Automatic Instrumentation Example"
 ---
 
+You can find the source code [here](https://github.com/zio/zio-telemetry/tree/series/2.x/opentelemetry-instrumentation-example).
+
 Firstly, download OpenTelemetry JVM agent JAR:
 ```bash
 OTEL_AGENT_PATH=$(cs fetch --classpath "io.opentelemetry.javaagent:opentelemetry-javaagent:latest.release")

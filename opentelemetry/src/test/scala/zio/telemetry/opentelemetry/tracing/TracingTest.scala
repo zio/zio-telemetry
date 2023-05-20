@@ -11,7 +11,6 @@ import zio._
 import zio.telemetry.opentelemetry.context.{ ContextStorage, IncomingContextCarrier, OutgoingContextCarrier }
 import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 import zio.test.Assertion._
-import zio.test.TestAspect
 import zio.test.{ assert, TestClock, ZIOSpecDefault }
 
 import scala.collection.mutable
@@ -335,6 +334,6 @@ object TracingTest extends ZIOSpecDefault {
           } yield assert(released)(isFalse)
         }
       }
-    ).provideLayer(tracingMockLayer) @@ TestAspect.sequential
+    ).provideLayer(tracingMockLayer)
 
 }

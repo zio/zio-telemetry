@@ -92,10 +92,7 @@ object Dependencies {
   )
 
   lazy val opentelemetryInstrumentationExample = example ++ Seq(
-    Orgs.softwaremillSttpClient3 %% "zio"                           % ExampleVersions.sttp3,
-    Orgs.opentelemetry            % "opentelemetry-exporter-jaeger" % Versions.opentelemetry,
-    Orgs.opentelemetry            % "opentelemetry-sdk"             % Versions.opentelemetry,
-    Orgs.grpc                     % "grpc-netty-shaded"             % ExampleVersions.grpcNetty
+    Orgs.softwaremillSttpClient3 %% "zio" % ExampleVersions.sttp3
   )
 
 }
