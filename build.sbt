@@ -38,7 +38,10 @@ addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "ciCheck;docsCheck")
 addCommandAlias("ciCheck", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
 addCommandAlias("docsCheck", "docs/checkReadme;docs/checkGithubWorkflow")
-addCommandAlias("compileExamples", "opentracingExample/compile;opentelemetryExample/compile")
+addCommandAlias(
+  "compileExamples",
+  "opentracingExample/compile;opentelemetryExample/compile;opentelemetryInstrumentationExample/compile"
+)
 
 lazy val root =
   project
@@ -79,6 +82,15 @@ lazy val opentelemetryExample =
     .settings(publish / skip := true)
     .settings(onlyWithScala2)
     .settings(libraryDependencies := Dependencies.opentelemetryExample)
+    .dependsOn(opentelemetry)
+
+lazy val opentelemetryInstrumentationExample =
+  project
+    .in(file("opentelemetry-instrumentation-example"))
+    .settings(stdSettings("opentelemetry-instrumentation-example"))
+    .settings(publish / skip := true)
+    .settings(onlyWithScala2)
+    .settings(libraryDependencies := Dependencies.opentelemetryInstrumentationExample)
     .dependsOn(opentelemetry)
 
 lazy val docs =

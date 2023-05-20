@@ -57,9 +57,11 @@ object ContextStorage {
   val openTelemetryContext: ULayer[ContextStorage] =
     ZLayer.succeed {
       new ContextStorage {
-        override def get(implicit trace: Trace): UIO[Context] = ZIO.succeed(Context.current())
+        override def get(implicit trace: Trace): UIO[Context] =
+          ZIO.succeed(Context.current())
 
-        override def set(context: Context)(implicit trace: Trace): UIO[Unit] = ZIO.succeed(context.makeCurrent()).unit
+        override def set(context: Context)(implicit trace: Trace): UIO[Unit] =
+          ZIO.succeed(context.makeCurrent()).unit
 
         override def getAndSet(context: Context)(implicit trace: Trace): UIO[Context] =
           ZIO.succeed {

@@ -223,16 +223,19 @@ object TracingTest extends ZIOSpecDefault {
 
           val carrier: mutable.Map[String, String] = mutable.Map().empty
 
+          val roundtrip =
+            (for {
+              _ <-
+                tracing.inject(TraceContextPropagator.default, OutgoingContextCarrier.default(carrier)) @@
+                  span("foo")
+              _ <-
+                ZIO.unit @@
+                  extractSpan(TraceContextPropagator.default, IncomingContextCarrier.default(carrier), "baz") @@
+                  span("bar")
+            } yield ()) @@ span("ROOT")
+
           for {
-            _     <-
-              (for {
-                _ <-
-                  tracing.inject(TraceContextPropagator.default, OutgoingContextCarrier.default(carrier)) @@ span("foo")
-                _ <-
-                  ZIO.unit @@
-                    extractSpan(TraceContextPropagator.default, IncomingContextCarrier.default(carrier), "baz") @@
-                    span("bar")
-              } yield ()) @@ span("ROOT")
+            _     <- roundtrip
             spans <- getFinishedSpans
             root   = spans.find(_.getName == "ROOT")
             foo    = spans.find(_.getName == "foo")

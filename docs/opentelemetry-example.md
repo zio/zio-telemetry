@@ -3,7 +3,7 @@ id: opentelemetry-example
 title: "OpenTelemetry Example"
 ---
 
-You can find the source code [here](https://github.com/zio/zio-telemetry/tree/series/2.x/opentracing-example).
+You can find the source code [here](https://github.com/zio/zio-telemetry/tree/series/2.x/opentelemetry-example).
 
 For an explanation in more detail, check the [OpenTracing Example](opentracing-example.md).
 
