@@ -30,7 +30,7 @@ object TracingTest extends ZIOSpecDefault {
   val inMemoryTracerLayer: ULayer[InMemorySpanExporter with Tracer with ContextStorage] =
     ZLayer.fromZIOEnvironment(inMemoryTracer.map { case (inMemorySpanExporter, tracer) =>
       ZEnvironment(inMemorySpanExporter).add(tracer)
-    }) ++ ContextStorage.openTelemetryContext
+    }) ++ ContextStorage.fiberRef
 
   val tracingMockLayer: ULayer[Tracing with InMemorySpanExporter with Tracer] =
     inMemoryTracerLayer >>> (Tracing.live ++ inMemoryTracerLayer)

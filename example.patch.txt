@@ -1,0 +1,159 @@
+diff --git a/opentelemetry-instrumentation-example/src/main/resources/application.conf b/opentelemetry-instrumentation-example/src/main/resources/application.conf
+index fff39f3..71b5484 100644
+--- a/opentelemetry-instrumentation-example/src/main/resources/application.conf
++++ b/opentelemetry-instrumentation-example/src/main/resources/application.conf
+@@ -2,7 +2,3 @@ server {
+   host = "0.0.0.0"
+   port = 9000
+ }
+-
+-tracer {
+-  host = "http://localhost:14250"
+-}
+\ No newline at end of file
+diff --git a/opentelemetry-instrumentation-example/src/main/scala/zio/telemetry/opentelemetry/instrumentation/example/JaegerTracer.scala b/opentelemetry-instrumentation-example/src/main/scala/zio/telemetry/opentelemetry/instrumentation/example/JaegerTracer.scala
+deleted file mode 100644
+index 6e112b2..0000000
+--- a/opentelemetry-instrumentation-example/src/main/scala/zio/telemetry/opentelemetry/instrumentation/example/JaegerTracer.scala
++++ /dev/null
+@@ -1,42 +0,0 @@
+-package zio.telemetry.opentelemetry.instrumentation.example
+-
+-import io.opentelemetry.api.common.Attributes
+-import io.opentelemetry.api.trace.Tracer
+-import io.opentelemetry.exporter.jaeger.JaegerGrpcSpanExporter
+-import io.opentelemetry.sdk.OpenTelemetrySdk
+-import io.opentelemetry.sdk.resources.Resource
+-import io.opentelemetry.sdk.trace.SdkTracerProvider
+-import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor
+-import io.opentelemetry.semconv.resource.attributes.ResourceAttributes
+-import zio._
+-import zio.telemetry.opentelemetry.instrumentation.example.config.AppConfig
+-
+-object JaegerTracer {
+-
+-  def live: RLayer[AppConfig, Tracer] =
+-    ZLayer {
+-      for {
+-        config <- ZIO.service[AppConfig]
+-        tracer <- makeTracer(config.tracer.host)
+-      } yield tracer
+-    }
+-
+-  def makeTracer(host: String): Task[Tracer] =
+-    for {
+-      spanExporter   <- ZIO.attempt(JaegerGrpcSpanExporter.builder().setEndpoint(host).build())
+-      spanProcessor  <- ZIO.succeed(SimpleSpanProcessor.create(spanExporter))
+-      tracerProvider <-
+-        ZIO.attempt(
+-          SdkTracerProvider
+-            .builder()
+-            .setResource(
+-              Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, "opentelemetry-instrumentation-example"))
+-            )
+-            .addSpanProcessor(spanProcessor)
+-            .build()
+-        )
+-      openTelemetry  <- ZIO.succeed(OpenTelemetrySdk.builder().setTracerProvider(tracerProvider).build())
+-      tracer         <- ZIO.succeed(openTelemetry.getTracer("zio.telemetry.opentelemetry.example.instrumentation.JaegerTracer"))
+-    } yield tracer
+-
+-}
+diff --git a/opentelemetry-instrumentation-example/src/main/scala/zio/telemetry/opentelemetry/instrumentation/example/ServerApp.scala b/opentelemetry-instrumentation-example/src/main/scala/zio/telemetry/opentelemetry/instrumentation/example/ServerApp.scala
+index 30290f8..f5a383e 100644
+--- a/opentelemetry-instrumentation-example/src/main/scala/zio/telemetry/opentelemetry/instrumentation/example/ServerApp.scala
++++ b/opentelemetry-instrumentation-example/src/main/scala/zio/telemetry/opentelemetry/instrumentation/example/ServerApp.scala
+@@ -1,8 +1,9 @@
+ package zio.telemetry.opentelemetry.instrumentation.example
+ 
++import io.opentelemetry.api.GlobalOpenTelemetry
+ import zio._
+-import zio.config.typesafe.TypesafeConfig
+ import zio.config.magnolia._
++import zio.config.typesafe.TypesafeConfig
+ import zio.telemetry.opentelemetry.context.ContextStorage
+ import zio.telemetry.opentelemetry.instrumentation.example.config.AppConfig
+ import zio.telemetry.opentelemetry.instrumentation.example.http.{ HttpServer, HttpServerApp }
+@@ -20,7 +21,7 @@ object ServerApp extends ZIOAppDefault {
+         HttpServer.live,
+         HttpServerApp.live,
+         Tracing.live,
+-        JaegerTracer.live,
++        ZLayer.fromZIO(ZIO.attempt(GlobalOpenTelemetry.getTracer("opentelemetry-instrumentation-example"))),
+         ContextStorage.openTelemetryContext
+       )
+ 
+diff --git a/opentelemetry-instrumentation-example/src/main/scala/zio/telemetry/opentelemetry/instrumentation/example/config/AppConfig.scala b/opentelemetry-instrumentation-example/src/main/scala/zio/telemetry/opentelemetry/instrumentation/example/config/AppConfig.scala
+index 667698b..be83be5 100644
+--- a/opentelemetry-instrumentation-example/src/main/scala/zio/telemetry/opentelemetry/instrumentation/example/config/AppConfig.scala
++++ b/opentelemetry-instrumentation-example/src/main/scala/zio/telemetry/opentelemetry/instrumentation/example/config/AppConfig.scala
+@@ -1,3 +1,3 @@
+ package zio.telemetry.opentelemetry.instrumentation.example.config
+ 
+-case class AppConfig(server: ServerConfig, tracer: TracerConfig)
++case class AppConfig(server: ServerConfig)
+diff --git a/opentelemetry-instrumentation-example/src/main/scala/zio/telemetry/opentelemetry/instrumentation/example/config/TracerConfig.scala b/opentelemetry-instrumentation-example/src/main/scala/zio/telemetry/opentelemetry/instrumentation/example/config/TracerConfig.scala
+deleted file mode 100644
+index fd5d762..0000000
+--- a/opentelemetry-instrumentation-example/src/main/scala/zio/telemetry/opentelemetry/instrumentation/example/config/TracerConfig.scala
++++ /dev/null
+@@ -1,3 +0,0 @@
+-package zio.telemetry.opentelemetry.instrumentation.example.config
+-
+-final case class TracerConfig(host: String)
+diff --git a/opentelemetry-instrumentation-example/src/main/scala/zio/telemetry/opentelemetry/instrumentation/example/http/HttpServerApp.scala b/opentelemetry-instrumentation-example/src/main/scala/zio/telemetry/opentelemetry/instrumentation/example/http/HttpServerApp.scala
+index ff8be88..6dcc5ba 100644
+--- a/opentelemetry-instrumentation-example/src/main/scala/zio/telemetry/opentelemetry/instrumentation/example/http/HttpServerApp.scala
++++ b/opentelemetry-instrumentation-example/src/main/scala/zio/telemetry/opentelemetry/instrumentation/example/http/HttpServerApp.scala
+@@ -1,33 +1,14 @@
+ package zio.telemetry.opentelemetry.instrumentation.example.http
+ 
+-import io.opentelemetry.api.trace.SpanKind
+ import zhttp.http._
+ import zio._
+-import zio.telemetry.opentelemetry.context.IncomingContextCarrier
+ import zio.telemetry.opentelemetry.tracing.Tracing
+-import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
+ 
+ case class HttpServerApp(tracing: Tracing) {
+ 
+-  import tracing.aspects._
+-
+-  def headersCarrier(initial: Headers): IncomingContextCarrier[Headers] =
+-    new IncomingContextCarrier[Headers] {
+-      override val kernel: Headers = initial
+-
+-      override def getAllKeys(carrier: Headers): Iterable[String] =
+-        carrier.headers.headersAsList.map(_._1)
+-
+-      override def getByKey(carrier: Headers, key: String): Option[String] =
+-        carrier.headers.headerValue(key)
+-
+-    }
+-
+   val routes: HttpApp[Any, Throwable] =
+-    Http.collectZIO { case request @ Method.GET -> _ / "health" =>
+-      val carrier = headersCarrier(request.headers)
+-
+-      health @@ extractSpan(TraceContextPropagator.default, carrier, "/health", SpanKind.INTERNAL)
++    Http.collectZIO { case Method.GET -> _ / "health" =>
++      health
+     }
+ 
+   def health: UIO[Response] =
+diff --git a/project/Dependencies.scala b/project/Dependencies.scala
+index 1f99c8a..8bc4910 100644
+--- a/project/Dependencies.scala
++++ b/project/Dependencies.scala
+@@ -92,10 +92,7 @@ object Dependencies {
+   )
+ 
+   lazy val opentelemetryInstrumentationExample = example ++ Seq(
+-    Orgs.softwaremillSttpClient3 %% "zio"                           % ExampleVersions.sttp3,
+-    Orgs.opentelemetry            % "opentelemetry-exporter-jaeger" % Versions.opentelemetry,
+-    Orgs.opentelemetry            % "opentelemetry-sdk"             % Versions.opentelemetry,
+-    Orgs.grpc                     % "grpc-netty-shaded"             % ExampleVersions.grpcNetty
++    Orgs.softwaremillSttpClient3 %% "zio" % ExampleVersions.sttp3
+   )
+ 
+ }

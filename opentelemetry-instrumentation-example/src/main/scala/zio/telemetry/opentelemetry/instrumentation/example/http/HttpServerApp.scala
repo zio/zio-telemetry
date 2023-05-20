@@ -27,13 +27,13 @@ case class HttpServerApp(tracing: Tracing) {
     Http.collectZIO { case request @ Method.GET -> _ / "health" =>
       val carrier = headersCarrier(request.headers)
 
-      health @@ extractSpan(TraceContextPropagator.default, carrier, "/health", SpanKind.INTERNAL)
+      health @@ extractSpan(TraceContextPropagator.default, carrier, "health-logic-span", SpanKind.INTERNAL)
     }
 
   def health: UIO[Response] =
     for {
       _        <- tracing.addEvent("executing health logic")
-      _        <- tracing.setAttribute("server-span", "internal")
+      _        <- tracing.setAttribute("zio", "telemetry")
       response <- ZIO.succeed(Response.ok)
     } yield response
 
