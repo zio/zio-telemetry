@@ -47,8 +47,9 @@ libraryDependencies += "dev.zio" %% "zio-opencensus" % "<version>"
 ## Examples
 
 You can find examples with full source code and instructions of how to run by following the links:
-- [OpenTelemetry Example](docs/https://github.com/zio/zio-telemetry/blob/series/2.x/docs/opentelemetry-example.md)
-- [OpenTracing Example](docs/https://github.com/zio/zio-telemetry/blob/series/2.x/docs/opentracing-example.md)
+- [OpenTelemetry Example](docs/opentelemetry-example.md)
+- [OpenTelemetry Instrumentation Example](docs/opentelemetry-instrumentation-example.md)
+- [OpenTracing Example](docs/opentracing-example.md)
 
 ## Articles
 

@@ -11,6 +11,7 @@ const sidebars = {
         "opencensus",
         "opentelemetry",
         "opentelemetry-example",
+        "opentelemetry-instrumentation-example"
       ]
     }
   ]
