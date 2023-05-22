@@ -1,11 +1,13 @@
-import BuildHelper._
+enablePlugins(ZioSbtEcosystemPlugin, ZioSbtCiPlugin)
 
 inThisBuild(
   List(
-    organization      := "dev.zio",
-    homepage          := Some(url("https://zio.dev/zio-telemetry/")),
-    licenses          := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-    developers        := List(
+    name               := "ZIO Telemetry",
+    organization       := "dev.zio",
+    zioVersion         := "2.0.13",
+    homepage           := Some(url("https://zio.dev/zio-telemetry/")),
+    licenses           := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+    developers         := List(
       Developer(
         "mijicd",
         "Dejan Mijic",
@@ -19,11 +21,12 @@ inThisBuild(
         url("https://github.com/runtologist")
       )
     ),
-    ciEnabledBranches := Seq("series/2.x"),
-    pgpPassphrase     := sys.env.get("PGP_PASSWORD").map(_.toArray),
-    pgpPublicRing     := file("/tmp/public.asc"),
-    pgpSecretRing     := file("/tmp/secret.asc"),
-    scmInfo           := Some(
+    crossScalaVersions := Seq(scala212.value, scala213.value, scala3.value),
+    ciEnabledBranches  := Seq("series/2.x"),
+    pgpPassphrase      := sys.env.get("PGP_PASSWORD").map(_.toArray),
+    pgpPublicRing      := file("/tmp/public.asc"),
+    pgpSecretRing      := file("/tmp/secret.asc"),
+    scmInfo            := Some(
       ScmInfo(
         url("https://github.com/zio/zio-telemetry/"),
         "scm:git:git@github.com:zio/zio-telemetry.git"
@@ -53,45 +56,81 @@ lazy val root =
 lazy val opentracing =
   project
     .in(file("opentracing"))
-    .settings(stdSettings0("zio-opentracing"))
-    .settings(libraryDependencies := Dependencies.opentracing)
+    .settings(enableZIO())
+    .settings(
+      stdSettings(
+        name = Some("zio-opentracing"),
+        packageName = Some("zio.telemetry.opentracing")
+      )
+    )
+    .settings(libraryDependencies ++= Dependencies.opentracing)
 
 lazy val opentelemetry =
   project
     .in(file("opentelemetry"))
-    .settings(stdSettings0("zio-opentelemetry"))
-    .settings(libraryDependencies := Dependencies.opentelemetry)
+    .settings(enableZIO())
+    .settings(
+      stdSettings(
+        name = Some("zio-opentelemetry"),
+        packageName = Some("zio.telemetry.opentelemetry")
+      )
+    )
+    .settings(libraryDependencies ++= Dependencies.opentelemetry)
 
 lazy val opencensus = project
   .in(file("opencensus"))
-  .settings(stdSettings0("zio-opencensus"))
-  .settings(libraryDependencies := Dependencies.opencensus)
+  .settings(enableZIO())
+  .settings(
+    stdSettings(
+      name = Some("zio-opencensus"),
+      packageName = Some("zio.telemetry.opencensus")
+    )
+  )
+  .settings(libraryDependencies ++= Dependencies.opencensus)
 
 lazy val opentracingExample =
   project
     .in(file("opentracing-example"))
-    .settings(stdSettings0("opentracing-example"))
+    .settings(enableZIO())
+    .settings(
+      crossScalaVersions := Seq(scala212.value, scala213.value),
+      stdSettings(
+        name = Some("opentracing-example"),
+        packageName = Some("zio.telemetry.opentracing.example")
+      )
+    )
     .settings(publish / skip := true)
-    .settings(onlyWithScala2)
-    .settings(libraryDependencies := Dependencies.opentracingExample)
+    .settings(libraryDependencies ++= Dependencies.opentracingExample)
     .dependsOn(opentracing)
 
 lazy val opentelemetryExample =
   project
     .in(file("opentelemetry-example"))
-    .settings(stdSettings0("opentelemetry-example"))
+    .settings(enableZIO())
+    .settings(
+      crossScalaVersions := Seq(scala212.value, scala213.value),
+      stdSettings(
+        name = Some("opentelemetry-example"),
+        packageName = Some("zio.telemetry.opentelemetry.example")
+      )
+    )
     .settings(publish / skip := true)
-    .settings(onlyWithScala2)
-    .settings(libraryDependencies := Dependencies.opentelemetryExample)
+    .settings(libraryDependencies ++= Dependencies.opentelemetryExample)
     .dependsOn(opentelemetry)
 
 lazy val opentelemetryInstrumentationExample =
   project
     .in(file("opentelemetry-instrumentation-example"))
-    .settings(stdSettings0("opentelemetry-instrumentation-example"))
+    .settings(enableZIO())
+    .settings(
+      crossScalaVersions := Seq(scala212.value, scala213.value),
+      stdSettings(
+        name = Some("opentelemetry-instrumentation-example"),
+        packageName = Some("zio.telemetry.opentelemetry.instrumentation.example")
+      )
+    )
     .settings(publish / skip := true)
-    .settings(onlyWithScala2)
-    .settings(libraryDependencies := Dependencies.opentelemetryInstrumentationExample)
+    .settings(libraryDependencies ++= Dependencies.opentelemetryInstrumentationExample)
     .dependsOn(opentelemetry)
 
 lazy val docs =

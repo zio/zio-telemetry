@@ -37,9 +37,7 @@ object Dependencies {
   }
 
   lazy val zio = Seq(
-    Orgs.zio %% "zio"          % Versions.zio,
-    Orgs.zio %% "zio-test"     % Versions.zio % Test,
-    Orgs.zio %% "zio-test-sbt" % Versions.zio % Test
+    Orgs.zio %% "zio" % Versions.zio
   )
 
   lazy val opentracing = zio ++ Seq(
@@ -63,7 +61,7 @@ object Dependencies {
     Orgs.scalaLangModules %% "scala-collection-compat"      % Versions.scalaCollectionCompat % Test
   )
 
-  lazy val example = Seq(
+  lazy val example = zio ++ Seq(
     Orgs.typelevel               %% "cats-core"           % ExampleVersions.cats,
     Orgs.jaegertracing            % "jaeger-core"         % ExampleVersions.jaeger,
     Orgs.jaegertracing            % "jaeger-client"       % ExampleVersions.jaeger,

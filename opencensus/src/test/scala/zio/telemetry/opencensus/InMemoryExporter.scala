@@ -23,7 +23,7 @@ object InMemoryExporter {
   class InMemoryExporter(finishedSpans: Ref[List[SpanData]]) extends Handler {
     override def `export`(spanDataList: util.Collection[SpanData]): Unit =
       Unsafe.unsafe { implicit unsafe =>
-        runtime.unsafe.run(finishedSpans.update(x => x ++ spanDataList.asScala.toList))
+        runtime.unsafe.run(finishedSpans.update(x => x ++ spanDataList.asScala.toList)): Unit
         ()
       }
   }
