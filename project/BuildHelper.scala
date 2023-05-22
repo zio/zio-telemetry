@@ -3,7 +3,7 @@ import sbt.Keys._
 
 object BuildHelper {
 
-  def stdSettings(prjName: String) = Seq(
+  def stdSettings0(prjName: String) = Seq(
     name                     := s"$prjName",
     crossScalaVersions       := Seq(Scala212, Scala213, Scala3),
     ThisBuild / scalaVersion := Scala212,

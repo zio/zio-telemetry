@@ -2,10 +2,10 @@ import BuildHelper._
 
 inThisBuild(
   List(
-    organization  := "dev.zio",
-    homepage      := Some(url("https://zio.dev/zio-telemetry/")),
-    licenses      := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-    developers    := List(
+    organization      := "dev.zio",
+    homepage          := Some(url("https://zio.dev/zio-telemetry/")),
+    licenses          := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+    developers        := List(
       Developer(
         "mijicd",
         "Dejan Mijic",
@@ -19,10 +19,11 @@ inThisBuild(
         url("https://github.com/runtologist")
       )
     ),
-    pgpPassphrase := sys.env.get("PGP_PASSWORD").map(_.toArray),
-    pgpPublicRing := file("/tmp/public.asc"),
-    pgpSecretRing := file("/tmp/secret.asc"),
-    scmInfo       := Some(
+    ciEnabledBranches := Seq("series/2.x"),
+    pgpPassphrase     := sys.env.get("PGP_PASSWORD").map(_.toArray),
+    pgpPublicRing     := file("/tmp/public.asc"),
+    pgpSecretRing     := file("/tmp/secret.asc"),
+    scmInfo           := Some(
       ScmInfo(
         url("https://github.com/zio/zio-telemetry/"),
         "scm:git:git@github.com:zio/zio-telemetry.git"
@@ -52,24 +53,24 @@ lazy val root =
 lazy val opentracing =
   project
     .in(file("opentracing"))
-    .settings(stdSettings("zio-opentracing"))
+    .settings(stdSettings0("zio-opentracing"))
     .settings(libraryDependencies := Dependencies.opentracing)
 
 lazy val opentelemetry =
   project
     .in(file("opentelemetry"))
-    .settings(stdSettings("zio-opentelemetry"))
+    .settings(stdSettings0("zio-opentelemetry"))
     .settings(libraryDependencies := Dependencies.opentelemetry)
 
 lazy val opencensus = project
   .in(file("opencensus"))
-  .settings(stdSettings("zio-opencensus"))
+  .settings(stdSettings0("zio-opencensus"))
   .settings(libraryDependencies := Dependencies.opencensus)
 
 lazy val opentracingExample =
   project
     .in(file("opentracing-example"))
-    .settings(stdSettings("opentracing-example"))
+    .settings(stdSettings0("opentracing-example"))
     .settings(publish / skip := true)
     .settings(onlyWithScala2)
     .settings(libraryDependencies := Dependencies.opentracingExample)
@@ -78,7 +79,7 @@ lazy val opentracingExample =
 lazy val opentelemetryExample =
   project
     .in(file("opentelemetry-example"))
-    .settings(stdSettings("opentelemetry-example"))
+    .settings(stdSettings0("opentelemetry-example"))
     .settings(publish / skip := true)
     .settings(onlyWithScala2)
     .settings(libraryDependencies := Dependencies.opentelemetryExample)
@@ -87,7 +88,7 @@ lazy val opentelemetryExample =
 lazy val opentelemetryInstrumentationExample =
   project
     .in(file("opentelemetry-instrumentation-example"))
-    .settings(stdSettings("opentelemetry-instrumentation-example"))
+    .settings(stdSettings0("opentelemetry-instrumentation-example"))
     .settings(publish / skip := true)
     .settings(onlyWithScala2)
     .settings(libraryDependencies := Dependencies.opentelemetryInstrumentationExample)
@@ -103,8 +104,7 @@ lazy val docs =
       projectName                                := "ZIO Telemetry",
       mainModuleName                             := (opentracing / moduleName).value,
       projectStage                               := ProjectStage.ProductionReady,
-      ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(opentracing, opentelemetry, opencensus),
-      docsPublishBranch                          := "series/2.x"
+      ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(opentracing, opentelemetry, opencensus)
     )
     .dependsOn(opentracing, opentelemetry, opencensus)
     .enablePlugins(WebsitePlugin)
