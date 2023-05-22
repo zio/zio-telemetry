@@ -36,16 +36,19 @@ inThisBuild(
 )
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
-Global / testFrameworks       := Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
 
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "ciCheck;docsCheck")
 addCommandAlias("ciCheck", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
-addCommandAlias("docsCheck", "docs/checkReadme;docs/checkGithubWorkflow")
+addCommandAlias("docsCheck", "docs/checkReadme;docs/ciCheckGithubWorkflow")
 addCommandAlias(
   "compileExamples",
   "opentracingExample/compile;opentelemetryExample/compile;opentelemetryInstrumentationExample/compile"
 )
+
+// Fix 'Flag set repeatedly' error allegedly introduced by the usage of sdtSettings
+lazy val tempFixScalacOptions =
+  Seq("-deprecation", "-encoding", "utf8", "-feature", "-unchecked", "-language:implicitConversions")
 
 lazy val root =
   project
@@ -61,7 +64,8 @@ lazy val opentracing =
       stdSettings(
         name = Some("zio-opentracing"),
         packageName = Some("zio.telemetry.opentracing")
-      )
+      ),
+      scalacOptions --= tempFixScalacOptions
     )
     .settings(libraryDependencies ++= Dependencies.opentracing)
 
@@ -73,7 +77,8 @@ lazy val opentelemetry =
       stdSettings(
         name = Some("zio-opentelemetry"),
         packageName = Some("zio.telemetry.opentelemetry")
-      )
+      ),
+      scalacOptions --= tempFixScalacOptions
     )
     .settings(libraryDependencies ++= Dependencies.opentelemetry)
 
@@ -84,7 +89,8 @@ lazy val opencensus = project
     stdSettings(
       name = Some("zio-opencensus"),
       packageName = Some("zio.telemetry.opencensus")
-    )
+    ),
+    scalacOptions --= tempFixScalacOptions
   )
   .settings(libraryDependencies ++= Dependencies.opencensus)
 

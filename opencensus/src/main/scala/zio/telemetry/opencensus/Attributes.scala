@@ -5,6 +5,8 @@ import io.opencensus.trace.AttributeValue
 object Attributes {
 
   trait implicits {
+    import scala.language.implicitConversions
+
     implicit def boolToAttribute(b: Boolean): AttributeValue =
       AttributeValue.booleanAttributeValue(b)
 
