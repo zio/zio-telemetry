@@ -1,7 +1,7 @@
 package zio.telemetry.opentelemetry.example.http
 
 import zio._
-import zio.http._
+import zio.http.{ Header, Headers, Request, URL }
 import zio.json._
 import zio.telemetry.opentelemetry.example.Backend
 import zio.telemetry.opentelemetry.example.config.AppConfig
