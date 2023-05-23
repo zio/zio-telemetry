@@ -1,18 +1,16 @@
 package zio.telemetry.opentracing.example.http
 
-import sttp.client3._
-import sttp.client3.ziojson._
-import sttp.model.Uri
 import zio._
+import zio.http._
+import zio.json.JsonDecoder
 import zio.telemetry.opentracing.example.Backend
 import zio.telemetry.opentracing.example.config.AppConfig
 
 case class Client(backend: Backend, config: AppConfig) {
 
   private val backendUrl =
-    Uri
-      .safeApply(config.backend.host, config.backend.port)
-      .map(_.withPath("status"))
+    URL
+      .decode(s"http://${config.backend.host}/${config.backend.port}")
       .left
       .map(new IllegalArgumentException(_))
 
@@ -21,14 +19,13 @@ case class Client(backend: Backend, config: AppConfig) {
   ): Task[Statuses] =
     for {
       url      <- ZIO.fromEither(backendUrl)
-      response <- backend
-                    .send(
-                      basicRequest
-                        .get(url.withPath("status"))
-                        .headers(headers)
-                        .response(asJson[Status])
-                    )
-      status    = response.body.getOrElse(Status.down("backend"))
+      request   = Request
+                    .get(url)
+                    .copy(headers = Headers(headers.map(x => Header.Custom(x._1, x._2))))
+      response <- backend.request(request)
+      status   <- JsonDecoder[Status]
+                    .decodeJsonStream(response.body.asStream.map(_.toChar))
+                    .catchAll(_ => ZIO.succeed(Status.down("backend")))
     } yield Statuses(List(status, Status.up("proxy")))
 
 }

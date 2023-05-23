@@ -31,9 +31,10 @@ object Dependencies {
     val slf4j     = "1.7.36"
     val sttp3     = "3.7.0"
     val zipkin    = "2.16.3"
-    val zioHttp   = "2.0.0-RC10"
+    val zHttp     = "2.0.0-RC10"
     val zioJson   = "0.3.0-RC10"
     val zioConfig = "3.0.1"
+    val zioHttp   = "3.0.0-RC1"
   }
 
   lazy val zio = Seq(
@@ -69,7 +70,7 @@ object Dependencies {
     Orgs.jaegertracing            % "jaeger-client"       % ExampleVersions.jaeger,
     Orgs.jaegertracing            % "jaeger-zipkin"       % ExampleVersions.jaeger,
     Orgs.softwaremillSttpClient3 %% "zio-json"            % ExampleVersions.sttp3,
-    Orgs.d11                     %% "zhttp"               % ExampleVersions.zioHttp,
+    Orgs.d11                     %% "zhttp"               % ExampleVersions.zHttp,
     Orgs.zio                     %% "zio-json"            % ExampleVersions.zioJson,
     Orgs.zio                     %% "zio-config"          % ExampleVersions.zioConfig,
     Orgs.zio                     %% "zio-config-magnolia" % ExampleVersions.zioConfig,
@@ -79,16 +80,16 @@ object Dependencies {
   )
 
   lazy val opentracingExample = example ++ Seq(
-    Orgs.softwaremillSttpClient3 %% "async-http-client-backend-zio" % ExampleVersions.sttp3,
-    "io.zipkin.reporter2"         % "zipkin-reporter"               % ExampleVersions.zipkin,
-    "io.zipkin.reporter2"         % "zipkin-sender-okhttp3"         % ExampleVersions.zipkin
+    "io.zipkin.reporter2" % "zipkin-reporter"       % ExampleVersions.zipkin,
+    "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % ExampleVersions.zipkin,
+    Orgs.zio             %% "zio-http"              % ExampleVersions.zioHttp
   )
 
   lazy val opentelemetryExample = example ++ Seq(
-    Orgs.softwaremillSttpClient3 %% "async-http-client-backend-zio" % ExampleVersions.sttp3,
-    Orgs.opentelemetry            % "opentelemetry-exporter-jaeger" % Versions.opentelemetry,
-    Orgs.opentelemetry            % "opentelemetry-sdk"             % Versions.opentelemetry,
-    Orgs.grpc                     % "grpc-netty-shaded"             % ExampleVersions.grpcNetty
+    Orgs.opentelemetry % "opentelemetry-exporter-jaeger" % Versions.opentelemetry,
+    Orgs.opentelemetry % "opentelemetry-sdk"             % Versions.opentelemetry,
+    Orgs.grpc          % "grpc-netty-shaded"             % ExampleVersions.grpcNetty,
+    Orgs.zio          %% "zio-http"                      % ExampleVersions.zioHttp
   )
 
   lazy val opentelemetryInstrumentationExample = example ++ Seq(
