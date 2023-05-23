@@ -28,7 +28,7 @@ jobs:
     - name: Install libuv
       run: sudo apt-get update && sudo apt-get install -y libuv1-dev
     - name: Setup Scala
-      uses: actions/setup-java@v3.10.0
+      uses: actions/setup-java@v3.11.0
       with:
         distribution: temurin
         java-version: '8'
@@ -53,7 +53,7 @@ jobs:
     - name: Install libuv
       run: sudo apt-get update && sudo apt-get install -y libuv1-dev
     - name: Setup Scala
-      uses: actions/setup-java@v3.10.0
+      uses: actions/setup-java@v3.11.0
       with:
         distribution: temurin
         java-version: '8'
@@ -79,7 +79,7 @@ jobs:
     - name: Install libuv
       run: sudo apt-get update && sudo apt-get install -y libuv1-dev
     - name: Setup Scala
-      uses: actions/setup-java@v3.10.0
+      uses: actions/setup-java@v3.11.0
       with:
         distribution: temurin
         java-version: ${{ matrix.java }}
@@ -105,7 +105,7 @@ jobs:
     - name: Install libuv
       run: sudo apt-get update && sudo apt-get install -y libuv1-dev
     - name: Setup Scala
-      uses: actions/setup-java@v3.10.0
+      uses: actions/setup-java@v3.11.0
       with:
         distribution: temurin
         java-version: '8'
@@ -179,7 +179,7 @@ jobs:
     - name: Install libuv
       run: sudo apt-get update && sudo apt-get install -y libuv1-dev
     - name: Setup Scala
-      uses: actions/setup-java@v3.10.0
+      uses: actions/setup-java@v3.11.0
       with:
         distribution: temurin
         java-version: '8'
@@ -208,7 +208,7 @@ jobs:
     - name: Install libuv
       run: sudo apt-get update && sudo apt-get install -y libuv1-dev
     - name: Setup Scala
-      uses: actions/setup-java@v3.10.0
+      uses: actions/setup-java@v3.11.0
       with:
         distribution: temurin
         java-version: '8'
