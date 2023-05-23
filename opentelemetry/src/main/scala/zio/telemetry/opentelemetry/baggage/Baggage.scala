@@ -1,10 +1,10 @@
 package zio.telemetry.opentelemetry.baggage
 
-import io.opentelemetry.api.baggage.{ Baggage => Baggaje, BaggageBuilder, BaggageEntryMetadata }
+import io.opentelemetry.api.baggage.{Baggage => Baggaje, BaggageBuilder, BaggageEntryMetadata}
 import io.opentelemetry.context.Context
 import zio._
 import zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator
-import zio.telemetry.opentelemetry.context.{ ContextStorage, IncomingContextCarrier, OutgoingContextCarrier }
+import zio.telemetry.opentelemetry.context.{ContextStorage, IncomingContextCarrier, OutgoingContextCarrier}
 
 import scala.jdk.CollectionConverters._
 

@@ -1,12 +1,11 @@
 package zio.telemetry.opentracing
 
-import java.util.concurrent.TimeUnit
-
-import io.opentracing.propagation.Format
-import io.opentracing.{ Span, SpanContext, Tracer }
 import io.opentracing.noop.NoopTracerFactory
+import io.opentracing.propagation.Format
+import io.opentracing.{Span, SpanContext, Tracer}
 import zio._
 
+import java.util.concurrent.TimeUnit
 import scala.jdk.CollectionConverters._
 
 trait OpenTracing { self =>

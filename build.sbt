@@ -37,7 +37,6 @@ inThisBuild(
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "ciCheck;docsCheck")
 addCommandAlias("ciCheck", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
 addCommandAlias("docsCheck", "docs/checkReadme;docs/ciCheckGithubWorkflow")

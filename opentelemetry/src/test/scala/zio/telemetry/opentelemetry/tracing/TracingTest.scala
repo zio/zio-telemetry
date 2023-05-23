@@ -1,17 +1,17 @@
 package zio.telemetry.opentelemetry.tracing
 
-import io.opentelemetry.api.common.{ AttributeKey, Attributes }
-import io.opentelemetry.api.trace.{ Span, SpanId, Tracer }
+import io.opentelemetry.api.common.{AttributeKey, Attributes}
+import io.opentelemetry.api.trace.{Span, SpanId, Tracer}
 import io.opentelemetry.context.Context
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
 import io.opentelemetry.sdk.trace.SdkTracerProvider
-import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import io.opentelemetry.sdk.trace.data.SpanData
+import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import zio._
-import zio.telemetry.opentelemetry.context.{ ContextStorage, IncomingContextCarrier, OutgoingContextCarrier }
+import zio.telemetry.opentelemetry.context.{ContextStorage, IncomingContextCarrier, OutgoingContextCarrier}
 import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 import zio.test.Assertion._
-import zio.test.{ assert, TestClock, ZIOSpecDefault }
+import zio.test.{Spec, TestClock, ZIOSpecDefault, assert}
 
 import scala.collection.mutable
 import scala.concurrent.Future
@@ -34,12 +34,12 @@ object TracingTest extends ZIOSpecDefault {
   val tracingMockLayer: ULayer[Tracing with InMemorySpanExporter with Tracer] =
     inMemoryTracerLayer >>> (Tracing.live ++ inMemoryTracerLayer)
 
-  def getFinishedSpans =
+  def getFinishedSpans: ZIO[InMemorySpanExporter, Nothing, List[SpanData]] =
     ZIO
       .service[InMemorySpanExporter]
       .map(_.getFinishedSpanItems.asScala.toList)
 
-  def spec =
+  def spec: Spec[Any, Throwable] =
     suite("zio opentelemetry")(
       suite("Tracing")(
         creationSpec,
