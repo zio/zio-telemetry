@@ -1,16 +1,14 @@
 package zio.telemetry.opentracing
 
-import io.opentracing.mock.{ MockSpan, MockTracer }
-import io.opentracing.propagation.{ BinaryAdapters, Format, TextMapAdapter }
+import io.opentracing.mock.{MockSpan, MockTracer}
+import io.opentracing.propagation.{BinaryAdapters, Format, TextMapAdapter}
 import zio._
-import zio.test._
 import zio.test.Assertion._
-import zio.test.ZIOSpecDefault
-
-import scala.collection.mutable
-import scala.jdk.CollectionConverters._
+import zio.test.{ZIOSpecDefault, _}
 
 import java.nio.ByteBuffer
+import scala.collection.mutable
+import scala.jdk.CollectionConverters._
 
 object OpenTracingTest extends ZIOSpecDefault {
 

@@ -8,11 +8,8 @@ import zio.telemetry.opentelemetry.example.config.AppConfig
 case class BackendHttpServer(config: AppConfig, httpApp: BackendHttpApp) {
 
   def start: ZIO[Any, Throwable, Nothing] =
-    for {
-      _     <- Server.start(config.backend.port, httpApp.routes)
-      _     <- printLine(s"BackendHttpServer started on port ${config.backend.port}")
-      never <- ZIO.never
-    } yield never
+    printLine(s"Starting BackendHttpServer on port ${config.backend.port}") *>
+      Server.start(config.backend.port, httpApp.routes)
 
 }
 

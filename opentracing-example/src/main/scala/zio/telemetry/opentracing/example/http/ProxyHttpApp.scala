@@ -34,7 +34,7 @@ case class ProxyHttpApp(client: Client, tracing: OpenTracing) {
 
     ZIO.succeed {
       adapter.forEach { entry =>
-        m.put(entry.getKey, entry.getValue)
+        m.put(entry.getKey, entry.getValue): Unit
         ()
       }
     }.as(m.toMap)

@@ -3,9 +3,9 @@ package zio.telemetry.opentelemetry.context
 import io.opentelemetry.context.propagation.TextMapGetter
 import zio.telemetry.opentelemetry.internal.ContextCarrier
 
-import scala.jdk.CollectionConverters._
 import java.lang
 import scala.collection.mutable
+import scala.jdk.CollectionConverters._
 
 /**
  * The wrapper for the context data from the external process.

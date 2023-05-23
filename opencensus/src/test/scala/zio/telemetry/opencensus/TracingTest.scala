@@ -2,7 +2,7 @@ package zio.telemetry.opencensus
 
 import io.opencensus.trace.`export`.SpanData
 import io.opencensus.trace.samplers.Samplers
-import io.opencensus.trace.{ SpanId, Tracer, Tracing => OTracing }
+import io.opencensus.trace.{SpanId, Tracer, Tracing => OTracing}
 import zio._
 import zio.test.Assertion._
 import zio.test._
@@ -31,7 +31,7 @@ object TracingTest extends ZIOSpecDefault {
   val customLayer: ULayer[Ref[List[SpanData]] with Tracer with Tracing] =
     exporterTracerLayer ++ (exporterTracerLayer >>> Tracing.live)
 
-  def spec =
+  def spec: Spec[Environment with TestEnvironment with Scope, Any] =
     suite("zio opencensus")(
       suite("Tracing")(
         spansSpec

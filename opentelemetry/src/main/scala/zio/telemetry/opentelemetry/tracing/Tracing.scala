@@ -1,10 +1,10 @@
 package zio.telemetry.opentelemetry.tracing
 
-import io.opentelemetry.api.common.{ AttributeKey, Attributes }
+import io.opentelemetry.api.common.{AttributeKey, Attributes}
 import io.opentelemetry.api.trace._
 import io.opentelemetry.context.Context
 import zio._
-import zio.telemetry.opentelemetry.context.{ ContextStorage, IncomingContextCarrier, OutgoingContextCarrier }
+import zio.telemetry.opentelemetry.context.{ContextStorage, IncomingContextCarrier, OutgoingContextCarrier}
 import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 
 import java.util.concurrent.TimeUnit
