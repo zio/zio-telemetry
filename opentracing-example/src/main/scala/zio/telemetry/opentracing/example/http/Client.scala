@@ -1,18 +1,17 @@
 package zio.telemetry.opentracing.example.http
 
-import sttp.client3._
-import sttp.client3.ziojson._
-import sttp.model.Uri
 import zio._
-import zio.telemetry.opentracing.example.Backend
+import zio.http.{ Header, Headers, Request, URL }
+import zio.json.JsonDecoder
 import zio.telemetry.opentracing.example.config.AppConfig
 
-case class Client(backend: Backend, config: AppConfig) {
+import java.nio.charset.StandardCharsets
+
+case class Client(backend: zio.http.Client, config: AppConfig) {
 
   private val backendUrl =
-    Uri
-      .safeApply(config.backend.host, config.backend.port)
-      .map(_.withPath("status"))
+    URL
+      .decode(s"http://${config.backend.host}:${config.backend.port}")
       .left
       .map(new IllegalArgumentException(_))
 
@@ -21,21 +20,21 @@ case class Client(backend: Backend, config: AppConfig) {
   ): Task[Statuses] =
     for {
       url      <- ZIO.fromEither(backendUrl)
-      response <- backend
-                    .send(
-                      basicRequest
-                        .get(url.withPath("status"))
-                        .headers(headers)
-                        .response(asJson[Status])
-                    )
-      status    = response.body.getOrElse(Status.down("backend"))
+      request   = Request
+                    .get(url.withPath("status"))
+                    .copy(headers = Headers(headers.map(x => Header.Custom(x._1, x._2))))
+      response <- backend.request(request)
+      json     <- response.body.asString(StandardCharsets.UTF_8)
+      status   <- ZIO
+                    .fromEither(JsonDecoder[Status].decodeJson(json))
+                    .catchAll(_ => ZIO.succeed(Status.down("backend")))
     } yield Statuses(List(status, Status.up("proxy")))
 
 }
 
 object Client {
 
-  val live: RLayer[AppConfig with Backend, Client] =
+  val live: RLayer[AppConfig with zio.http.Client, Client] =
     ZLayer.fromFunction(Client.apply _)
 
 }
