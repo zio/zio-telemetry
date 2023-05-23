@@ -14,14 +14,12 @@ object ProxyApp extends ZIOAppDefault {
 
   private val configLayer = TypesafeConfig.fromResourcePath(descriptor[AppConfig])
 
-  private val httpBackendLayer: TaskLayer[Backend] = ZClient.default
-
   override def run: Task[ExitCode] =
     ZIO
       .serviceWithZIO[ProxyHttpServer](_.start.exitCode)
       .provide(
         configLayer,
-        httpBackendLayer,
+        ZClient.default,
         Client.live,
         ProxyHttpServer.live,
         ProxyHttpApp.live,
