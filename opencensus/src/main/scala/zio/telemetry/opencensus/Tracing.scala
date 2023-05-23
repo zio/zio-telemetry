@@ -1,8 +1,8 @@
 package zio.telemetry.opencensus
 
-import zio._
 import io.opencensus.trace._
 import io.opencensus.trace.propagation.TextFormat
+import zio._
 
 trait Tracing { self =>
 

@@ -8,11 +8,8 @@ import zio._
 case class ProxyHttpServer(config: AppConfig, httpApp: ProxyHttpApp) {
 
   def start: ZIO[Any, Throwable, Nothing] =
-    for {
-      _     <- Server.start(config.proxy.port, httpApp.routes)
-      _     <- printLine(s"ProxyHttpServer started on port ${config.proxy.port}")
-      never <- ZIO.never
-    } yield never
+    printLine(s"Starting ProxyHttpServer on port ${config.proxy.port}") *>
+      Server.start(config.proxy.port, httpApp.routes)
 
 }
 

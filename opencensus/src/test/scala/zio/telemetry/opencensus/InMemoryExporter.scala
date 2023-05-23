@@ -2,8 +2,8 @@ package zio.telemetry.opencensus
 
 import io.opencensus.trace.`export`.SpanData
 import io.opencensus.trace.`export`.SpanExporter.Handler
-import io.opencensus.trace.{ Tracing => OTracing }
-import zio.{ Ref, Runtime, Unsafe, ZIO }
+import io.opencensus.trace.{Tracing => OTracing}
+import zio.{Ref, Runtime, Unsafe, ZIO}
 
 import java.util
 import scala.jdk.CollectionConverters._
@@ -23,7 +23,7 @@ object InMemoryExporter {
   class InMemoryExporter(finishedSpans: Ref[List[SpanData]]) extends Handler {
     override def `export`(spanDataList: util.Collection[SpanData]): Unit =
       Unsafe.unsafe { implicit unsafe =>
-        runtime.unsafe.run(finishedSpans.update(x => x ++ spanDataList.asScala.toList))
+        runtime.unsafe.run(finishedSpans.update(x => x ++ spanDataList.asScala.toList)): Unit
         ()
       }
   }

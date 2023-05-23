@@ -2,9 +2,9 @@ package zio.telemetry.opentelemetry.baggage
 
 import zio._
 import zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator
-import zio.telemetry.opentelemetry.context.{ ContextStorage, IncomingContextCarrier, OutgoingContextCarrier }
-import zio.test._
+import zio.telemetry.opentelemetry.context.{ContextStorage, IncomingContextCarrier, OutgoingContextCarrier}
 import zio.test.Assertion._
+import zio.test._
 
 import scala.collection.mutable
 
@@ -16,7 +16,7 @@ object BaggageTest extends ZIOSpecDefault {
   def logAnnotatedBaggageLayer: ULayer[Baggage] =
     (ContextStorage.fiberRef >>> Baggage.logAnnotated)
 
-  def spec =
+  def spec: Spec[Environment with TestEnvironment with Scope, Any] =
     suite("zio opentelemetry")(
       suite("Baggage")(
         operationsSpec,
