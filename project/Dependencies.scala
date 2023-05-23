@@ -93,7 +93,7 @@ object Dependencies {
   )
 
   lazy val opentelemetryInstrumentationExample = example ++ Seq(
-    Orgs.softwaremillSttpClient3 %% "zio" % ExampleVersions.sttp3
+    Orgs.zio %% "zio-http" % ExampleVersions.zioHttp
   )
 
 }

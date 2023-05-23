@@ -1,32 +1,32 @@
 package zio.telemetry.opentelemetry.instrumentation.example.http
 
-import sttp.client3._
-import sttp.model.Uri
 import zio._
-import zio.telemetry.opentelemetry.instrumentation.example.Backend
+import zio.http.{ Request, URL }
 import zio.telemetry.opentelemetry.instrumentation.example.config.AppConfig
 
-case class HttpClient(backend: Backend, config: AppConfig) {
+import java.nio.charset.StandardCharsets
+
+case class HttpClient(backend: zio.http.Client, config: AppConfig) {
 
   private val backendUrl =
-    Uri
-      .safeApply(config.server.host, config.server.port)
-      .map(_.withPath("status"))
+    URL
+      .decode(s"http://${config.server.host}:${config.server.port}")
       .left
       .map(new IllegalArgumentException(_))
 
   def health: Task[String] =
     for {
       url      <- ZIO.fromEither(backendUrl)
-      response <- backend.send(basicRequest.get(url.withPath("health")).response(asStringAlways))
-      result    = response.body
+      request   = Request.get(url.withPath("health"))
+      response <- backend.request(request)
+      result   <- response.body.asString(StandardCharsets.UTF_8)
     } yield result
 
 }
 
 object HttpClient {
 
-  val live: RLayer[AppConfig with Backend, HttpClient] =
+  val live: RLayer[AppConfig with zio.http.Client, HttpClient] =
     ZLayer.fromFunction(HttpClient.apply _)
 
 }
