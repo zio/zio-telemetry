@@ -696,11 +696,11 @@ object Tracing {
                 .getOrElse(StatusCode.UNSET)
 
             for {
-              _    <- ZIO.succeed(span.setStatus(errorStatus, cause.prettyPrint))
-              span <- errorMapper.toThrowable.fold(ZIO.succeed(span))(toThrowable =>
-                        ZIO.succeed(span.recordException(cause.squashWith(toThrowable)))
-                      )
-            } yield span
+              _      <- ZIO.succeed(span.setStatus(errorStatus, cause.prettyPrint))
+              result <- errorMapper.toThrowable.fold(ZIO.succeed(span))(toThrowable =>
+                          ZIO.succeed(span.recordException(cause.squashWith(toThrowable)))
+                        )
+            } yield result
           }
 
           /**

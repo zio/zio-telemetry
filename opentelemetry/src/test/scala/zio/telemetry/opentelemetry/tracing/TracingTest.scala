@@ -1,7 +1,7 @@
 package zio.telemetry.opentelemetry.tracing
 
 import io.opentelemetry.api.common.{AttributeKey, Attributes}
-import io.opentelemetry.api.trace.{Span, SpanId, Tracer}
+import io.opentelemetry.api.trace.{Span, SpanId, StatusCode, Tracer}
 import io.opentelemetry.context.Context
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
 import io.opentelemetry.sdk.trace.SdkTracerProvider
@@ -78,6 +78,36 @@ object TracingTest extends ZIOSpecDefault {
                 )
               )
             )
+        }
+      },
+      test("setError") {
+        ZIO.serviceWithZIO[Tracing] { tracing =>
+          import tracing.aspects._
+
+          val assertStatusCodeError             =
+            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.ERROR))
+          val assertRecordedExceptionAttributes = hasField[SpanData, List[(String, String)]](
+            "exceptionAttributes",
+            _.getEvents.asScala.toList
+              .flatMap(_.getAttributes.asMap().asScala.toList.map(x => x._1.getKey -> x._2.toString)),
+            hasSubset(List("exception.message" -> "some_error", "exception.type" -> "java.lang.RuntimeException"))
+          )
+          val errorMapper                       = ErrorMapper[Throwable](_ => StatusCode.ERROR, Some(identity))
+
+          val alwaysTrue                              = true
+          val failedEffect: ZIO[Any, Throwable, Unit] =
+            ZIO.fail(new RuntimeException("some_error")).when(alwaysTrue).unit
+
+          for {
+            _     <- (failedEffect @@ span[Throwable]("Child", errorMapper = errorMapper) @@ span[Throwable](
+                       "Root",
+                       errorMapper = errorMapper
+                     )).ignore
+            spans <- getFinishedSpans
+            root   = spans.find(_.getName == "Root")
+            child  = spans.find(_.getName == "Child")
+          } yield assert(root)(isSome(assertStatusCodeError && assertRecordedExceptionAttributes)) &&
+            assert(child)(isSome(assertStatusCodeError && assertRecordedExceptionAttributes))
         }
       },
       test("root") {
