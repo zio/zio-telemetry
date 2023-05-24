@@ -414,12 +414,6 @@ trait Tracing { self =>
     trace: Trace
   ): UIO[Span]
 
-  def setErrorStatus[E](
-    span: Span,
-    cause: Cause[E],
-    errorMapper: ErrorMapper[E]
-  )(implicit trace: Trace): UIO[Span]
-
   object aspects {
 
     def extractSpan[C, E1](
@@ -691,7 +685,7 @@ object Tracing {
             getCurrentSpan.map(_.setAttribute(AttributeKey.doubleArrayKey(name), v))
           }
 
-          override def setErrorStatus[E](
+          private def setErrorStatus[E](
             span: Span,
             cause: Cause[E],
             errorMapper: ErrorMapper[E]
