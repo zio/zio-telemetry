@@ -52,6 +52,8 @@ trait Tracing { self =>
    *   kind of the child span
    * @param errorMapper
    *   error mapper
+   * @param links
+   *   spanContexts of the linked Spans.
    * @param zio
    *   body of the child span
    * @param trace
@@ -112,6 +114,8 @@ trait Tracing { self =>
    *   name of the new root span
    * @param errorMapper
    *   error mapper
+   * @param links
+   *   spanContexts of the linked Spans.
    * @param zio
    *   body of the new root span
    * @param trace
@@ -139,6 +143,8 @@ trait Tracing { self =>
    *   kind of the child span
    * @param errorMapper
    *   error mapper
+   * @param links
+   *   spanContexts of the linked Spans.
    * @param zio
    *   body of the child span
    * @param trace
@@ -268,6 +274,8 @@ trait Tracing { self =>
    *   kind of the child span
    * @param errorMapper
    *   error mapper
+   * @param links
+   *   spanContexts of the linked Spans.
    * @param zio
    *   body of the child span
    * @param trace
