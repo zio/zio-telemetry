@@ -50,7 +50,7 @@ trait Tracing { self =>
    *   name of the child span
    * @param spanKind
    *   kind of the child span
-   * @param toErrorStatus
+   * @param errorMapper
    *   error mapper
    * @param zio
    *   body of the child span
@@ -68,7 +68,7 @@ trait Tracing { self =>
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     attributes: Attributes = Attributes.empty(),
-    toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
+    errorMapper: ErrorMapper[E] = ErrorMapper.default[E]
   )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   /**
@@ -108,7 +108,7 @@ trait Tracing { self =>
    *   name of the new root span
    * @param spanKind
    *   name of the new root span
-   * @param toErrorStatus
+   * @param errorMapper
    *   error mapper
    * @param zio
    *   body of the new root span
@@ -122,7 +122,7 @@ trait Tracing { self =>
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     attributes: Attributes = Attributes.empty(),
-    toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
+    errorMapper: ErrorMapper[E] = ErrorMapper.default[E]
   )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   /**
@@ -134,7 +134,7 @@ trait Tracing { self =>
    *   name of the child span
    * @param spanKind
    *   kind of the child span
-   * @param toErrorStatus
+   * @param errorMapper
    *   error mapper
    * @param zio
    *   body of the child span
@@ -148,7 +148,7 @@ trait Tracing { self =>
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     attributes: Attributes = Attributes.empty(),
-    toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
+    errorMapper: ErrorMapper[E] = ErrorMapper.default[E]
   )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   /**
@@ -261,7 +261,7 @@ trait Tracing { self =>
    *   name of the child span
    * @param spanKind
    *   kind of the child span
-   * @param toErrorStatus
+   * @param errorMapper
    *   error mapper
    * @param zio
    *   body of the child span
@@ -276,7 +276,7 @@ trait Tracing { self =>
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     attributes: Attributes = Attributes.empty(),
-    toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
+    errorMapper: ErrorMapper[E] = ErrorMapper.default[E]
   )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   /**
@@ -414,7 +414,7 @@ trait Tracing { self =>
     trace: Trace
   ): UIO[Span]
 
-  def setErrorStatus[E <: Throwable](
+  def setErrorStatus[E](
     span: Span,
     cause: Cause[E],
     errorMapper: ErrorMapper[E]
@@ -428,33 +428,33 @@ trait Tracing { self =>
       spanName: String,
       spanKind: SpanKind = SpanKind.INTERNAL,
       attributes: Attributes = Attributes.empty(),
-      toErrorStatus: ErrorMapper[E1] = ErrorMapper.default[E1]
+      errorMapper: ErrorMapper[E1] = ErrorMapper.default[E1]
     ): ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] =
       new ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] {
         override def apply[R, E >: E1 <: E1, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
-          self.extractSpan(propagator, carrier, spanName, spanKind, attributes, toErrorStatus)(zio)
+          self.extractSpan(propagator, carrier, spanName, spanKind, attributes, errorMapper)(zio)
       }
 
     def root[E1](
       spanName: String,
       spanKind: SpanKind = SpanKind.INTERNAL,
       attributes: Attributes = Attributes.empty(),
-      toErrorStatus: ErrorMapper[E1] = ErrorMapper.default[E1]
+      errorMapper: ErrorMapper[E1] = ErrorMapper.default[E1]
     ): ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] =
       new ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] {
         override def apply[R, E >: E1 <: E1, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
-          self.root(spanName, spanKind, attributes, toErrorStatus)(zio)
+          self.root(spanName, spanKind, attributes, errorMapper)(zio)
       }
 
     def span[E1](
       spanName: String,
       spanKind: SpanKind = SpanKind.INTERNAL,
       attributes: Attributes = Attributes.empty(),
-      toErrorStatus: ErrorMapper[E1] = ErrorMapper.default[E1]
+      errorMapper: ErrorMapper[E1] = ErrorMapper.default[E1]
     ): ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] =
       new ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] {
         override def apply[R, E >: E1 <: E1, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
-          self.span(spanName, spanKind, attributes, toErrorStatus)(zio)
+          self.span(spanName, spanKind, attributes, errorMapper)(zio)
       }
 
     def inSpan[E1](
@@ -462,11 +462,11 @@ trait Tracing { self =>
       spanName: String,
       spanKind: SpanKind = SpanKind.INTERNAL,
       attributes: Attributes = Attributes.empty(),
-      toErrorStatus: ErrorMapper[E1] = ErrorMapper.default[E1]
+      errorMapper: ErrorMapper[E1] = ErrorMapper.default[E1]
     ): ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] =
       new ZIOAspect[Nothing, Any, E1, E1, Nothing, Any] {
         override def apply[R, E >: E1 <: E1, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
-          self.inSpan(span, spanName, spanKind, attributes, toErrorStatus)(zio)
+          self.inSpan(span, spanName, spanKind, attributes, errorMapper)(zio)
       }
 
   }
@@ -503,7 +503,7 @@ object Tracing {
             spanName: String,
             spanKind: SpanKind = SpanKind.INTERNAL,
             attributes: Attributes = Attributes.empty(),
-            toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
+            errorMapper: ErrorMapper[E] = ErrorMapper.default[E]
           )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
             extractContext(propagator, carrier).flatMap { context =>
               ZIO.acquireReleaseWith {
@@ -511,7 +511,7 @@ object Tracing {
               } { case (endSpan, _) =>
                 endSpan
               } { case (_, ctx) =>
-                finalizeSpanUsingEffect(zio, ctx, toErrorStatus)
+                finalizeSpanUsingEffect(zio, ctx, errorMapper)
               }
             }
 
@@ -534,21 +534,21 @@ object Tracing {
             spanName: String,
             spanKind: SpanKind = SpanKind.INTERNAL,
             attributes: Attributes = Attributes.empty(),
-            toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
+            errorMapper: ErrorMapper[E] = ErrorMapper.default[E]
           )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
             ZIO.acquireReleaseWith {
               createRoot(spanName, spanKind, attributes)
             } { case (endSpan, _) =>
               endSpan
             } { case (_, ctx) =>
-              finalizeSpanUsingEffect(zio, ctx, toErrorStatus)
+              finalizeSpanUsingEffect(zio, ctx, errorMapper)
             }
 
           override def span[R, E, A](
             spanName: String,
             spanKind: SpanKind = SpanKind.INTERNAL,
             attributes: Attributes = Attributes.empty(),
-            toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
+            errorMapper: ErrorMapper[E] = ErrorMapper.default[E]
           )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
             getCurrentContext.flatMap { old =>
               ZIO.acquireReleaseWith {
@@ -556,7 +556,7 @@ object Tracing {
               } { case (endSpan, _) =>
                 endSpan
               } { case (_, ctx) =>
-                finalizeSpanUsingEffect(zio, ctx, toErrorStatus)
+                finalizeSpanUsingEffect(zio, ctx, errorMapper)
               }
             }
 
@@ -619,14 +619,14 @@ object Tracing {
             spanName: String,
             spanKind: SpanKind = SpanKind.INTERNAL,
             attributes: Attributes = Attributes.empty(),
-            toErrorStatus: ErrorMapper[E] = ErrorMapper.default[E]
+            errorMapper: ErrorMapper[E] = ErrorMapper.default[E]
           )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
             ZIO.acquireReleaseWith {
               createChild(Context.root().`with`(span), spanName, spanKind, attributes)
             } { case (endSpan, _) =>
               endSpan
             } { case (_, ctx) =>
-              finalizeSpanUsingEffect(zio, ctx, toErrorStatus)
+              finalizeSpanUsingEffect(zio, ctx, errorMapper)
             }
 
           override def addEvent(name: String)(implicit trace: Trace): UIO[Span] =
@@ -702,11 +702,11 @@ object Tracing {
                 .getOrElse(StatusCode.UNSET)
 
             for {
-              spanWithStatus <- ZIO.succeed(span.setStatus(errorStatus, cause.prettyPrint))
-              result         <- errorMapper.toThrowable.fold(ZIO.succeed(spanWithStatus))(toThrowable =>
-                                  ZIO.succeed(spanWithStatus.recordException(cause.squashWith(toThrowable)))
-                                )
-            } yield result
+              _    <- ZIO.succeed(span.setStatus(errorStatus, cause.prettyPrint))
+              span <- errorMapper.toThrowable.fold(ZIO.succeed(span))(toThrowable =>
+                        ZIO.succeed(span.recordException(cause.squashWith(toThrowable)))
+                      )
+            } yield span
           }
 
           /**
@@ -716,11 +716,11 @@ object Tracing {
           private def finalizeSpanUsingEffect[R, E, A](
             zio: ZIO[R, E, A],
             ctx: Context,
-            toErrorStatus: ErrorMapper[E]
+            errorMapper: ErrorMapper[E]
           )(implicit trace: Trace): ZIO[R, E, A] =
             ctxStorage
               .locally(ctx)(zio)
-              .tapErrorCause(setErrorStatus(Span.fromContext(ctx), _, toErrorStatus))
+              .tapErrorCause(setErrorStatus(Span.fromContext(ctx), _, errorMapper))
 
           private def currentNanos(implicit trace: Trace): UIO[Long] =
             Clock.currentTime(TimeUnit.NANOSECONDS)

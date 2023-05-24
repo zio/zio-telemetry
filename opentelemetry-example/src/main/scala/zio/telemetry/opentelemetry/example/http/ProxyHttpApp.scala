@@ -15,11 +15,11 @@ case class ProxyHttpApp(client: Client, tracing: Tracing, baggage: Baggage) {
   import tracing.aspects._
 
   private val errorMapper: ErrorMapper[Throwable] =
-    ErrorMapper[Throwable]({ case _ => StatusCode.UNSET }, Some(identity))
+    ErrorMapper[Throwable] { case _ => StatusCode.UNSET }
 
   val routes: HttpApp[Any, Throwable] =
     Http.collectZIO { case Method.GET -> _ / "statuses" =>
-      statuses @@ root("/statuses", SpanKind.SERVER, toErrorStatus = errorMapper)
+      statuses @@ root("/statuses", SpanKind.SERVER, errorMapper = errorMapper)
     }
 
   def statuses: Task[Response] = {
