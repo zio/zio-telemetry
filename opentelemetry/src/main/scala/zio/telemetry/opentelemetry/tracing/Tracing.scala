@@ -414,6 +414,12 @@ trait Tracing { self =>
     trace: Trace
   ): UIO[Span]
 
+  def setErrorStatus[E <: Throwable](
+    span: Span,
+    cause: Cause[E],
+    errorMapper: ErrorMapper[E]
+  )(implicit trace: Trace): UIO[Span]
+
   object aspects {
 
     def extractSpan[C, E1](
@@ -685,17 +691,22 @@ object Tracing {
             getCurrentSpan.map(_.setAttribute(AttributeKey.doubleArrayKey(name), v))
           }
 
-          private def setErrorStatus[E](
+          override def setErrorStatus[E](
             span: Span,
             cause: Cause[E],
-            toErrorStatus: ErrorMapper[E]
+            errorMapper: ErrorMapper[E]
           )(implicit trace: Trace): UIO[Span] = {
             val errorStatus =
               cause.failureOption
-                .flatMap(toErrorStatus.body.lift)
+                .flatMap(errorMapper.body.lift)
                 .getOrElse(StatusCode.UNSET)
 
-            ZIO.succeed(span.setStatus(errorStatus, cause.prettyPrint))
+            for {
+              spanWithStatus <- ZIO.succeed(span.setStatus(errorStatus, cause.prettyPrint))
+              result         <- errorMapper.toThrowable.fold(ZIO.succeed(spanWithStatus))(toThrowable =>
+                                  ZIO.succeed(spanWithStatus.recordException(cause.squashWith(toThrowable)))
+                                )
+            } yield result
           }
 
           /**

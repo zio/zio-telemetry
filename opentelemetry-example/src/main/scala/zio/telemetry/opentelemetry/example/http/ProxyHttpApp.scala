@@ -1,6 +1,6 @@
 package zio.telemetry.opentelemetry.example.http
 
-import io.opentelemetry.api.trace.{ SpanKind, StatusCode }
+import io.opentelemetry.api.trace.{SpanKind, StatusCode}
 import zhttp.http._
 import zio._
 import zio.json.EncoderOps
@@ -8,14 +8,14 @@ import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator
 import zio.telemetry.opentelemetry.context.OutgoingContextCarrier
 import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
-import zio.telemetry.opentelemetry.tracing.{ ErrorMapper, Tracing }
+import zio.telemetry.opentelemetry.tracing.{ErrorMapper, Tracing}
 
 case class ProxyHttpApp(client: Client, tracing: Tracing, baggage: Baggage) {
 
   import tracing.aspects._
 
   private val errorMapper: ErrorMapper[Throwable] =
-    ErrorMapper[Throwable] { case _ => StatusCode.UNSET }
+    ErrorMapper[Throwable]({ case _ => StatusCode.UNSET }, Some(identity))
 
   val routes: HttpApp[Any, Throwable] =
     Http.collectZIO { case Method.GET -> _ / "statuses" =>
