@@ -771,7 +771,7 @@ object Tracing {
                        )
             } yield (endSpan(span), parentCtx.`with`(span))
 
-          implicit class SpanBuilderOps(spanBuilder: SpanBuilder) {
+          private implicit class SpanBuilderOps(spanBuilder: SpanBuilder) {
             def addLinks(links: Seq[SpanContext]): SpanBuilder =
               links.foldLeft(spanBuilder) { case (builder, link) => builder.addLink(link) }
           }
