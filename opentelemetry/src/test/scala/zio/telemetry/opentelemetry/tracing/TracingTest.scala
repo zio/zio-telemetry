@@ -80,6 +80,37 @@ object TracingTest extends ZIOSpecDefault {
             )
         }
       },
+      test("addLinks") {
+        ZIO.serviceWithZIO[Tracing] { tracing =>
+          import tracing.aspects._
+
+          for {
+            res                        <- inMemoryTracer
+            (_, tracer)                 = res
+            externallyProvidedRootSpan1 = tracer.spanBuilder("external1").startSpan()
+            externallyProvidedRootSpan2 = tracer.spanBuilder("external2").startSpan()
+            externallyProvidedRootSpan3 = tracer.spanBuilder("external3").startSpan()
+            links                       = List(externallyProvidedRootSpan1, externallyProvidedRootSpan2, externallyProvidedRootSpan3)
+                                            .map(_.getSpanContext)
+            _                          <- ZIO.unit @@ span("Child", links = links) @@ span("Root")
+            spans                      <- getFinishedSpans
+            root                        = spans.find(_.getName == "Root")
+            child                       = spans.find(_.getName == "Child")
+          } yield assert(root)(isSome(anything)) &&
+            assert(child)(
+              isSome(
+                hasField[SpanData, String](
+                  "parentSpanId",
+                  _.getParentSpanId,
+                  equalTo(root.get.getSpanId)
+                )
+              )
+            ) &&
+            assert(child.toList.flatMap(_.getLinks.asScala.toList.map(_.getSpanContext.getSpanId)))(
+              hasSameElements(links.map(_.getSpanId))
+            )
+        }
+      },
       test("setError") {
         ZIO.serviceWithZIO[Tracing] { tracing =>
           import tracing.aspects._
