@@ -2,7 +2,7 @@ package zio.telemetry.opentelemetry.tracing
 
 import io.opentelemetry.api.trace.StatusCode
 
-case class ErrorMapper[E](body: PartialFunction[E, StatusCode])
+case class ErrorMapper[E](body: PartialFunction[E, StatusCode], toThrowable: Option[E => Throwable] = None)
 
 object ErrorMapper {
 
