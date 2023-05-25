@@ -123,7 +123,7 @@ object TracingTest extends ZIOSpecDefault {
               .flatMap(_.getAttributes.asMap().asScala.toList.map(x => x._1.getKey -> x._2.toString)),
             hasSubset(List("exception.message" -> "some_error", "exception.type" -> "java.lang.RuntimeException"))
           )
-          val errorMapper                       = ErrorMapper[Throwable](_ => StatusCode.ERROR, Some(identity))
+          val errorMapper                       = ErrorMapper[Throwable]({ case _ => StatusCode.ERROR }, Some(identity))
 
           val alwaysTrue                              = true
           val failedEffect: ZIO[Any, Throwable, Unit] =
