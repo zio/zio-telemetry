@@ -720,7 +720,10 @@ object Tracing {
                 .getOrElse(StatusCode.UNSET)
 
             for {
-              _      <- ZIO.succeed(span.setStatus(errorStatus, cause.prettyPrint))
+              _      <- ZIO.ifZIO(ZIO.succeed(errorStatus == StatusCode.ERROR))(
+                          onTrue = ZIO.succeed(span.setStatus(errorStatus, cause.prettyPrint)),
+                          onFalse = ZIO.succeed(span.setStatus(errorStatus))
+                        )
               result <- errorMapper.toThrowable.fold(ZIO.succeed(span))(toThrowable =>
                           ZIO.succeed(span.recordException(cause.squashWith(toThrowable)))
                         )
