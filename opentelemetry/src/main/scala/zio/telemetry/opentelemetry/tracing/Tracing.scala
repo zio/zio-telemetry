@@ -717,10 +717,13 @@ object Tracing {
             val errorStatus =
               cause.failureOption
                 .flatMap(errorMapper.body.lift)
-                .getOrElse(StatusCode.UNSET)
+                .getOrElse(StatusCode.ERROR)
 
             for {
-              _      <- ZIO.succeed(span.setStatus(errorStatus, cause.prettyPrint))
+              _      <- if (errorStatus == StatusCode.ERROR)
+                          ZIO.succeed(span.setStatus(errorStatus, cause.prettyPrint))
+                        else
+                          ZIO.succeed(span.setStatus(errorStatus))
               result <- errorMapper.toThrowable.fold(ZIO.succeed(span))(toThrowable =>
                           ZIO.succeed(span.recordException(cause.squashWith(toThrowable)))
                         )
