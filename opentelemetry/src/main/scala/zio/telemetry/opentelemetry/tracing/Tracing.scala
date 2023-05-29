@@ -717,7 +717,7 @@ object Tracing {
             val errorStatus =
               cause.failureOption
                 .flatMap(errorMapper.body.lift)
-                .getOrElse(StatusCode.UNSET)
+                .getOrElse(StatusCode.ERROR)
 
             for {
               _      <- ZIO.ifZIO(ZIO.succeed(errorStatus == StatusCode.ERROR))(
