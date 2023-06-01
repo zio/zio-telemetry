@@ -7,7 +7,7 @@ import zio.http.ZClient
 import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.context.ContextStorage
 import zio.telemetry.opentelemetry.example.config.AppConfig
-import zio.telemetry.opentelemetry.example.http.{ Client, ProxyHttpApp, ProxyHttpServer }
+import zio.telemetry.opentelemetry.example.http.{Client, ProxyHttpApp, ProxyHttpServer}
 import zio.telemetry.opentelemetry.tracing.Tracing
 
 object ProxyApp extends ZIOAppDefault {

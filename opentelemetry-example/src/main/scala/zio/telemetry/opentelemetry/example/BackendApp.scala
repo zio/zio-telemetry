@@ -3,7 +3,7 @@ package zio.telemetry.opentelemetry.example
 import zio.config.magnolia._
 import zio.config.typesafe.TypesafeConfig
 import zio.telemetry.opentelemetry.example.config.AppConfig
-import zio.telemetry.opentelemetry.example.http.{ BackendHttpApp, BackendHttpServer }
+import zio.telemetry.opentelemetry.example.http.{BackendHttpApp, BackendHttpServer}
 import zio._
 import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.context.ContextStorage
