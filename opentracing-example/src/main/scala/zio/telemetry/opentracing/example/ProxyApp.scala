@@ -5,7 +5,7 @@ import zio.config.magnolia._
 import zio.config.typesafe.TypesafeConfig
 import zio.telemetry.opentracing.OpenTracing
 import zio.telemetry.opentracing.example.config.AppConfig
-import zio.telemetry.opentracing.example.http.{ Client, ProxyHttpApp, ProxyHttpServer }
+import zio.telemetry.opentracing.example.http.{Client, ProxyHttpApp, ProxyHttpServer}
 
 object ProxyApp extends ZIOAppDefault {
 

@@ -1,7 +1,7 @@
 package zio.telemetry.opentracing.example.http
 
 import zio._
-import zio.http.{ Header, Headers, Request, URL }
+import zio.http.{Header, Headers, Request, URL}
 import zio.json.JsonDecoder
 import zio.telemetry.opentracing.example.config.AppConfig
 
