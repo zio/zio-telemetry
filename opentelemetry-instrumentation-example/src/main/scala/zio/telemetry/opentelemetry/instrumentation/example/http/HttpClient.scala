@@ -1,7 +1,7 @@
 package zio.telemetry.opentelemetry.instrumentation.example.http
 
 import zio._
-import zio.http.{ Request, URL }
+import zio.http.{Request, URL}
 import zio.telemetry.opentelemetry.instrumentation.example.config.AppConfig
 
 import java.nio.charset.StandardCharsets
