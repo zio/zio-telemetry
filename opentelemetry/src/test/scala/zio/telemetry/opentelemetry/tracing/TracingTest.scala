@@ -43,11 +43,12 @@ object TracingTest extends ZIOSpecDefault {
     suite("zio opentelemetry")(
       suite("Tracing")(
         creationSpec,
-        spansSpec
+        spansSpec,
+        spanScopedSpec
       )
     )
 
-  private def creationSpec =
+  private val creationSpec =
     suite("creation")(
       test("live") {
         for {
@@ -57,7 +58,7 @@ object TracingTest extends ZIOSpecDefault {
       }.provideLayer(inMemoryTracerLayer)
     )
 
-  private def spansSpec =
+  private val spansSpec =
     suite("spans")(
       test("span") {
         ZIO.serviceWithZIO[Tracing] { tracing =>
@@ -435,4 +436,102 @@ object TracingTest extends ZIOSpecDefault {
       }
     ).provideLayer(tracingMockLayer)
 
+  private val spanScopedSpec =
+    suite("scoped spans")(
+      test("span") {
+        ZIO.serviceWithZIO[Tracing] { tracing =>
+          for {
+            _     <- ZIO.scoped[Any](
+                       tracing.spanScoped("Root") *> ZIO.scoped[Any](
+                         tracing.spanScoped("Child")
+                       )
+                     )
+            spans <- getFinishedSpans
+            root   = spans.find(_.getName == "Root")
+            child  = spans.find(_.getName == "Child")
+          } yield assert(root)(isSome(anything)) &&
+            assert(child)(
+              isSome(
+                hasField[SpanData, String](
+                  "parentSpanId",
+                  _.getParentSpanId,
+                  equalTo(root.get.getSpanId)
+                )
+              )
+            )
+        }
+      },
+      test("span single scope") {
+        ZIO.serviceWithZIO[Tracing] { tracing =>
+          for {
+            _     <- ZIO.scoped[Any](
+                       for {
+                         _ <- tracing.spanScoped("Root")
+                         _ <- tracing.spanScoped("Child")
+                       } yield ()
+                     )
+            spans <- getFinishedSpans
+            root   = spans.find(_.getName == "Root")
+            child  = spans.find(_.getName == "Child")
+          } yield assert(root)(isSome(anything)) &&
+            assert(child)(
+              isSome(
+                hasField[SpanData, String](
+                  "parentSpanId",
+                  _.getParentSpanId,
+                  equalTo(root.get.getSpanId)
+                )
+              )
+            )
+        }
+      },
+      test("setError") {
+        ZIO.serviceWithZIO[Tracing] { tracing =>
+          val assertStatusCodeError             =
+            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.ERROR))
+          val assertStatusDescriptionError      =
+            hasField[SpanData, String](
+              "statusDescription",
+              _.getStatus.getDescription,
+              containsString("java.lang.RuntimeException: some_error")
+            )
+          val assertRecordedExceptionAttributes = hasField[SpanData, List[(String, String)]](
+            "exceptionAttributes",
+            _.getEvents.asScala.toList
+              .flatMap(_.getAttributes.asMap().asScala.toList.map(x => x._1.getKey -> x._2.toString)),
+            hasSubset(List("exception.message" -> "some_error", "exception.type" -> "java.lang.RuntimeException"))
+          )
+          val assertion                         = assertStatusCodeError && assertRecordedExceptionAttributes && assertStatusDescriptionError
+          val errorMapper                       = ErrorMapper[Any]({ case _ => StatusCode.ERROR }, Some(_.asInstanceOf[Throwable]))
+
+          val failedEffect: ZIO[Any, Throwable, Unit] =
+            ZIO.fail(new RuntimeException("some_error")).unit
+
+          for {
+            _     <- ZIO
+                       .scoped[Any](
+                         tracing.spanScoped("Root", errorMapper = errorMapper) *> ZIO.scoped[Any](
+                           tracing.spanScoped("Child", errorMapper = errorMapper) *> failedEffect
+                         )
+                       )
+                       .ignore
+            spans <- getFinishedSpans
+            root   = spans.find(_.getName == "Root")
+            child  = spans.find(_.getName == "Child")
+          } yield assert(root)(isSome(assertion)) && assert(child)(isSome(assertion))
+        }
+      },
+      test("setAttribute") {
+        ZIO.serviceWithZIO[Tracing] { tracing =>
+          for {
+            _     <- ZIO.scoped[Any](for {
+                       _ <- tracing.spanScoped("foo")
+                       _ <- tracing.setAttribute("string", "bar")
+                     } yield ())
+            spans <- getFinishedSpans
+            tags   = spans.head.getAttributes
+          } yield assert(tags.get(AttributeKey.stringKey("string")))(equalTo("bar"))
+        }
+      }
+    ).provideLayer(tracingMockLayer)
 }

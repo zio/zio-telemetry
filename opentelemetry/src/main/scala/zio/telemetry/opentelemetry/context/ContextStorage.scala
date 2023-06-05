@@ -15,6 +15,7 @@ trait ContextStorage {
 
   def locally[R, E, A](context: Context)(zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
+  def locallyScoped(context: Context)(implicit trace: Trace): ZIO[Scope, Nothing, Unit]
 }
 
 object ContextStorage {
@@ -45,6 +46,9 @@ object ContextStorage {
                 trace: Trace
               ): ZIO[R, E, A] =
                 ref.locally(context)(zio)
+
+              override def locallyScoped(context: Context)(implicit trace: Trace): ZIO[Scope, Nothing, Unit] =
+                ref.locallyScoped(context)
             }
           }
         }
@@ -79,6 +83,10 @@ object ContextStorage {
 
         override def locally[R, E, A](context: Context)(zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
           ZIO.acquireReleaseWith(get <* set(context))(set)(_ => zio)
+
+        override def locallyScoped(context: Context)(implicit trace: Trace): ZIO[Scope, Nothing, Unit] =
+          ZIO.acquireRelease(get <* set(context))(set).unit
+
       }
     }
 
