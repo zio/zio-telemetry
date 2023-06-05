@@ -162,6 +162,28 @@ trait Tracing { self =>
   )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   /**
+   * Sets the current span to be the child of the current span with name 'spanName'.
+   *
+   * Ends the span when the scope closes.
+   *
+   * @param spanName
+   *   name of the child span
+   * @param spanKind
+   *   kind of the child span
+   * @param errorMapper
+   *   error mapper
+   * @param links
+   *   spanContexts of the linked Spans.
+   */
+  def spanScoped(
+    spanName: String,
+    spanKind: SpanKind = SpanKind.INTERNAL,
+    attributes: Attributes = Attributes.empty(),
+    errorMapper: ErrorMapper[Any] = ErrorMapper.default[Any],
+    links: Seq[SpanContext] = Seq.empty
+  )(implicit trace: Trace): ZIO[Scope, Nothing, Unit]
+
+  /**
    * Unsafely sets the current span to be the child of the current span with name 'spanName'.
    *
    * You need to manually call the finalizer to end the span.
@@ -574,6 +596,27 @@ object Tracing {
               } { case (_, ctx) =>
                 finalizeSpanUsingEffect(zio, ctx, errorMapper)
               }
+            }
+
+          override def spanScoped(
+            spanName: String,
+            spanKind: SpanKind,
+            attributes: Attributes,
+            errorMapper: ErrorMapper[Any] = ErrorMapper.default[Any],
+            links: Seq[SpanContext]
+          )(implicit trace: Trace): ZIO[Scope, Nothing, Unit] =
+            getCurrentContext.flatMap { old =>
+              ZIO.acquireReleaseExit {
+                for {
+                  res <- createChild(old, spanName, spanKind, attributes, links)
+                  _   <- ctxStorage.locallyScoped(res._2)
+                } yield res
+              } { case ((endSpan, ctx), exit) =>
+                (exit match {
+                  case Exit.Success(_)     => ZIO.unit
+                  case Exit.Failure(cause) => setErrorStatus(Span.fromContext(ctx), cause, errorMapper)
+                }) *> endSpan
+              }.unit
             }
 
           override def spanUnsafe(
