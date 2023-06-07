@@ -21,7 +21,7 @@ inThisBuild(
         url("https://github.com/runtologist")
       )
     ),
-    crossScalaVersions := Seq(scala212.value, scala213.value, scala3.value),
+    crossScalaVersions := Seq(scala212.value, scala213.value, "3.3.0"),
     ciEnabledBranches  := Seq("series/2.x"),
     pgpPassphrase      := sys.env.get("PGP_PASSWORD").map(_.toArray),
     pgpPublicRing      := file("/tmp/public.asc"),
