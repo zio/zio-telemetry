@@ -8,18 +8,17 @@ import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator
 import zio.telemetry.opentelemetry.context.OutgoingContextCarrier
 import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
-import zio.telemetry.opentelemetry.tracing.{ErrorMapper, Tracing}
+import zio.telemetry.opentelemetry.tracing.{StatusMapper, Tracing}
 
 case class ProxyHttpApp(client: Client, tracing: Tracing, baggage: Baggage) {
 
   import tracing.aspects._
 
-  private val errorMapper: ErrorMapper[Throwable] =
-    ErrorMapper[Throwable] { case _ => StatusCode.UNSET }
+  private val statusMapper: StatusMapper[Throwable, Unit] = StatusMapper.failure[Unit](StatusCode.UNSET)
 
   val routes: HttpApp[Any, Throwable] =
     Http.collectZIO { case Method.GET -> _ / "statuses" =>
-      statuses @@ root("/statuses", SpanKind.SERVER, errorMapper = errorMapper)
+      statuses @@ root("/statuses", SpanKind.SERVER, statusMapper = statusMapper)
     }
 
   def statuses: Task[Response] = {
