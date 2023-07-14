@@ -540,7 +540,7 @@ object TracingTest extends ZIOSpecDefault {
           )
           val assertion                               = assertStatusCodeError && assertRecordedExceptionAttributes && assertStatusDescriptionError
           val statusMapper: StatusMapper[Any, Unit]   = StatusMapper[Any, Unit](
-            { e: Any =>
+            { case e =>
               StatusMapperResult(StatusCode.ERROR, Option(e.asInstanceOf[Throwable]))
             },
             Map.empty
