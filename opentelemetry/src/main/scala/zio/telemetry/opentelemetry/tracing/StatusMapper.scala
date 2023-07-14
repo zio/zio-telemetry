@@ -22,7 +22,7 @@ object StatusMapper {
 
   def success[E, A](
     statusCode: StatusCode,
-    f: A => Option[String] = { _: A => Option.empty[String] }
+    f: A => Option[String] = { (_: A) => Option.empty[String] }
   ): StatusMapper[E, A] =
     StatusMapper(
       Map.empty,
