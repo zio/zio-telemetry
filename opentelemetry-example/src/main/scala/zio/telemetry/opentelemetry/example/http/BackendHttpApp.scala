@@ -32,7 +32,7 @@ case class BackendHttpApp(tracing: Tracing, baggage: Baggage) {
       val carrier = headersCarrier(request.headers)
 
       (baggage.extract(BaggagePropagator.default, carrier) *> status) @@
-        extractSpan(TraceContextPropagator.default, carrier, "/status", SpanKind.SERVER)
+        extractSpan[Headers, Throwable, Response](TraceContextPropagator.default, carrier, "/status", SpanKind.SERVER)
     }
 
   def status: UIO[Response] =
