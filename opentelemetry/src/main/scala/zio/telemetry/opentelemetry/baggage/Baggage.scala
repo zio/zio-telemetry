@@ -11,12 +11,21 @@ import scala.jdk.CollectionConverters._
 trait Baggage { self =>
 
   /**
-   * Gets the baggage from current context.
+   * Extracts the baggage data from carrier `C` into the current context.
    *
+   * @param propagator
+   *   implementation of [[zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator]]
+   * @param carrier
+   *   mutable data from which the parent span is extracted
    * @param trace
+   * @tparam C
+   *   carrier
    * @return
    */
-  def getCurrentBaggage(implicit trace: Trace): UIO[Baggaje]
+  def extract[C](
+    propagator: BaggagePropagator,
+    carrier: IncomingContextCarrier[C]
+  )(implicit trace: Trace): UIO[Unit]
 
   /**
    * Gets the value by a given name.
@@ -46,6 +55,40 @@ trait Baggage { self =>
   def getAllWithMetadata(implicit trace: Trace): UIO[Map[String, (String, String)]]
 
   /**
+   * Gets the baggage from current context.
+   *
+   * @param trace
+   * @return
+   */
+  def getCurrentBaggageUnsafe(implicit trace: Trace): UIO[Baggaje]
+
+  /**
+   * Injects the baggage data from the current context into carrier `C`.
+   *
+   * @param propagator
+   *   implementation of [[zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator]]
+   * @param carrier
+   *   mutable data from which the parent span is extracted
+   * @param trace
+   * @tparam C
+   *   carrier
+   * @return
+   */
+  def inject[C](
+    propagator: BaggagePropagator,
+    carrier: OutgoingContextCarrier[C]
+  )(implicit trace: Trace): UIO[Unit]
+
+  /**
+   * Removes the name/value by a given name.
+   *
+   * @param name
+   * @param trace
+   * @return
+   */
+  def remove(name: String)(implicit trace: Trace): UIO[Unit]
+
+  /**
    * Sets the new value for a given name.
    *
    * @param name
@@ -67,49 +110,6 @@ trait Baggage { self =>
    */
   def setWithMetadata(name: String, value: String, metadata: String)(implicit trace: Trace): UIO[Unit]
 
-  /**
-   * Removes the name/value by a given name.
-   *
-   * @param name
-   * @param trace
-   * @return
-   */
-  def remove(name: String)(implicit trace: Trace): UIO[Unit]
-
-  /**
-   * Injects the baggage data from the current context into carrier `C`.
-   *
-   * @param propagator
-   *   implementation of [[zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator]]
-   * @param carrier
-   *   mutable data from which the parent span is extracted
-   * @param trace
-   * @tparam C
-   *   carrier
-   * @return
-   */
-  def inject[C](
-    propagator: BaggagePropagator,
-    carrier: OutgoingContextCarrier[C]
-  )(implicit trace: Trace): UIO[Unit]
-
-  /**
-   * Extracts the baggage data from carrier `C` into the current context.
-   *
-   * @param propagator
-   *   implementation of [[zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator]]
-   * @param carrier
-   *   mutable data from which the parent span is extracted
-   * @param trace
-   * @tparam C
-   *   carrier
-   * @return
-   */
-  def extract[C](
-    propagator: BaggagePropagator,
-    carrier: IncomingContextCarrier[C]
-  )(implicit trace: Trace): UIO[Unit]
-
 }
 
 object Baggage {
@@ -119,21 +119,21 @@ object Baggage {
       for {
         ctxStorage <- ZIO.service[ContextStorage]
       } yield new Baggage { self =>
-        override def getCurrentBaggage(implicit trace: Trace): UIO[Baggaje] =
+        override def getCurrentBaggageUnsafe(implicit trace: Trace): UIO[Baggaje] =
           injectLogAnnotations *>
             getCurrentContext.map(Baggaje.fromContext)
 
         override def get(name: String)(implicit trace: Trace): UIO[Option[String]] =
           injectLogAnnotations *>
-            getCurrentBaggage.map(baggage => Option(baggage.getEntryValue(name)))
+            getCurrentBaggageUnsafe.map(baggage => Option(baggage.getEntryValue(name)))
 
         override def getAll(implicit trace: Trace): UIO[Map[String, String]] =
           injectLogAnnotations *>
-            getCurrentBaggage.map(_.asMap().asScala.toMap.map { case (k, v) => k -> v.getValue })
+            getCurrentBaggageUnsafe.map(_.asMap().asScala.toMap.map { case (k, v) => k -> v.getValue })
 
         override def getAllWithMetadata(implicit trace: Trace): UIO[Map[String, (String, String)]] =
           injectLogAnnotations *>
-            getCurrentBaggage.map(
+            getCurrentBaggageUnsafe.map(
               _.asMap().asScala.toMap.map { case (k, v) => (k, (v.getValue, v.getMetadata.getValue)) }
             )
 
