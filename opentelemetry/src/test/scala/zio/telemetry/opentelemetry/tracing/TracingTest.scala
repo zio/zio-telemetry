@@ -12,6 +12,7 @@ import zio.telemetry.opentelemetry.context.{ContextStorage, IncomingContextCarri
 import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 import zio.test.Assertion._
 import zio.test.{Spec, TestClock, ZIOSpecDefault, assert}
+import StatusMapper.StatusMapperResult
 
 import scala.collection.mutable
 import scala.concurrent.Future
@@ -523,31 +524,35 @@ object TracingTest extends ZIOSpecDefault {
       },
       test("setError") {
         ZIO.serviceWithZIO[Tracing] { tracing =>
-          val assertStatusCodeError             =
+          val assertStatusCodeError                   =
             hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.ERROR))
-          val assertStatusDescriptionError      =
+          val assertStatusDescriptionError            =
             hasField[SpanData, String](
               "statusDescription",
               _.getStatus.getDescription,
               containsString("java.lang.RuntimeException: some_error")
             )
-          val assertRecordedExceptionAttributes = hasField[SpanData, List[(String, String)]](
+          val assertRecordedExceptionAttributes       = hasField[SpanData, List[(String, String)]](
             "exceptionAttributes",
             _.getEvents.asScala.toList
               .flatMap(_.getAttributes.asMap().asScala.toList.map(x => x._1.getKey -> x._2.toString)),
             hasSubset(List("exception.message" -> "some_error", "exception.type" -> "java.lang.RuntimeException"))
           )
-          val assertion                         = assertStatusCodeError && assertRecordedExceptionAttributes && assertStatusDescriptionError
-          val errorMapper                       = ErrorMapper[Any]({ case _ => StatusCode.ERROR }, Some(_.asInstanceOf[Throwable]))
-
+          val assertion                               = assertStatusCodeError && assertRecordedExceptionAttributes && assertStatusDescriptionError
+          val statusMapper: StatusMapper[Any, Unit]   = StatusMapper[Any, Unit](
+            { e: Any =>
+              StatusMapperResult(StatusCode.ERROR, Option(e.asInstanceOf[Throwable]))
+            },
+            Map.empty
+          )
           val failedEffect: ZIO[Any, Throwable, Unit] =
             ZIO.fail(new RuntimeException("some_error")).unit
 
           for {
             _     <- ZIO
                        .scoped[Any](
-                         tracing.spanScoped("Root", errorMapper = errorMapper) *> ZIO.scoped[Any](
-                           tracing.spanScoped("Child", errorMapper = errorMapper) *> failedEffect
+                         tracing.spanScoped("Root", statusMapper = statusMapper) *> ZIO.scoped[Any](
+                           tracing.spanScoped("Child", statusMapper = statusMapper) *> failedEffect
                          )
                        )
                        .ignore

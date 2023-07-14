@@ -198,7 +198,7 @@ trait Tracing { self =>
    *   name of the new root span
    * @param spanKind
    *   name of the new root span
-   * @param errorMapper
+   * @param statusMapper
    *   error mapper
    * @param links
    *   spanContexts of the linked Spans.
@@ -214,7 +214,7 @@ trait Tracing { self =>
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     attributes: Attributes = Attributes.empty(),
-    errorMapper: ErrorMapper[E] = ErrorMapper.default[E],
+    statusMapper: StatusMapper[E, A] = StatusMapper.default[E, A],
     links: Seq[SpanContext] = Seq.empty
   )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
@@ -384,7 +384,7 @@ trait Tracing { self =>
    *   name of the child span
    * @param spanKind
    *   kind of the child span
-   * @param errorMapper
+   * @param statusMapper
    *   error mapper
    * @param links
    *   spanContexts of the linked Spans.
@@ -400,7 +400,7 @@ trait Tracing { self =>
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     attributes: Attributes = Attributes.empty(),
-    errorMapper: ErrorMapper[E] = ErrorMapper.default[E],
+    statusMapper: StatusMapper[E, A] = StatusMapper.default[E, A],
     links: Seq[SpanContext] = Seq.empty
   )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
@@ -413,7 +413,7 @@ trait Tracing { self =>
    *   name of the child span
    * @param spanKind
    *   kind of the child span
-   * @param errorMapper
+   * @param statusMapper
    *   error mapper
    * @param links
    *   spanContexts of the linked Spans.
@@ -422,7 +422,7 @@ trait Tracing { self =>
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     attributes: Attributes = Attributes.empty(),
-    errorMapper: ErrorMapper[Any] = ErrorMapper.default[Any],
+    statusMapper: StatusMapper[Any, Unit] = StatusMapper.default[Any, Unit],
     links: Seq[SpanContext] = Seq.empty
   )(implicit trace: Trace): ZIO[Scope, Nothing, Unit]
 
@@ -599,7 +599,7 @@ object Tracing {
             spanName: String,
             spanKind: SpanKind,
             attributes: Attributes,
-            errorMapper: ErrorMapper[Any] = ErrorMapper.default[Any],
+            statusMapper: StatusMapper[Any, Unit] = StatusMapper.default[Any, Unit],
             links: Seq[SpanContext]
           )(implicit trace: Trace): ZIO[Scope, Nothing, Unit] =
             getCurrentContextUnsafe.flatMap { old =>
@@ -611,7 +611,7 @@ object Tracing {
               } { case ((endSpan, ctx), exit) =>
                 (exit match {
                   case Exit.Success(_)     => ZIO.unit
-                  case Exit.Failure(cause) => setErrorStatus(Span.fromContext(ctx), cause, errorMapper)
+                  case Exit.Failure(cause) => setErrorStatus(Span.fromContext(ctx), cause, statusMapper)
                 }) *> endSpan
               }.unit
             }
