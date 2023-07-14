@@ -9,10 +9,10 @@ import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import io.opentelemetry.sdk.trace.data.SpanData
 import zio._
 import zio.telemetry.opentelemetry.context.{ContextStorage, IncomingContextCarrier, OutgoingContextCarrier}
+import zio.telemetry.opentelemetry.tracing.StatusMapper.StatusMapperResult
 import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 import zio.test.Assertion._
 import zio.test.{Spec, TestClock, ZIOSpecDefault, assert}
-import StatusMapper.StatusMapperResult
 
 import scala.collection.mutable
 import scala.concurrent.Future
