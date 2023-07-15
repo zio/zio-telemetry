@@ -42,10 +42,8 @@ object TracingTest extends ZIOSpecDefault {
     suite("spans")(test("span") {
       ZIO
         .serviceWithZIO[Tracing] { tracing =>
-          import tracing.aspects._
-
           for {
-            _     <- ZIO.unit @@ span("Child") @@ span("Root")
+            _     <- ZIO.unit @@ tracing.span("Child") @@ tracing.span("Root")
             spans <- getFinishedSpans
             root   = spans.find(_.getName == "Root")
             child  = spans.find(_.getName == "Child")

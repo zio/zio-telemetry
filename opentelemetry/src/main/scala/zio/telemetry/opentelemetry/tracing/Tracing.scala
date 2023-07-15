@@ -63,7 +63,7 @@ trait Tracing { self =>
    * @tparam A
    * @return
    */
-  def extractSpan[C, R, E, A](
+  def extractSpan[C, R, E, E1 <: E, A, A1 <: A](
     propagator: TraceContextPropagator,
     carrier: IncomingContextCarrier[C],
     spanName: String,
@@ -71,7 +71,7 @@ trait Tracing { self =>
     attributes: Attributes = Attributes.empty(),
     statusMapper: StatusMapper[E, A] = StatusMapper.default,
     links: Seq[SpanContext] = Seq.empty
-  )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
+  )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1]
 
   /**
    * Extracts the span from carrier `C` and unsafely set its child span with name 'spanName' as the current span.
@@ -180,14 +180,14 @@ trait Tracing { self =>
    * @tparam A
    * @return
    */
-  def inSpan[R, E, A](
+  def inSpan[R, E, E1 <: E, A, A1 <: A](
     span: Span,
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     attributes: Attributes = Attributes.empty(),
     statusMapper: StatusMapper[E, A] = StatusMapper.default,
     links: Seq[SpanContext] = Seq.empty
-  )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
+  )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1]
 
   /**
    * Sets the current span to be the new root span with name 'spanName'.
@@ -210,13 +210,13 @@ trait Tracing { self =>
    * @tparam A
    * @return
    */
-  def root[R, E, A](
+  def root[R, E, E1 <: E, A, A1 <: A](
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     attributes: Attributes = Attributes.empty(),
     statusMapper: StatusMapper[E, A] = StatusMapper.default,
     links: Seq[SpanContext] = Seq.empty
-  )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
+  )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1]
 
   /**
    * Introduces a thread-local scope during the execution allowing for non-zio context propagation.
@@ -396,13 +396,13 @@ trait Tracing { self =>
    * @tparam A
    * @return
    */
-  def span[R, E, A](
+  def span[R, E, E1 <: E, A, A1 <: A](
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     attributes: Attributes = Attributes.empty(),
     statusMapper: StatusMapper[E, A] = StatusMapper.default,
     links: Seq[SpanContext] = Seq.empty
-  )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
+  )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1]
 
   /**
    * Sets the current span to be the child of the current span with name 'spanName'.
@@ -457,9 +457,9 @@ trait Tracing { self =>
       attributes: Attributes = Attributes.empty(),
       statusMapper: StatusMapper[E1, A1] = StatusMapper.default,
       links: Seq[SpanContext] = Seq.empty
-    ): ZIOAspect[Nothing, Any, E1, E1, A1, A1] =
-      new ZIOAspect[Nothing, Any, E1, E1, A1, A1] {
-        override def apply[R, E >: E1 <: E1, A >: A1 <: A1](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A1] =
+    ): ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] =
+      new ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] {
+        override def apply[R, E <: E1, A <: A1](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
           self.extractSpan(propagator, carrier, spanName, spanKind, attributes, statusMapper, links)(zio)
       }
 
@@ -470,9 +470,9 @@ trait Tracing { self =>
       attributes: Attributes = Attributes.empty(),
       statusMapper: StatusMapper[E1, A1] = StatusMapper.default,
       links: Seq[SpanContext] = Seq.empty
-    ): ZIOAspect[Nothing, Any, E1, E1, A1, A1] =
-      new ZIOAspect[Nothing, Any, E1, E1, A1, A1] {
-        override def apply[R, E >: E1 <: E1, A >: A1 <: A1](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+    ): ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] =
+      new ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] {
+        override def apply[R, E <: E1, A <: A1](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
           self.inSpan(span, spanName, spanKind, attributes, statusMapper, links)(zio)
       }
 
@@ -482,9 +482,9 @@ trait Tracing { self =>
       attributes: Attributes = Attributes.empty(),
       statusMapper: StatusMapper[E1, A1] = StatusMapper.default,
       links: Seq[SpanContext] = Seq.empty
-    ): ZIOAspect[Nothing, Any, E1, E1, A1, A1] =
-      new ZIOAspect[Nothing, Any, E1, E1, A1, A1] {
-        override def apply[R, E >: E1 <: E1, A >: A1 <: A1](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+    ): ZIOAspect[Nothing, Any, Nothing, E1, A1, A1] =
+      new ZIOAspect[Nothing, Any, Nothing, E1, A1, A1] {
+        override def apply[R, E <: E1, A <: A1](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
           self.root(spanName, spanKind, attributes, statusMapper, links)(zio)
       }
 
@@ -494,9 +494,9 @@ trait Tracing { self =>
       attributes: Attributes = Attributes.empty(),
       statusMapper: StatusMapper[E1, A1] = StatusMapper.default,
       links: Seq[SpanContext] = Seq.empty
-    ): ZIOAspect[Nothing, Any, E1, E1, A1, A1] =
-      new ZIOAspect[Nothing, Any, E1, E1, A1, A1] {
-        override def apply[R, E >: E1 <: E1, A >: A1 <: A1](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+    ): ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] =
+      new ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] {
+        override def apply[R, E <: E1, A <: A1](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
           self.span(spanName, spanKind, attributes, statusMapper, links)(zio)
       }
 
@@ -528,7 +528,7 @@ object Tracing {
           override def getCurrentSpanContextUnsafe(implicit trace: Trace): UIO[SpanContext] =
             getCurrentSpanUnsafe.map(_.getSpanContext())
 
-          override def extractSpan[C, R, E, A](
+          override def extractSpan[C, R, E, E1 <: E, A, A1 <: A](
             propagator: TraceContextPropagator,
             carrier: IncomingContextCarrier[C],
             spanName: String,
@@ -536,7 +536,7 @@ object Tracing {
             attributes: Attributes = Attributes.empty(),
             statusMapper: StatusMapper[E, A] = StatusMapper.default,
             links: Seq[SpanContext] = Seq.empty
-          )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
             extractContext(propagator, carrier).flatMap { context =>
               ZIO.acquireReleaseWith {
                 createChild(context, spanName, spanKind, attributes, links)
@@ -563,13 +563,13 @@ object Tracing {
               finalize    = end *> ctxStorage.set(oldCtx)
             } yield (span, finalize)
 
-          override def root[R, E, A](
+          override def root[R, E, E1 <: E, A, A1 <: A](
             spanName: String,
             spanKind: SpanKind = SpanKind.INTERNAL,
             attributes: Attributes = Attributes.empty(),
             statusMapper: StatusMapper[E, A] = StatusMapper.default,
             links: Seq[SpanContext] = Seq.empty
-          )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
             ZIO.acquireReleaseWith {
               createRoot(spanName, spanKind, attributes, links)
             } { case (endSpan, _) =>
@@ -578,13 +578,13 @@ object Tracing {
               finalizeSpanUsingEffect(zio, ctx, statusMapper)
             }
 
-          override def span[R, E, A](
+          override def span[R, E, E1 <: E, A, A1 <: A](
             spanName: String,
             spanKind: SpanKind = SpanKind.INTERNAL,
             attributes: Attributes = Attributes.empty(),
             statusMapper: StatusMapper[E, A] = StatusMapper.default,
             links: Seq[SpanContext] = Seq.empty
-          )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
             getCurrentContextUnsafe.flatMap { old =>
               ZIO.acquireReleaseWith {
                 createChild(old, spanName, spanKind, attributes, links)
@@ -671,14 +671,14 @@ object Tracing {
               _   <- injectContext(ctx, propagator, carrier)
             } yield ()
 
-          override def inSpan[R, E, A](
+          override def inSpan[R, E, E1 <: E, A, A1 <: A](
             span: Span,
             spanName: String,
             spanKind: SpanKind = SpanKind.INTERNAL,
             attributes: Attributes = Attributes.empty(),
             statusMapper: StatusMapper[E, A] = StatusMapper.default,
             links: Seq[SpanContext] = Seq.empty
-          )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
             ZIO.acquireReleaseWith {
               createChild(Context.root().`with`(span), spanName, spanKind, attributes, links)
             } { case (endSpan, _) =>
