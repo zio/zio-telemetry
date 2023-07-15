@@ -27,7 +27,7 @@ import zio.telemetry.opentelemetry.example.JaegerTracer
 import io.opentelemetry.api.trace.{ SpanKind, StatusCode }
 import zio._
 
-val errorMapper = ErrorMapper[Throwable]{ case _ => StatusCode.UNSET }
+val statusMapper = StatusMapper.failure[Unit](StatusCode.UNSET)
 
 val app =
   ZIO.serviceWithZIO[Tracing] { tracing =>
@@ -46,7 +46,7 @@ val app =
     } yield message
     
     // create a root span out of `zio`
-    zio @@ root("root span", SpanKind.INTERNAL, errorMapper)
+    zio @@ root("root span", SpanKind.INTERNAL, statusMapper)
     
   }.provide(Tracing.live, ContextStorage.fiberRef, JaegerTracer.live)
 ```
@@ -133,12 +133,12 @@ import zio.telemetry.opentelemetry.example.JaegerTracer
 import io.opentelemetry.api.trace.{SpanKind, StatusCode}
 import zio._
 
-val errorMapper = ErrorMapper[Throwable] { case _ => StatusCode.UNSET }
+val statusMapper = StatusMapper.failure[Unit](StatusCode.UNSET)
 
 val app =
   ZIO.serviceWithZIO[Tracing] { tracing =>
     import tracing.aspects._
-    ZIO.logInfo("Hello") @@ root("root span", SpanKind.INTERNAL, errorMapper)
+    ZIO.logInfo("Hello") @@ root("root span", SpanKind.INTERNAL, statusMapper)
   }.provide(
     Tracing.live,
     ContextStorage.openTelemetryContext, // <<< ContextStorage
