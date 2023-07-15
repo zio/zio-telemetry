@@ -69,7 +69,7 @@ trait Tracing { self =>
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     attributes: Attributes = Attributes.empty(),
-    statusMapper: StatusMapper[E, A] = StatusMapper.default[E, A],
+    statusMapper: StatusMapper[E, A] = StatusMapper.default,
     links: Seq[SpanContext] = Seq.empty
   )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
@@ -185,7 +185,7 @@ trait Tracing { self =>
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     attributes: Attributes = Attributes.empty(),
-    statusMapper: StatusMapper[E, A] = StatusMapper.default[E, A],
+    statusMapper: StatusMapper[E, A] = StatusMapper.default,
     links: Seq[SpanContext] = Seq.empty
   )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
@@ -214,7 +214,7 @@ trait Tracing { self =>
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     attributes: Attributes = Attributes.empty(),
-    statusMapper: StatusMapper[E, A] = StatusMapper.default[E, A],
+    statusMapper: StatusMapper[E, A] = StatusMapper.default,
     links: Seq[SpanContext] = Seq.empty
   )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
@@ -400,7 +400,7 @@ trait Tracing { self =>
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     attributes: Attributes = Attributes.empty(),
-    statusMapper: StatusMapper[E, A] = StatusMapper.default[E, A],
+    statusMapper: StatusMapper[E, A] = StatusMapper.default,
     links: Seq[SpanContext] = Seq.empty
   )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
@@ -422,7 +422,7 @@ trait Tracing { self =>
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     attributes: Attributes = Attributes.empty(),
-    statusMapper: StatusMapper[Any, Unit] = StatusMapper.default[Any, Unit],
+    statusMapper: StatusMapper[Any, Unit] = StatusMapper.default,
     links: Seq[SpanContext] = Seq.empty
   )(implicit trace: Trace): ZIO[Scope, Nothing, Unit]
 
@@ -455,7 +455,7 @@ trait Tracing { self =>
       spanName: String,
       spanKind: SpanKind = SpanKind.INTERNAL,
       attributes: Attributes = Attributes.empty(),
-      statusMapper: StatusMapper[E1, A1] = StatusMapper.default[E1, A1],
+      statusMapper: StatusMapper[E1, A1] = StatusMapper.default,
       links: Seq[SpanContext] = Seq.empty
     ): ZIOAspect[Nothing, Any, E1, E1, A1, A1] =
       new ZIOAspect[Nothing, Any, E1, E1, A1, A1] {
@@ -468,7 +468,7 @@ trait Tracing { self =>
       spanName: String,
       spanKind: SpanKind = SpanKind.INTERNAL,
       attributes: Attributes = Attributes.empty(),
-      statusMapper: StatusMapper[E1, A1] = StatusMapper.default[E1, A1],
+      statusMapper: StatusMapper[E1, A1] = StatusMapper.default,
       links: Seq[SpanContext] = Seq.empty
     ): ZIOAspect[Nothing, Any, E1, E1, A1, A1] =
       new ZIOAspect[Nothing, Any, E1, E1, A1, A1] {
@@ -480,7 +480,7 @@ trait Tracing { self =>
       spanName: String,
       spanKind: SpanKind = SpanKind.INTERNAL,
       attributes: Attributes = Attributes.empty(),
-      statusMapper: StatusMapper[E1, A1] = StatusMapper.default[E1, A1],
+      statusMapper: StatusMapper[E1, A1] = StatusMapper.default,
       links: Seq[SpanContext] = Seq.empty
     ): ZIOAspect[Nothing, Any, E1, E1, A1, A1] =
       new ZIOAspect[Nothing, Any, E1, E1, A1, A1] {
@@ -492,7 +492,7 @@ trait Tracing { self =>
       spanName: String,
       spanKind: SpanKind = SpanKind.INTERNAL,
       attributes: Attributes = Attributes.empty(),
-      statusMapper: StatusMapper[E1, A1] = StatusMapper.default[E1, A1],
+      statusMapper: StatusMapper[E1, A1] = StatusMapper.default,
       links: Seq[SpanContext] = Seq.empty
     ): ZIOAspect[Nothing, Any, E1, E1, A1, A1] =
       new ZIOAspect[Nothing, Any, E1, E1, A1, A1] {
@@ -534,7 +534,7 @@ object Tracing {
             spanName: String,
             spanKind: SpanKind = SpanKind.INTERNAL,
             attributes: Attributes = Attributes.empty(),
-            statusMapper: StatusMapper[E, A] = StatusMapper.default[E, A],
+            statusMapper: StatusMapper[E, A] = StatusMapper.default,
             links: Seq[SpanContext] = Seq.empty
           )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
             extractContext(propagator, carrier).flatMap { context =>
@@ -567,7 +567,7 @@ object Tracing {
             spanName: String,
             spanKind: SpanKind = SpanKind.INTERNAL,
             attributes: Attributes = Attributes.empty(),
-            statusMapper: StatusMapper[E, A] = StatusMapper.default[E, A],
+            statusMapper: StatusMapper[E, A] = StatusMapper.default,
             links: Seq[SpanContext] = Seq.empty
           )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
             ZIO.acquireReleaseWith {
@@ -582,7 +582,7 @@ object Tracing {
             spanName: String,
             spanKind: SpanKind = SpanKind.INTERNAL,
             attributes: Attributes = Attributes.empty(),
-            statusMapper: StatusMapper[E, A] = StatusMapper.default[E, A],
+            statusMapper: StatusMapper[E, A] = StatusMapper.default,
             links: Seq[SpanContext] = Seq.empty
           )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
             getCurrentContextUnsafe.flatMap { old =>
@@ -599,7 +599,7 @@ object Tracing {
             spanName: String,
             spanKind: SpanKind,
             attributes: Attributes,
-            statusMapper: StatusMapper[Any, Unit] = StatusMapper.default[Any, Unit],
+            statusMapper: StatusMapper[Any, Unit] = StatusMapper.default,
             links: Seq[SpanContext]
           )(implicit trace: Trace): ZIO[Scope, Nothing, Unit] =
             getCurrentContextUnsafe.flatMap { old =>
@@ -676,7 +676,7 @@ object Tracing {
             spanName: String,
             spanKind: SpanKind = SpanKind.INTERNAL,
             attributes: Attributes = Attributes.empty(),
-            statusMapper: StatusMapper[E, A] = StatusMapper.default[E, A],
+            statusMapper: StatusMapper[E, A] = StatusMapper.default,
             links: Seq[SpanContext] = Seq.empty
           )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
             ZIO.acquireReleaseWith {

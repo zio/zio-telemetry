@@ -10,7 +10,7 @@ case class HttpServerApp(tracing: Tracing) {
 
   val routes: HttpApp[Any, Throwable] =
     Http.collectZIO { case _ @Method.GET -> _ / "health" =>
-      health @@ span[Throwable, Response]("health-endpoint")
+      health @@ span("health-endpoint")
     }
 
   def health: UIO[Response] =
