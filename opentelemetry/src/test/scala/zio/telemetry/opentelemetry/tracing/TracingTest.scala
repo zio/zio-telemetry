@@ -9,9 +9,10 @@ import io.opentelemetry.sdk.trace.data.SpanData
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import zio._
 import zio.telemetry.opentelemetry.context.{ContextStorage, IncomingContextCarrier, OutgoingContextCarrier}
+import zio.telemetry.opentelemetry.tracing.StatusMapper.StatusMapperResult
 import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 import zio.test.Assertion._
-import zio.test.{Spec, TestClock, ZIOSpecDefault, assert}
+import zio.test.{TestClock, ZIOSpecDefault, assert}
 
 import scala.collection.mutable
 import scala.concurrent.Future
@@ -39,7 +40,7 @@ object TracingTest extends ZIOSpecDefault {
       .service[InMemorySpanExporter]
       .map(_.getFinishedSpanItems.asScala.toList)
 
-  def spec: Spec[Any, Throwable] =
+  def spec =
     suite("zio opentelemetry")(
       suite("Tracing")(
         creationSpec,
@@ -79,6 +80,35 @@ object TracingTest extends ZIOSpecDefault {
                 )
               )
             )
+        }
+      },
+      test("set status code for success span") {
+        ZIO.serviceWithZIO[Tracing] { tracing =>
+          import tracing.aspects._
+          val assertStatusCodeError             =
+            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.ERROR))
+          val assertStatusDescriptionError      =
+            hasField[SpanData, String](
+              "statusDescription",
+              _.getStatus.getDescription,
+              equalTo("My error message. Result = success")
+            )
+          val assertRecordedExceptionAttributes = hasField[SpanData, List[(String, String)]](
+            "exceptionAttributes",
+            _.getEvents.asScala.toList
+              .flatMap(_.getAttributes.asMap().asScala.toList.map(x => x._1.getKey -> x._2.toString)),
+            isEmpty
+          )
+          val assertion                         = assertStatusCodeError && assertRecordedExceptionAttributes && assertStatusDescriptionError
+          val statusMapper                      =
+            StatusMapper.success[String](StatusCode.ERROR, r => Option(s"My error message. Result = $r"))
+
+          for {
+            _     <-
+              ZIO.succeed("success") @@ span("Child", statusMapper = statusMapper) @@ span("Root")
+            spans <- getFinishedSpans
+            child  = spans.find(_.getName == "Child")
+          } yield assert(child)(isSome(assertion))
         }
       },
       test("addLinks") {
@@ -131,16 +161,16 @@ object TracingTest extends ZIOSpecDefault {
             hasSubset(List("exception.message" -> "some_error", "exception.type" -> "java.lang.RuntimeException"))
           )
           val assertion                         = assertStatusCodeError && assertRecordedExceptionAttributes && assertStatusDescriptionError
-          val errorMapper                       = ErrorMapper[Throwable]({ case _ => StatusCode.ERROR }, Some(identity))
+          val statusMapper                      = StatusMapper.failure(StatusCode.ERROR)
 
           val alwaysTrue                              = true
           val failedEffect: ZIO[Any, Throwable, Unit] =
             ZIO.fail(new RuntimeException("some_error")).when(alwaysTrue).unit
 
           for {
-            _     <- (failedEffect @@ span[Throwable]("Child", errorMapper = errorMapper) @@ span[Throwable](
+            _     <- (failedEffect @@ span("Child", statusMapper = statusMapper) @@ span(
                        "Root",
-                       errorMapper = errorMapper
+                       statusMapper = statusMapper
                      )).ignore
             spans <- getFinishedSpans
             root   = spans.find(_.getName == "Root")
@@ -163,16 +193,16 @@ object TracingTest extends ZIOSpecDefault {
             hasSubset(List("exception.message" -> "some_error", "exception.type" -> "java.lang.RuntimeException"))
           )
           val assertion                         = assertStatusCodeError && assertRecordedExceptionAttributes && assertStatusDescriptionError
-          val errorMapper                       = ErrorMapper[Throwable]({ case _ => StatusCode.UNSET }, Some(identity))
+          val statusMapper                      = StatusMapper.failure(StatusCode.UNSET)
 
           val alwaysTrue                              = true
           val failedEffect: ZIO[Any, Throwable, Unit] =
             ZIO.fail(new RuntimeException("some_error")).when(alwaysTrue).unit
 
           for {
-            _     <- (failedEffect @@ span[Throwable]("Child", errorMapper = errorMapper) @@ span[Throwable](
+            _     <- (failedEffect @@ span("Child", statusMapper = statusMapper) @@ span(
                        "Root",
-                       errorMapper = errorMapper
+                       statusMapper = statusMapper
                      )).ignore
             spans <- getFinishedSpans
             root   = spans.find(_.getName == "Root")
@@ -236,7 +266,7 @@ object TracingTest extends ZIOSpecDefault {
                        span.addEvent("In legacy code")
                        if (Context.current() == Context.root()) throw new RuntimeException("Current context is root!")
                        span.addEvent("Finishing legacy code")
-                     } @@ span[Throwable]("Scoped") @@ span[Throwable]("Root")
+                     }.unit @@ span("Scoped") @@ span("Root")
             spans <- getFinishedSpans
             root   = spans.find(_.getName == "Root")
             scoped = spans.find(_.getName == "Scoped")
@@ -266,7 +296,7 @@ object TracingTest extends ZIOSpecDefault {
                        Thread.sleep(10)
                        if (Context.current() == Context.root()) throw new RuntimeException("Current context is root!")
                        span.addEvent("Finishing legacy code")
-                     } @@ span("Scoped") @@ span("Root")
+                     }.unit @@ span("Scoped") @@ span("Root")
             spans <- getFinishedSpans
             root   = spans.find(_.getName == "Root")
             scoped = spans.find(_.getName == "Scoped")
@@ -298,7 +328,7 @@ object TracingTest extends ZIOSpecDefault {
                           span.addEvent("Finishing legacy code")
                           1
                         }
-                      } @@ span[Throwable]("Scoped") @@ span[Throwable]("Root")
+                      } @@ span("Scoped") @@ span("Root")
             spans  <- getFinishedSpans
             root    = spans.find(_.getName == "Root")
             scoped  = spans.find(_.getName == "Scoped")
@@ -326,11 +356,14 @@ object TracingTest extends ZIOSpecDefault {
           val roundtrip =
             (for {
               _ <-
-                tracing.inject(TraceContextPropagator.default, OutgoingContextCarrier.default(carrier)) @@
-                  span("foo")
+                tracing.inject(TraceContextPropagator.default, OutgoingContextCarrier.default(carrier)) @@ span("foo")
               _ <-
                 ZIO.unit @@
-                  extractSpan(TraceContextPropagator.default, IncomingContextCarrier.default(carrier), "baz") @@
+                  extractSpan(
+                    TraceContextPropagator.default,
+                    IncomingContextCarrier.default(carrier),
+                    "baz"
+                  ) @@
                   span("bar")
             } yield ()) @@ span("ROOT")
 
@@ -487,31 +520,35 @@ object TracingTest extends ZIOSpecDefault {
       },
       test("setError") {
         ZIO.serviceWithZIO[Tracing] { tracing =>
-          val assertStatusCodeError             =
+          val assertStatusCodeError                   =
             hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.ERROR))
-          val assertStatusDescriptionError      =
+          val assertStatusDescriptionError            =
             hasField[SpanData, String](
               "statusDescription",
               _.getStatus.getDescription,
               containsString("java.lang.RuntimeException: some_error")
             )
-          val assertRecordedExceptionAttributes = hasField[SpanData, List[(String, String)]](
+          val assertRecordedExceptionAttributes       = hasField[SpanData, List[(String, String)]](
             "exceptionAttributes",
             _.getEvents.asScala.toList
               .flatMap(_.getAttributes.asMap().asScala.toList.map(x => x._1.getKey -> x._2.toString)),
             hasSubset(List("exception.message" -> "some_error", "exception.type" -> "java.lang.RuntimeException"))
           )
-          val assertion                         = assertStatusCodeError && assertRecordedExceptionAttributes && assertStatusDescriptionError
-          val errorMapper                       = ErrorMapper[Any]({ case _ => StatusCode.ERROR }, Some(_.asInstanceOf[Throwable]))
-
+          val assertion                               = assertStatusCodeError && assertRecordedExceptionAttributes && assertStatusDescriptionError
+          val statusMapper: StatusMapper[Any, Unit]   = StatusMapper[Any, Unit](
+            { case e =>
+              StatusMapperResult(StatusCode.ERROR, Option(e.asInstanceOf[Throwable]))
+            },
+            Map.empty
+          )
           val failedEffect: ZIO[Any, Throwable, Unit] =
             ZIO.fail(new RuntimeException("some_error")).unit
 
           for {
             _     <- ZIO
                        .scoped[Any](
-                         tracing.spanScoped("Root", errorMapper = errorMapper) *> ZIO.scoped[Any](
-                           tracing.spanScoped("Child", errorMapper = errorMapper) *> failedEffect
+                         tracing.spanScoped("Root", statusMapper = statusMapper) *> ZIO.scoped[Any](
+                           tracing.spanScoped("Child", statusMapper = statusMapper) *> failedEffect
                          )
                        )
                        .ignore
