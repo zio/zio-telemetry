@@ -100,24 +100,6 @@ trait Tracing { self =>
           self.fromRootSpan(format, carrier, getter, name, kind, toErrorStatus, attributes)(zio)
       }
 
-    def inject[C](
-      format: TextFormat,
-      carrier: C,
-      setter: TextFormat.Setter[C]
-    ): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
-      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
-        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
-          self.inject(format, carrier, setter) *> zio
-      }
-
-    def withAttributes(
-      attrs: (String, AttributeValue)*
-    ): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
-      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
-        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
-          self.putAttributes(attrs.toMap) *> zio
-      }
-
   }
 
 }
