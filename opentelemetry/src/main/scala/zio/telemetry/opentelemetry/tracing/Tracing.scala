@@ -50,7 +50,7 @@ trait Tracing { self =>
    * @param spanKind
    *   kind of the child span
    * @param statusMapper
-   *   error mapper
+   *   status mapper
    * @param links
    *   spanContexts of the linked Spans.
    * @param zio
@@ -169,7 +169,7 @@ trait Tracing { self =>
    * @param spanKind
    *   kind of the child span
    * @param statusMapper
-   *   error mapper
+   *   status mapper
    * @param links
    *   spanContexts of the linked Spans.
    * @param zio
@@ -199,7 +199,7 @@ trait Tracing { self =>
    * @param spanKind
    *   name of the new root span
    * @param statusMapper
-   *   error mapper
+   *   status mapper
    * @param links
    *   spanContexts of the linked Spans.
    * @param zio
@@ -385,7 +385,7 @@ trait Tracing { self =>
    * @param spanKind
    *   kind of the child span
    * @param statusMapper
-   *   error mapper
+   *   status mapper
    * @param links
    *   spanContexts of the linked Spans.
    * @param zio
@@ -414,7 +414,7 @@ trait Tracing { self =>
    * @param spanKind
    *   kind of the child span
    * @param statusMapper
-   *   error mapper
+   *   status mapper
    * @param links
    *   spanContexts of the linked Spans.
    */
@@ -605,14 +605,17 @@ object Tracing {
             getCurrentContextUnsafe.flatMap { old =>
               ZIO.acquireReleaseExit {
                 for {
-                  res <- createChild(old, spanName, spanKind, attributes, links)
-                  _   <- ctxStorage.locallyScoped(res._2)
-                } yield res
+                  childUnsafe <- createChild(old, spanName, spanKind, attributes, links)
+                  (_, ctx)     = childUnsafe
+                  _           <- ctxStorage.locallyScoped(ctx)
+                } yield childUnsafe
               } { case ((endSpan, ctx), exit) =>
-                (exit match {
+                val setStatus = exit match {
                   case Exit.Success(_)     => ZIO.unit
-                  case Exit.Failure(cause) => setErrorStatus(Span.fromContext(ctx), cause, statusMapper)
-                }) *> endSpan
+                  case Exit.Failure(cause) => setFailureStatus(Span.fromContext(ctx), cause, statusMapper)
+                }
+
+                setStatus *> endSpan
               }.unit
             }
 
@@ -749,21 +752,21 @@ object Tracing {
             getCurrentSpanUnsafe.map(_.setAttribute(AttributeKey.doubleArrayKey(name), v))
           }
 
-          private def setErrorFromResult[E, A](span: Span, a: A, statusMapper: StatusMapper[E, A]): UIO[Span] =
+          private def setSuccessStatus[E, A](span: Span, a: A, statusMapper: StatusMapper[E, A]): UIO[Span] =
             statusMapper.success
               .lift(a)
-              .fold(ZIO.succeed(span)) { case StatusMapper.StatusMapperResult(errorStatus, maybeError) =>
+              .fold(ZIO.succeed(span)) { case StatusMapper.Result(statusCode, maybeError) =>
                 for {
-                  result <- if (errorStatus == StatusCode.ERROR)
-                              maybeError.fold(ZIO.succeed(span.setStatus(errorStatus)))(errorMessage =>
-                                ZIO.succeed(span.setStatus(errorStatus, errorMessage))
+                  result <- if (statusCode == StatusCode.ERROR)
+                              maybeError.fold(ZIO.succeed(span.setStatus(statusCode)))(errorMessage =>
+                                ZIO.succeed(span.setStatus(statusCode, errorMessage))
                               )
                             else
-                              ZIO.succeed(span.setStatus(errorStatus))
+                              ZIO.succeed(span.setStatus(statusCode))
                 } yield result
               }
 
-          private def setErrorStatus[E, A](
+          private def setFailureStatus[E, A](
             span: Span,
             cause: Cause[E],
             statusMapper: StatusMapper[E, A]
@@ -771,7 +774,7 @@ object Tracing {
             val statusMapperResult =
               cause.failureOption
                 .flatMap(statusMapper.failure.lift)
-                .getOrElse(StatusMapper.StatusMapperResult(StatusCode.ERROR, None))
+                .getOrElse(StatusMapper.Result(StatusCode.ERROR, None))
 
             for {
               _      <- if (statusMapperResult.statusCode == StatusCode.ERROR)
@@ -794,8 +797,8 @@ object Tracing {
           )(implicit trace: Trace): ZIO[R, E, A] =
             ctxStorage
               .locally(ctx)(zio)
-              .tapErrorCause(setErrorStatus(Span.fromContext(ctx), _, statusMapper))
-              .tap(setErrorFromResult(Span.fromContext(ctx), _, statusMapper))
+              .tapErrorCause(setFailureStatus(Span.fromContext(ctx), _, statusMapper))
+              .tap(setSuccessStatus(Span.fromContext(ctx), _, statusMapper))
 
           private def currentNanos(implicit trace: Trace): UIO[Long] =
             Clock.currentTime(TimeUnit.NANOSECONDS)

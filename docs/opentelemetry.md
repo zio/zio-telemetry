@@ -27,7 +27,7 @@ import zio.telemetry.opentelemetry.example.JaegerTracer
 import io.opentelemetry.api.trace.{ SpanKind, StatusCode }
 import zio._
 
-val statusMapper = StatusMapper.failure[Unit](StatusCode.UNSET)
+val statusMapper = StatusMapper.failureThrowable(StatusCode.UNSET)
 
 val app =
   ZIO.serviceWithZIO[Tracing] { tracing =>
@@ -133,7 +133,7 @@ import zio.telemetry.opentelemetry.example.JaegerTracer
 import io.opentelemetry.api.trace.{SpanKind, StatusCode}
 import zio._
 
-val statusMapper = StatusMapper.failure[Unit](StatusCode.UNSET)
+val statusMapper = StatusMapper.failureNoException(StatusCode.UNSET)
 
 val app =
   ZIO.serviceWithZIO[Tracing] { tracing =>
