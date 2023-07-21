@@ -20,7 +20,7 @@ trait Tracing { self =>
    * @param trace
    * @return
    */
-  def addEvent(name: String)(implicit trace: Trace): UIO[Span]
+  def addEvent(name: String)(implicit trace: Trace): UIO[Unit]
 
   /**
    * Adds an event with attributes to the current span.
@@ -34,7 +34,7 @@ trait Tracing { self =>
   def addEventWithAttributes(
     name: String,
     attributes: Attributes
-  )(implicit trace: Trace): UIO[Span]
+  )(implicit trace: Trace): UIO[Unit]
 
   /**
    * Extracts the span from carrier `C` and set its child span with name 'spanName' as the current span.
@@ -271,7 +271,7 @@ trait Tracing { self =>
    * @param trace
    * @return
    */
-  def setAttribute(name: String, value: Boolean)(implicit trace: Trace): UIO[Span]
+  def setAttribute(name: String, value: Boolean)(implicit trace: Trace): UIO[Unit]
 
   /**
    * Sets an attribute of the current span.
@@ -281,7 +281,7 @@ trait Tracing { self =>
    * @param trace
    * @return
    */
-  def setAttribute(name: String, value: Double)(implicit trace: Trace): UIO[Span]
+  def setAttribute(name: String, value: Double)(implicit trace: Trace): UIO[Unit]
 
   /**
    * Sets an attribute of the current span.
@@ -291,7 +291,7 @@ trait Tracing { self =>
    * @param trace
    * @return
    */
-  def setAttribute(name: String, value: Long)(implicit trace: Trace): UIO[Span]
+  def setAttribute(name: String, value: Long)(implicit trace: Trace): UIO[Unit]
 
   /**
    * Sets an attribute of the current span.
@@ -301,7 +301,7 @@ trait Tracing { self =>
    * @param trace
    * @return
    */
-  def setAttribute(name: String, value: String)(implicit trace: Trace): UIO[Span]
+  def setAttribute(name: String, value: String)(implicit trace: Trace): UIO[Unit]
 
   /**
    * Sets an attribute of the current span.
@@ -312,7 +312,7 @@ trait Tracing { self =>
    * @tparam T
    * @return
    */
-  def setAttribute[T](key: AttributeKey[T], value: T)(implicit trace: Trace): UIO[Span]
+  def setAttribute[T](key: AttributeKey[T], value: T)(implicit trace: Trace): UIO[Unit]
 
   /**
    * Sets an attribute of the current span.
@@ -322,7 +322,7 @@ trait Tracing { self =>
    * @param trace
    * @return
    */
-  def setAttribute(name: String, values: Seq[String])(implicit trace: Trace): UIO[Span]
+  def setAttribute(name: String, values: Seq[String])(implicit trace: Trace): UIO[Unit]
 
   /**
    * Sets an attribute of the current span.
@@ -334,7 +334,7 @@ trait Tracing { self =>
    * @param trace
    * @return
    */
-  def setAttribute(name: String, values: Seq[Boolean])(implicit i1: DummyImplicit, trace: Trace): UIO[Span]
+  def setAttribute(name: String, values: Seq[Boolean])(implicit i1: DummyImplicit, trace: Trace): UIO[Unit]
 
   /**
    * Sets an attribute of the current span.
@@ -352,7 +352,7 @@ trait Tracing { self =>
     i1: DummyImplicit,
     i2: DummyImplicit,
     trace: Trace
-  ): UIO[Span]
+  ): UIO[Unit]
 
   /**
    * Sets an attribute of the current span.
@@ -373,7 +373,7 @@ trait Tracing { self =>
     i2: DummyImplicit,
     i3: DummyImplicit,
     trace: Trace
-  ): UIO[Span]
+  ): UIO[Unit]
 
   /**
    * Sets the current span to be the child of the current span with name 'spanName'.
@@ -690,56 +690,55 @@ object Tracing {
               finalizeSpanUsingEffect(zio, ctx, statusMapper)
             }
 
-          override def addEvent(name: String)(implicit trace: Trace): UIO[Span] =
+          override def addEvent(name: String)(implicit trace: Trace): UIO[Unit] =
             for {
               nanos <- currentNanos
               span  <- getCurrentSpanUnsafe
-            } yield span.addEvent(name, nanos, TimeUnit.NANOSECONDS)
+              _     <- ZIO.succeed(span.addEvent(name, nanos, TimeUnit.NANOSECONDS))
+            } yield ()
 
-          override def addEventWithAttributes(
-            name: String,
-            attributes: Attributes
-          )(implicit trace: Trace): UIO[Span] =
+          override def addEventWithAttributes(name: String, attributes: Attributes)(implicit trace: Trace): UIO[Unit] =
             for {
               nanos <- currentNanos
               span  <- getCurrentSpanUnsafe
-            } yield span.addEvent(name, attributes, nanos, TimeUnit.NANOSECONDS)
+              _     <- ZIO.succeed(span.addEvent(name, attributes, nanos, TimeUnit.NANOSECONDS))
+            } yield ()
 
-          override def setAttribute(name: String, value: Boolean)(implicit trace: Trace): UIO[Span] =
-            getCurrentSpanUnsafe.map(_.setAttribute(name, value))
+          override def setAttribute(name: String, value: Boolean)(implicit trace: Trace): UIO[Unit] =
+            getCurrentSpanUnsafe.map(_.setAttribute(name, value)).unit
 
-          override def setAttribute(name: String, value: Double)(implicit trace: Trace): UIO[Span] =
-            getCurrentSpanUnsafe.map(_.setAttribute(name, value))
+          override def setAttribute(name: String, value: Double)(implicit trace: Trace): UIO[Unit] =
+            getCurrentSpanUnsafe.map(_.setAttribute(name, value)).unit
 
-          override def setAttribute(name: String, value: Long)(implicit trace: Trace): UIO[Span] =
-            getCurrentSpanUnsafe.map(_.setAttribute(name, value))
+          override def setAttribute(name: String, value: Long)(implicit trace: Trace): UIO[Unit] =
+            getCurrentSpanUnsafe.map(_.setAttribute(name, value)).unit
 
-          override def setAttribute(name: String, value: String)(implicit trace: Trace): UIO[Span] =
-            getCurrentSpanUnsafe.map(_.setAttribute(name, value))
+          override def setAttribute(name: String, value: String)(implicit trace: Trace): UIO[Unit] =
+            getCurrentSpanUnsafe.map(_.setAttribute(name, value)).unit
 
-          override def setAttribute[T](key: AttributeKey[T], value: T)(implicit trace: Trace): UIO[Span] =
-            getCurrentSpanUnsafe.map(_.setAttribute(key, value))
+          override def setAttribute[T](key: AttributeKey[T], value: T)(implicit trace: Trace): UIO[Unit] =
+            getCurrentSpanUnsafe.map(_.setAttribute(key, value)).unit
 
-          override def setAttribute(name: String, values: Seq[String])(implicit trace: Trace): UIO[Span] = {
+          override def setAttribute(name: String, values: Seq[String])(implicit trace: Trace): UIO[Unit] = {
             val v = values.asJava
-            getCurrentSpanUnsafe.map(_.setAttribute(AttributeKey.stringArrayKey(name), v))
+            getCurrentSpanUnsafe.map(_.setAttribute(AttributeKey.stringArrayKey(name), v)).unit
           }
 
           override def setAttribute(name: String, values: Seq[Boolean])(implicit
             i1: DummyImplicit,
             trace: Trace
-          ): UIO[Span] = {
+          ): UIO[Unit] = {
             val v = values.map(Boolean.box).asJava
-            getCurrentSpanUnsafe.map(_.setAttribute(AttributeKey.booleanArrayKey(name), v))
+            getCurrentSpanUnsafe.map(_.setAttribute(AttributeKey.booleanArrayKey(name), v)).unit
           }
 
           override def setAttribute(name: String, values: Seq[Long])(implicit
             i1: DummyImplicit,
             i2: DummyImplicit,
             trace: Trace
-          ): UIO[Span] = {
+          ): UIO[Unit] = {
             val v = values.map(Long.box).asJava
-            getCurrentSpanUnsafe.map(_.setAttribute(AttributeKey.longArrayKey(name), v))
+            getCurrentSpanUnsafe.map(_.setAttribute(AttributeKey.longArrayKey(name), v)).unit
           }
 
           override def setAttribute(name: String, values: Seq[Double])(implicit
@@ -747,9 +746,9 @@ object Tracing {
             i2: DummyImplicit,
             i3: DummyImplicit,
             trace: Trace
-          ): UIO[Span] = {
+          ): UIO[Unit] = {
             val v = values.map(Double.box).asJava
-            getCurrentSpanUnsafe.map(_.setAttribute(AttributeKey.doubleArrayKey(name), v))
+            getCurrentSpanUnsafe.map(_.setAttribute(AttributeKey.doubleArrayKey(name), v)).unit
           }
 
           private def setSuccessStatus[E, A](span: Span, a: A, statusMapper: StatusMapper[E, A]): UIO[Span] =
