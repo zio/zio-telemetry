@@ -30,11 +30,11 @@ val app =
     import tracing.aspects._
 
     (for {
-      _       <- ZIO.unit @@ tag(Tags.SPAN_KIND.getKey, Tags.SPAN_KIND_CLIENT)
-      _       <- ZIO.unit @@ tag(Tags.HTTP_METHOD.getKey, "GET")
-      _       <- ZIO.unit @@ setBaggageItem("proxy-baggage-item-key", "proxy-baggage-item-value")
+      _       <- tracing.tag(Tags.SPAN_KIND.getKey, Tags.SPAN_KIND_CLIENT)
+      _       <- tracing.tag(Tags.HTTP_METHOD.getKey, "GET")
+      _       <- tracing.setBaggageItem("proxy-baggage-item-key", "proxy-baggage-item-value")
       message <- Console.readline
-      _       <- ZIO.unit @@ log("Message has been read")
+      _       <- tracing.log("Message has been read")
     } yield message) @@ root("/app")
   }.provide(OpenTracing.live, JaegerTracer.live("my-app"))
 ```
@@ -48,15 +48,14 @@ ZIO.serviceWithZIO[OpenTracing] { tracing =>
   import tracing.aspects._
   
   // start a new root span and set some baggage item
-  val zio1 = ZIO.unit @@ 
-    setBaggage("foo", "bar") @@ 
-    root("root span")
+  val zio1 = tracing.setBaggage("foo", "bar") @@ root("root span")
 
   // start a child of the current span, set a tag and log a message
-  val zio2 = ZIO.unit @@ 
-    tag("http.status_code", 200) @@ 
-    log("doing some serious work here!") @@ 
-    span("child span")
+  val zio2 = 
+    (for {
+      _ <- tracing.tag("http.status_code", 200)
+      _ <- tracing.log("doing some serious work here!")
+    } yield ()) @@ span("child span")
 }
 ```
 
@@ -76,7 +75,7 @@ ZIO.serviceWithZIO[OpenTracing] { tracing =>
   
   val buffer = new TextMapAdapter(mutable.Map.empty.asJava)
   for {
-    _ <- ZIO.unit @@ inject(Format.Builtin.TEXT_MAP, buffer)
+    _ <- tracing.inject(Format.Builtin.TEXT_MAP, buffer)
     _ <- ZIO.unit @@ spanFrom(Format.Builtin.TEXT_MAP, buffer, "child of remote span")
   } yield buffer
 }
