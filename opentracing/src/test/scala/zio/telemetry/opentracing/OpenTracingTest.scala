@@ -163,9 +163,15 @@ object OpenTracingTest extends ZIOSpecDefault {
           ZIO.serviceWithZIO[OpenTracing] { tracing =>
             import tracing.aspects._
 
+            val zio = for {
+              _ <- tracing.tag("boolean", value = true)
+              _ <- tracing.tag("int", 1)
+              _ <- tracing.tag("string", "foo")
+            } yield ()
+
             for {
               tracer <- ZIO.service[MockTracer]
-              _      <- ZIO.unit @@ tag("boolean", value = true) @@ tag("int", 1) @@ tag("string", "foo") @@ span("foo")
+              _      <- zio @@ span("foo")
             } yield {
               val tags     = tracer.finishedSpans().asScala.head.tags.asScala.toMap
               val expected = Map[String, Any]("boolean" -> true, "int" -> 1, "string" -> "foo")
@@ -180,11 +186,15 @@ object OpenTracingTest extends ZIOSpecDefault {
 
             val duration = 1000.micros
 
+            val zio = for {
+              _ <- tracing.log("message")
+              _ <- TestClock.adjust(duration)
+              _ <- tracing.log(Map("msg" -> "message", "size" -> 1))
+            } yield ()
+
             for {
               tracer <- ZIO.service[MockTracer]
-              logging = ZIO.unit @@ log("message") *>
-                          TestClock.adjust(duration) @@ log(Map("msg" -> "message", "size" -> 1))
-              _      <- tracing.span("foo")(logging)
+              _      <- zio @@ span("foo")
             } yield {
               val tags =
                 tracer
@@ -208,11 +218,9 @@ object OpenTracingTest extends ZIOSpecDefault {
         },
         test("baggage") {
           ZIO.serviceWithZIO[OpenTracing] { tracing =>
-            import tracing.aspects._
-
             for {
-              _      <- ZIO.unit @@ setBaggageItem("foo", "bar")
-              _      <- ZIO.unit @@ setBaggageItem("bar", "baz")
+              _      <- tracing.setBaggageItem("foo", "bar")
+              _      <- tracing.setBaggageItem("bar", "baz")
               fooBag <- tracing.getBaggageItem("foo")
               barBag <- tracing.getBaggageItem("bar")
             } yield assert(fooBag)(isSome(equalTo("bar"))) &&
