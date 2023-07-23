@@ -19,9 +19,9 @@ case class ProxyHttpApp(client: Client, tracing: OpenTracing) {
   def routes: HttpApp[Any, Throwable] =
     Http.collectZIO { case Method.GET -> _ / "statuses" =>
       (for {
-        _        <- ZIO.unit @@ tag(Tags.SPAN_KIND.getKey, Tags.SPAN_KIND_CLIENT)
-        _        <- ZIO.unit @@ tag(Tags.HTTP_METHOD.getKey, GET.method)
-        _        <- ZIO.unit @@ setBaggageItem("proxy-baggage-item-key", "proxy-baggage-item-value")
+        _        <- tracing.tag(Tags.SPAN_KIND.getKey, Tags.SPAN_KIND_CLIENT)
+        _        <- tracing.tag(Tags.HTTP_METHOD.getKey, GET.method)
+        _        <- tracing.setBaggageItem("proxy-baggage-item-key", "proxy-baggage-item-value")
         carrier   = new TextMapAdapter(mutable.Map.empty[String, String].asJava)
         _        <- tracing.inject(HttpHeadersFormat, carrier)
         headers  <- extractHeaders(carrier)
@@ -34,8 +34,7 @@ case class ProxyHttpApp(client: Client, tracing: OpenTracing) {
 
     ZIO.succeed {
       adapter.forEach { entry =>
-        m.put(entry.getKey, entry.getValue): Unit
-        ()
+        m.put(entry.getKey, entry.getValue).fold(())(_ => ())
       }
     }.as(m.toMap)
   }

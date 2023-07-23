@@ -2,7 +2,7 @@ package zio.telemetry.opentelemetry.example
 
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.trace.Tracer
-import io.opentelemetry.exporter.jaeger.JaegerGrpcSpanExporter
+import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.resources.Resource
 import io.opentelemetry.sdk.trace.SdkTracerProvider
@@ -23,7 +23,7 @@ object JaegerTracer {
 
   def makeTracer(host: String): Task[Tracer] =
     for {
-      spanExporter   <- ZIO.attempt(JaegerGrpcSpanExporter.builder().setEndpoint(host).build())
+      spanExporter   <- ZIO.attempt(OtlpGrpcSpanExporter.builder().setEndpoint(host).build())
       spanProcessor  <- ZIO.succeed(SimpleSpanProcessor.create(spanExporter))
       tracerProvider <-
         ZIO.attempt(
