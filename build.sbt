@@ -2,12 +2,12 @@ enablePlugins(ZioSbtEcosystemPlugin, ZioSbtCiPlugin)
 
 inThisBuild(
   List(
-    name               := "ZIO Telemetry",
-    organization       := "dev.zio",
-    zioVersion         := "2.0.15",
-    homepage           := Some(url("https://zio.dev/zio-telemetry/")),
-    licenses           := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-    developers         := List(
+    name              := "ZIO Telemetry",
+    organization      := "dev.zio",
+    zioVersion        := "2.0.15",
+    homepage          := Some(url("https://zio.dev/zio-telemetry/")),
+    licenses          := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+    developers        := List(
       Developer(
         "mijicd",
         "Dejan Mijic",
@@ -21,12 +21,11 @@ inThisBuild(
         url("https://github.com/runtologist")
       )
     ),
-    crossScalaVersions := Seq(scala212.value, scala213.value, "3.3.0"),
-    ciEnabledBranches  := Seq("series/2.x"),
-    pgpPassphrase      := sys.env.get("PGP_PASSWORD").map(_.toArray),
-    pgpPublicRing      := file("/tmp/public.asc"),
-    pgpSecretRing      := file("/tmp/secret.asc"),
-    scmInfo            := Some(
+    ciEnabledBranches := Seq("series/2.x"),
+    pgpPassphrase     := sys.env.get("PGP_PASSWORD").map(_.toArray),
+    pgpPublicRing     := file("/tmp/public.asc"),
+    pgpSecretRing     := file("/tmp/secret.asc"),
+    scmInfo           := Some(
       ScmInfo(
         url("https://github.com/zio/zio-telemetry/"),
         "scm:git:git@github.com:zio/zio-telemetry.git"
@@ -45,9 +44,27 @@ addCommandAlias(
   "opentracingExample/compile;opentelemetryExample/compile;opentelemetryInstrumentationExample/compile"
 )
 
-// Fix 'Flag set repeatedly' error allegedly introduced by the usage of sdtSettings
-lazy val tempFixScalacOptions =
-  Seq("-deprecation", "-encoding", "utf8", "-feature", "-unchecked", "-language:implicitConversions")
+def stdModuleSettings(name: Option[String], packageName: Option[String]) =
+  stdSettings(name, packageName) ++
+    Seq(
+      crossScalaVersions := Seq(scala212.value, scala213.value, scala3.value),
+      // Fix 'Flag set repeatedly' error allegedly introduced by the usage of sdtSettings: https://github.com/zio/zio-sbt/issues/221
+      scalacOptions --= Seq(
+        "-deprecation",
+        "-encoding",
+        "utf8",
+        "-feature",
+        "-unchecked",
+        "-language:implicitConversions"
+      )
+    )
+
+def stdExampleSettings(name: Option[String], packageName: Option[String]) =
+  stdSettings(name, packageName) ++
+    Seq(
+      crossScalaVersions := Seq(scala212.value, scala213.value),
+      publish / skip     := true
+    )
 
 lazy val root =
   project
@@ -60,11 +77,10 @@ lazy val opentracing =
     .in(file("opentracing"))
     .settings(enableZIO())
     .settings(
-      stdSettings(
+      stdModuleSettings(
         name = Some("zio-opentracing"),
         packageName = Some("zio.telemetry.opentracing")
-      ),
-      scalacOptions --= tempFixScalacOptions
+      )
     )
     .settings(libraryDependencies ++= Dependencies.opentracing)
 
@@ -73,11 +89,10 @@ lazy val opentelemetry =
     .in(file("opentelemetry"))
     .settings(enableZIO())
     .settings(
-      stdSettings(
+      stdModuleSettings(
         name = Some("zio-opentelemetry"),
         packageName = Some("zio.telemetry.opentelemetry")
-      ),
-      scalacOptions --= tempFixScalacOptions
+      )
     )
     .settings(libraryDependencies ++= Dependencies.opentelemetry)
 
@@ -85,11 +100,10 @@ lazy val opencensus = project
   .in(file("opencensus"))
   .settings(enableZIO())
   .settings(
-    stdSettings(
+    stdModuleSettings(
       name = Some("zio-opencensus"),
       packageName = Some("zio.telemetry.opencensus")
-    ),
-    scalacOptions --= tempFixScalacOptions
+    )
   )
   .settings(libraryDependencies ++= Dependencies.opencensus)
 
@@ -98,13 +112,11 @@ lazy val opentracingExample =
     .in(file("opentracing-example"))
     .settings(enableZIO())
     .settings(
-      crossScalaVersions := Seq(scala212.value, scala213.value),
-      stdSettings(
+      stdExampleSettings(
         name = Some("opentracing-example"),
         packageName = Some("zio.telemetry.opentracing.example")
       )
     )
-    .settings(publish / skip := true)
     .settings(libraryDependencies ++= Dependencies.opentracingExample)
     .dependsOn(opentracing)
 
@@ -113,13 +125,11 @@ lazy val opentelemetryExample =
     .in(file("opentelemetry-example"))
     .settings(enableZIO())
     .settings(
-      crossScalaVersions := Seq(scala212.value, scala213.value),
-      stdSettings(
+      stdExampleSettings(
         name = Some("opentelemetry-example"),
         packageName = Some("zio.telemetry.opentelemetry.example")
       )
     )
-    .settings(publish / skip := true)
     .settings(libraryDependencies ++= Dependencies.opentelemetryExample)
     .dependsOn(opentelemetry)
 
@@ -128,13 +138,11 @@ lazy val opentelemetryInstrumentationExample =
     .in(file("opentelemetry-instrumentation-example"))
     .settings(enableZIO())
     .settings(
-      crossScalaVersions := Seq(scala212.value, scala213.value),
-      stdSettings(
+      stdExampleSettings(
         name = Some("opentelemetry-instrumentation-example"),
         packageName = Some("zio.telemetry.opentelemetry.instrumentation.example")
       )
     )
-    .settings(publish / skip := true)
     .settings(libraryDependencies ++= Dependencies.opentelemetryInstrumentationExample)
     .dependsOn(opentelemetry)
 
@@ -142,13 +150,13 @@ lazy val docs =
   project
     .in(file("zio-telemetry-docs"))
     .settings(
+      crossScalaVersions                         := Seq(scala212.value, scala213.value, scala3.value),
       moduleName                                 := "zio-telemetry-docs",
-      scalacOptions -= "-Yno-imports",
-      scalacOptions -= "-Xfatal-warnings",
       projectName                                := "ZIO Telemetry",
       mainModuleName                             := (opentracing / moduleName).value,
       projectStage                               := ProjectStage.ProductionReady,
-      ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(opentracing, opentelemetry, opencensus)
+      ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(opentracing, opentelemetry, opencensus),
+      scalacOptions --= Seq("-Yno-imports", "-Xfatal-warnings")
     )
     .dependsOn(opentracing, opentelemetry, opencensus)
     .enablePlugins(WebsitePlugin)
