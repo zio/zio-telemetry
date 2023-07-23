@@ -11,8 +11,8 @@ import zio.telemetry.opentelemetry.tracing.StatusMapper.Result
  *
  * Usage examples:
  * {{{
- *   StatusMapper.failure[MyError](StatusCode.ERROR)(e => Some(new RuntimeException(e.message)))
- *   StatusMapper.failureNoException[MyError](StatusCode.ERROR)
+ *   StatusMapper.failure[MyError](_ => StatusCode.ERROR)(e => Some(new RuntimeException(e.message)))
+ *   StatusMapper.failureNoException(_ => StatusCode.ERROR)
  *   StatusMapper.failureThrowable(StatusCode.ERROR)
  *
  *   StatusMapper.success[Response] {
@@ -62,14 +62,14 @@ object StatusMapper {
   val default: StatusMapper[Any, Any] =
     StatusMapper(PartialFunction.empty, PartialFunction.empty)
 
-  def failure[E](statusCode: StatusCode)(toError: E => Option[Throwable]): Failure[E] =
-    Failure { case e => Result(statusCode, toError(e)) }
+  def failure[E](toStatusCode: E => StatusCode)(toError: E => Option[Throwable]): Failure[E] =
+    Failure { case e => Result(toStatusCode(e), toError(e)) }
 
-  def failureNoException(statusCode: StatusCode): Failure[Any] =
-    Failure { case _ => Result(statusCode) }
+  def failureNoException[E](toStatusCode: E => StatusCode): Failure[E] =
+    Failure { case e => Result(toStatusCode(e)) }
 
-  def failureThrowable(statusCode: StatusCode): Failure[Throwable] =
-    Failure { case e => Result(statusCode, Option(e)) }
+  def failureThrowable(toStatusCode: Throwable => StatusCode): Failure[Throwable] =
+    Failure { case e => Result(toStatusCode(e), Option(e)) }
 
   def success[A](toStatusCode: A => StatusCode)(toError: A => Option[String]): Success[A] =
     Success { case a => Result(toStatusCode(a), toError(a)) }

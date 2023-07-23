@@ -427,7 +427,7 @@ object TracingTest extends ZIOSpecDefault {
             )
 
           val assertion    = assertStatusCodeError && assertRecordedExceptionAttributes && assertStatusDescriptionError
-          val statusMapper = StatusMapper.failureThrowable(StatusCode.ERROR)
+          val statusMapper = StatusMapper.failureThrowable(_ => StatusCode.ERROR)
 
           val failedEffect: ZIO[Any, Throwable, Unit] =
             ZIO.fail(new RuntimeException("some_error")).when(true).unit
@@ -467,7 +467,8 @@ object TracingTest extends ZIOSpecDefault {
             )
 
           val assertion    = assertStatusCodeError && assertRecordedExceptionAttributes && assertStatusDescriptionError
-          val statusMapper = StatusMapper.failure[Error](StatusCode.ERROR)(e => Option(new RuntimeException(e.msg)))
+          val statusMapper =
+            StatusMapper.failure[Error](_ => StatusCode.ERROR)(e => Option(new RuntimeException(e.msg)))
 
           final case class Error(msg: String)
           val failedEffect: ZIO[Any, Error, Unit] =
@@ -504,7 +505,7 @@ object TracingTest extends ZIOSpecDefault {
             )
 
           val assertion    = assertStatusCodeUnset && assertRecordedExceptionAttributes && assertStatusDescriptionEmpty
-          val statusMapper = StatusMapper.failureThrowable(StatusCode.UNSET)
+          val statusMapper = StatusMapper.failureThrowable(_ => StatusCode.UNSET)
 
           val failedEffect: ZIO[Any, Throwable, Unit] =
             ZIO.fail(new RuntimeException("some_error")).when(true).unit
@@ -534,7 +535,7 @@ object TracingTest extends ZIOSpecDefault {
         val failureAssertion = assertErrorStatusCodeUnset && assertStatusDescriptionEmpty
         val successAssertion = assertSuccessStatusCodeOk && assertStatusDescriptionEmpty
 
-        val failureMapper = StatusMapper.failureThrowable(StatusCode.UNSET)
+        val failureMapper = StatusMapper.failureThrowable(_ => StatusCode.UNSET)
         val successMapper = StatusMapper.successNoDescription[Unit](_ => StatusCode.OK)
         val statusMapper  = StatusMapper.both(failureMapper, successMapper)
 
@@ -623,7 +624,7 @@ object TracingTest extends ZIOSpecDefault {
             )
 
           val assertion    = assertStatusCodeError && assertRecordedExceptionAttributes && assertStatusDescriptionError
-          val statusMapper = StatusMapper.failure[Any](StatusCode.ERROR)(e => Option(e.asInstanceOf[Throwable]))
+          val statusMapper = StatusMapper.failure[Any](_ => StatusCode.ERROR)(e => Option(e.asInstanceOf[Throwable]))
 
           val failedEffect: ZIO[Any, Throwable, Unit] =
             ZIO.fail(new RuntimeException("some_error")).unit
