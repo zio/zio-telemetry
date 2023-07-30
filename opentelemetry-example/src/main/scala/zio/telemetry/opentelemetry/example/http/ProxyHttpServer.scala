@@ -8,7 +8,7 @@ import zio.telemetry.opentelemetry.example.config.AppConfig
 case class ProxyHttpServer(config: AppConfig, httpApp: ProxyHttpApp) {
 
   def start: ZIO[Any, Throwable, Nothing] =
-    printLine(s"Starting ProxyHttpServer on port ${config.backend.port}") *>
+    printLine(s"Starting ProxyHttpServer on port ${config.proxy.port}") *>
       Server.start(config.proxy.port, httpApp.routes)
 
 }

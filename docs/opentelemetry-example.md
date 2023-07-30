@@ -10,9 +10,10 @@ For an explanation in more detail, check the [OpenTracing Example](opentracing-e
 Firstly, start Jaeger by running the following command:
 ```bash
 docker run --rm -it \
+  -e COLLECTOR_OTLP_ENABLED=true \
+  -p 4317:4317 \
   -p 16686:16686 \
-  -p 14250:14250 \
-  jaegertracing/all-in-one:1.36
+  jaegertracing/all-in-one:1.47
 ```
 
 Then start the proxy application

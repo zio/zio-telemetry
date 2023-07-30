@@ -17,7 +17,7 @@ docker run --rm -it \
   -p 14250:14250 \
   -p 16686:16686 \
   -p 4317:4317 \
-  jaegertracing/all-in-one:1.42
+  jaegertracing/all-in-one:1.47
  ```
 
 Then start the server application
