@@ -90,6 +90,20 @@ object LoggingTest extends ZIOSpecDefault {
             assert(spanId)(equalTo("0000000000000000"))
           }
         }.provide(loggingMockLayer("filter log level", LogLevel.Warning), ContextStorage.fiberRef),
+        test("multiple loggers") {
+          for {
+            logRecords1 <-
+              ZIO.logInfo("test1").flatMap(_ => getFinishedLogRecords).provideLayer(loggingMockLayer("test1"))
+            logRecords2 <-
+              ZIO.logInfo("test2").flatMap(_ => getFinishedLogRecords).provideLayer(loggingMockLayer("test2"))
+          } yield {
+            val r1 = logRecords1.head
+            val r2 = logRecords2.head
+
+            assert(r1.getInstrumentationScopeInfo.getName)(equalTo("test1")) &&
+            assert(r2.getInstrumentationScopeInfo.getName)(equalTo("test2"))
+          }
+        }.provide(ContextStorage.fiberRef),
         test("tracing context (fiberRef)") {
           ZIO.serviceWithZIO[Tracing] { tracing =>
             tracing.root("ROOT")(
