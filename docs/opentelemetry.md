@@ -29,11 +29,7 @@ import zio._
 
 val statusMapper = StatusMapper.failureThrowable(_ => StatusCode.UNSET)
 
-val app =
-  ZIO.serviceWithZIO[Tracing] { tracing =>
-    // import available aspects to create spans conveniently
-    import tracing.aspects._
-
+val app = ZIO.serviceWithZIO[Tracing] { tracing =>
     val zio = for {
       // set an attribute to the current span
       _       <- tracing.setAttribute("zio", "telemetry")
@@ -46,7 +42,7 @@ val app =
     } yield message
     
     // create a root span out of `zio`
-    zio @@ root("root span", SpanKind.INTERNAL, statusMapper)
+    zio @@ tracing.aspects.root("root span", SpanKind.INTERNAL, statusMapper)
     
   }.provide(Tracing.live, ContextStorage.fiberRef, JaegerTracer.live)
 ```
@@ -62,8 +58,7 @@ import zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator
 import zio.telemetry.opentelemetry.context.ContextStorage
 import zio._
 
- val app = 
-  ZIO.serviceWithZIO[Baggage] { baggage => 
+ val app = ZIO.serviceWithZIO[Baggage] { baggage => 
     val carrier = OutgoingContextCarrier.default()
   
     val upstream = for {
@@ -85,6 +80,28 @@ import zio._
   }.provide(Baggage.live, ContextStorage.fiberRef)
 ```
 
+### Logging
+
+To send Log signals, you need to provide an instance of `LoggerProvider` and add a `ZLogger` implementation that is able
+to emit correlated log records to an OpenTelemetry Collector by providing `Logging.live` layer. 
+
+```scala
+import zio.telemetry.opentelemetry.logging.Logging
+import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.tracing.Tracing
+import zio.telemetry.opentelemetry.example.JaegerTracer
+import zio._
+
+val app = ZIO.serviceWithZIO[Tracing] { tracing =>
+  ZIO.logDebug("not correlated message with 'my-app1' instrumentation scope")
+    .provideLayer(Logging.live("my-app1", LogLevel.Debug))
+
+  tracing.root("root span")(
+    ZIO.logInfo("correlated message with 'my-app2' instrumentation scope")
+  ).provideLayer(Logging.live("my-app2"))
+}.provide(Tracing.live, JaegerTracer.live, ContextStorage.fiberRef)
+```
+
 ### Context Propagation
 
 To propagate contexts across process boundaries, extraction and injection can be
@@ -97,16 +114,14 @@ are not referentially transparent.
 
 ```scala
 ZIO.serviceWithZIO[Tracing] { tracing =>
-  import tracing.aspects._
-  
   val propagator = TraceContextPropagator.default
   val kernel     = mutable.Map().empty
   
   val upstream =
-    tracing.inject(propagator, OutgoingContextCarrier.default(kernel)) @@ root("span of upstream service")
+    tracing.inject(propagator, OutgoingContextCarrier.default(kernel)) @@ tracing.aspects.root("span of upstream service")
     
   val downstream =
-    extractSpan(propagator, IncomingContextCarrier.default(kernel), "span of downstream service")
+    tracing.extractSpan(propagator, IncomingContextCarrier.default(kernel), "span of downstream service")
     
   upstream *> downstream
   
@@ -135,13 +150,11 @@ import zio._
 
 val statusMapper = StatusMapper.failureNoException(_ => StatusCode.UNSET)
 
-val app =
-  ZIO.serviceWithZIO[Tracing] { tracing =>
-    import tracing.aspects._
-    ZIO.logInfo("Hello") @@ root("root span", SpanKind.INTERNAL, statusMapper)
+val app = ZIO.serviceWithZIO[Tracing] { tracing =>
+    ZIO.logInfo("Hello") @@ tracing.aspects.root("root span", SpanKind.INTERNAL, statusMapper)
   }.provide(
     Tracing.live,
-    ContextStorage.openTelemetryContext, // <<< ContextStorage
-    ZLayer.fromZIO(ZIO.attempt(GlobalOpenTelemetry.getTracer("hello"))) // <<< Tracer
+    ContextStorage.openTelemetryContext,
+    ZLayer.fromZIO(ZIO.attempt(GlobalOpenTelemetry.getTracer("hello")))
   )
 ```
