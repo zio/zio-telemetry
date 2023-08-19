@@ -1,6 +1,6 @@
 package zio.telemetry.opentelemetry.logging
 
-import io.opentelemetry.api.logs.LoggerProvider
+import io.opentelemetry.api.logs.{LoggerProvider, Severity}
 import io.opentelemetry.sdk.logs.SdkLoggerProvider
 import io.opentelemetry.sdk.logs.data.LogRecordData
 import io.opentelemetry.sdk.logs.`export`.SimpleLogRecordProcessor
@@ -42,7 +42,7 @@ object LoggingTest extends ZIOSpecDefault {
       suite("Logging")(
         test("works with empty tracing context") {
           for {
-            _          <- ZIO.logInfo("test")
+            _          <- ZIO.logAnnotate("zio", "logging")(ZIO.logInfo("test"))
             logRecords <- getFinishedLogRecords
           } yield {
             val r                        = logRecords.head
@@ -56,10 +56,10 @@ object LoggingTest extends ZIOSpecDefault {
 
             assert(logRecords.length)(equalTo(1)) &&
             assert(body)(equalTo("test")) &&
-            assert(severityNumber)(equalTo(0)) && // TODO: set it
+            assert(severityNumber)(equalTo(Severity.INFO.getSeverityNumber)) &&
             assert(severityText)(equalTo("INFO")) &&
             assert(instrumentationScopeName)(equalTo("test1")) &&
-            assert(attributes)(equalTo(Map.empty[String, String])) &&
+            assert(attributes)(equalTo(Map("zio" -> "logging"))) &&
             assert(traceId)(equalTo("00000000000000000000000000000000")) &&
             assert(spanId)(equalTo("0000000000000000"))
           }
@@ -83,7 +83,7 @@ object LoggingTest extends ZIOSpecDefault {
 
                 assert(logRecords.length)(equalTo(1)) &&
                 assert(body)(equalTo("test")) &&
-                assert(severityNumber)(equalTo(0)) && // TODO: set it
+                assert(severityNumber)(equalTo(Severity.INFO.getSeverityNumber)) &&
                 assert(severityText)(equalTo("INFO")) &&
                 assert(instrumentationScopeName)(equalTo("test2")) &&
                 assert(attributes)(equalTo(Map.empty[String, String])) &&
@@ -116,7 +116,7 @@ object LoggingTest extends ZIOSpecDefault {
 
                 assert(logRecords.length)(equalTo(1)) &&
                 assert(body)(equalTo("test")) &&
-                assert(severityNumber)(equalTo(0)) && // TODO: set it
+                assert(severityNumber)(equalTo(Severity.INFO.getSeverityNumber)) &&
                 assert(severityText)(equalTo("INFO")) &&
                 assert(instrumentationScopeName)(equalTo("test3")) &&
                 assert(attributes)(equalTo(Map.empty[String, String])) &&
