@@ -28,11 +28,12 @@ object LoggingTest extends ZIOSpecDefault {
     })
 
   def loggingMockLayer(
-    instrumentationScopeName: String
+    instrumentationScopeName: String,
+    logLevel: LogLevel = LogLevel.Info
   ): URLayer[ContextStorage, InMemoryLogRecordExporter with LoggerProvider] =
     Runtime.removeDefaultLoggers >>>
       inMemoryLoggerProviderLayer >>>
-      (Logging.live(instrumentationScopeName) ++ inMemoryLoggerProviderLayer)
+      (Logging.live(instrumentationScopeName, logLevel) ++ inMemoryLoggerProviderLayer)
 
   def getFinishedLogRecords: ZIO[InMemoryLogRecordExporter, Nothing, List[LogRecordData]] =
     ZIO.service[InMemoryLogRecordExporter].map(_.getFinishedLogRecordItems.asScala.toList)
@@ -40,7 +41,7 @@ object LoggingTest extends ZIOSpecDefault {
   override def spec: Spec[TestEnvironment with Scope, Any] =
     suite("zio opentelemetry")(
       suite("Logging")(
-        test("works with empty tracing context") {
+        test("without tracing context") {
           for {
             _          <- ZIO.logAnnotate("zio", "logging")(ZIO.logInfo("test"))
             logRecords <- getFinishedLogRecords
@@ -58,13 +59,38 @@ object LoggingTest extends ZIOSpecDefault {
             assert(body)(equalTo("test")) &&
             assert(severityNumber)(equalTo(Severity.INFO.getSeverityNumber)) &&
             assert(severityText)(equalTo("INFO")) &&
-            assert(instrumentationScopeName)(equalTo("test1")) &&
+            assert(instrumentationScopeName)(equalTo("without tracing context")) &&
             assert(attributes)(equalTo(Map("zio" -> "logging"))) &&
             assert(traceId)(equalTo("00000000000000000000000000000000")) &&
             assert(spanId)(equalTo("0000000000000000"))
           }
-        }.provide(loggingMockLayer("test1"), ContextStorage.fiberRef),
-        test("works in a tracing context (fiberRef)") {
+        }.provide(loggingMockLayer("without tracing context"), ContextStorage.fiberRef),
+        test("filter log level") {
+          for {
+            _          <- ZIO.logInfo("test")
+            _          <- ZIO.logWarning("test")
+            logRecords <- getFinishedLogRecords
+          } yield {
+            val r                        = logRecords.head
+            val body                     = r.getBody.asString()
+            val severityNumber           = r.getSeverity.getSeverityNumber
+            val severityText             = r.getSeverityText
+            val instrumentationScopeName = r.getInstrumentationScopeInfo.getName
+            val attributes               = r.getAttributes.asMap().asScala.toMap.map { case (k, v) => k.getKey -> v.toString }
+            val traceId                  = r.getSpanContext.getTraceId
+            val spanId                   = r.getSpanContext.getSpanId
+
+            assert(logRecords.length)(equalTo(1)) &&
+            assert(body)(equalTo("test")) &&
+            assert(severityNumber)(equalTo(Severity.WARN.getSeverityNumber)) &&
+            assert(severityText)(equalTo("WARN")) &&
+            assert(instrumentationScopeName)(equalTo("filter log level")) &&
+            assert(attributes)(equalTo(Map.empty[String, String])) &&
+            assert(traceId)(equalTo("00000000000000000000000000000000")) &&
+            assert(spanId)(equalTo("0000000000000000"))
+          }
+        }.provide(loggingMockLayer("filter log level", LogLevel.Warning), ContextStorage.fiberRef),
+        test("tracing context (fiberRef)") {
           ZIO.serviceWithZIO[Tracing] { tracing =>
             tracing.root("ROOT")(
               for {
@@ -85,7 +111,7 @@ object LoggingTest extends ZIOSpecDefault {
                 assert(body)(equalTo("test")) &&
                 assert(severityNumber)(equalTo(Severity.INFO.getSeverityNumber)) &&
                 assert(severityText)(equalTo("INFO")) &&
-                assert(instrumentationScopeName)(equalTo("test2")) &&
+                assert(instrumentationScopeName)(equalTo("tracing context (fiberRef)")) &&
                 assert(attributes)(equalTo(Map.empty[String, String])) &&
                 assert(traceId)(equalTo(spanCtx.getTraceId)) &&
                 assert(spanId)(equalTo(spanCtx.getSpanId))
@@ -93,11 +119,11 @@ object LoggingTest extends ZIOSpecDefault {
             )
           }
         }.provide(
-          loggingMockLayer("test2"),
+          loggingMockLayer("tracing context (fiberRef)"),
           TracingTest.tracingMockLayer,
           ContextStorage.fiberRef
         ),
-        test("works in a tracing context (openTelemtryContext") {
+        test("tracing context (openTelemtryContext)") {
           ZIO.serviceWithZIO[Tracing] { tracing =>
             tracing.root("ROOT")(
               for {
@@ -118,7 +144,7 @@ object LoggingTest extends ZIOSpecDefault {
                 assert(body)(equalTo("test")) &&
                 assert(severityNumber)(equalTo(Severity.INFO.getSeverityNumber)) &&
                 assert(severityText)(equalTo("INFO")) &&
-                assert(instrumentationScopeName)(equalTo("test3")) &&
+                assert(instrumentationScopeName)(equalTo("tracing context (openTelemtryContext)")) &&
                 assert(attributes)(equalTo(Map.empty[String, String])) &&
                 assert(traceId)(equalTo(spanCtx.getTraceId)) &&
                 assert(spanId)(equalTo(spanCtx.getSpanId))
@@ -126,7 +152,7 @@ object LoggingTest extends ZIOSpecDefault {
             )
           }
         }.provide(
-          loggingMockLayer("test3"),
+          loggingMockLayer("tracing context (openTelemtryContext)"),
           TracingTest.tracingMockLayer,
           ContextStorage.openTelemetryContext
         )
