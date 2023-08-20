@@ -1,7 +1,7 @@
 package zio.telemetry.opentelemetry.example.http
 
 import io.opentelemetry.api.trace.SpanKind
-import zhttp.http.{->, /, Headers, Http, HttpApp, Method, Response}
+import zio.http._
 import zio._
 import zio.json.EncoderOps
 import zio.telemetry.opentelemetry.baggage.Baggage
@@ -20,14 +20,14 @@ case class BackendHttpApp(tracing: Tracing, baggage: Baggage) {
       override val kernel: Headers = initial
 
       override def getAllKeys(carrier: Headers): Iterable[String] =
-        carrier.headers.headersAsList.map(_._1)
+        carrier.headers.map(_.headerName)
 
       override def getByKey(carrier: Headers, key: String): Option[String] =
-        carrier.headers.headerValue(key)
+        carrier.headers.get(key)
 
     }
 
-  val routes: HttpApp[Any, Throwable] =
+  val routes: HttpApp[Any, Nothing] =
     Http.collectZIO { case request @ Method.GET -> _ / "status" =>
       val carrier = headersCarrier(request.headers)
 
@@ -42,6 +42,7 @@ case class BackendHttpApp(tracing: Tracing, baggage: Baggage) {
       _            <- tracing.addEvent("event from backend before response")
       response     <- ZIO.succeed(Response.json(ServiceStatus.up("backend").toJson))
       _            <- tracing.addEvent("event from backend after response")
+      _            <- ZIO.logInfo("status processing finished on backend")
     } yield response
 
 }

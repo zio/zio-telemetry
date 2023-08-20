@@ -1,5 +1,6 @@
 package zio.telemetry.opentelemetry.instrumentation.example
 
+import zio.http._
 import zio._
 import zio.config.ReadError
 import zio.config.magnolia.descriptor
@@ -17,7 +18,7 @@ object ClientApp extends ZIOAppDefault {
       .serviceWithZIO[HttpClient](_.health.exitCode)
       .provide(
         configLayer,
-        zio.http.Client.default,
+        Client.default,
         HttpClient.live
       )
 }

@@ -12,18 +12,17 @@ object Logging {
     instrumentationScopeName: String,
     logLevel: LogLevel = LogLevel.Info
   ): ZLayer[ContextStorage with LoggerProvider, Nothing, Unit] =
-    ZLayer
-      .fromZIO(
-        for {
-          loggerProvider <- ZIO.service[LoggerProvider]
-          contextStorage <- ZIO.service[ContextStorage]
-          logger         <- ZIO.succeed(
-                              zioLogger(instrumentationScopeName)(contextStorage, loggerProvider)
-                                .filterLogLevel(_ >= logLevel)
-                            )
-        } yield logger
-      )
-      .flatMap(env => Runtime.addLogger(env.get))
+    ZLayer.scoped(
+      for {
+        loggerProvider <- ZIO.service[LoggerProvider]
+        contextStorage <- ZIO.service[ContextStorage]
+        logger         <- ZIO.succeed(
+                            zioLogger(instrumentationScopeName)(contextStorage, loggerProvider)
+                              .filterLogLevel(_ >= logLevel)
+                          )
+        _              <- ZIO.withLoggerScoped(logger)
+      } yield ()
+    )
 
   private def zioLogger(instrumentationScopeName: String)(
     contextStorage: ContextStorage,

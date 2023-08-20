@@ -1,6 +1,6 @@
 package zio.telemetry.opentelemetry.instrumentation.example.http
 
-import zhttp.http._
+import zio.http._
 import zio._
 import zio.telemetry.opentelemetry.tracing.Tracing
 
@@ -8,7 +8,7 @@ case class HttpServerApp(tracing: Tracing) {
 
   import tracing.aspects._
 
-  val routes: HttpApp[Any, Throwable] =
+  val routes: HttpApp[Any, Nothing] =
     Http.collectZIO { case _ @Method.GET -> _ / "health" =>
       health @@ span("health-endpoint")
     }

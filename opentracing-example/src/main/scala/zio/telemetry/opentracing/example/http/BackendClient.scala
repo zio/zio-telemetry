@@ -1,13 +1,13 @@
-package zio.telemetry.opentelemetry.example.http
+package zio.telemetry.opentracing.example.http
 
 import zio._
 import zio.http.{Header, Headers, Request, URL}
-import zio.json._
-import zio.telemetry.opentelemetry.example.config.AppConfig
+import zio.json.JsonDecoder
+import zio.telemetry.opentracing.example.config.AppConfig
 
 import java.nio.charset.StandardCharsets
 
-case class Client(backend: zio.http.Client, config: AppConfig) {
+case class BackendClient(backend: zio.http.Client, config: AppConfig) {
 
   private val backendUrl =
     URL
@@ -15,7 +15,9 @@ case class Client(backend: zio.http.Client, config: AppConfig) {
       .left
       .map(new IllegalArgumentException(_))
 
-  def status(headers: Map[String, String]): Task[Statuses] =
+  def status(
+    headers: Map[String, String]
+  ): Task[Statuses] =
     for {
       url      <- ZIO.fromEither(backendUrl)
       request   = Request
@@ -30,9 +32,9 @@ case class Client(backend: zio.http.Client, config: AppConfig) {
 
 }
 
-object Client {
+object BackendClient {
 
-  val live: RLayer[AppConfig with zio.http.Client, Client] =
-    ZLayer.fromFunction(Client.apply _)
+  val live: RLayer[AppConfig with zio.http.Client, BackendClient] =
+    ZLayer.fromFunction(BackendClient.apply _)
 
 }

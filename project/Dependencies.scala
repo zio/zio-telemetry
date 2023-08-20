@@ -18,7 +18,6 @@ object Dependencies {
     val jaegertracing           = "io.jaegertracing"
     val scalaLangModules        = "org.scala-lang.modules"
     val typelevel               = "org.typelevel"
-    val d11                     = "io.d11"
     val softwaremillSttpClient3 = "com.softwaremill.sttp.client3"
     val slf4j                   = "org.slf4j"
     val grpc                    = "io.grpc"
@@ -31,10 +30,9 @@ object Dependencies {
     val slf4j     = "1.7.36"
     val sttp3     = "3.7.0"
     val zipkin    = "2.16.3"
-    val zHttp     = "2.0.0-RC10"
     val zioJson   = "0.3.0-RC10"
     val zioConfig = "3.0.1"
-    val zioHttp   = "3.0.0-RC1"
+    val zioHttp   = "3.0.0-RC2"
   }
 
   lazy val zio = Seq(
@@ -68,7 +66,6 @@ object Dependencies {
     Orgs.jaegertracing            % "jaeger-client"       % ExampleVersions.jaeger,
     Orgs.jaegertracing            % "jaeger-zipkin"       % ExampleVersions.jaeger,
     Orgs.softwaremillSttpClient3 %% "zio-json"            % ExampleVersions.sttp3,
-    Orgs.d11                     %% "zhttp"               % ExampleVersions.zHttp,
     Orgs.zio                     %% "zio-json"            % ExampleVersions.zioJson,
     Orgs.zio                     %% "zio-config"          % ExampleVersions.zioConfig,
     Orgs.zio                     %% "zio-config-magnolia" % ExampleVersions.zioConfig,

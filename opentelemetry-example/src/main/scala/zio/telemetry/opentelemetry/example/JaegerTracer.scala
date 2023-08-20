@@ -13,7 +13,7 @@ import zio.telemetry.opentelemetry.example.config.AppConfig
 
 object JaegerTracer {
 
-  def live: RLayer[AppConfig, Tracer] =
+  val live: RLayer[AppConfig, Tracer] =
     ZLayer {
       for {
         config <- ZIO.service[AppConfig]
@@ -21,7 +21,7 @@ object JaegerTracer {
       } yield tracer
     }
 
-  def makeTracer(host: String): Task[Tracer] =
+  private def makeTracer(host: String): Task[Tracer] =
     for {
       spanExporter   <- ZIO.attempt(OtlpGrpcSpanExporter.builder().setEndpoint(host).build())
       spanProcessor  <- ZIO.succeed(SimpleSpanProcessor.create(spanExporter))
