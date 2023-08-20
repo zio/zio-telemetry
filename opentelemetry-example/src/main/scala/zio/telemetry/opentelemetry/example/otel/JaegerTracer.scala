@@ -1,21 +1,25 @@
-package zio.telemetry.opentelemetry.example
+package zio.telemetry.opentelemetry.example.otel
 
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.trace.Tracer
-import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter
+import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.resources.Resource
 import io.opentelemetry.sdk.trace.SdkTracerProvider
-import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
+import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor
 import io.opentelemetry.semconv.resource.attributes.ResourceAttributes
 import zio._
+import zio.telemetry.opentelemetry.example.config.AppConfig
 
-object FluentbitTracer {
+/**
+ * https://www.jaegertracing.io/
+ */
+object JaegerTracer {
 
-  def live(resourceName: String, instrumentationScopeName: String): TaskLayer[Tracer] =
+  def live(resourceName: String, instrumentationScopeName: String): RLayer[AppConfig, Tracer] =
     ZLayer(
       for {
-        spanExporter   <- ZIO.attempt(OtlpHttpSpanExporter.builder().build())
+        spanExporter   <- ZIO.attempt(OtlpGrpcSpanExporter.builder().build())
         spanProcessor  <- ZIO.succeed(SimpleSpanProcessor.create(spanExporter))
         tracerProvider <-
           ZIO.attempt(

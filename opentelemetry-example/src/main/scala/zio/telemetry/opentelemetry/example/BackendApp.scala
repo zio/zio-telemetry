@@ -7,6 +7,7 @@ import zio.telemetry.opentelemetry.example.http.{BackendHttpApp, BackendHttpServ
 import zio._
 import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.example.otel.{FluentbitLoggerProvider, FluentbitTracer}
 import zio.telemetry.opentelemetry.logging.Logging
 import zio.telemetry.opentelemetry.tracing.Tracing
 
@@ -17,17 +18,9 @@ object BackendApp extends ZIOAppDefault {
   private val instrumentationScopeName = "zio.telemetry.opentelemetry.example.BackendApp"
   private val resourceName             = "opentelemetry-example-backend"
 
-  override val bootstrap: ZLayer[ZIOAppArgs, Throwable, Any] =
-    Runtime.removeDefaultLoggers >>>
-      (FluentbitLoggerProvider.live(resourceName) ++ ContextStorage.fiberRef) >>>
-      Logging.live(instrumentationScopeName)
-
   override def run: ZIO[Scope, Any, ExitCode] =
     ZIO
-      .serviceWithZIO[BackendHttpServer] { s =>
-        ZIO.logInfo("Starting backend server...") *>
-          s.start.exitCode
-      }
+      .serviceWithZIO[BackendHttpServer](_.start.exitCode)
       .provide(
         configLayer,
         BackendHttpServer.live,
@@ -35,7 +28,9 @@ object BackendApp extends ZIOAppDefault {
         Tracing.live,
         Baggage.live(),
         ContextStorage.fiberRef,
-        FluentbitTracer.live(resourceName, instrumentationScopeName)
+        FluentbitTracer.live(resourceName, instrumentationScopeName),
+        FluentbitLoggerProvider.live(resourceName),
+        Logging.live(instrumentationScopeName)
       )
 
 }
