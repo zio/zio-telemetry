@@ -43,7 +43,7 @@ object ContextStorage {
       ref.locallyScoped(context)
   }
 
-  final class OpenTelemetryContextStorage extends ContextStorage {
+  final class NativeContextStorage extends ContextStorage {
 
     override def get(implicit trace: Trace): UIO[Context] =
       ZIO.succeed(Context.current())
@@ -89,7 +89,7 @@ object ContextStorage {
    * Uses OpenTelemetry's context storage which is backed by a [[java.lang.ThreadLocal]]. This makes sense only if
    * [[https://github.com/open-telemetry/opentelemetry-java-instrumentation OTEL instrumentation agent]] is used.
    */
-  val openTelemetryContext: ULayer[ContextStorage] =
-    ZLayer.succeed(new OpenTelemetryContextStorage)
+  val native: ULayer[ContextStorage] =
+    ZLayer.succeed(new NativeContextStorage)
 
 }

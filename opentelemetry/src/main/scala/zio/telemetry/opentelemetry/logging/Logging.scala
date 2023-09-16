@@ -52,7 +52,7 @@ object Logging {
         contextStorage match {
           case cs: ContextStorage.FiberRefContextStorage     =>
             context.get(cs.ref).foreach(builder.setContext)
-          case _: ContextStorage.OpenTelemetryContextStorage =>
+          case _: ContextStorage.NativeContextStorage =>
             builder.setContext(Context.current())
         }
 

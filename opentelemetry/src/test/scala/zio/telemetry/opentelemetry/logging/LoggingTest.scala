@@ -168,7 +168,7 @@ object LoggingTest extends ZIOSpecDefault {
         }.provide(
           loggingMockLayer("tracing context (openTelemtryContext)"),
           TracingTest.tracingMockLayer,
-          ContextStorage.openTelemetryContext
+          ContextStorage.native
         )
       )
     )

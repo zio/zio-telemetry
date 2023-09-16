@@ -30,7 +30,7 @@ object ServerApp extends ZIOAppDefault {
         HttpServerApp.live,
         Tracing.live,
         globalTracerLayer,
-        ContextStorage.openTelemetryContext
+        ContextStorage.native
       )
 
 }
