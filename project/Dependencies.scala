@@ -14,6 +14,7 @@ object Dependencies {
     val zio                          = "dev.zio"
     val opentracing                  = "io.opentracing"
     val opentelemetry                = "io.opentelemetry"
+    val opentelemetrySemconv         = "io.opentelemetry.semconv"
     val opentelemetryInstrumentation = "io.opentelemetry.instrumentation"
     val opencensus                   = "io.opencensus"
     val jaegertracing                = "io.jaegertracing"
@@ -85,17 +86,19 @@ object Dependencies {
   )
 
   lazy val opentelemetryExample = example ++ Seq(
-    Orgs.opentelemetry % "opentelemetry-exporter-otlp" % Versions.opentelemetry,
-    Orgs.opentelemetry % "opentelemetry-sdk"           % Versions.opentelemetry,
-    Orgs.grpc          % "grpc-netty-shaded"           % ExampleVersions.grpcNetty,
-    Orgs.zio          %% "zio-http"                    % ExampleVersions.zioHttp
+    Orgs.opentelemetry        % "opentelemetry-exporter-otlp" % Versions.opentelemetry,
+    Orgs.opentelemetry        % "opentelemetry-sdk"           % Versions.opentelemetry,
+    Orgs.opentelemetrySemconv % "opentelemetry-semconv"       % "1.22.0-alpha",
+    Orgs.grpc                 % "grpc-netty-shaded"           % ExampleVersions.grpcNetty,
+    Orgs.zio                 %% "zio-http"                    % ExampleVersions.zioHttp
   )
 
   lazy val opentelemetryInstrumentationExample = example ++ Seq(
     Orgs.opentelemetry                % "opentelemetry-exporter-otlp"        % Versions.opentelemetry,
     Orgs.opentelemetry                % "opentelemetry-sdk"                  % Versions.opentelemetry,
+    Orgs.opentelemetrySemconv         % "opentelemetry-semconv"              % "1.22.0-alpha",
     Orgs.grpc                         % "grpc-netty-shaded"                  % ExampleVersions.grpcNetty,
-    Orgs.opentelemetryInstrumentation % "opentelemetry-logback-appender-1.0" % s"${Versions.opentelemetry}-alpha",
+    Orgs.opentelemetryInstrumentation % "opentelemetry-logback-appender-1.0" % "1.31.0-alpha",
     Orgs.zio                         %% "zio-http"                           % ExampleVersions.zioHttp,
     Orgs.zio                         %% "zio-logging"                        % ExampleVersions.zioLogging,
     Orgs.zio                         %% "zio-logging-slf4j2"                 % ExampleVersions.zioLogging,
