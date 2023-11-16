@@ -7,7 +7,7 @@ import zio.telemetry.opentelemetry.example.http.{BackendHttpApp, BackendHttpServ
 import zio._
 import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.context.ContextStorage
-import zio.telemetry.opentelemetry.example.otel.{FluentbitLoggerProvider, FluentbitTracer}
+import zio.telemetry.opentelemetry.example.otel.{JaegerTracer, SeqLoggerProvider}
 import zio.telemetry.opentelemetry.logging.Logging
 import zio.telemetry.opentelemetry.tracing.Tracing
 
@@ -28,8 +28,8 @@ object BackendApp extends ZIOAppDefault {
         Tracing.live,
         Baggage.live(),
         ContextStorage.fiberRef,
-        FluentbitTracer.live(resourceName, instrumentationScopeName),
-        FluentbitLoggerProvider.live(resourceName),
+        JaegerTracer.live(resourceName, instrumentationScopeName),
+        SeqLoggerProvider.live(resourceName),
         Logging.live(instrumentationScopeName)
       )
 
