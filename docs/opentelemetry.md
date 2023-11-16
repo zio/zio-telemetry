@@ -27,6 +27,9 @@ import zio.telemetry.opentelemetry.example.JaegerTracer
 import io.opentelemetry.api.trace.{ SpanKind, StatusCode }
 import zio._
 
+val instrumentationScopeName = "com.example.MyApp"
+val resourceName             = "example-app"
+
 val statusMapper = StatusMapper.failureThrowable(_ => StatusCode.UNSET)
 
 val app = ZIO.serviceWithZIO[Tracing] { tracing =>
@@ -44,7 +47,7 @@ val app = ZIO.serviceWithZIO[Tracing] { tracing =>
     // create a root span out of `zio`
     zio @@ tracing.aspects.root("root span", SpanKind.INTERNAL, statusMapper)
     
-  }.provide(Tracing.live, ContextStorage.fiberRef, JaegerTracer.live)
+}.provide(Tracing.live, ContextStorage.fiberRef, JaegerTracer.live(resourceName, instrumentationScopeName))
 ```
 
 ### Baggage
@@ -77,12 +80,13 @@ import zio._
     
     upstream *> downstream
     
-  }.provide(Baggage.live, ContextStorage.fiberRef)
+ }.provide(Baggage.live, ContextStorage.fiberRef)
 ```
 
 ### Logging
 
-To send Log signals, you need to provide an instance of `LoggerProvider` and add a `ZLogger` implementation that is able
+To send Log signals, you need to provide an instance of `LoggerProvider` 
+(for this example we use `SeqLoggerProvider.live` from `opentelemetry-example` module) and add a `ZLogger` implementation that is able
 to emit correlated log records to an OpenTelemetry Collector by providing `Logging.live` layer. 
 
 ```scala
@@ -92,6 +96,9 @@ import zio.telemetry.opentelemetry.tracing.Tracing
 import zio.telemetry.opentelemetry.example.JaegerTracer
 import zio._
 
+val instrumentationScopeName = "com.example.MyApp"
+val resourceName             = "example-app"
+
 val app = ZIO.serviceWithZIO[Tracing] { tracing =>
   ZIO.logDebug("not correlated message with 'my-app1' instrumentation scope")
     .provideLayer(Logging.live("my-app1", LogLevel.Debug))
@@ -99,7 +106,16 @@ val app = ZIO.serviceWithZIO[Tracing] { tracing =>
   tracing.root("root span")(
     ZIO.logInfo("correlated message with 'my-app2' instrumentation scope")
   ).provideLayer(Logging.live("my-app2"))
-}.provide(Tracing.live, JaegerTracer.live, ContextStorage.fiberRef)
+  
+  ZIO.logAnnotate("zio", "logging")(
+    ZIO.logInfo("propagate ZIO log annotations to OTEL log attributes")
+  ).provideLayer(Logging.live("my-app3"))
+}.provide(
+  Tracing.live, 
+  JaegerTracer.live(resourceName, instrumentationScopeName), 
+  SeqLoggerProvider.live(resourceName), 
+  ContextStorage.fiberRef
+)
 ```
 
 ### Context Propagation
@@ -125,7 +141,7 @@ ZIO.serviceWithZIO[Tracing] { tracing =>
     
   upstream *> downstream
   
-}.provide(Tracing.live, ContextStorage.fiberRef, JaegerTracer.live)
+}.provide(Tracing.live, ContextStorage.fiberRef, JaegerTracer.live(resourceName, instrumentationScopeName))
 ```
 
 ### Usage with OpenTelemetry automatic instrumentation
@@ -148,6 +164,8 @@ import zio.telemetry.opentelemetry.example.JaegerTracer
 import io.opentelemetry.api.trace.{SpanKind, StatusCode}
 import zio._
 
+val instrumentationScopeName = "com.example.MyApp"
+
 val statusMapper = StatusMapper.failureNoException(_ => StatusCode.UNSET)
 
 val app = ZIO.serviceWithZIO[Tracing] { tracing =>
@@ -155,6 +173,6 @@ val app = ZIO.serviceWithZIO[Tracing] { tracing =>
   }.provide(
     Tracing.live,
     ContextStorage.openTelemetryContext,
-    ZLayer.fromZIO(ZIO.attempt(GlobalOpenTelemetry.getTracer("hello")))
+    ZLayer.fromZIO(ZIO.attempt(GlobalOpenTelemetry.getTracer(instrumentationScopeName)))
   )
 ```
