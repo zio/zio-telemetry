@@ -9,14 +9,13 @@ import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor
 import io.opentelemetry.semconv.resource.attributes.ResourceAttributes
 import zio._
-import zio.telemetry.opentelemetry.example.config.AppConfig
 
 /**
  * https://www.jaegertracing.io/
  */
 object JaegerTracer {
 
-  def live(resourceName: String, instrumentationScopeName: String): RLayer[AppConfig, Tracer] =
+  def live(resourceName: String, instrumentationScopeName: String): TaskLayer[Tracer] =
     ZLayer(
       for {
         spanExporter   <- ZIO.attempt(OtlpGrpcSpanExporter.builder().build())

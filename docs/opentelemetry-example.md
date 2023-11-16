@@ -20,12 +20,11 @@ docker run --rm -it \
   jaegertracing/all-in-one:1.47
 ```
 
-To run Seq, you also need to specify an admin password:
+To run Seq, you also need to specify an admin password (user is `admin`):
 ```bash
 PH=$(echo 'admin123' | docker run --rm -i datalust/seq config hash)
 
 docker run \
-  --name seq \
   -d \
   --restart unless-stopped \
   -e ACCEPT_EULA=Y \

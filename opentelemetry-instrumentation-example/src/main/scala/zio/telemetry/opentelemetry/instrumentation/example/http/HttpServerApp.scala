@@ -17,6 +17,7 @@ case class HttpServerApp(tracing: Tracing) {
     for {
       _        <- tracing.addEvent("executing health logic")
       _        <- tracing.setAttribute("zio", "telemetry")
+      _        <- ZIO.logInfo("health processing finished on the server")
       response <- ZIO.succeed(Response.ok)
     } yield response
 
