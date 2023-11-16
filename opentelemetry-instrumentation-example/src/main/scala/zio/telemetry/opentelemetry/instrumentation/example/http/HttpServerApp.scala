@@ -10,15 +10,25 @@ case class HttpServerApp(tracing: Tracing) {
 
   val routes: HttpApp[Any, Throwable] =
     Http.collectZIO { case _ @Method.GET -> _ / "health" =>
-      health @@ span("health-endpoint")
+      for {
+        _        <- serverSpan
+        _        <- healthSpan @@ span("health span")
+        response <- ZIO.succeed(Response.ok)
+      } yield response
+
     }
 
-  def health: UIO[Response] =
+  private def serverSpan: UIO[Unit] =
     for {
-      _        <- tracing.addEvent("executing health logic")
-      _        <- tracing.setAttribute("zio", "telemetry")
-      response <- ZIO.succeed(Response.ok)
-    } yield response
+      _ <- tracing.setAttribute("zio", true)
+      _ <- tracing.addEvent("running server span")
+    } yield ()
+
+  private def healthSpan: UIO[Unit] =
+    for {
+      _ <- tracing.addEvent("executing health logic")
+      _ <- tracing.setAttribute("zio", "telemetry")
+    } yield ()
 
 }
 
