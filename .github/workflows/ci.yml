@@ -4,7 +4,6 @@
 name: CI
 env:
   JDK_JAVA_OPTIONS: -XX:+PrintCommandLineFlags
-  JVM_OPTS: -XX:+PrintCommandLineFlags
 'on':
   workflow_dispatch: {}
   release:
@@ -13,8 +12,9 @@ env:
   push:
     branches:
     - series/2.x
-  pull_request: {}
-  create: {}
+  pull_request:
+    branches-ignore:
+    - gh-pages
 jobs:
   build:
     name: Build
@@ -22,16 +22,16 @@ jobs:
     continue-on-error: true
     steps:
     - name: Git Checkout
-      uses: actions/checkout@v4.0.0
+      uses: actions/checkout@v4.1.0
       with:
         fetch-depth: '0'
     - name: Install libuv
       run: sudo apt-get update && sudo apt-get install -y libuv1-dev
     - name: Setup Scala
-      uses: actions/setup-java@v3.12.0
+      uses: actions/setup-java@v3.13.0
       with:
-        distribution: temurin
-        java-version: '8'
+        distribution: corretto
+        java-version: '17'
         check-latest: true
     - name: Cache Dependencies
       uses: coursier/cache-action@v6
@@ -47,16 +47,16 @@ jobs:
     continue-on-error: false
     steps:
     - name: Git Checkout
-      uses: actions/checkout@v4.0.0
+      uses: actions/checkout@v4.1.0
       with:
         fetch-depth: '0'
     - name: Install libuv
       run: sudo apt-get update && sudo apt-get install -y libuv1-dev
     - name: Setup Scala
-      uses: actions/setup-java@v3.12.0
+      uses: actions/setup-java@v3.13.0
       with:
-        distribution: temurin
-        java-version: '8'
+        distribution: corretto
+        java-version: '17'
         check-latest: true
     - name: Cache Dependencies
       uses: coursier/cache-action@v6
@@ -72,22 +72,22 @@ jobs:
       fail-fast: false
       matrix:
         java:
-        - '8'
         - '11'
         - '17'
+        - '21'
     steps:
     - name: Install libuv
       run: sudo apt-get update && sudo apt-get install -y libuv1-dev
     - name: Setup Scala
-      uses: actions/setup-java@v3.12.0
+      uses: actions/setup-java@v3.13.0
       with:
-        distribution: temurin
+        distribution: corretto
         java-version: ${{ matrix.java }}
         check-latest: true
     - name: Cache Dependencies
       uses: coursier/cache-action@v6
     - name: Git Checkout
-      uses: actions/checkout@v4.0.0
+      uses: actions/checkout@v4.1.0
       with:
         fetch-depth: '0'
     - name: Test
@@ -99,16 +99,16 @@ jobs:
     if: ${{ github.event_name == 'push' }}
     steps:
     - name: Git Checkout
-      uses: actions/checkout@v4.0.0
+      uses: actions/checkout@v4.1.0
       with:
         fetch-depth: '0'
     - name: Install libuv
       run: sudo apt-get update && sudo apt-get install -y libuv1-dev
     - name: Setup Scala
-      uses: actions/setup-java@v3.12.0
+      uses: actions/setup-java@v3.13.0
       with:
-        distribution: temurin
-        java-version: '8'
+        distribution: corretto
+        java-version: '17'
         check-latest: true
     - name: Cache Dependencies
       uses: coursier/cache-action@v6
@@ -173,16 +173,16 @@ jobs:
     if: ${{ github.event_name != 'pull_request' }}
     steps:
     - name: Git Checkout
-      uses: actions/checkout@v4.0.0
+      uses: actions/checkout@v4.1.0
       with:
         fetch-depth: '0'
     - name: Install libuv
       run: sudo apt-get update && sudo apt-get install -y libuv1-dev
     - name: Setup Scala
-      uses: actions/setup-java@v3.12.0
+      uses: actions/setup-java@v3.13.0
       with:
-        distribution: temurin
-        java-version: '8'
+        distribution: corretto
+        java-version: '17'
         check-latest: true
     - name: Cache Dependencies
       uses: coursier/cache-action@v6
@@ -202,16 +202,16 @@ jobs:
     if: ${{ ((github.event_name == 'release') && (github.event.action == 'published')) || (github.event_name == 'workflow_dispatch') }}
     steps:
     - name: Git Checkout
-      uses: actions/checkout@v4.0.0
+      uses: actions/checkout@v4.1.0
       with:
         fetch-depth: '0'
     - name: Install libuv
       run: sudo apt-get update && sudo apt-get install -y libuv1-dev
     - name: Setup Scala
-      uses: actions/setup-java@v3.12.0
+      uses: actions/setup-java@v3.13.0
       with:
-        distribution: temurin
-        java-version: '8'
+        distribution: corretto
+        java-version: '17'
         check-latest: true
     - name: Cache Dependencies
       uses: coursier/cache-action@v6
@@ -233,7 +233,7 @@ jobs:
     if: ${{ (github.event_name == 'release') && (github.event.action == 'published') }}
     steps:
     - name: Git Checkout
-      uses: actions/checkout@v4.0.0
+      uses: actions/checkout@v4.1.0
       with:
         fetch-depth: '0'
     - name: notify the main repo about the new release of docs package
