@@ -560,7 +560,7 @@ object Tracing {
               updatedCtx <- createChildUnsafe(ctx, spanName, spanKind, attributes, links)
               oldCtx     <- ctxStorage.getAndSet(updatedCtx)
               span       <- getCurrentSpanUnsafe
-              finalize    = end *> ctxStorage.set(oldCtx)
+              finalize    = endCurrentSpan *> ctxStorage.set(oldCtx)
             } yield (span, finalize)
 
           override def root[R, E, E1 <: E, A, A1 <: A](
@@ -630,7 +630,7 @@ object Tracing {
               updatedCtx <- createChildUnsafe(ctx, spanName, spanKind, attributes, links)
               _          <- ctxStorage.set(updatedCtx)
               span       <- getCurrentSpanUnsafe
-              finalize    = end *> ctxStorage.set(ctx)
+              finalize    = endCurrentSpan *> ctxStorage.set(ctx)
             } yield (span, finalize)
 
           override def scopedEffect[A](effect: => A)(implicit trace: Trace): Task[A] =
@@ -873,7 +873,7 @@ object Tracing {
           private def endSpan(span: Span)(implicit trace: Trace): UIO[Unit] =
             currentNanos.flatMap(nanos => ZIO.succeed(span.end(nanos, TimeUnit.NANOSECONDS)))
 
-          private def end(implicit trace: Trace): UIO[Any] =
+          private def endCurrentSpan(implicit trace: Trace): UIO[Any] =
             getCurrentSpanUnsafe.flatMap(endSpan)
 
           /**

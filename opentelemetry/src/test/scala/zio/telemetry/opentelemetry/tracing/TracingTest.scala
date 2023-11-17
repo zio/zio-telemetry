@@ -26,12 +26,12 @@ object TracingTest extends ZIOSpecDefault {
     tracer          = tracerProvider.get("TracingTest")
   } yield (spanExporter, tracer)
 
-  val inMemoryTracerLayer: ULayer[InMemorySpanExporter with Tracer with ContextStorage] =
+  val inMemoryTracerLayer: ULayer[InMemorySpanExporter with Tracer] =
     ZLayer.fromZIOEnvironment(inMemoryTracer.map { case (inMemorySpanExporter, tracer) =>
       ZEnvironment(inMemorySpanExporter).add(tracer)
-    }) ++ ContextStorage.fiberRef
+    })
 
-  val tracingMockLayer: ULayer[Tracing with InMemorySpanExporter with Tracer] =
+  val tracingMockLayer: URLayer[ContextStorage, Tracing with InMemorySpanExporter with Tracer] =
     inMemoryTracerLayer >>> (Tracing.live ++ inMemoryTracerLayer)
 
   def getFinishedSpans: ZIO[InMemorySpanExporter, Nothing, List[SpanData]] =
@@ -55,7 +55,7 @@ object TracingTest extends ZIOSpecDefault {
           _             <- ZIO.scoped(Tracing.live.build)
           finishedSpans <- getFinishedSpans
         } yield assert(finishedSpans)(hasSize(equalTo(0)))
-      }.provideLayer(inMemoryTracerLayer)
+      }.provide(inMemoryTracerLayer, ContextStorage.fiberRef)
     )
 
   private val spansSpec =
@@ -554,7 +554,7 @@ object TracingTest extends ZIOSpecDefault {
           } yield assert(ko)(isSome(failureAssertion)) && assert(ok)(isSome(successAssertion))
         }
       }
-    ).provideLayer(tracingMockLayer)
+    ).provide(tracingMockLayer, ContextStorage.fiberRef)
 
   private val spanScopedSpec =
     suite("scoped spans")(
@@ -656,5 +656,5 @@ object TracingTest extends ZIOSpecDefault {
           } yield assert(tags.get(AttributeKey.stringKey("string")))(equalTo("bar"))
         }
       }
-    ).provideLayer(tracingMockLayer)
+    ).provide(tracingMockLayer, ContextStorage.fiberRef)
 }

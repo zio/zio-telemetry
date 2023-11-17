@@ -11,30 +11,33 @@ object Dependencies {
   }
 
   object Orgs {
-    val zio                     = "dev.zio"
-    val opentracing             = "io.opentracing"
-    val opentelemetry           = "io.opentelemetry"
-    val opencensus              = "io.opencensus"
-    val jaegertracing           = "io.jaegertracing"
-    val scalaLangModules        = "org.scala-lang.modules"
-    val typelevel               = "org.typelevel"
-    val d11                     = "io.d11"
-    val softwaremillSttpClient3 = "com.softwaremill.sttp.client3"
-    val slf4j                   = "org.slf4j"
-    val grpc                    = "io.grpc"
+    val zio                          = "dev.zio"
+    val opentracing                  = "io.opentracing"
+    val opentelemetry                = "io.opentelemetry"
+    val opentelemetrySemconv         = "io.opentelemetry.semconv"
+    val opentelemetryInstrumentation = "io.opentelemetry.instrumentation"
+    val opencensus                   = "io.opencensus"
+    val jaegertracing                = "io.jaegertracing"
+    val scalaLangModules             = "org.scala-lang.modules"
+    val typelevel                    = "org.typelevel"
+    val softwaremillSttpClient3      = "com.softwaremill.sttp.client3"
+    val slf4j                        = "org.slf4j"
+    val grpc                         = "io.grpc"
+    val logback                      = "ch.qos.logback"
   }
 
   private object ExampleVersions {
-    val cats      = "2.7.0"
-    val grpcNetty = "1.47.0"
-    val jaeger    = "1.8.0"
-    val slf4j     = "1.7.36"
-    val sttp3     = "3.7.0"
-    val zipkin    = "2.16.3"
-    val zHttp     = "2.0.0-RC10"
-    val zioJson   = "0.3.0-RC10"
-    val zioConfig = "3.0.1"
-    val zioHttp   = "3.0.0-RC1"
+    val cats       = "2.7.0"
+    val grpcNetty  = "1.47.0"
+    val jaeger     = "1.8.0"
+    val slf4j      = "1.7.36"
+    val sttp3      = "3.7.0"
+    val zipkin     = "2.16.3"
+    val zioJson    = "0.3.0-RC10"
+    val zioConfig  = "3.0.1"
+    val zioHttp    = "3.0.0-RC2"
+    val zioLogging = "2.1.15"
+    val logback    = "1.4.11"
   }
 
   lazy val zio = Seq(
@@ -68,7 +71,6 @@ object Dependencies {
     Orgs.jaegertracing            % "jaeger-client"       % ExampleVersions.jaeger,
     Orgs.jaegertracing            % "jaeger-zipkin"       % ExampleVersions.jaeger,
     Orgs.softwaremillSttpClient3 %% "zio-json"            % ExampleVersions.sttp3,
-    Orgs.d11                     %% "zhttp"               % ExampleVersions.zHttp,
     Orgs.zio                     %% "zio-json"            % ExampleVersions.zioJson,
     Orgs.zio                     %% "zio-config"          % ExampleVersions.zioConfig,
     Orgs.zio                     %% "zio-config-magnolia" % ExampleVersions.zioConfig,
@@ -84,14 +86,24 @@ object Dependencies {
   )
 
   lazy val opentelemetryExample = example ++ Seq(
-    Orgs.opentelemetry % "opentelemetry-exporter-otlp" % Versions.opentelemetry,
-    Orgs.opentelemetry % "opentelemetry-sdk"           % Versions.opentelemetry,
-    Orgs.grpc          % "grpc-netty-shaded"           % ExampleVersions.grpcNetty,
-    Orgs.zio          %% "zio-http"                    % ExampleVersions.zioHttp
+    Orgs.opentelemetry        % "opentelemetry-exporter-otlp" % Versions.opentelemetry,
+    Orgs.opentelemetry        % "opentelemetry-sdk"           % Versions.opentelemetry,
+    Orgs.opentelemetrySemconv % "opentelemetry-semconv"       % "1.22.0-alpha",
+    Orgs.grpc                 % "grpc-netty-shaded"           % ExampleVersions.grpcNetty,
+    Orgs.zio                 %% "zio-http"                    % ExampleVersions.zioHttp
   )
 
   lazy val opentelemetryInstrumentationExample = example ++ Seq(
-    Orgs.zio %% "zio-http" % ExampleVersions.zioHttp
+    Orgs.opentelemetry                % "opentelemetry-exporter-otlp"        % Versions.opentelemetry,
+    Orgs.opentelemetry                % "opentelemetry-sdk"                  % Versions.opentelemetry,
+    Orgs.opentelemetrySemconv         % "opentelemetry-semconv"              % "1.22.0-alpha",
+    Orgs.grpc                         % "grpc-netty-shaded"                  % ExampleVersions.grpcNetty,
+    Orgs.opentelemetryInstrumentation % "opentelemetry-logback-appender-1.0" % "1.31.0-alpha",
+    Orgs.zio                         %% "zio-http"                           % ExampleVersions.zioHttp,
+    Orgs.zio                         %% "zio-logging"                        % ExampleVersions.zioLogging,
+    Orgs.zio                         %% "zio-logging-slf4j2"                 % ExampleVersions.zioLogging,
+    Orgs.logback                      % "logback-classic"                    % ExampleVersions.logback,
+    Orgs.logback                      % "logback-core"                       % ExampleVersions.logback
   )
 
 }

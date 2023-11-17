@@ -4,7 +4,7 @@ import io.opentracing.propagation.Format.Builtin.{HTTP_HEADERS => HttpHeadersFor
 import io.opentracing.propagation.TextMapAdapter
 import io.opentracing.tag.Tags
 import sttp.model.Method.GET
-import zhttp.http._
+import zio.http._
 import zio._
 import zio.json.EncoderOps
 import zio.telemetry.opentracing.OpenTracing
@@ -12,12 +12,12 @@ import zio.telemetry.opentracing.OpenTracing
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
-case class ProxyHttpApp(client: Client, tracing: OpenTracing) {
+case class ProxyHttpApp(client: BackendClient, tracing: OpenTracing) {
 
   import tracing.aspects._
 
-  def routes: HttpApp[Any, Throwable] =
-    Http.collectZIO { case Method.GET -> _ / "statuses" =>
+  def routes: HttpApp[Any, Nothing] =
+    Http.collectZIO { case Method.GET -> Root / "statuses" =>
       (for {
         _        <- tracing.tag(Tags.SPAN_KIND.getKey, Tags.SPAN_KIND_CLIENT)
         _        <- tracing.tag(Tags.HTTP_METHOD.getKey, GET.method)
@@ -25,7 +25,9 @@ case class ProxyHttpApp(client: Client, tracing: OpenTracing) {
         carrier   = new TextMapAdapter(mutable.Map.empty[String, String].asJava)
         _        <- tracing.inject(HttpHeadersFormat, carrier)
         headers  <- extractHeaders(carrier)
-        statuses <- client.status(headers)
+        statuses <- client
+                      .status(headers)
+                      .catchAll(_ => ZIO.succeed(Statuses(List.empty)))
       } yield Response.json(statuses.toJson)) @@ root("/statuses")
     }
 
@@ -43,7 +45,7 @@ case class ProxyHttpApp(client: Client, tracing: OpenTracing) {
 
 object ProxyHttpApp {
 
-  val live: URLayer[Client with OpenTracing, ProxyHttpApp] =
+  val live: URLayer[BackendClient with OpenTracing, ProxyHttpApp] =
     ZLayer.fromFunction(ProxyHttpApp.apply _)
 
 }

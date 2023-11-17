@@ -7,13 +7,18 @@ import zio.telemetry.opentelemetry.example.http.{BackendHttpApp, BackendHttpServ
 import zio._
 import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.example.otel.{JaegerTracer, SeqLoggerProvider}
+import zio.telemetry.opentelemetry.logging.Logging
 import zio.telemetry.opentelemetry.tracing.Tracing
 
 object BackendApp extends ZIOAppDefault {
 
   private val configLayer = TypesafeConfig.fromResourcePath(descriptor[AppConfig])
 
-  override def run: Task[ExitCode] =
+  private val instrumentationScopeName = "zio.telemetry.opentelemetry.example.BackendApp"
+  private val resourceName             = "opentelemetry-example-backend"
+
+  override def run: ZIO[Scope, Any, ExitCode] =
     ZIO
       .serviceWithZIO[BackendHttpServer](_.start.exitCode)
       .provide(
@@ -23,7 +28,9 @@ object BackendApp extends ZIOAppDefault {
         Tracing.live,
         Baggage.live(),
         ContextStorage.fiberRef,
-        JaegerTracer.live
+        JaegerTracer.live(resourceName, instrumentationScopeName),
+        SeqLoggerProvider.live(resourceName),
+        Logging.live(instrumentationScopeName)
       )
 
 }
