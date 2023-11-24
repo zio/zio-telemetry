@@ -126,7 +126,9 @@ object OpenTracing {
         )(implicit trace: Trace): UIO[Unit] =
           for {
             _ <- ZIO.succeed(span.setTag("error", true)).when(tagError)
-            _ <- ZIO.succeed(span.log(Map("error.object" -> cause, "stack" -> cause.prettyPrint).asJava)).when(logError)
+            _ <- ZIO
+                   .succeed(span.log(Map("error.object" -> FiberFailure(cause), "stack" -> cause.prettyPrint).asJava))
+                   .when(logError)
           } yield ()
 
         override def finish(span: Span)(implicit trace: Trace): UIO[Unit] =
