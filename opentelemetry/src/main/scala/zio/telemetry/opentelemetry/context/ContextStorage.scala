@@ -20,7 +20,7 @@ sealed trait ContextStorage {
 
 object ContextStorage {
 
-  final class FiberRefContextStorage(private[zio] val ref: FiberRef[Context]) extends ContextStorage {
+  final class ZIOFiberRef(private[zio] val ref: FiberRef[Context]) extends ContextStorage {
 
     override def get(implicit trace: Trace): UIO[Context] =
       ref.get
@@ -43,7 +43,7 @@ object ContextStorage {
       ref.locallyScoped(context)
   }
 
-  final class NativeContextStorage extends ContextStorage {
+  object Native extends ContextStorage {
 
     override def get(implicit trace: Trace): UIO[Context] =
       ZIO.succeed(Context.current())
@@ -81,7 +81,7 @@ object ContextStorage {
       FiberRef
         .make[Context](Context.root())
         .flatMap { ref =>
-          ZIO.succeed(new FiberRefContextStorage(ref))
+          ZIO.succeed(new ZIOFiberRef(ref))
         }
     )
 
@@ -90,6 +90,6 @@ object ContextStorage {
    * [[https://github.com/open-telemetry/opentelemetry-java-instrumentation OTEL instrumentation agent]] is used.
    */
   val native: ULayer[ContextStorage] =
-    ZLayer.succeed(new NativeContextStorage)
+    ZLayer.succeed(Native)
 
 }

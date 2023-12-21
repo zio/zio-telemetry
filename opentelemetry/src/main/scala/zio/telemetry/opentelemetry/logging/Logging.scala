@@ -50,9 +50,9 @@ object Logging {
         annotations.foreach { case (k, v) => builder.setAttribute(AttributeKey.stringKey(k), v) }
 
         ctxStorage match {
-          case cs: ContextStorage.FiberRefContextStorage =>
+          case cs: ContextStorage.ZIOFiberRef =>
             context.get(cs.ref).foreach(builder.setContext)
-          case _: ContextStorage.NativeContextStorage    =>
+          case _: ContextStorage.Native.type    =>
             builder.setContext(Context.current())
         }
 
