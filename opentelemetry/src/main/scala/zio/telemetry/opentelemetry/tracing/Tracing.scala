@@ -509,9 +509,9 @@ object Tracing {
   def live: URLayer[Tracer with ContextStorage, Tracing] =
     ZLayer.scoped {
       for {
-        tracer         <- ZIO.service[Tracer]
-        contextStorage <- ZIO.service[ContextStorage]
-        tracing        <- scoped(tracer, contextStorage)
+        tracer     <- ZIO.service[Tracer]
+        ctxStorage <- ZIO.service[ContextStorage]
+        tracing    <- scoped(tracer, ctxStorage)
       } yield tracing
     }
 
