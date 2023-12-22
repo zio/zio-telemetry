@@ -8,9 +8,8 @@ import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.context.ContextStorage
 import zio.telemetry.opentelemetry.example.config.AppConfig
 import zio.telemetry.opentelemetry.example.http.{BackendClient, ProxyHttpApp, ProxyHttpServer}
-import zio.telemetry.opentelemetry.example.otel.{JaegerTracer, SeqLoggerProvider}
-import zio.telemetry.opentelemetry.logging.Logging
-import zio.telemetry.opentelemetry.tracing.Tracing
+import zio.telemetry.opentelemetry.example.otel.OtelSdk
+import zio.telemetry.opentelemetry.OpenTelemetry
 
 object ProxyApp extends ZIOAppDefault {
 
@@ -28,12 +27,11 @@ object ProxyApp extends ZIOAppDefault {
         BackendClient.live,
         ProxyHttpServer.live,
         ProxyHttpApp.live,
-        Tracing.live,
+        OtelSdk.custom(resourceName),
+        OpenTelemetry.tracing(instrumentationScopeName),
+        OpenTelemetry.logging(instrumentationScopeName),
         Baggage.live(),
         ContextStorage.fiberRef,
-        JaegerTracer.live(resourceName, instrumentationScopeName),
-        SeqLoggerProvider.live(resourceName),
-        Logging.live(instrumentationScopeName)
       )
 
 }

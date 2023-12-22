@@ -11,7 +11,7 @@ object Logging {
   def live(
     instrumentationScopeName: String,
     logLevel: LogLevel = LogLevel.Info
-  ): ZLayer[ContextStorage with LoggerProvider, Nothing, Unit] =
+  ): URLayer[ContextStorage with LoggerProvider, Unit] =
     ZLayer.scoped(
       for {
         loggerProvider <- ZIO.service[LoggerProvider]

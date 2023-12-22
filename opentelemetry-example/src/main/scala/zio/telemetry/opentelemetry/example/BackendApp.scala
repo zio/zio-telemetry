@@ -7,9 +7,8 @@ import zio.telemetry.opentelemetry.example.http.{BackendHttpApp, BackendHttpServ
 import zio._
 import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.context.ContextStorage
-import zio.telemetry.opentelemetry.example.otel.{JaegerTracer, SeqLoggerProvider}
-import zio.telemetry.opentelemetry.logging.Logging
-import zio.telemetry.opentelemetry.tracing.Tracing
+import zio.telemetry.opentelemetry.OpenTelemetry
+import zio.telemetry.opentelemetry.example.otel.OtelSdk
 
 object BackendApp extends ZIOAppDefault {
 
@@ -25,12 +24,11 @@ object BackendApp extends ZIOAppDefault {
         configLayer,
         BackendHttpServer.live,
         BackendHttpApp.live,
-        Tracing.live,
+        OtelSdk.custom(resourceName),
+        OpenTelemetry.tracing(instrumentationScopeName),
+        OpenTelemetry.logging(instrumentationScopeName),
         Baggage.live(),
-        ContextStorage.fiberRef,
-        JaegerTracer.live(resourceName, instrumentationScopeName),
-        SeqLoggerProvider.live(resourceName),
-        Logging.live(instrumentationScopeName)
+        ContextStorage.fiberRef
       )
 
 }

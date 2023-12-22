@@ -755,14 +755,12 @@ object Tracing {
             statusMapper.success
               .lift(a)
               .fold(ZIO.succeed(span)) { case StatusMapper.Result(statusCode, maybeError) =>
-                for {
-                  result <- if (statusCode == StatusCode.ERROR)
-                              maybeError.fold(ZIO.succeed(span.setStatus(statusCode)))(errorMessage =>
-                                ZIO.succeed(span.setStatus(statusCode, errorMessage))
-                              )
-                            else
-                              ZIO.succeed(span.setStatus(statusCode))
-                } yield result
+                if (statusCode == StatusCode.ERROR)
+                  maybeError.fold(ZIO.succeed(span.setStatus(statusCode)))(errorMessage =>
+                    ZIO.succeed(span.setStatus(statusCode, errorMessage))
+                  )
+                else
+                  ZIO.succeed(span.setStatus(statusCode))
               }
 
           private def setFailureStatus[E, A](
@@ -770,19 +768,18 @@ object Tracing {
             cause: Cause[E],
             statusMapper: StatusMapper[E, A]
           )(implicit trace: Trace): UIO[Span] = {
-            val statusMapperResult =
+            val result =
               cause.failureOption
                 .flatMap(statusMapper.failure.lift)
                 .getOrElse(StatusMapper.Result(StatusCode.ERROR, None))
 
             for {
-              _      <- if (statusMapperResult.statusCode == StatusCode.ERROR)
-                          ZIO.succeed(span.setStatus(statusMapperResult.statusCode, cause.prettyPrint))
-                        else
-                          ZIO.succeed(span.setStatus(statusMapperResult.statusCode))
-              result <-
-                statusMapperResult.error.fold(ZIO.succeed(span))(error => ZIO.succeed(span.recordException(error)))
-            } yield result
+              _          <- if (result.statusCode == StatusCode.ERROR)
+                              ZIO.succeed(span.setStatus(result.statusCode, cause.prettyPrint))
+                            else
+                              ZIO.succeed(span.setStatus(result.statusCode))
+              spanResult <- result.error.fold(ZIO.succeed(span))(error => ZIO.succeed(span.recordException(error)))
+            } yield spanResult
           }
 
           /**
