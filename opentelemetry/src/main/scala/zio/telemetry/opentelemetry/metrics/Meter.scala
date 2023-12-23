@@ -1,8 +1,8 @@
 package zio.telemetry.opentelemetry.metrics
 
+import io.opentelemetry.api
 import zio._
 import zio.telemetry.opentelemetry.context.ContextStorage
-import io.opentelemetry.api
 
 trait Meter {
 
@@ -11,6 +11,12 @@ trait Meter {
     unit: Option[String] = None,
     description: Option[String] = None
   ): Task[Counter[Long]]
+
+  def observableCounter(
+    name: String,
+    unit: Option[String] = None,
+    description: Option[String] = None
+  )(cb: ObservableMeasurement[Long] => Task[Unit]): TaskLayer[api.metrics.ObservableLongCounter]
 
 }
 
@@ -23,18 +29,44 @@ object Meter {
         ctxStorage <- ZIO.service[ContextStorage]
       } yield new Meter {
 
+        private val unsafeRuntime =
+          Runtime.default.unsafe
+
         override def counter(
           name: String,
           unit: Option[String] = None,
           description: Option[String] = None
-        ): Task[Counter[Long]] = ZIO.attempt {
-          val builder = meter.counterBuilder(name)
+        ): Task[Counter[Long]] =
+          ZIO.attempt {
+            val builder = meter.counterBuilder(name)
 
-          unit.foreach(builder.setUnit)
-          description.foreach(builder.setDescription)
+            unit.foreach(builder.setUnit)
+            description.foreach(builder.setDescription)
 
-          Counter.long(builder.build(), ctxStorage)
-        }
+            Counter.long(builder.build(), ctxStorage)
+          }
+
+        override def observableCounter(
+          name: String,
+          unit: Option[String] = None,
+          description: Option[String] = None
+        )(cb: ObservableMeasurement[Long] => Task[Unit]): TaskLayer[api.metrics.ObservableLongCounter] =
+          ZLayer.scoped(
+            ZIO.fromAutoCloseable(
+              ZIO.attempt {
+                val builder = meter.counterBuilder(name)
+
+                unit.foreach(builder.setUnit)
+                description.foreach(builder.setDescription)
+
+                builder.buildWithCallback { om =>
+                  Unsafe.unsafe { implicit unsafe =>
+                    unsafeRuntime.run(cb(ObservableMeasurement.long(om))).getOrThrowFiberFailure()
+                  }
+                }
+              }
+            )
+          )
 
       }
     )

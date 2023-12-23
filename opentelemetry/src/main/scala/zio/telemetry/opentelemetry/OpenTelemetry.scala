@@ -2,10 +2,10 @@ package zio.telemetry.opentelemetry
 
 import io.opentelemetry.api
 import zio._
-import zio.telemetry.opentelemetry.tracing.Tracing
 import zio.telemetry.opentelemetry.context.ContextStorage
 import zio.telemetry.opentelemetry.logging.Logging
 import zio.telemetry.opentelemetry.metrics.Meter
+import zio.telemetry.opentelemetry.tracing.Tracing
 
 object OpenTelemetry {
 

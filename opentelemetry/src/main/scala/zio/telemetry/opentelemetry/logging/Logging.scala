@@ -52,7 +52,7 @@ object Logging {
         ctxStorage match {
           case cs: ContextStorage.ZIOFiberRef =>
             context.get(cs.ref).foreach(builder.setContext)
-          case _: ContextStorage.Native.type    =>
+          case _: ContextStorage.Native.type  =>
             builder.setContext(Context.current())
         }
 

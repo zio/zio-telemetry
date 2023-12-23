@@ -36,7 +36,7 @@ object LoggerProvider {
   /**
    * https://fluentbit.io/
    */
-  def live(resourceName: String): Task[SdkLoggerProvider] =
+  def fluentbit(resourceName: String): Task[SdkLoggerProvider] =
     for {
       logRecordExporter  <- ZIO.succeed(OtlpHttpLogRecordExporter.builder().build())
       logRecordProcessor <- ZIO.succeed(SimpleLogRecordProcessor.create(logRecordExporter))
