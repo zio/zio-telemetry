@@ -16,7 +16,7 @@ trait Meter {
     name: String,
     unit: Option[String] = None,
     description: Option[String] = None
-  )(cb: ObservableMeasurement[Long] => Task[Unit]): TaskLayer[api.metrics.ObservableLongCounter]
+  )(callback: ObservableMeasurement[Long] => Task[Unit]): TaskLayer[api.metrics.ObservableLongCounter]
 
 }
 
@@ -50,7 +50,7 @@ object Meter {
           name: String,
           unit: Option[String] = None,
           description: Option[String] = None
-        )(cb: ObservableMeasurement[Long] => Task[Unit]): TaskLayer[api.metrics.ObservableLongCounter] =
+        )(callback: ObservableMeasurement[Long] => Task[Unit]): TaskLayer[api.metrics.ObservableLongCounter] =
           ZLayer.scoped(
             ZIO.fromAutoCloseable(
               ZIO.attempt {
@@ -61,7 +61,7 @@ object Meter {
 
                 builder.buildWithCallback { om =>
                   Unsafe.unsafe { implicit unsafe =>
-                    unsafeRuntime.run(cb(ObservableMeasurement.long(om))).getOrThrowFiberFailure()
+                    unsafeRuntime.run(callback(ObservableMeasurement.long(om))).getOrThrowFiberFailure()
                   }
                 }
               }

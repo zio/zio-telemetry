@@ -10,7 +10,7 @@ import scala.jdk.CollectionConverters._
 
 object MeterTest extends ZIOSpecDefault {
 
-  val inMemoryMetricReaderLayer: ZLayer[Any,Nothing,InMemoryMetricReader] =
+  val inMemoryMetricReaderLayer: ZLayer[Any, Nothing, InMemoryMetricReader] =
     ZLayer(ZIO.succeed(InMemoryMetricReader.create()))
 
   val meterLayer = {
@@ -35,7 +35,7 @@ object MeterTest extends ZIOSpecDefault {
               _      <- meter
                           .observableCounter("obs")(_.record(1L))
                           .launch
-                          .forkDaemon
+                          .fork
               _      <- TestClock.adjust(1.millisecond)
               metrics = reader.collectAllMetrics().asScala.toList
             } yield assertTrue(metrics.nonEmpty)

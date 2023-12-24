@@ -9,6 +9,7 @@ import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.context.ContextStorage
 import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.example.otel.OtelSdk
+import zio.telemetry.opentelemetry.metrics.Meter
 
 object BackendApp extends ZIOAppDefault {
 
@@ -16,6 +17,13 @@ object BackendApp extends ZIOAppDefault {
 
   private val instrumentationScopeName = "zio.telemetry.opentelemetry.example.BackendApp"
   private val resourceName             = "opentelemetry-example-backend"
+
+  val observableCounterLayer = 
+    ZLayer.suspend(
+      ZLayer.service[Meter].flatMap { env => 
+        env.get.observableCounter("foo")(_.record(1L)).unit
+      }
+    )
 
   override def run: ZIO[Scope, Any, ExitCode] =
     ZIO
@@ -27,6 +35,8 @@ object BackendApp extends ZIOAppDefault {
         OtelSdk.custom(resourceName),
         OpenTelemetry.tracing(instrumentationScopeName),
         OpenTelemetry.logging(instrumentationScopeName),
+        OpenTelemetry.meter(instrumentationScopeName),
+        observableCounterLayer,
         Baggage.live(),
         ContextStorage.fiberRef
       )
