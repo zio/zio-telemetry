@@ -18,11 +18,9 @@ object BackendApp extends ZIOAppDefault {
   private val instrumentationScopeName = "zio.telemetry.opentelemetry.example.BackendApp"
   private val resourceName             = "opentelemetry-example-backend"
 
-  val observableCounterLayer = 
-    ZLayer.suspend(
-      ZLayer.service[Meter].flatMap { env => 
-        env.get.observableCounter("foo")(_.record(1L)).unit
-      }
+  val observableCounterLayer: RLayer[Meter, Unit] =
+    ZLayer.scoped(
+      ZIO.serviceWithZIO[Meter](_.observableCounter("foo")(_.record(1L)))
     )
 
   override def run: ZIO[Scope, Any, ExitCode] =

@@ -7,9 +7,9 @@ import zio.telemetry.opentelemetry.context.ContextStorage
 
 trait Counter[-A] {
 
-  def add(value: A): Task[Unit]
+  def add(value: A): UIO[Unit]
 
-  def inc: Task[Unit]
+  def inc: UIO[Unit]
 }
 
 object Counter {
@@ -17,10 +17,10 @@ object Counter {
   private[metrics] def long(counter: LongCounter, ctxStorage: ContextStorage): Counter[Long] =
     new Counter[Long] {
 
-      override def add(value: Long): Task[Unit] =
+      override def add(value: Long): UIO[Unit] =
         ctxStorage.get.map(counter.add(value, Attributes.empty(), _))
 
-      override def inc: Task[Unit] =
+      override def inc: UIO[Unit] =
         add(1L)
 
     }

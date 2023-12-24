@@ -28,18 +28,29 @@ object MeterTest extends ZIOSpecDefault {
   override def spec: Spec[TestEnvironment with Scope, Any] =
     suite("zio opentelemetry")(
       suite("Meter")(
-        test("observableCounter") {
+        test("counter") {
           ZIO.serviceWithZIO[Meter] { meter =>
             for {
-              reader <- ZIO.service[InMemoryMetricReader]
-              _      <- meter
-                          .observableCounter("obs")(_.record(1L))
-                          .launch
-                          .fork
-              _      <- TestClock.adjust(1.millisecond)
-              metrics = reader.collectAllMetrics().asScala.toList
+              reader  <- ZIO.service[InMemoryMetricReader]
+              counter <- meter.counter("test_counter")
+              _       <- counter.inc
+              metrics  = reader.collectAllMetrics().asScala.toList
             } yield assertTrue(metrics.nonEmpty)
           }
+        },
+        test("observableCounter") {
+          ZIO.scoped(
+            ZIO.serviceWithZIO[Meter] { meter =>
+              for {
+                reader <- ZIO.service[InMemoryMetricReader]
+                _      <- meter
+                            .observableCounter("obs")(_.record(1L))
+                            .fork
+                _      <- TestClock.adjust(1.millisecond)
+                metrics = reader.collectAllMetrics().asScala.toList
+              } yield assertTrue(metrics.nonEmpty)
+            }
+          )
         }
       )
     ).provide(inMemoryMetricReaderLayer, meterLayer, ContextStorage.fiberRef)

@@ -10,17 +10,19 @@ object OtelSdk {
   def custom(resourceName: String): TaskLayer[api.OpenTelemetry] =
     OpenTelemetry.custom(
       for {
-        tracerProvider <- TracerProvider.jaeger(resourceName)
-        loggerProvider <- LoggerProvider.seq(resourceName)
-        openTelemetry  <- ZIO.acquireRelease(
-                            ZIO.attempt(
+        tracerProvider <- TracerProvider.stdout(resourceName)
+        meterProvider  <- MeterProvider.stdout(resourceName)
+        loggerProvider <- LoggerProvider.stdout(resourceName)
+        openTelemetry  <- ZIO.fromAutoCloseable(
+                            ZIO.succeed(
                               OpenTelemetrySdk
                                 .builder()
                                 .setTracerProvider(tracerProvider)
+                                .setMeterProvider(meterProvider)
                                 .setLoggerProvider(loggerProvider)
                                 .build
                             )
-                          )(sdk => ZIO.attempt(sdk.close()).orDie)
+                          )
       } yield openTelemetry
     )
 

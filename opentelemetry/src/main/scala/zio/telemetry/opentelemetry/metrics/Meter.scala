@@ -10,13 +10,13 @@ trait Meter {
     name: String,
     unit: Option[String] = None,
     description: Option[String] = None
-  ): Task[Counter[Long]]
+  ): UIO[Counter[Long]]
 
   def observableCounter(
     name: String,
     unit: Option[String] = None,
     description: Option[String] = None
-  )(callback: ObservableMeasurement[Long] => Task[Unit]): TaskLayer[api.metrics.ObservableLongCounter]
+  )(callback: ObservableMeasurement[Long] => Task[Unit]): RIO[Scope, Unit]
 
 }
 
@@ -36,8 +36,8 @@ object Meter {
           name: String,
           unit: Option[String] = None,
           description: Option[String] = None
-        ): Task[Counter[Long]] =
-          ZIO.attempt {
+        ): UIO[Counter[Long]] =
+          ZIO.succeed {
             val builder = meter.counterBuilder(name)
 
             unit.foreach(builder.setUnit)
@@ -50,9 +50,9 @@ object Meter {
           name: String,
           unit: Option[String] = None,
           description: Option[String] = None
-        )(callback: ObservableMeasurement[Long] => Task[Unit]): TaskLayer[api.metrics.ObservableLongCounter] =
-          ZLayer.scoped(
-            ZIO.fromAutoCloseable(
+        )(callback: ObservableMeasurement[Long] => Task[Unit]): RIO[Scope, Unit] =
+          ZIO
+            .fromAutoCloseable(
               ZIO.attempt {
                 val builder = meter.counterBuilder(name)
 
@@ -66,7 +66,7 @@ object Meter {
                 }
               }
             )
-          )
+            .unit
 
       }
     )
