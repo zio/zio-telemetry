@@ -18,9 +18,29 @@ object BackendApp extends ZIOAppDefault {
   private val instrumentationScopeName = "zio.telemetry.opentelemetry.example.BackendApp"
   private val resourceName             = "opentelemetry-example-backend"
 
-  val observableCounterLayer: RLayer[Meter, Unit] =
+  val tickRefLayer: ULayer[Ref[Long]] =
+    ZLayer(
+      for {
+        ref <- Ref.make(0L)
+        _   <- ref
+                 .update(_ + 1)
+                 .repeat[Any, Long](Schedule.spaced(1.second))
+                 .forkDaemon
+      } yield ref
+    )
+
+  val globalTickCounterLayer: RLayer[Meter with Ref[Long], Unit] =
     ZLayer.scoped(
-      ZIO.serviceWithZIO[Meter](_.observableCounter("foo")(_.record(1L)))
+      for {
+        meter <- ZIO.service[Meter]
+        ref   <- ZIO.service[Ref[Long]]
+        _     <- meter.observableCounter("tick_counter") { om =>
+                   for {
+                     tick <- ref.get
+                     _    <- om.record(tick)
+                   } yield ()
+                 }
+      } yield ()
     )
 
   override def run: ZIO[Scope, Any, ExitCode] =
@@ -34,7 +54,8 @@ object BackendApp extends ZIOAppDefault {
         OpenTelemetry.tracing(instrumentationScopeName),
         OpenTelemetry.logging(instrumentationScopeName),
         OpenTelemetry.meter(instrumentationScopeName),
-        observableCounterLayer,
+        globalTickCounterLayer,
+        tickRefLayer,
         Baggage.live(),
         ContextStorage.fiberRef
       )

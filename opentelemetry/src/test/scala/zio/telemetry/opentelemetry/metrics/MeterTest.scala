@@ -43,9 +43,7 @@ object MeterTest extends ZIOSpecDefault {
             ZIO.serviceWithZIO[Meter] { meter =>
               for {
                 reader <- ZIO.service[InMemoryMetricReader]
-                _      <- meter
-                            .observableCounter("obs")(_.record(1L))
-                            .fork
+                _      <- meter.observableCounter("obs")(_.record(1L))
                 _      <- TestClock.adjust(1.millisecond)
                 metrics = reader.collectAllMetrics().asScala.toList
               } yield assertTrue(metrics.nonEmpty)
