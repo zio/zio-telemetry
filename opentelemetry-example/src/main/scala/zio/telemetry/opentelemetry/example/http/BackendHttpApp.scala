@@ -45,21 +45,17 @@ case class BackendHttpApp(tracing: Tracing, baggage: Baggage, statusRequestsCoun
       response     <- ZIO.succeed(Response.json(ServiceStatus.up("backend").toJson))
       _            <- tracing.addEvent("event from backend after response")
       _            <- ZIO.logInfo("status processing finished on backend")
-      _            <- statusRequestsCounter.inc
+      _            <- statusRequestsCounter.inc()
     } yield response
 
 }
 
 object BackendHttpApp {
 
-  val live: URLayer[Tracing with Meter with Baggage, BackendHttpApp] =
-    ZLayer(
-      for {
-        meter                 <- ZIO.service[Meter]
-        tracing               <- ZIO.service[Tracing]
-        baggage               <- ZIO.service[Baggage]
-        statusRequestsCounter <- meter.counter("status_requests_count")
-      } yield BackendHttpApp(tracing, baggage, statusRequestsCounter)
-    )
+  val live: URLayer[Tracing with Meter with Baggage, BackendHttpApp] = {
+    val counterLayer = ZLayer(ZIO.serviceWithZIO[Meter](_.counter("status_requests_count")))
+
+    counterLayer >>> ZLayer.fromFunction(BackendHttpApp.apply _)
+  }
 
 }
