@@ -1,6 +1,5 @@
 package zio.telemetry.opentelemetry.tracing
 
-import io.opentelemetry.api.common.{AttributeKey, Attributes}
 import io.opentelemetry.api.trace.{Span, SpanId, StatusCode, Tracer}
 import io.opentelemetry.context.Context
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
@@ -16,6 +15,9 @@ import zio.test.{Spec, TestClock, ZIOSpecDefault, assert}
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
+import io.opentelemetry.api.common.AttributeKey
+import zio.telemetry.opentelemetry.common.Attributes
+import zio.telemetry.opentelemetry.common.Attribute
 
 object TracingTest extends ZIOSpecDefault {
 
@@ -292,12 +294,7 @@ object TracingTest extends ZIOSpecDefault {
             _ <- TestClock.adjust(duration)
             _ <- tracing.addEventWithAttributes(
                    "message2",
-                   Attributes.of(
-                     AttributeKey.stringKey("msg"),
-                     "message",
-                     AttributeKey.longKey("size"),
-                     Long.box(1)
-                   )
+                   Attributes(Attribute.string("msg", "message"), Attribute.long("size", 1L))
                  )
           } yield ()
 
@@ -311,16 +308,11 @@ object TracingTest extends ZIOSpecDefault {
                      }.flatten
           } yield {
             val expected = List(
-              (0L, "message", Attributes.empty()),
+              (0L, "message", Attributes.empty),
               (
                 1000000L,
                 "message2",
-                Attributes.of(
-                  AttributeKey.stringKey("msg"),
-                  "message",
-                  AttributeKey.longKey("size"),
-                  Long.box(1)
-                )
+                Attributes(Attribute.string("msg", "message"), Attribute.long("size", 1L))
               )
             )
             assert(tags)(equalTo(expected))

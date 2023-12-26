@@ -10,6 +10,7 @@ import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters._
+import zio.telemetry.opentelemetry.common.Attribute
 
 trait Tracing { self =>
 
@@ -313,6 +314,15 @@ trait Tracing { self =>
    * @return
    */
   def setAttribute[T](key: AttributeKey[T], value: T)(implicit trace: Trace): UIO[Unit]
+
+  /**
+    * Sets an attribute of the current span.
+    *
+    * @param attribute
+    *   convenient Scala wrapper for Java key/value
+    * @param trace
+    */
+  def setAttribute[T](attribute: Attribute[T])(implicit trace: Trace): UIO[Unit]
 
   /**
    * Sets an attribute of the current span.
@@ -718,6 +728,9 @@ object Tracing {
 
           override def setAttribute[T](key: AttributeKey[T], value: T)(implicit trace: Trace): UIO[Unit] =
             getCurrentSpanUnsafe.map(_.setAttribute(key, value)).unit
+
+          override def setAttribute[T](attribute: Attribute[T])(implicit trace: Trace): UIO[Unit] =
+            getCurrentSpanUnsafe.map(_.setAttribute(attribute.key, attribute.value)).unit
 
           override def setAttribute(name: String, values: Seq[String])(implicit trace: Trace): UIO[Unit] = {
             val v = values.asJava
