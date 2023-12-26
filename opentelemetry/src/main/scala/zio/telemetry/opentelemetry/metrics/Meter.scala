@@ -30,7 +30,7 @@ trait Meter {
     name: String,
     unit: Option[String] = None,
     description: Option[String] = None
-  ): UIO[Counter[Long]]
+  )(implicit trace: Trace): UIO[Counter[Long]]
 
   /**
    * Constructs a UpDownCounter instrument.
@@ -48,7 +48,7 @@ trait Meter {
     name: String,
     unit: Option[String] = None,
     description: Option[String] = None
-  ): UIO[UpDownCounter[Long]]
+  )(implicit trace: Trace): UIO[UpDownCounter[Long]]
 
   /**
    * Constructs a Historgram instrument.
@@ -66,7 +66,7 @@ trait Meter {
     name: String,
     unit: Option[String] = None,
     description: Option[String] = None
-  ): UIO[Histogram[Double]]
+  )(implicit trace: Trace): UIO[Histogram[Double]]
 
   /**
    * Builds an Asynchronous Counter instrument with the given callback.
@@ -86,7 +86,7 @@ trait Meter {
     name: String,
     unit: Option[String] = None,
     description: Option[String] = None
-  )(callback: ObservableMeasurement[Long] => Task[Unit]): RIO[Scope, Unit]
+  )(callback: ObservableMeasurement[Long] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit]
 
   /**
    * Builds an Asynchronous UpDownCounter instrument with the given callback.
@@ -106,7 +106,7 @@ trait Meter {
     name: String,
     unit: Option[String] = None,
     description: Option[String] = None
-  )(callback: ObservableMeasurement[Long] => Task[Unit]): RIO[Scope, Unit]
+  )(callback: ObservableMeasurement[Long] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit]
 
   /**
    * Builds an Asynchronous Gauge instrument with the given callback.
@@ -126,7 +126,7 @@ trait Meter {
     name: String,
     unit: Option[String] = None,
     description: Option[String] = None
-  )(callback: ObservableMeasurement[Double] => Task[Unit]): RIO[Scope, Unit]
+  )(callback: ObservableMeasurement[Double] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit]
 
 }
 
@@ -146,7 +146,7 @@ object Meter {
           name: String,
           unit: Option[String] = None,
           description: Option[String] = None
-        ): UIO[Counter[Long]] =
+        )(implicit trace: Trace): UIO[Counter[Long]] =
           ZIO.succeed {
             val builder = meter.counterBuilder(name)
 
@@ -160,7 +160,7 @@ object Meter {
           name: String,
           unit: Option[String] = None,
           description: Option[String] = None
-        ): UIO[UpDownCounter[Long]] =
+        )(implicit trace: Trace): UIO[UpDownCounter[Long]] =
           ZIO.succeed {
             val builder = meter.upDownCounterBuilder(name)
 
@@ -174,7 +174,7 @@ object Meter {
           name: String,
           unit: Option[String] = None,
           description: Option[String] = None
-        ): UIO[Histogram[Double]] =
+        )(implicit trace: Trace): UIO[Histogram[Double]] =
           ZIO.succeed {
             val builder = meter.histogramBuilder(name)
 
@@ -188,7 +188,7 @@ object Meter {
           name: String,
           unit: Option[String] = None,
           description: Option[String] = None
-        )(callback: ObservableMeasurement[Long] => Task[Unit]): RIO[Scope, Unit] =
+        )(callback: ObservableMeasurement[Long] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit] =
           ZIO
             .fromAutoCloseable(
               ZIO.attempt {
@@ -210,7 +210,7 @@ object Meter {
           name: String,
           unit: Option[String] = None,
           description: Option[String] = None
-        )(callback: ObservableMeasurement[Long] => Task[Unit]): RIO[Scope, Unit] =
+        )(callback: ObservableMeasurement[Long] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit] =
           ZIO
             .fromAutoCloseable(
               ZIO.attempt {
@@ -232,7 +232,7 @@ object Meter {
           name: String,
           unit: Option[String] = None,
           description: Option[String] = None
-        )(callback: ObservableMeasurement[Double] => Task[Unit]): RIO[Scope, Unit] =
+        )(callback: ObservableMeasurement[Double] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit] =
           ZIO
             .fromAutoCloseable(
               ZIO.attempt {

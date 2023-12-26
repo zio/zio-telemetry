@@ -24,7 +24,7 @@ trait Histogram[-A] {
    * @param attributes
    *   set of attributes to associate with the value
    */
-  def record(value: A, attributes: Attributes = Attributes.empty): UIO[Unit]
+  def record(value: A, attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit]
 
 }
 
@@ -33,7 +33,7 @@ object Histogram {
   private[metrics] def double(histogram: DoubleHistogram, ctxStorage: ContextStorage): Histogram[Double] =
     new Histogram[Double] {
 
-      override def record(value: Double, attributes: Attributes = Attributes.empty): UIO[Unit] =
+      override def record(value: Double, attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
         ctxStorage.get.map(histogram.record(value, attributes, _))
 
     }

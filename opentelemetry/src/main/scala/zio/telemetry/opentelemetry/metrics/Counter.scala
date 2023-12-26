@@ -24,7 +24,7 @@ trait Counter[-A] {
    * @param attributes
    *   set of attributes to associate with the value
    */
-  def add(value: A, attributes: Attributes = Attributes.empty): UIO[Unit]
+  def add(value: A, attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit]
 
   /**
    * Increments a counter by one.
@@ -35,7 +35,7 @@ trait Counter[-A] {
    * @param attributes
    *   set of attributes to associate with the value
    */
-  def inc(attributes: Attributes = Attributes.empty): UIO[Unit]
+  def inc(attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit]
 }
 
 object Counter {
@@ -43,10 +43,10 @@ object Counter {
   private[metrics] def long(counter: LongCounter, ctxStorage: ContextStorage): Counter[Long] =
     new Counter[Long] {
 
-      override def add(value: Long, attributes: Attributes = Attributes.empty): UIO[Unit] =
+      override def add(value: Long, attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
         ctxStorage.get.map(counter.add(value, attributes, _))
 
-      override def inc(attributes: Attributes = Attributes.empty): UIO[Unit] =
+      override def inc(attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
         add(1L, attributes)
 
     }

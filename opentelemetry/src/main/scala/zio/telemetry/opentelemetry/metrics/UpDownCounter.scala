@@ -24,7 +24,7 @@ trait UpDownCounter[-A] {
    * @param attributes
    *   set of attributes to associate with the value
    */
-  def add(value: A, attributes: Attributes = Attributes.empty): UIO[Unit]
+  def add(value: A, attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit]
 
   /**
    * Increments a counter by one.
@@ -35,7 +35,7 @@ trait UpDownCounter[-A] {
    * @param attributes
    *   set of attributes to associate with the value
    */
-  def inc(attributes: Attributes = Attributes.empty): UIO[Unit]
+  def inc(attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit]
 
   /**
    * Decrements a counter by one.
@@ -46,7 +46,7 @@ trait UpDownCounter[-A] {
    * @param attributes
    *   set of attributes to associate with the value
    */
-  def dec(attributes: Attributes = Attributes.empty): UIO[Unit]
+  def dec(attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit]
 
 }
 
@@ -55,13 +55,13 @@ object UpDownCounter {
   private[metrics] def long(counter: LongUpDownCounter, ctxStorage: ContextStorage): UpDownCounter[Long] =
     new UpDownCounter[Long] {
 
-      override def add(value: Long, attributes: Attributes = Attributes.empty): UIO[Unit] =
+      override def add(value: Long, attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
         ctxStorage.get.map(counter.add(value, attributes, _))
 
-      override def inc(attributes: Attributes = Attributes.empty): UIO[Unit] =
+      override def inc(attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
         add(1L, attributes)
 
-      override def dec(attributes: Attributes = Attributes.empty): UIO[Unit] =
+      override def dec(attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
         add(-1L, attributes)
 
     }

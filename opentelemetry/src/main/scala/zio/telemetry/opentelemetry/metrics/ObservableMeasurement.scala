@@ -20,7 +20,7 @@ trait ObservableMeasurement[-A] {
    * @param attributes
    *   set of attributes to associate with the value
    */
-  def record(value: A, attributes: Attributes = Attributes.empty): Task[Unit]
+  def record(value: A, attributes: Attributes = Attributes.empty)(implicit trace: Trace): Task[Unit]
 
 }
 
@@ -29,7 +29,7 @@ object ObservableMeasurement {
   private[metrics] def long(om: api.metrics.ObservableLongMeasurement): ObservableMeasurement[Long] =
     new ObservableMeasurement[Long] {
 
-      override def record(value: Long, attributes: Attributes = Attributes.empty): Task[Unit] =
+      override def record(value: Long, attributes: Attributes = Attributes.empty)(implicit trace: Trace): Task[Unit] =
         ZIO.succeed(om.record(value, attributes))
 
     }
@@ -37,7 +37,7 @@ object ObservableMeasurement {
   private[metrics] def double(om: api.metrics.ObservableDoubleMeasurement): ObservableMeasurement[Double] =
     new ObservableMeasurement[Double] {
 
-      override def record(value: Double, attributes: Attributes = Attributes.empty): Task[Unit] =
+      override def record(value: Double, attributes: Attributes = Attributes.empty)(implicit trace: Trace): Task[Unit] =
         ZIO.succeed(om.record(value, attributes))
 
     }
