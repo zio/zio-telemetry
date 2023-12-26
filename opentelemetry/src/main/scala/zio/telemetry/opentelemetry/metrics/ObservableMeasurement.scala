@@ -4,8 +4,22 @@ import io.opentelemetry.api
 import io.opentelemetry.api.common.Attributes
 import zio._
 
+/**
+ * An instrument for observing measurements with values of type `A`
+ *
+ * @tparam A
+ *   according to the specification, it can be either [[scala.Long]] or [[scala.Double]] type
+ */
 trait ObservableMeasurement[-A] {
 
+  /**
+   * Records a measurement.
+   *
+   * @param value
+   *   measurement value
+   * @param attributes
+   *   set of attributes to associate with the value
+   */
   def record(value: A, attributes: Attributes = Attributes.empty): Task[Unit]
 
 }

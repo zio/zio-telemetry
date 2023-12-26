@@ -1,8 +1,18 @@
 package zio.telemetry.opentelemetry.common
 
 import io.opentelemetry.api.common.AttributeKey
+
 import scala.jdk.CollectionConverters._
 
+/**
+ * A Scala wrapper for Java attribute key/value API. It simplifies the creation of key/value pairs without having to box
+ * Scala primitives to Java ones.
+ *
+ * @param key
+ * @param value
+ * @tparam T
+ *   Java-specific type `java.lang.*`
+ */
 final case class Attribute[T](key: AttributeKey[T], value: T)
 
 object Attribute {

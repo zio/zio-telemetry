@@ -7,17 +7,50 @@ import zio.telemetry.opentelemetry.logging.Logging
 import zio.telemetry.opentelemetry.metrics.Meter
 import zio.telemetry.opentelemetry.tracing.Tracing
 
+/**
+ * The entrypoint to telemetry functionality for tracing, metrics, logging and baggage.
+ */
 object OpenTelemetry {
 
-  def global: TaskLayer[api.OpenTelemetry] =
+  /**
+   * A global singleton for the entrypoint to telemetry functionality for tracing, metrics, logging and baggage. Should
+   * be used with <a href="https://opentelemetry.io/docs/instrumentation/java/automatic/agent-config/">SDK
+   * Autoconfiguration</a> module and/or <a href="">Automatic instrumentation</a> Java agent.
+   *
+   * @see
+   *   <a href="https://zio.dev/zio-telemetry/opentelemetry/#usage-with-opentelemetry-automatic-instrumentation">Usage
+   *   with OpenTelemetry automatic instrumentation</a>
+   */
+  val global: TaskLayer[api.OpenTelemetry] =
     ZLayer(ZIO.attempt(api.GlobalOpenTelemetry.get()))
 
+  /**
+   * Use when you need to configure an instance of OpenTelemetry programmatically.
+   *
+   * Example:
+   * [[https://github.com/zio/zio-telemetry/blob/series/2.x/opentelemetry-example/src/main/scala/zio/telemetry/opentelemetry/example/otel/OtelSdk.scala]]
+   *
+   * @param zio
+   *   scoped ZIO value that returns a configured instance of [[io.opentelemetry.api.OpenTelemetry]], thus ensuring that
+   *   the returned instance will be closed.
+   */
   def custom(zio: => ZIO[Scope, Throwable, api.OpenTelemetry]): TaskLayer[api.OpenTelemetry] =
     ZLayer.scoped(zio)
 
-  def noop: TaskLayer[api.OpenTelemetry] =
+  val noop: ULayer[api.OpenTelemetry] =
     ZLayer.succeed(api.OpenTelemetry.noop())
 
+  /**
+   * Use when you need to instrument spans manually.
+   *
+   * @param instrumentationScopeName
+   *   name uniquely identifying the instrumentation scope, such as the instrumentation library, package, or fully
+   *   qualified class name
+   * @param instrumentationVersion
+   *   version of the instrumentation scope (e.g., "1.0.0")
+   * @param schemaUrl
+   *   schema URL
+   */
   def tracing(
     instrumentationScopeName: String,
     instrumentationVersion: Option[String] = None,
@@ -37,6 +70,17 @@ object OpenTelemetry {
     tracerLayer >>> Tracing.live
   }
 
+  /**
+   * Use when you need to instrument metrics manually.
+   *
+   * @param instrumentationScopeName
+   *   name uniquely identifying the instrumentation scope, such as the instrumentation library, package, or fully
+   *   qualified class name
+   * @param instrumentationVersion
+   *   version of the instrumentation scope (e.g., "1.0.0")
+   * @param schemaUrl
+   *   schema URL
+   */
   def meter(
     instrumentationScopeName: String,
     instrumentationVersion: Option[String] = None,
@@ -56,6 +100,15 @@ object OpenTelemetry {
     meterLayer >>> Meter.live
   }
 
+  /**
+   * Use when you need to propagate calls to `ZIO.log*` as OTEL Log signals.
+   *
+   * @param instrumentationScopeName
+   *   name uniquely identifying the instrumentation scope, such as the instrumentation library, package, or fully
+   *   qualified class name
+   * @param logLevel
+   *   configures the logger to propagate the log records only when the log level is more than specified
+   */
   def logging(
     instrumentationScopeName: String,
     logLevel: LogLevel = LogLevel.Info

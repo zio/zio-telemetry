@@ -3,14 +3,12 @@ package zio.telemetry.opentelemetry.metrics
 import io.opentelemetry.sdk.metrics.SdkMeterProvider
 import io.opentelemetry.sdk.testing.exporter.InMemoryMetricReader
 import zio._
+import zio.telemetry.opentelemetry.common.{Attribute, Attributes}
 import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.tracing.{Tracing, TracingTest}
 import zio.test.{TestEnvironment, ZIOSpecDefault, _}
 
 import scala.jdk.CollectionConverters._
-import zio.telemetry.opentelemetry.tracing.Tracing
-import zio.telemetry.opentelemetry.tracing.TracingTest
-import zio.telemetry.opentelemetry.common.Attributes
-import zio.telemetry.opentelemetry.common.Attribute
 
 object MeterTest extends ZIOSpecDefault {
 
@@ -93,7 +91,7 @@ object MeterTest extends ZIOSpecDefault {
           for {
             reader          <- ZIO.service[InMemoryMetricReader]
             histogram       <- meter.histogram("test_histogram")
-            attributes       = Attributes(Attribute.double("attr3", 12.3))`
+            attributes       = Attributes(Attribute.double("attr3", 12.3))
             _               <- histogram.record(2.1, attributes)
             _               <- histogram.record(3.3, attributes)
             metric           = reader.collectAllMetrics().asScala.toList.head

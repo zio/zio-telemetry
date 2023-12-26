@@ -1,5 +1,6 @@
 package zio.telemetry.opentelemetry.tracing
 
+import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.trace.{Span, SpanId, StatusCode, Tracer}
 import io.opentelemetry.context.Context
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
@@ -7,6 +8,7 @@ import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.data.SpanData
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import zio._
+import zio.telemetry.opentelemetry.common.{Attribute, Attributes}
 import zio.telemetry.opentelemetry.context.{ContextStorage, IncomingContextCarrier, OutgoingContextCarrier}
 import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 import zio.test.Assertion._
@@ -15,9 +17,6 @@ import zio.test.{Spec, TestClock, ZIOSpecDefault, assert}
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
-import io.opentelemetry.api.common.AttributeKey
-import zio.telemetry.opentelemetry.common.Attributes
-import zio.telemetry.opentelemetry.common.Attribute
 
 object TracingTest extends ZIOSpecDefault {
 

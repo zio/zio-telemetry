@@ -4,13 +4,13 @@ import io.opentelemetry.api.common.{AttributeKey, Attributes}
 import io.opentelemetry.api.trace._
 import io.opentelemetry.context.Context
 import zio._
+import zio.telemetry.opentelemetry.common.Attribute
 import zio.telemetry.opentelemetry.context.{ContextStorage, IncomingContextCarrier, OutgoingContextCarrier}
 import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters._
-import zio.telemetry.opentelemetry.common.Attribute
 
 trait Tracing { self =>
 
@@ -53,7 +53,7 @@ trait Tracing { self =>
    * @param statusMapper
    *   status mapper
    * @param links
-   *   spanContexts of the linked Spans.
+   *   spanContexts of the linked Spans
    * @param zio
    *   body of the child span
    * @param trace
@@ -316,12 +316,12 @@ trait Tracing { self =>
   def setAttribute[T](key: AttributeKey[T], value: T)(implicit trace: Trace): UIO[Unit]
 
   /**
-    * Sets an attribute of the current span.
-    *
-    * @param attribute
-    *   convenient Scala wrapper for Java key/value
-    * @param trace
-    */
+   * Sets an attribute of the current span.
+   *
+   * @param attribute
+   *   convenient Scala wrapper for Java key/value
+   * @param trace
+   */
   def setAttribute[T](attribute: Attribute[T])(implicit trace: Trace): UIO[Unit]
 
   /**

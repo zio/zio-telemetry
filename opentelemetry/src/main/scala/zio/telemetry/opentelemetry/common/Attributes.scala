@@ -2,9 +2,12 @@ package zio.telemetry.opentelemetry.common
 
 import io.opentelemetry.api
 
+/**
+ * Scala helpers to build [[io.opentelemetry.api.common.Attributes]]
+ */
 object Attributes {
 
-  def empty: api.common.Attributes = 
+  def empty: api.common.Attributes =
     api.common.Attributes.empty()
 
   def apply[T](attributes: Attribute[T]*): api.common.Attributes = {
