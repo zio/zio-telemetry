@@ -3,6 +3,9 @@ package zio.telemetry.opentelemetry.context
 import io.opentelemetry.context.Context
 import zio._
 
+/**
+ * An interface crafted to offer abstraction from the approach of context propagation.
+ */
 sealed trait ContextStorage {
 
   def get(implicit trace: Trace): UIO[Context]
@@ -20,6 +23,11 @@ sealed trait ContextStorage {
 
 object ContextStorage {
 
+  /**
+   * The implementation that uses [[zio.FiberRef]] as a storage for [[io.opentelemetry.context.Context]]
+   *
+   * @param ref
+   */
   final class ZIOFiberRef(private[zio] val ref: FiberRef[Context]) extends ContextStorage {
 
     override def get(implicit trace: Trace): UIO[Context] =
@@ -43,6 +51,9 @@ object ContextStorage {
       ref.locallyScoped(context)
   }
 
+  /**
+   * The implementation that uses [[java.lang.ThreadLocal]] as a storage for [[io.opentelemetry.context.Context]]
+   */
   object Native extends ContextStorage {
 
     override def get(implicit trace: Trace): UIO[Context] =
@@ -74,7 +85,8 @@ object ContextStorage {
   }
 
   /**
-   * The main one. Uses [[FiberRef]] as a [[ContextStorage]].
+   * The default one. Use in cases where you do not use automatic instrumentation. Uses [[zio.FiberRef]] as a
+   * [[ContextStorage]].
    */
   val fiberRef: ULayer[ContextStorage] =
     ZLayer.scoped(

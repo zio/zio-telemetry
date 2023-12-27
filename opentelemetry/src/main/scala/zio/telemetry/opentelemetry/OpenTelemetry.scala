@@ -6,6 +6,7 @@ import zio.telemetry.opentelemetry.context.ContextStorage
 import zio.telemetry.opentelemetry.logging.Logging
 import zio.telemetry.opentelemetry.metrics.Meter
 import zio.telemetry.opentelemetry.tracing.Tracing
+import zio.telemetry.opentelemetry.baggage.Baggage
 
 /**
  * The entrypoint to telemetry functionality for tracing, metrics, logging and baggage.
@@ -117,5 +118,14 @@ object OpenTelemetry {
 
     loggerProviderLayer >>> Logging.live(instrumentationScopeName, logLevel)
   }
+
+  /**
+    * Use when you need to pass contextual information that between spans.
+    *
+    * @param logAnnotated
+    *   propagate ZIO log annotations as Baggage key/values if it is set to true
+    */
+  def baggage(logAnnotated: Boolean = false): URLayer[ContextStorage, Baggage] =
+    Baggage.live(logAnnotated)
 
 }

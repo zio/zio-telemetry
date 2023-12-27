@@ -139,7 +139,7 @@ trait Tracing { self =>
    *   carrier
    * @return
    */
-  def inject[C](
+  def injectSpan[C](
     propagator: TraceContextPropagator,
     carrier: OutgoingContextCarrier[C]
   )(implicit trace: Trace): UIO[Unit]
@@ -675,7 +675,7 @@ object Tracing {
                         }
             } yield effect
 
-          override def inject[C](
+          override def injectSpan[C](
             propagator: TraceContextPropagator,
             carrier: OutgoingContextCarrier[C]
           )(implicit trace: Trace): UIO[Unit] =

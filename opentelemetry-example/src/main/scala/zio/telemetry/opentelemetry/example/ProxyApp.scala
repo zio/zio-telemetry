@@ -4,7 +4,6 @@ import zio._
 import zio.config.magnolia._
 import zio.config.typesafe.TypesafeConfig
 import zio.http.Client
-import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.context.ContextStorage
 import zio.telemetry.opentelemetry.example.config.AppConfig
 import zio.telemetry.opentelemetry.example.http.{BackendClient, ProxyHttpApp, ProxyHttpServer}
@@ -30,7 +29,7 @@ object ProxyApp extends ZIOAppDefault {
         OtelSdk.custom(resourceName),
         OpenTelemetry.tracing(instrumentationScopeName),
         OpenTelemetry.logging(instrumentationScopeName),
-        Baggage.live(),
+        OpenTelemetry.baggage(),
         ContextStorage.fiberRef,
       )
 

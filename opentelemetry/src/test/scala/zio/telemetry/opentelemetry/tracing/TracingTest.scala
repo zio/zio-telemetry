@@ -228,7 +228,7 @@ object TracingTest extends ZIOSpecDefault {
           val roundtrip =
             (for {
               _ <-
-                tracing.inject(TraceContextPropagator.default, OutgoingContextCarrier.default(carrier)) @@ span("foo")
+                tracing.injectSpan(TraceContextPropagator.default, OutgoingContextCarrier.default(carrier)) @@ span("foo")
               _ <-
                 ZIO.unit @@
                   extractSpan(

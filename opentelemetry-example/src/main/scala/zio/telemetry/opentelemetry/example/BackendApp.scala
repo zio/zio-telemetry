@@ -5,7 +5,6 @@ import zio.config.typesafe.TypesafeConfig
 import zio.telemetry.opentelemetry.example.config.AppConfig
 import zio.telemetry.opentelemetry.example.http.{BackendHttpApp, BackendHttpServer}
 import zio._
-import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.context.ContextStorage
 import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.example.otel.OtelSdk
@@ -52,11 +51,11 @@ object BackendApp extends ZIOAppDefault {
         BackendHttpApp.live,
         OtelSdk.custom(resourceName),
         OpenTelemetry.tracing(instrumentationScopeName),
-        OpenTelemetry.logging(instrumentationScopeName),
         OpenTelemetry.meter(instrumentationScopeName),
+        OpenTelemetry.logging(instrumentationScopeName),
+        OpenTelemetry.baggage(),
         globalTickCounterLayer,
         tickRefLayer,
-        Baggage.live(),
         ContextStorage.fiberRef
       )
 
