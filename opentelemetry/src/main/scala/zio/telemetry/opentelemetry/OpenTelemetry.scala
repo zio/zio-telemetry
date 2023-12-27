@@ -120,11 +120,11 @@ object OpenTelemetry {
   }
 
   /**
-    * Use when you need to pass contextual information that between spans.
-    *
-    * @param logAnnotated
-    *   propagate ZIO log annotations as Baggage key/values if it is set to true
-    */
+   * Use when you need to pass contextual information that between spans.
+   *
+   * @param logAnnotated
+   *   propagate ZIO log annotations as Baggage key/values if it is set to true
+   */
   def baggage(logAnnotated: Boolean = false): URLayer[ContextStorage, Baggage] =
     Baggage.live(logAnnotated)
 
