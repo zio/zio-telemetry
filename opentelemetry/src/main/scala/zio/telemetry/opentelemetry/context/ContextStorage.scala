@@ -3,6 +3,9 @@ package zio.telemetry.opentelemetry.context
 import io.opentelemetry.context.Context
 import zio._
 
+/**
+ * An interface crafted to offer abstraction from the approach of context propagation.
+ */
 sealed trait ContextStorage {
 
   def get(implicit trace: Trace): UIO[Context]
@@ -20,7 +23,12 @@ sealed trait ContextStorage {
 
 object ContextStorage {
 
-  final class FiberRefContextStorage(private[zio] val ref: FiberRef[Context]) extends ContextStorage {
+  /**
+   * The implementation that uses [[zio.FiberRef]] as a storage for [[io.opentelemetry.context.Context]]
+   *
+   * @param ref
+   */
+  final class ZIOFiberRef(private[zio] val ref: FiberRef[Context]) extends ContextStorage {
 
     override def get(implicit trace: Trace): UIO[Context] =
       ref.get
@@ -43,7 +51,10 @@ object ContextStorage {
       ref.locallyScoped(context)
   }
 
-  final class NativeContextStorage extends ContextStorage {
+  /**
+   * The implementation that uses [[java.lang.ThreadLocal]] as a storage for [[io.opentelemetry.context.Context]]
+   */
+  object Native extends ContextStorage {
 
     override def get(implicit trace: Trace): UIO[Context] =
       ZIO.succeed(Context.current())
@@ -74,14 +85,15 @@ object ContextStorage {
   }
 
   /**
-   * The main one. Uses [[FiberRef]] as a [[ContextStorage]].
+   * The default one. Use in cases where you do not use automatic instrumentation. Uses [[zio.FiberRef]] as a
+   * [[ContextStorage]].
    */
   val fiberRef: ULayer[ContextStorage] =
     ZLayer.scoped(
       FiberRef
         .make[Context](Context.root())
         .flatMap { ref =>
-          ZIO.succeed(new FiberRefContextStorage(ref))
+          ZIO.succeed(new ZIOFiberRef(ref))
         }
     )
 
@@ -90,6 +102,6 @@ object ContextStorage {
    * [[https://github.com/open-telemetry/opentelemetry-java-instrumentation OTEL instrumentation agent]] is used.
    */
   val native: ULayer[ContextStorage] =
-    ZLayer.succeed(new NativeContextStorage)
+    ZLayer.succeed(Native)
 
 }

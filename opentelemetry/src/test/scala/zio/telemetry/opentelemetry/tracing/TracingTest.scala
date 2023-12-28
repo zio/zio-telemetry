@@ -1,6 +1,6 @@
 package zio.telemetry.opentelemetry.tracing
 
-import io.opentelemetry.api.common.{AttributeKey, Attributes}
+import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.trace.{Span, SpanId, StatusCode, Tracer}
 import io.opentelemetry.context.Context
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
@@ -8,6 +8,7 @@ import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.data.SpanData
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import zio._
+import zio.telemetry.opentelemetry.common.{Attribute, Attributes}
 import zio.telemetry.opentelemetry.context.{ContextStorage, IncomingContextCarrier, OutgoingContextCarrier}
 import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 import zio.test.Assertion._
@@ -227,7 +228,11 @@ object TracingTest extends ZIOSpecDefault {
           val roundtrip =
             (for {
               _ <-
-                tracing.inject(TraceContextPropagator.default, OutgoingContextCarrier.default(carrier)) @@ span("foo")
+                tracing.injectSpan(
+                  TraceContextPropagator.default,
+                  OutgoingContextCarrier.default(carrier)
+                ) @@
+                  span("foo")
               _ <-
                 ZIO.unit @@
                   extractSpan(
@@ -292,12 +297,7 @@ object TracingTest extends ZIOSpecDefault {
             _ <- TestClock.adjust(duration)
             _ <- tracing.addEventWithAttributes(
                    "message2",
-                   Attributes.of(
-                     AttributeKey.stringKey("msg"),
-                     "message",
-                     AttributeKey.longKey("size"),
-                     Long.box(1)
-                   )
+                   Attributes(Attribute.string("msg", "message"), Attribute.long("size", 1L))
                  )
           } yield ()
 
@@ -311,16 +311,11 @@ object TracingTest extends ZIOSpecDefault {
                      }.flatten
           } yield {
             val expected = List(
-              (0L, "message", Attributes.empty()),
+              (0L, "message", Attributes.empty),
               (
                 1000000L,
                 "message2",
-                Attributes.of(
-                  AttributeKey.stringKey("msg"),
-                  "message",
-                  AttributeKey.longKey("size"),
-                  Long.box(1)
-                )
+                Attributes(Attribute.string("msg", "message"), Attribute.long("size", 1L))
               )
             )
             assert(tags)(equalTo(expected))

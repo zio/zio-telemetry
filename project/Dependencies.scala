@@ -86,11 +86,12 @@ object Dependencies {
   )
 
   lazy val opentelemetryExample = example ++ Seq(
-    Orgs.opentelemetry        % "opentelemetry-exporter-otlp" % Versions.opentelemetry,
-    Orgs.opentelemetry        % "opentelemetry-sdk"           % Versions.opentelemetry,
-    Orgs.opentelemetrySemconv % "opentelemetry-semconv"       % "1.22.0-alpha",
-    Orgs.grpc                 % "grpc-netty-shaded"           % ExampleVersions.grpcNetty,
-    Orgs.zio                 %% "zio-http"                    % ExampleVersions.zioHttp
+    Orgs.opentelemetry        % "opentelemetry-exporter-otlp"         % Versions.opentelemetry,
+    Orgs.opentelemetry        % "opentelemetry-exporter-logging-otlp" % Versions.opentelemetry,
+    Orgs.opentelemetry        % "opentelemetry-sdk"                   % Versions.opentelemetry,
+    Orgs.opentelemetrySemconv % "opentelemetry-semconv"               % "1.22.0-alpha",
+    Orgs.grpc                 % "grpc-netty-shaded"                   % ExampleVersions.grpcNetty,
+    Orgs.zio                 %% "zio-http"                            % ExampleVersions.zioHttp
   )
 
   lazy val opentelemetryInstrumentationExample = example ++ Seq(

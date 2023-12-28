@@ -5,11 +5,10 @@ import zio.config.typesafe.TypesafeConfig
 import zio.telemetry.opentelemetry.example.config.AppConfig
 import zio.telemetry.opentelemetry.example.http.{BackendHttpApp, BackendHttpServer}
 import zio._
-import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.context.ContextStorage
-import zio.telemetry.opentelemetry.example.otel.{JaegerTracer, SeqLoggerProvider}
-import zio.telemetry.opentelemetry.logging.Logging
-import zio.telemetry.opentelemetry.tracing.Tracing
+import zio.telemetry.opentelemetry.OpenTelemetry
+import zio.telemetry.opentelemetry.example.otel.OtelSdk
+import zio.telemetry.opentelemetry.metrics.Meter
 
 object BackendApp extends ZIOAppDefault {
 
@@ -18,6 +17,31 @@ object BackendApp extends ZIOAppDefault {
   private val instrumentationScopeName = "zio.telemetry.opentelemetry.example.BackendApp"
   private val resourceName             = "opentelemetry-example-backend"
 
+  val tickRefLayer: ULayer[Ref[Long]] =
+    ZLayer(
+      for {
+        ref <- Ref.make(0L)
+        _   <- ref
+                 .update(_ + 1)
+                 .repeat[Any, Long](Schedule.spaced(1.second))
+                 .forkDaemon
+      } yield ref
+    )
+
+  val globalTickCounterLayer: RLayer[Meter with Ref[Long], Unit] =
+    ZLayer.scoped(
+      for {
+        meter <- ZIO.service[Meter]
+        ref   <- ZIO.service[Ref[Long]]
+        _     <- meter.observableCounter("tick_counter") { om =>
+                   for {
+                     tick <- ref.get
+                     _    <- om.record(tick)
+                   } yield ()
+                 }
+      } yield ()
+    )
+
   override def run: ZIO[Scope, Any, ExitCode] =
     ZIO
       .serviceWithZIO[BackendHttpServer](_.start.exitCode)
@@ -25,12 +49,14 @@ object BackendApp extends ZIOAppDefault {
         configLayer,
         BackendHttpServer.live,
         BackendHttpApp.live,
-        Tracing.live,
-        Baggage.live(),
-        ContextStorage.fiberRef,
-        JaegerTracer.live(resourceName, instrumentationScopeName),
-        SeqLoggerProvider.live(resourceName),
-        Logging.live(instrumentationScopeName)
+        OtelSdk.custom(resourceName),
+        OpenTelemetry.tracing(instrumentationScopeName),
+        OpenTelemetry.meter(instrumentationScopeName),
+        OpenTelemetry.logging(instrumentationScopeName),
+        OpenTelemetry.baggage(),
+        globalTickCounterLayer,
+        tickRefLayer,
+        ContextStorage.fiberRef
       )
 
 }

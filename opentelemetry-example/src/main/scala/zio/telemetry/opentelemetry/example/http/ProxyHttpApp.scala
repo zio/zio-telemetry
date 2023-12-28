@@ -28,7 +28,7 @@ case class ProxyHttpApp(client: BackendClient, tracing: Tracing, baggage: Baggag
       _        <- tracing.setAttribute("http.method", "get")
       _        <- tracing.addEvent("proxy-event")
       _        <- baggage.set("proxy-baggage", "value from proxy")
-      _        <- tracing.inject(TraceContextPropagator.default, carrier)
+      _        <- tracing.injectSpan(TraceContextPropagator.default, carrier)
       _        <- baggage.inject(BaggagePropagator.default, carrier)
       statuses <- client.status(carrier.kernel.toMap).catchAll(_ => ZIO.succeed(Statuses(List.empty)))
       _        <- ZIO.logInfo("statuses processing finished on proxy")

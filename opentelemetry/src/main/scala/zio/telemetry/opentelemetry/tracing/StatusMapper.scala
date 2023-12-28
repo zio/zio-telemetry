@@ -30,7 +30,7 @@ import zio.telemetry.opentelemetry.tracing.StatusMapper.Result
  * @param failure
  *   partial function to map the ZIO failure to [[io.opentelemetry.api.trace.StatusCode]] and [[java.lang.Throwable]].
  *   The latter is used to record the exception, see:
- *   [[https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/semantic_conventions/exceptions.md#recording-an-exception Recording an exception]]
+ *   [[https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/exceptions.md#recording-an-exception]]
  * @param success
  *   partial function to map the ZIO success to [[io.opentelemetry.api.trace.StatusCode]] and status description
  * @tparam E

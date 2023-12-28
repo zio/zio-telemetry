@@ -11,13 +11,13 @@ object Logging {
   def live(
     instrumentationScopeName: String,
     logLevel: LogLevel = LogLevel.Info
-  ): ZLayer[ContextStorage with LoggerProvider, Nothing, Unit] =
+  ): URLayer[ContextStorage with LoggerProvider, Unit] =
     ZLayer.scoped(
       for {
         loggerProvider <- ZIO.service[LoggerProvider]
-        contextStorage <- ZIO.service[ContextStorage]
+        ctxStorage     <- ZIO.service[ContextStorage]
         logger         <- ZIO.succeed(
-                            zioLogger(instrumentationScopeName)(contextStorage, loggerProvider)
+                            zioLogger(instrumentationScopeName)(ctxStorage, loggerProvider)
                               .filterLogLevel(_ >= logLevel)
                           )
         _              <- ZIO.withLoggerScoped(logger)
@@ -25,7 +25,7 @@ object Logging {
     )
 
   private def zioLogger(instrumentationScopeName: String)(
-    contextStorage: ContextStorage,
+    ctxStorage: ContextStorage,
     loggerProvider: LoggerProvider
   ): ZLogger[String, Unit] =
     new ZLogger[String, Unit] {
@@ -49,10 +49,10 @@ object Logging {
         builder.setSeverity(severityMapping(logLevel))
         annotations.foreach { case (k, v) => builder.setAttribute(AttributeKey.stringKey(k), v) }
 
-        contextStorage match {
-          case cs: ContextStorage.FiberRefContextStorage =>
+        ctxStorage match {
+          case cs: ContextStorage.ZIOFiberRef =>
             context.get(cs.ref).foreach(builder.setContext)
-          case _: ContextStorage.NativeContextStorage    =>
+          case _: ContextStorage.Native.type  =>
             builder.setContext(Context.current())
         }
 

@@ -12,3 +12,4 @@ website/build
 website/i18n
 website/static/api
 website/yarn.lock
+.scala-build

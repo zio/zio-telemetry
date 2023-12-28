@@ -4,6 +4,7 @@ import io.opentelemetry.api.common.{AttributeKey, Attributes}
 import io.opentelemetry.api.trace._
 import io.opentelemetry.context.Context
 import zio._
+import zio.telemetry.opentelemetry.common.Attribute
 import zio.telemetry.opentelemetry.context.{ContextStorage, IncomingContextCarrier, OutgoingContextCarrier}
 import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 
@@ -52,7 +53,7 @@ trait Tracing { self =>
    * @param statusMapper
    *   status mapper
    * @param links
-   *   spanContexts of the linked Spans.
+   *   spanContexts of the linked Spans
    * @param zio
    *   body of the child span
    * @param trace
@@ -138,7 +139,7 @@ trait Tracing { self =>
    *   carrier
    * @return
    */
-  def inject[C](
+  def injectSpan[C](
     propagator: TraceContextPropagator,
     carrier: OutgoingContextCarrier[C]
   )(implicit trace: Trace): UIO[Unit]
@@ -313,6 +314,15 @@ trait Tracing { self =>
    * @return
    */
   def setAttribute[T](key: AttributeKey[T], value: T)(implicit trace: Trace): UIO[Unit]
+
+  /**
+   * Sets an attribute of the current span.
+   *
+   * @param attribute
+   *   convenient Scala wrapper for Java key/value
+   * @param trace
+   */
+  def setAttribute[T](attribute: Attribute[T])(implicit trace: Trace): UIO[Unit]
 
   /**
    * Sets an attribute of the current span.
@@ -509,9 +519,9 @@ object Tracing {
   def live: URLayer[Tracer with ContextStorage, Tracing] =
     ZLayer.scoped {
       for {
-        tracer         <- ZIO.service[Tracer]
-        contextStorage <- ZIO.service[ContextStorage]
-        tracing        <- scoped(tracer, contextStorage)
+        tracer     <- ZIO.service[Tracer]
+        ctxStorage <- ZIO.service[ContextStorage]
+        tracing    <- scoped(tracer, ctxStorage)
       } yield tracing
     }
 
@@ -665,7 +675,7 @@ object Tracing {
                         }
             } yield effect
 
-          override def inject[C](
+          override def injectSpan[C](
             propagator: TraceContextPropagator,
             carrier: OutgoingContextCarrier[C]
           )(implicit trace: Trace): UIO[Unit] =
@@ -719,6 +729,9 @@ object Tracing {
           override def setAttribute[T](key: AttributeKey[T], value: T)(implicit trace: Trace): UIO[Unit] =
             getCurrentSpanUnsafe.map(_.setAttribute(key, value)).unit
 
+          override def setAttribute[T](attribute: Attribute[T])(implicit trace: Trace): UIO[Unit] =
+            getCurrentSpanUnsafe.map(_.setAttribute(attribute.key, attribute.value)).unit
+
           override def setAttribute(name: String, values: Seq[String])(implicit trace: Trace): UIO[Unit] = {
             val v = values.asJava
             getCurrentSpanUnsafe.map(_.setAttribute(AttributeKey.stringArrayKey(name), v)).unit
@@ -755,14 +768,12 @@ object Tracing {
             statusMapper.success
               .lift(a)
               .fold(ZIO.succeed(span)) { case StatusMapper.Result(statusCode, maybeError) =>
-                for {
-                  result <- if (statusCode == StatusCode.ERROR)
-                              maybeError.fold(ZIO.succeed(span.setStatus(statusCode)))(errorMessage =>
-                                ZIO.succeed(span.setStatus(statusCode, errorMessage))
-                              )
-                            else
-                              ZIO.succeed(span.setStatus(statusCode))
-                } yield result
+                if (statusCode == StatusCode.ERROR)
+                  maybeError.fold(ZIO.succeed(span.setStatus(statusCode)))(errorMessage =>
+                    ZIO.succeed(span.setStatus(statusCode, errorMessage))
+                  )
+                else
+                  ZIO.succeed(span.setStatus(statusCode))
               }
 
           private def setFailureStatus[E, A](
@@ -770,19 +781,18 @@ object Tracing {
             cause: Cause[E],
             statusMapper: StatusMapper[E, A]
           )(implicit trace: Trace): UIO[Span] = {
-            val statusMapperResult =
+            val result =
               cause.failureOption
                 .flatMap(statusMapper.failure.lift)
                 .getOrElse(StatusMapper.Result(StatusCode.ERROR, None))
 
             for {
-              _      <- if (statusMapperResult.statusCode == StatusCode.ERROR)
-                          ZIO.succeed(span.setStatus(statusMapperResult.statusCode, cause.prettyPrint))
-                        else
-                          ZIO.succeed(span.setStatus(statusMapperResult.statusCode))
-              result <-
-                statusMapperResult.error.fold(ZIO.succeed(span))(error => ZIO.succeed(span.recordException(error)))
-            } yield result
+              _          <- if (result.statusCode == StatusCode.ERROR)
+                              ZIO.succeed(span.setStatus(result.statusCode, cause.prettyPrint))
+                            else
+                              ZIO.succeed(span.setStatus(result.statusCode))
+              spanResult <- result.error.fold(ZIO.succeed(span))(error => ZIO.succeed(span.recordException(error)))
+            } yield spanResult
           }
 
           /**
