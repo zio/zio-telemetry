@@ -7,8 +7,34 @@ You can find the source code [here](https://github.com/zio/zio-telemetry/tree/se
 
 For an explanation in more detail, check the [OpenTracing Example](opentracing-example.md).
 
-We're going to show an example of how to collect traces and logs. For this, we will use 
-[Jaeger](https://www.jaegertracing.io/) and [Seq](https://datalust.co/seq).
+We're going to show an example of how to pass contextual information using [Baggage](https://opentelemetry.io/docs/concepts/signals/baggage/) and collect traces, metrics, and logs.
+
+---
+
+By default the example code uses [OTLP Logging Exporters](https://github.com/open-telemetry/opentelemetry-java/tree/main/exporters/logging-otlp) to print all signals to stdout in OTLP JSON encoding. This means that you can run the application immediately and observe the results.
+
+For this, you need to run proxy and backend parts of application in different terminals via sbt.
+
+Run proxy:
+```bash
+sbt "opentelemetryExample/runMain zio.telemetry.opentelemetry.example.ProxyApp"
+```
+Run backend:
+```bash
+sbt "opentelemetryExample/runMain zio.telemetry.opentelemetry.example.BackendApp"
+```
+Now perform the following request to see the results immediately:
+```bash
+curl -X GET http://localhost:8080/statuses
+```
+
+---
+
+In case you want to try different observability platforms such as [Jaeger](https://www.jaegertracing.io/), [Fluentbit](https://fluentbit.io/), [Seq](https://datalust.co/seq), [DataDog](https://www.datadoghq.com/), [Honeycomb](https://www.honeycomb.io/) or others, please change the [OtelSdk.scala](https://github.com/zio/zio-telemetry/blob/series/2.x/opentelemetry-example/src/main/scala/zio/telemetry/opentelemetry/example/otel/OtelSdk.scala) file by choosing from the available tracer, meter, and logger providers or by implementing your own. 
+
+--- 
+
+We chose [Jaeger](https://www.jaegertracing.io/) for distributed traces and [Seq](https://datalust.co/seq) to store logs to demonstrate how the library works with available open-source observability platforms.
 
 Start Jaeger by running the following command:
 ```bash
@@ -34,17 +60,4 @@ docker run \
   datalust/seq
 ```
 
-Then start the proxy application
-```bash
-sbt "opentelemetryExample/runMain zio.telemetry.opentelemetry.example.ProxyApp"
-```
-and the backend application
-
-```bash
-sbt "opentelemetryExample/runMain zio.telemetry.opentelemetry.example.BackendApp"
-```
-Now perform the following request:
-```bash
-curl -X GET http://localhost:8080/statuses
-```
-and head over to [Jaeger UI](http://localhost:16686/) and [Seq UI](http://localhost:80/) to see the result.
+Run the application and fire a curl request as shown above, and then head over to [Jaeger UI](http://localhost:16686/) and [Seq UI](http://localhost:80/) to see the result.
