@@ -158,7 +158,7 @@ import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor
 import io.opentelemetry.sdk.metrics.SdkMeterProvider
 import io.opentelemetry.sdk.metrics.export.PeriodicMetricReader
 import io.opentelemetry.sdk.resources.Resource
-import io.opentelemetry.api.common.Attributes
+import io.opentelemetry.api.common
 import io.opentelemetry.semconv.ResourceAttributes
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingMetricExporter
@@ -167,6 +167,8 @@ import io.opentelemetry.api
 import zio._
 import zio.telemetry.opentelemetry.tracing.Tracing
 import zio.telemetry.opentelemetry.metrics.Meter
+import zio.telemetry.opentelemetry.common.Attributes
+import zio.telemetry.opentelemetry.common.Attribute
 import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.context.ContextStorage
 
@@ -187,7 +189,7 @@ object MetricsApp extends ZIOAppDefault {
             SdkMeterProvider
               .builder()
               .registerMetricReader(metricReader)
-              .setResource(Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, resourceName)))
+              .setResource(Resource.create(common.Attributes.of(ResourceAttributes.SERVICE_NAME, resourceName)))
               .build()
           )
         )
@@ -203,7 +205,7 @@ object MetricsApp extends ZIOAppDefault {
           ZIO.succeed(
             SdkTracerProvider
               .builder()
-              .setResource(Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, resourceName)))
+              .setResource(Resource.create(common.Attributes.of(ResourceAttributes.SERVICE_NAME, resourceName)))
               .addSpanProcessor(spanProcessor)
               .build()
           )
@@ -267,7 +269,7 @@ object MetricsApp extends ZIOAppDefault {
           // Sleep for the number of seconds equal to the message length  to demonstrate the work of observable counter
           _                    <- ZIO.sleep(message.length.seconds)
           // Record the message length
-          _                    <- messageLengthCounter.add(message.length)
+          _                    <- messageLengthCounter.add(message.length, Attributes(Attribute.string("message", message)))
         } yield message
 
         // By wrapping our logic into a span, we make the `messageLengthCounter` data points correlated with a "root_span" automatically
