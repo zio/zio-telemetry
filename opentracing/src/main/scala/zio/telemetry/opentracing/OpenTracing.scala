@@ -125,10 +125,14 @@ object OpenTracing {
           logError: Boolean = true
         )(implicit trace: Trace): UIO[Unit] =
           for {
-            _ <- ZIO.succeed(span.setTag("error", true)).when(tagError)
-            _ <- ZIO
-                   .succeed(span.log(Map("error.object" -> FiberFailure(cause), "stack" -> cause.prettyPrint).asJava))
-                   .when(logError)
+            _        <- ZIO.succeed(span.setTag("error", true)).when(tagError)
+            throwable = cause.failureOption match {
+                          case Some(t: Throwable) => t
+                          case _                  => FiberFailure(cause)
+                        }
+            _        <- ZIO
+                          .succeed(span.log(Map("error.object" -> throwable, "stack" -> cause.prettyPrint).asJava))
+                          .when(logError)
           } yield ()
 
         override def finish(span: Span)(implicit trace: Trace): UIO[Unit] =
