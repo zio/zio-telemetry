@@ -30,7 +30,7 @@ object ProxyApp extends ZIOAppDefault {
         OpenTelemetry.tracing(instrumentationScopeName),
         OpenTelemetry.logging(instrumentationScopeName),
         OpenTelemetry.baggage(),
-        ContextStorage.fiberRef,
+        ContextStorage.fiberRef
       )
 
 }
