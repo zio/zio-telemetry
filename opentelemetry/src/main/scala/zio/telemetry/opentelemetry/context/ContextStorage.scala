@@ -92,8 +92,8 @@ object ContextStorage {
     ZLayer.scoped(
       FiberRef
         .make[Context](Context.root())
-        .flatMap { ref =>
-          ZIO.succeed(new ZIOFiberRef(ref))
+        .map { ref =>
+          new ZIOFiberRef(ref)
         }
     )
 
