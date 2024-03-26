@@ -7,6 +7,7 @@ import zio.telemetry.opentelemetry.common.{Attribute, Attributes}
 import zio.telemetry.opentelemetry.context.ContextStorage
 import zio.telemetry.opentelemetry.tracing.{Tracing, TracingTest}
 import zio.test.{TestEnvironment, ZIOSpecDefault, _}
+import zio.telemetry.opentelemetry.metrics.internal.Instrument
 
 import scala.jdk.CollectionConverters._
 
@@ -16,15 +17,16 @@ object MeterTest extends ZIOSpecDefault {
     ZLayer(ZIO.succeed(InMemoryMetricReader.create()))
 
   val meterLayer = {
-    val jmeter = ZLayer {
+    val jmeter  = ZLayer {
       for {
         metricReader  <- ZIO.service[InMemoryMetricReader]
         meterProvider <- ZIO.succeed(SdkMeterProvider.builder().registerMetricReader(metricReader).build())
         meter         <- ZIO.succeed(meterProvider.get("MeterTest"))
       } yield meter
     }
+    val builder = jmeter >>> Instrument.Builder.live
 
-    jmeter >>> Meter.live
+    builder >>> Meter.live
   }
 
   val observableRefLayer: ULayer[Ref[Long]] =
