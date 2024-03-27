@@ -1,9 +1,8 @@
 package zio.telemetry.opentelemetry.metrics
 
-import zio.metrics.MetricLabel
-import zio.telemetry.opentelemetry.common.Attribute
 import io.opentelemetry.api
-import zio.telemetry.opentelemetry.common.Attributes
+import zio.metrics.MetricLabel
+import zio.telemetry.opentelemetry.common.{Attribute, Attributes}
 
 package object internal {
 

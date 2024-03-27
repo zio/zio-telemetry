@@ -5,9 +5,9 @@ import io.opentelemetry.sdk.testing.exporter.InMemoryMetricReader
 import zio._
 import zio.telemetry.opentelemetry.common.{Attribute, Attributes}
 import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.metrics.internal.Instrument
 import zio.telemetry.opentelemetry.tracing.{Tracing, TracingTest}
 import zio.test.{TestEnvironment, ZIOSpecDefault, _}
-import zio.telemetry.opentelemetry.metrics.internal.Instrument
 
 import scala.jdk.CollectionConverters._
 
@@ -16,7 +16,7 @@ object MeterTest extends ZIOSpecDefault {
   val inMemoryMetricReaderLayer: ZLayer[Any, Nothing, InMemoryMetricReader] =
     ZLayer(ZIO.succeed(InMemoryMetricReader.create()))
 
-  val meterLayer = {
+  val meterLayer: ZLayer[InMemoryMetricReader with ContextStorage,Nothing,Meter] = {
     val jmeter  = ZLayer {
       for {
         metricReader  <- ZIO.service[InMemoryMetricReader]

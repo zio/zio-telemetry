@@ -2,10 +2,10 @@ package zio.telemetry.opentelemetry.metrics
 
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.metrics.LongCounter
+import io.opentelemetry.context.Context
 import zio._
 import zio.telemetry.opentelemetry.context.ContextStorage
 import zio.telemetry.opentelemetry.metrics.internal.Instrument
-import io.opentelemetry.context.Context
 
 /**
  * A Counter instrument that records values of type `A`

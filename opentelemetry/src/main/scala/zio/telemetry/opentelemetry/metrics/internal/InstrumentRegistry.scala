@@ -1,11 +1,10 @@
 package zio.telemetry.opentelemetry.metrics.internal
 
-import java.util.concurrent.ConcurrentHashMap
-import zio.metrics.MetricKey
-import zio.metrics.MetricKeyType
-import zio.telemetry.opentelemetry.metrics.Counter
-import zio.telemetry.opentelemetry.metrics.Histogram
 import zio._
+import zio.metrics.{MetricKey, MetricKeyType}
+import zio.telemetry.opentelemetry.metrics.{Counter, Histogram}
+
+import java.util.concurrent.ConcurrentHashMap
 
 trait InstrumentRegistry {
 

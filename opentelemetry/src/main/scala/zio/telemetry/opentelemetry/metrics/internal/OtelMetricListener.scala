@@ -1,10 +1,9 @@
 package zio.telemetry.opentelemetry.metrics.internal
 
-import zio.metrics.MetricListener
-import zio.Unsafe
+import zio.metrics.{MetricKey, MetricKeyType, MetricListener}
+import zio.{Unsafe, _}
+
 import java.time.Instant
-import zio.metrics.{MetricKey, MetricKeyType}
-import zio._
 
 object OtelMetricListener {
 

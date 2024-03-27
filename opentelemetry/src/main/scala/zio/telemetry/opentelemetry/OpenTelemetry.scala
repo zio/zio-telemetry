@@ -2,16 +2,13 @@ package zio.telemetry.opentelemetry
 
 import io.opentelemetry.api
 import zio._
+import zio.metrics.{MetricClient, MetricListener}
 import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.context.ContextStorage
 import zio.telemetry.opentelemetry.logging.Logging
 import zio.telemetry.opentelemetry.metrics.Meter
+import zio.telemetry.opentelemetry.metrics.internal.{Instrument, InstrumentRegistry, OtelMetricListener}
 import zio.telemetry.opentelemetry.tracing.Tracing
-import zio.telemetry.opentelemetry.metrics.internal.Instrument
-import zio.metrics.MetricListener
-import zio.metrics.MetricClient
-import zio.telemetry.opentelemetry.metrics.internal.InstrumentRegistry
-import zio.telemetry.opentelemetry.metrics.internal.OtelMetricListener
 
 /**
  * The entrypoint to telemetry functionality for tracing, metrics, logging and baggage.
