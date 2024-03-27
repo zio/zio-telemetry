@@ -145,12 +145,12 @@ To send [Metric signals](https://opentelemetry.io/docs/concepts/signals/metrics/
 As a rule of thumb, observable instruments must be initialized on an application startup. They are scoped, so you should not be worried about shutting them down manually.
 
 ```scala
-//> using scala "2.13.12"
-//> using dep dev.zio::zio:2.0.20
-//> using dep dev.zio::zio-opentelemetry:3.0.0-RC20
-//> using dep io.opentelemetry:opentelemetry-sdk:1.33.0
-//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.33.0
-//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.33.0
+//> using scala "2.13.13"
+//> using dep dev.zio::zio:2.0.21
+//> using dep dev.zio::zio-opentelemetry:3.0.0-RC22
+//> using dep io.opentelemetry:opentelemetry-sdk:1.36.0
+//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.36.0
+//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.36.0
 //> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.22.0-alpha
 
 import io.opentelemetry.sdk.trace.SdkTracerProvider
@@ -278,7 +278,7 @@ object MetricsApp extends ZIOAppDefault {
       .provide(
         otelSdkLayer,
         ContextStorage.fiberRef,
-        OpenTelemetry.meter(instrumentationScopeName),
+        OpenTelemetry.metrics(instrumentationScopeName),
         OpenTelemetry.tracing(instrumentationScopeName),
         tickCounterLayer,
         tickRefLayer
