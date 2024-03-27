@@ -1,8 +1,7 @@
 package zio.telemetry.opentelemetry.metrics
 
-import io.opentelemetry.api
 import zio._
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.metrics.internal.Instrument
 
 /**
  * Provides instruments used to record measurements which are aggregated to metrics.
@@ -132,11 +131,10 @@ trait Meter {
 
 object Meter {
 
-  def live: URLayer[api.metrics.Meter with ContextStorage, Meter] =
+  def live: URLayer[Instrument.Builder, Meter] =
     ZLayer(
       for {
-        meter      <- ZIO.service[api.metrics.Meter]
-        ctxStorage <- ZIO.service[ContextStorage]
+        builder <- ZIO.service[Instrument.Builder]
       } yield new Meter {
 
         private val unsafeRuntime =
@@ -147,42 +145,21 @@ object Meter {
           unit: Option[String] = None,
           description: Option[String] = None
         )(implicit trace: Trace): UIO[Counter[Long]] =
-          ZIO.succeed {
-            val builder = meter.counterBuilder(name)
-
-            unit.foreach(builder.setUnit)
-            description.foreach(builder.setDescription)
-
-            Counter.long(builder.build(), ctxStorage)
-          }
+          ZIO.succeed(builder.counter(name, unit, description))
 
         override def upDownCounter(
           name: String,
           unit: Option[String] = None,
           description: Option[String] = None
         )(implicit trace: Trace): UIO[UpDownCounter[Long]] =
-          ZIO.succeed {
-            val builder = meter.upDownCounterBuilder(name)
-
-            unit.foreach(builder.setUnit)
-            description.foreach(builder.setDescription)
-
-            UpDownCounter.long(builder.build(), ctxStorage)
-          }
+          ZIO.succeed(builder.upDownCounter(name, unit, description))
 
         override def histogram(
           name: String,
           unit: Option[String] = None,
           description: Option[String] = None
         )(implicit trace: Trace): UIO[Histogram[Double]] =
-          ZIO.succeed {
-            val builder = meter.histogramBuilder(name)
-
-            unit.foreach(builder.setUnit)
-            description.foreach(builder.setDescription)
-
-            Histogram.double(builder.build(), ctxStorage)
-          }
+          ZIO.succeed(builder.histogram(name, unit, description))
 
         override def observableCounter(
           name: String,
@@ -192,14 +169,9 @@ object Meter {
           ZIO
             .fromAutoCloseable(
               ZIO.attempt {
-                val builder = meter.counterBuilder(name)
-
-                unit.foreach(builder.setUnit)
-                description.foreach(builder.setDescription)
-
-                builder.buildWithCallback { om =>
+                builder.observableCounter(name, unit, description) { om =>
                   Unsafe.unsafe { implicit unsafe =>
-                    unsafeRuntime.run(callback(ObservableMeasurement.long(om))).getOrThrowFiberFailure()
+                    unsafeRuntime.run(callback(om)).getOrThrowFiberFailure()
                   }
                 }
               }
@@ -214,14 +186,9 @@ object Meter {
           ZIO
             .fromAutoCloseable(
               ZIO.attempt {
-                val builder = meter.upDownCounterBuilder(name)
-
-                unit.foreach(builder.setUnit)
-                description.foreach(builder.setDescription)
-
-                builder.buildWithCallback { om =>
+                builder.observableUpDownCounter(name, unit, description) { om =>
                   Unsafe.unsafe { implicit unsafe =>
-                    unsafeRuntime.run(callback(ObservableMeasurement.long(om))).getOrThrowFiberFailure()
+                    unsafeRuntime.run(callback(om)).getOrThrowFiberFailure()
                   }
                 }
               }
@@ -236,14 +203,9 @@ object Meter {
           ZIO
             .fromAutoCloseable(
               ZIO.attempt {
-                val builder = meter.gaugeBuilder(name)
-
-                unit.foreach(builder.setUnit)
-                description.foreach(builder.setDescription)
-
-                builder.buildWithCallback { om =>
+                builder.observableGauge(name, unit, description) { om =>
                   Unsafe.unsafe { implicit unsafe =>
-                    unsafeRuntime.run(callback(ObservableMeasurement.double(om))).getOrThrowFiberFailure()
+                    unsafeRuntime.run(callback(om)).getOrThrowFiberFailure()
                   }
                 }
               }

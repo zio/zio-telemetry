@@ -2,10 +2,12 @@ package zio.telemetry.opentelemetry
 
 import io.opentelemetry.api
 import zio._
+import zio.metrics.{MetricClient, MetricListener}
 import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.context.ContextStorage
 import zio.telemetry.opentelemetry.logging.Logging
 import zio.telemetry.opentelemetry.metrics.Meter
+import zio.telemetry.opentelemetry.metrics.internal.{Instrument, InstrumentRegistry, OtelMetricListener}
 import zio.telemetry.opentelemetry.tracing.Tracing
 
 /**
@@ -82,12 +84,12 @@ object OpenTelemetry {
    * @param schemaUrl
    *   schema URL
    */
-  def meter(
+  def metrics(
     instrumentationScopeName: String,
     instrumentationVersion: Option[String] = None,
     schemaUrl: Option[String] = None
-  ): URLayer[api.OpenTelemetry with ContextStorage, Meter] = {
-    val meterLayer = ZLayer(
+  ): URLayer[api.OpenTelemetry with ContextStorage, Meter with Instrument.Builder] = {
+    val meterLayer   = ZLayer(
       ZIO.serviceWith[api.OpenTelemetry] { openTelemetry =>
         val builder = openTelemetry.meterBuilder(instrumentationScopeName)
 
@@ -97,8 +99,32 @@ object OpenTelemetry {
         builder.build()
       }
     )
+    val builderLayer = meterLayer >>> Instrument.Builder.live
 
-    meterLayer >>> Meter.live
+    builderLayer >+> (builderLayer >>> Meter.live)
+  }
+
+  /**
+   * Use when you want to allow a seamless integration with ZIO runtime and JVM metrics
+   *
+   * By default this layer enables the propagation of ZIO runtime metrics only. For JVM metrics you need to provide
+   * `DefaultJvmMetrics.live.unit`.
+   */
+  def zioMetrics: URLayer[Instrument.Builder, Unit] = {
+    val metricListenerLifecycleLayer = ZLayer.scoped {
+      ZIO.serviceWithZIO[MetricListener] { metricListener =>
+        Unsafe.unsafe { implicit unsafe =>
+          ZIO.acquireRelease(
+            ZIO.succeed(MetricClient.addListener(metricListener))
+          )(_ => ZIO.succeed(MetricClient.removeListener(metricListener)))
+        }
+      }
+    }
+
+    Runtime.enableRuntimeMetrics >>>
+      InstrumentRegistry.concurrent >>>
+      OtelMetricListener.zioMetrics >>>
+      metricListenerLifecycleLayer
   }
 
   /**

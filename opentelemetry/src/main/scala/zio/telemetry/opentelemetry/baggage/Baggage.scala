@@ -199,7 +199,4 @@ object Baggage {
       }
     }
 
-  def logAnnotated: URLayer[ContextStorage, Baggage] =
-    live(logAnnotated = true)
-
 }
