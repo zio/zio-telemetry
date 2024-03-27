@@ -1,13 +1,10 @@
 package zio.telemetry.opentelemetry.metrics.internal
 
-import zio.telemetry.opentelemetry.metrics.Counter
 import io.opentelemetry.api
-import zio.telemetry.opentelemetry.context.ContextStorage
-import zio.telemetry.opentelemetry.metrics.Histogram
-import zio.telemetry.opentelemetry.metrics.UpDownCounter
-import zio._
 import io.opentelemetry.context.Context
-import zio.telemetry.opentelemetry.metrics.ObservableMeasurement
+import zio._
+import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.metrics.{Counter, Histogram, ObservableMeasurement, UpDownCounter}
 
 trait Instrument[-A] {
 
