@@ -4,6 +4,7 @@ import zio.metrics.{MetricKey, MetricKeyType, MetricListener}
 import zio.{Unsafe, _}
 
 import java.time.Instant
+import zio.metrics.MetricLabel
 
 object OtelMetricListener {
 
@@ -32,7 +33,9 @@ object OtelMetricListener {
         override def updateFrequency(key: MetricKey[MetricKeyType.Frequency], value: String)(implicit
           unsafe: Unsafe
         ): Unit =
-          ()
+          registry
+            .getCounter(key.copy[MetricKeyType.Counter](key.name, MetricKeyType.Counter, key.tags))
+            .record0(1L, attributes(key.tags + MetricLabel("bucket", value)))
 
         override def updateSummary(key: MetricKey[MetricKeyType.Summary], value: Double, instant: Instant)(implicit
           unsafe: Unsafe
