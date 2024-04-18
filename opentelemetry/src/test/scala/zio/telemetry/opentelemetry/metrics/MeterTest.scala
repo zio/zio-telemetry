@@ -16,7 +16,7 @@ object MeterTest extends ZIOSpecDefault {
   val inMemoryMetricReaderLayer: ZLayer[Any, Nothing, InMemoryMetricReader] =
     ZLayer(ZIO.succeed(InMemoryMetricReader.create()))
 
-  val meterLayer: ZLayer[InMemoryMetricReader with ContextStorage,Nothing,Meter] = {
+  val meterLayer: ZLayer[InMemoryMetricReader with ContextStorage, Nothing, Meter] = {
     val jmeter  = ZLayer {
       for {
         metricReader  <- ZIO.service[InMemoryMetricReader]
