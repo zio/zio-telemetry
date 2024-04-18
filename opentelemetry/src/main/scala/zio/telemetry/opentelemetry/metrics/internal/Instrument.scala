@@ -50,7 +50,7 @@ object Instrument {
 
   }
 
-  object Builder {
+  private[opentelemetry] object Builder {
 
     def live: URLayer[api.metrics.Meter with ContextStorage, Builder] =
       ZLayer(

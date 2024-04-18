@@ -6,7 +6,7 @@ import zio.telemetry.opentelemetry.common.{Attribute, Attributes}
 
 package object internal {
 
-  def attributes(tags: Set[MetricLabel]): api.common.Attributes =
+  private[metrics] def attributes(tags: Set[MetricLabel]): api.common.Attributes =
     Attributes(tags.map(t => Attribute.string(t.key, t.value)).toSeq: _*)
 
 }

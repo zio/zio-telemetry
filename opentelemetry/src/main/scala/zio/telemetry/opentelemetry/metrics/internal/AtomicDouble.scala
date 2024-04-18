@@ -2,7 +2,7 @@ package zio.telemetry.opentelemetry.metrics.internal
 
 import java.util.concurrent.atomic.AtomicLong
 
-final class AtomicDouble(val ref: AtomicLong) extends AnyVal {
+private[metrics] final class AtomicDouble(val ref: AtomicLong) extends AnyVal {
 
   def get(): Double =
     java.lang.Double.longBitsToDouble(ref.get())
@@ -23,7 +23,7 @@ final class AtomicDouble(val ref: AtomicLong) extends AnyVal {
   }
 }
 
-object AtomicDouble {
+private[metrics] object AtomicDouble {
 
   def apply(value: Double): AtomicDouble =
     new AtomicDouble(new AtomicLong(java.lang.Double.doubleToLongBits(value)))

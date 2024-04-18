@@ -16,7 +16,7 @@ trait InstrumentRegistry {
 
 }
 
-object InstrumentRegistry {
+private[opentelemetry] object InstrumentRegistry {
 
   def concurrent: URLayer[Instrument.Builder, InstrumentRegistry] =
     ZLayer(

@@ -5,7 +5,7 @@ import zio.{Unsafe, _}
 
 import java.time.Instant
 
-object OtelMetricListener {
+private[opentelemetry] object OtelMetricListener {
 
   def zioMetrics: URLayer[InstrumentRegistry, MetricListener] =
     ZLayer(
