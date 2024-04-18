@@ -71,7 +71,7 @@ object MeterTest extends ZIOSpecDefault {
           for {
             reader          <- ZIO.service[InMemoryMetricReader]
             counter         <- meter.upDownCounter("test_up_down_counter")
-            attributes       = Attributes(Attribute.boolean("attr2", false))
+            attributes       = Attributes(Attribute.boolean("attr2", value = false))
             _               <- counter.add(5, attributes)
             _               <- counter.inc(attributes)
             _               <- counter.dec(attributes)
