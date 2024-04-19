@@ -21,7 +21,7 @@ sealed trait ContextStorage {
   def locallyScoped(context: Context)(implicit trace: Trace): ZIO[Scope, Nothing, Unit]
 }
 
-object ContextStorage {
+private[opentelemetry] object ContextStorage {
 
   /**
    * The implementation that uses [[zio.FiberRef]] as a storage for [[io.opentelemetry.context.Context]]
@@ -92,9 +92,7 @@ object ContextStorage {
     ZLayer.scoped(
       FiberRef
         .make[Context](Context.root())
-        .map { ref =>
-          new ZIOFiberRef(ref)
-        }
+        .map(new ZIOFiberRef(_))
     )
 
   /**

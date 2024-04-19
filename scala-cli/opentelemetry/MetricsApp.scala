@@ -1,6 +1,6 @@
 //> using scala "2.13.13"
 //> using dep dev.zio::zio:2.0.22
-//> using dep dev.zio::zio-opentelemetry:3.0.0-RC22
+//> using dep dev.zio::zio-opentelemetry:3.0.0-RC21+16-fd0048f2+20240419-2104-SNAPSHOT
 //> using dep io.opentelemetry:opentelemetry-sdk:1.37.0
 //> using dep io.opentelemetry:opentelemetry-sdk-trace:1.37.0
 //> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.37.0
@@ -130,9 +130,9 @@ object MetricsApp extends ZIOAppDefault {
       }
       .provide(
         otelSdkLayer,
-        ContextStorage.fiberRef,
         OpenTelemetry.metrics(instrumentationScopeName),
         OpenTelemetry.tracing(instrumentationScopeName),
+        OpenTelemetry.contextZIO,
         tickCounterLayer,
         tickRefLayer
       )

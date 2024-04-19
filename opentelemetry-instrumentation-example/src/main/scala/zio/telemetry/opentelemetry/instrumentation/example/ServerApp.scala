@@ -7,7 +7,6 @@ import zio._
 import zio.config.ReadError
 import zio.config.typesafe.TypesafeConfig
 import zio.config.magnolia._
-import zio.telemetry.opentelemetry.context.ContextStorage
 import zio.telemetry.opentelemetry.instrumentation.example.config.AppConfig
 import zio.telemetry.opentelemetry.instrumentation.example.http.{HttpServer, HttpServerApp}
 import zio.telemetry.opentelemetry.OpenTelemetry
@@ -32,9 +31,9 @@ object ServerApp extends ZIOAppDefault {
       configLayer,
       HttpServer.live,
       HttpServerApp.live,
-      ContextStorage.native,
       OpenTelemetry.global,
-      OpenTelemetry.tracing(instrumentationScopeName)
+      OpenTelemetry.tracing(instrumentationScopeName),
+      OpenTelemetry.contextJVM
     )
 
 }
