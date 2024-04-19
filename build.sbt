@@ -19,6 +19,12 @@ inThisBuild(
         "Simon Schenk",
         "simon@schenk-online.net",
         url("https://github.com/runtologist")
+      ),
+      Developer(
+        "grouzen",
+        "Michael Nedokushev",
+        "michael.nedokushev@gmail.com",
+        url("https://github.com/grouzen")
       )
     ),
     ciEnabledBranches := Seq("series/2.x"),
