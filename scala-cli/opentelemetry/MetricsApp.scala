@@ -130,9 +130,9 @@ object MetricsApp extends ZIOAppDefault {
       }
       .provide(
         otelSdkLayer,
-        ContextStorage.fiberRef,
         OpenTelemetry.metrics(instrumentationScopeName),
         OpenTelemetry.tracing(instrumentationScopeName),
+        OpenTelemetry.contextZIO,
         tickCounterLayer,
         tickRefLayer
       )

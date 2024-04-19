@@ -105,7 +105,7 @@ object OpenTelemetry {
   }
 
   /**
-   * Use when you want to allow a seamless integration with ZIO runtime and JVM metrics
+   * Use when you want to allow a seamless integration with ZIO runtime and JVM metrics.
    *
    * By default this layer enables the propagation of ZIO runtime metrics only. For JVM metrics you need to provide
    * `DefaultJvmMetrics.live.unit`.
@@ -153,5 +153,17 @@ object OpenTelemetry {
    */
   def baggage(logAnnotated: Boolean = false): URLayer[ContextStorage, Baggage] =
     Baggage.live(logAnnotated)
+
+  /**
+   * Use when you do not use automatic instrumentation.
+   */
+  def contextZIO: ULayer[ContextStorage] =
+    ContextStorage.fiberRef
+
+  /**
+   * Use when you use automatic instrumentation.
+   */
+  def contextJVM: ULayer[ContextStorage] =
+    ContextStorage.native
 
 }

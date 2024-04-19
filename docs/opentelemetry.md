@@ -79,7 +79,7 @@ OpenTelemetry provides a [JVM agent for automatic instrumentation](https://opent
 Since [version 1.25.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.25.0) OpenTelemetry JVM agent supports ZIO.
 
 To enable interoperability between automatic instrumentation and `zio-opentelemetry`, `Tracing` has to be created
-using `ContextStorage` backed by OpenTelemetry's native `Context` and `Tracer` provided by globally registered `TracerProvider`. It means that instead of `ContextStorage.fiberRef` and `OpenTelemetry.custom` you have to provide `ContextStorage.native` and `OpenTelemetry.global` layers.
+using `ContextStorage` backed by OpenTelemetry's native `Context` and `Tracer` provided by globally registered `TracerProvider`. It means that instead of `OpenTelemetry.contextZIO` and `OpenTelemetry.custom` you have to provide `OpenTelemetry.contextJVM` and `OpenTelemetry.global` layers.
 
 ### Tracing
 
@@ -97,12 +97,12 @@ Here are some of the main ones:
 Some of the methods above are available via [ZIO Aspect](https://zio.dev/reference/core/zio/#zio-aspect) syntax. 
 
 ```scala
-//> using scala "2.13.12"
-//> using dep dev.zio::zio:2.0.20
-//> using dep dev.zio::zio-opentelemetry:3.0.0-RC20
-//> using dep io.opentelemetry:opentelemetry-sdk:1.33.0
-//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.33.0
-//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.33.0
+//> using scala "2.13.13"
+//> using dep dev.zio::zio:2.0.22
+//> using dep dev.zio::zio-opentelemetry:3.0.0-RC22
+//> using dep io.opentelemetry:opentelemetry-sdk:1.37.0
+//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.37.0
+//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.37.0
 //> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.22.0-alpha
 
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter
@@ -176,12 +176,11 @@ object TracingApp extends ZIOAppDefault {
       }
       .provide(
         otelSdkLayer,
-        ContextStorage.fiberRef,
-        OpenTelemetry.tracing(instrumentationScopeName)
+        OpenTelemetry.tracing(instrumentationScopeName),
+        OpenTelemetry.contextZIO
       )
 
 }
-
 ```
 
 ### Metrics
@@ -191,11 +190,11 @@ As a rule of thumb, observable instruments must be initialized on an application
 
 ```scala
 //> using scala "2.13.13"
-//> using dep dev.zio::zio:2.0.21
+//> using dep dev.zio::zio:2.0.22
 //> using dep dev.zio::zio-opentelemetry:3.0.0-RC22
-//> using dep io.opentelemetry:opentelemetry-sdk:1.36.0
-//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.36.0
-//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.36.0
+//> using dep io.opentelemetry:opentelemetry-sdk:1.37.0
+//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.37.0
+//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.37.0
 //> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.22.0-alpha
 
 import io.opentelemetry.sdk.trace.SdkTracerProvider
@@ -322,9 +321,9 @@ object MetricsApp extends ZIOAppDefault {
       }
       .provide(
         otelSdkLayer,
-        ContextStorage.fiberRef,
         OpenTelemetry.metrics(instrumentationScopeName),
         OpenTelemetry.tracing(instrumentationScopeName),
+        OpenTelemetry.contextZIO,
         tickCounterLayer,
         tickRefLayer
       )
@@ -341,12 +340,12 @@ To enable seamless integration with [ZIO metrics](https://zio.dev/reference/obse
 To send [Log signals](https://opentelemetry.io/docs/concepts/signals/logs/), you will need a `Logging` service in your environment. For this, use the `OpenTelemetry.logging` layer which in turn requires an instance of `OpenTelemetry` provided by Java SDK and a suitable `ContextStorage` implementation. You can achieve the same by incorporating [Logger MDC auto-instrumentation](https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/logger-mdc-instrumentation.md), so the rule of thumb is to use the `Logging` service when you need to propagate ZIO log annotations as log record attributes or, for some reason you don't want to use auto-instrumentation.
 
 ```scala
-//> using scala "2.13.12"
-//> using dep dev.zio::zio:2.0.20
-//> using dep dev.zio::zio-opentelemetry:3.0.0-RC20
-//> using dep io.opentelemetry:opentelemetry-sdk:1.33.0
-//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.33.0
-//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.33.0
+//> using scala "2.13.13"
+//> using dep dev.zio::zio:2.0.22
+//> using dep dev.zio::zio-opentelemetry:3.0.0-RC22
+//> using dep io.opentelemetry:opentelemetry-sdk:1.37.0
+//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.37.0
+//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.37.0
 //> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.22.0-alpha
 
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter
@@ -433,14 +432,14 @@ object LoggingApp extends ZIOAppDefault {
                      )
         } yield ()
 
-        // All log messages produced by logic will be correlated with a "root_span" automatically
+        // All log messages produced by `logic` will be correlated with a "root_span" automatically
         logic @@ tracing.aspects.root("root_span")
       }
       .provide(
         otelSdkLayer,
-        ContextStorage.fiberRef,
         OpenTelemetry.logging(instrumentationScopeName),
-        OpenTelemetry.tracing(instrumentationScopeName)
+        OpenTelemetry.tracing(instrumentationScopeName),
+        OpenTelemetry.contextZIO
       )
 
 }
@@ -452,8 +451,8 @@ To pass contextual information in [Baggage](https://opentelemetry.io/docs/concep
 
 ```scala
 //> using scala "2.13.12"
-//> using dep dev.zio::zio:2.0.20
-//> using dep dev.zio::zio-opentelemetry:3.0.0-RC20
+//> using dep dev.zio::zio:2.0.22
+//> using dep dev.zio::zio-opentelemetry:3.0.0-RC22
 
 import zio._
 import zio.telemetry.opentelemetry.baggage.Baggage
@@ -494,12 +493,12 @@ Explicitly utilizing the context propagation API becomes relevant only when auto
 Please note that injection and extraction are not referentially transparent due to the use of the mutable OpenTelemetry carrier Java API.
 
 ```scala
-//> using scala "2.13.12"
-//> using dep dev.zio::zio:2.0.20
-//> using dep dev.zio::zio-opentelemetry:3.0.0-RC20
-//> using dep io.opentelemetry:opentelemetry-sdk:1.33.0
-//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.33.0
-//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.33.0
+//> using scala "2.13.13"
+//> using dep dev.zio::zio:2.0.22
+//> using dep dev.zio::zio-opentelemetry:3.0.0-RC22
+//> using dep io.opentelemetry:opentelemetry-sdk:1.37.0
+//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.37.0
+//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.37.0
 //> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.22.0-alpha
 
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter
@@ -565,7 +564,7 @@ object PropagatingApp extends ZIOAppDefault {
         val tracePropagator   = TraceContextPropagator.default
         val baggagePropagator = BaggagePropagator.default
         // Using the same kernel and carriers for baggage and tracing context propagation is safe
-        // since their encodings occupу different keys in the OTEL context.
+        // since their encodings occupy different keys in the OTEL context.
         val kernel            = mutable.Map.empty[String, String]
         val outgoingCarrier   = OutgoingContextCarrier.default(kernel)
         val incomingCarrier   = IncomingContextCarrier.default(kernel)
@@ -610,9 +609,9 @@ object PropagatingApp extends ZIOAppDefault {
       }
       .provide(
         otelSdkLayer,
-        ContextStorage.fiberRef,
         OpenTelemetry.tracing(instrumentationScopeName),
-        OpenTelemetry.baggage()
+        OpenTelemetry.baggage(),
+        OpenTelemetry.contextZIO
       )
 
 }
