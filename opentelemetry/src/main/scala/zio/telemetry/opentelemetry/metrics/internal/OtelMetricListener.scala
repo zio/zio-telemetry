@@ -36,6 +36,7 @@ private[opentelemetry] object OtelMetricListener {
             .getCounter(key.copy[MetricKeyType.Counter](key.name, MetricKeyType.Counter, key.tags))
             .record0(1L, attributes(key.tags + MetricLabel("bucket", value)))
 
+        // TODO: implement. One of the candidates to look at for inspiration is the micrometer library.
         override def updateSummary(key: MetricKey[MetricKeyType.Summary], value: Double, instant: Instant)(implicit
           unsafe: Unsafe
         ): Unit =
