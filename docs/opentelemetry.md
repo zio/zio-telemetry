@@ -99,7 +99,7 @@ Some of the methods above are available via [ZIO Aspect](https://zio.dev/referen
 ```scala
 //> using scala "2.13.13"
 //> using dep dev.zio::zio:2.0.22
-//> using dep dev.zio::zio-opentelemetry:3.0.0-RC21+16-fd0048f2+20240419-2104-SNAPSHOT
+//> using dep dev.zio::zio-opentelemetry:3.0.0-RC22
 //> using dep io.opentelemetry:opentelemetry-sdk:1.37.0
 //> using dep io.opentelemetry:opentelemetry-sdk-trace:1.37.0
 //> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.37.0
@@ -191,7 +191,7 @@ As a rule of thumb, observable instruments must be initialized on an application
 ```scala
 //> using scala "2.13.13"
 //> using dep dev.zio::zio:2.0.22
-//> using dep dev.zio::zio-opentelemetry:3.0.0-RC21+16-fd0048f2+20240419-2104-SNAPSHOT
+//> using dep dev.zio::zio-opentelemetry:3.0.0-RC22
 //> using dep io.opentelemetry:opentelemetry-sdk:1.37.0
 //> using dep io.opentelemetry:opentelemetry-sdk-trace:1.37.0
 //> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.37.0
@@ -342,7 +342,7 @@ To send [Log signals](https://opentelemetry.io/docs/concepts/signals/logs/), you
 ```scala
 //> using scala "2.13.13"
 //> using dep dev.zio::zio:2.0.22
-//> using dep dev.zio::zio-opentelemetry:3.0.0-RC21+16-fd0048f2+20240419-2104-SNAPSHOT
+//> using dep dev.zio::zio-opentelemetry:3.0.0-RC22
 //> using dep io.opentelemetry:opentelemetry-sdk:1.37.0
 //> using dep io.opentelemetry:opentelemetry-sdk-trace:1.37.0
 //> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.37.0
@@ -452,7 +452,7 @@ To pass contextual information in [Baggage](https://opentelemetry.io/docs/concep
 ```scala
 //> using scala "2.13.12"
 //> using dep dev.zio::zio:2.0.22
-//> using dep dev.zio::zio-opentelemetry:3.0.0-RC21+16-fd0048f2+20240419-2104-SNAPSHOT
+//> using dep dev.zio::zio-opentelemetry:3.0.0-RC22
 
 import zio._
 import zio.telemetry.opentelemetry.baggage.Baggage
@@ -495,7 +495,7 @@ Please note that injection and extraction are not referentially transparent due 
 ```scala
 //> using scala "2.13.13"
 //> using dep dev.zio::zio:2.0.22
-//> using dep dev.zio::zio-opentelemetry:3.0.0-RC21+16-fd0048f2+20240419-2104-SNAPSHOT
+//> using dep dev.zio::zio-opentelemetry:3.0.0-RC22
 //> using dep io.opentelemetry:opentelemetry-sdk:1.37.0
 //> using dep io.opentelemetry:opentelemetry-sdk-trace:1.37.0
 //> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.37.0
