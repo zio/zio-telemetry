@@ -9,6 +9,7 @@ import zio.telemetry.opentelemetry.context.ContextStorage
 import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.example.otel.OtelSdk
 import zio.telemetry.opentelemetry.metrics.Meter
+import zio.metrics.jvm.DefaultJvmMetrics
 
 object BackendApp extends ZIOAppDefault {
 
@@ -51,12 +52,14 @@ object BackendApp extends ZIOAppDefault {
         BackendHttpApp.live,
         OtelSdk.custom(resourceName),
         OpenTelemetry.tracing(instrumentationScopeName),
-        OpenTelemetry.meter(instrumentationScopeName),
+        OpenTelemetry.metrics(instrumentationScopeName),
         OpenTelemetry.logging(instrumentationScopeName),
         OpenTelemetry.baggage(),
+        OpenTelemetry.zioMetrics,
+        DefaultJvmMetrics.live.unit,
         globalTickCounterLayer,
         tickRefLayer,
-        ContextStorage.fiberRef
+        ContextStorage.fiberRef,
       )
 
 }

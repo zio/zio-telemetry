@@ -9,7 +9,9 @@ For an explanation in more detail, check the [OpenTracing Example](opentracing-e
 
 We're going to show an example of how to pass contextual information using [Baggage](https://opentelemetry.io/docs/concepts/signals/baggage/) and collect traces, metrics, and logs.
 
----
+# Run
+
+## Print OTEL signals to console
 
 By default the example code uses [OTLP Logging Exporters](https://github.com/open-telemetry/opentelemetry-java/tree/main/exporters/logging-otlp) to print all signals to stdout in OTLP JSON encoding. This means that you can run the application immediately and observe the results.
 
@@ -28,11 +30,11 @@ Now perform the following request to see the results immediately:
 curl -X GET http://localhost:8080/statuses
 ```
 
----
+## Publish OTEL signals to other observability platforms
 
 In case you want to try different observability platforms such as [Jaeger](https://www.jaegertracing.io/), [Fluentbit](https://fluentbit.io/), [Seq](https://datalust.co/seq), [DataDog](https://www.datadoghq.com/), [Honeycomb](https://www.honeycomb.io/) or others, please change the [OtelSdk.scala](https://github.com/zio/zio-telemetry/blob/series/2.x/opentelemetry-example/src/main/scala/zio/telemetry/opentelemetry/example/otel/OtelSdk.scala) file by choosing from the available tracer, meter, and logger providers or by implementing your own. 
 
---- 
+## Publish OTEL signals to Jaeger and Seq
 
 We chose [Jaeger](https://www.jaegertracing.io/) for distributed traces and [Seq](https://datalust.co/seq) to store logs to demonstrate how the library works with available open-source observability platforms.
 
@@ -60,4 +62,4 @@ docker run \
   datalust/seq
 ```
 
-Run the application and fire a curl request as shown above, and then head over to [Jaeger UI](http://localhost:16686/) and [Seq UI](http://localhost:80/) to see the result.
+Run the application and fire a curl request as shown above. Head over to [Jaeger UI](http://localhost:16686/) and [Seq UI](http://localhost:80/) to see the result.

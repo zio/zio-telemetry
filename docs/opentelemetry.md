@@ -12,7 +12,7 @@ Some of the key features:
 - **ZIO native** - Pleasant API that leverages native ZIO features, such as [Resource Management](https://zio.dev/reference/resource/), [Depenency Injection](https://zio.dev/reference/di/), [Streaming](https://zio.dev/reference/stream/), [Logging](https://zio.dev/reference/observability/logging), [Metrics](https://zio.dev/reference/observability/metrics/), and [ZIO Aspect](https://zio.dev/reference/core/zio/#zio-aspect)
 - **OpenTelemetry Java SDK and ZIO Runtime interoperability** - Protecting users from directly engaging in OTEL context manipulations, offering a straightforward and clear interface for instrumenting spans, metrics, logs, and baggage. In this scenario, the ZIO effect serves as the span's scope.
 - **Seamless signals correlation** -  Automatically correlates spans, metrics, and logs with a surrounding span.
-- **Integration with ZIO capabilities** - Propagation of log annotations, metrics, and other data from the ZIO runtime as OTEL attributes and metrics.
+- **Integration with ZIO capabilities** - Propagation of log annotations, metrics, and other data from the ZIO runtime as OTEL attributes and metric signals.
 
 ## Installation
 
@@ -35,6 +35,51 @@ For the complete list of available Java artifacts, please consult the informatio
 ## Usage
 
 All examples below can be run using amazing [Scala CLI](https://scala-cli.virtuslab.org/). You can find their full copies in the `scala-cli/opentelemetry/` directory. To run, type `scala-cli <AppName>.scala` while in the directory where the file is located.
+
+### Setup
+
+The `zio.telemetry.opentelemetry.OpenTelemetry` (aka entry point) offers a comprehensive set of layers for instrumenting your ZIO application. 
+
+First of all, you need to provide an instance of `io.opentelemetry.api.Opentelemetry`.
+In case you don't need an automatic instrumentation, you can use `OpenTelemetry.custom` layer. It receives a scoped ZIO effect indicating that the provided instance will be closed when the application is shut down. Here is an example:
+
+```scala
+import zio._
+import zio.telemetry.opentelemetry.OpenTelemetry
+import io.opentelemetry.sdk.OpenTelemetrySdk
+import io.opentelemetry.api
+
+def custom(resourceName: String): TaskLayer[api.OpenTelemetry] =
+  OpenTelemetry.custom(
+    for {
+      tracerProvider <- TracerProvider.stdout(resourceName)
+      meterProvider  <- MeterProvider.stdout(resourceName)
+      loggerProvider <- LoggerProvider.stdout(resourceName)
+      openTelemetry  <- ZIO.fromAutoCloseable(
+                          ZIO.succeed(
+                            OpenTelemetrySdk
+                              .builder()
+                              .setTracerProvider(tracerProvider)
+                              .setMeterProvider(meterProvider)
+                              .setLoggerProvider(loggerProvider)
+                              .build
+                          )
+                        )
+    } yield openTelemetry
+  )
+```
+
+The library depends only on `opentelemetry-api` which means you have to manage an initialization of providers and depenendencies for `opentelemetry-sdk`, and `opentelemetry-exporter-*` inside your application.
+
+For more details, please have a look at the source code of the [example application](https://github.com/zio/zio-telemetry/tree/series/2.x/opentelemetry-example/src/main/scala/zio/telemetry/opentelemetry/example).
+
+#### Usage with OpenTelemetry automatic instrumentation
+
+OpenTelemetry provides a [JVM agent for automatic instrumentation](https://opentelemetry.io/docs/instrumentation/java/automatic/) which supports many [popular Java libraries](https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/supported-libraries.md).
+Since [version 1.25.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.25.0) OpenTelemetry JVM agent supports ZIO.
+
+To enable interoperability between automatic instrumentation and `zio-opentelemetry`, `Tracing` has to be created
+using `ContextStorage` backed by OpenTelemetry's native `Context` and `Tracer` provided by globally registered `TracerProvider`. It means that instead of `ContextStorage.fiberRef` and `OpenTelemetry.custom` you have to provide `ContextStorage.native` and `OpenTelemetry.global` layers.
 
 ### Tracing
 
@@ -145,12 +190,12 @@ To send [Metric signals](https://opentelemetry.io/docs/concepts/signals/metrics/
 As a rule of thumb, observable instruments must be initialized on an application startup. They are scoped, so you should not be worried about shutting them down manually.
 
 ```scala
-//> using scala "2.13.12"
-//> using dep dev.zio::zio:2.0.20
-//> using dep dev.zio::zio-opentelemetry:3.0.0-RC20
-//> using dep io.opentelemetry:opentelemetry-sdk:1.33.0
-//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.33.0
-//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.33.0
+//> using scala "2.13.13"
+//> using dep dev.zio::zio:2.0.21
+//> using dep dev.zio::zio-opentelemetry:3.0.0-RC22
+//> using dep io.opentelemetry:opentelemetry-sdk:1.36.0
+//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.36.0
+//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.36.0
 //> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.22.0-alpha
 
 import io.opentelemetry.sdk.trace.SdkTracerProvider
@@ -278,7 +323,7 @@ object MetricsApp extends ZIOAppDefault {
       .provide(
         otelSdkLayer,
         ContextStorage.fiberRef,
-        OpenTelemetry.meter(instrumentationScopeName),
+        OpenTelemetry.metrics(instrumentationScopeName),
         OpenTelemetry.tracing(instrumentationScopeName),
         tickCounterLayer,
         tickRefLayer
@@ -286,6 +331,10 @@ object MetricsApp extends ZIOAppDefault {
 
 }
 ```
+
+#### Integration with ZIO metrics
+
+To enable seamless integration with [ZIO metrics](https://zio.dev/reference/observability/metrics/), use the `OpenTelemetry.zioMetrics` layer. If you also need to publish JVM metrics, be sure to include `DefaultJvmMetrics.live.unit`.
 
 ### Logging
 
@@ -568,11 +617,3 @@ object PropagatingApp extends ZIOAppDefault {
 
 }
 ```
-
-### Usage with OpenTelemetry automatic instrumentation
-
-OpenTelemetry provides a [JVM agent for automatic instrumentation](https://opentelemetry.io/docs/instrumentation/java/automatic/) which supports many [popular Java libraries](https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/supported-libraries.md).
-Since [version 1.25.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.25.0) OpenTelemetry JVM agent supports ZIO.
-
-To enable interoperability between automatic instrumentation and `zio-opentelemetry`, `Tracing` has to be created
-using `ContextStorage` backed by OpenTelemetry's native `Context` and `Tracer` provided by globally registered `TracerProvider`. It means that instead of `ContextStorage.fiberRef` and `OpenTelemetry.custom` you have to provide `ContextStorage.native` and `OpenTelemetry.global` layers.
