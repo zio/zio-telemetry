@@ -52,7 +52,7 @@ object Instrument {
 
   private[opentelemetry] object Builder {
 
-    def live: URLayer[api.metrics.Meter with ContextStorage, Builder] =
+    def live(logAnnotated: Boolean = false): URLayer[api.metrics.Meter with ContextStorage, Builder] =
       ZLayer(
         for {
           meter      <- ZIO.service[api.metrics.Meter]
@@ -69,7 +69,7 @@ object Instrument {
             unit.foreach(builder.setUnit)
             description.foreach(builder.setDescription)
 
-            Counter.long(builder.build(), ctxStorage)
+            Counter.long(builder.build(), ctxStorage, logAnnotated)
           }
 
           override def upDownCounter(
@@ -82,7 +82,7 @@ object Instrument {
             unit.foreach(builder.setUnit)
             description.foreach(builder.setDescription)
 
-            UpDownCounter.long(builder.build(), ctxStorage)
+            UpDownCounter.long(builder.build(), ctxStorage, logAnnotated)
           }
 
           override def histogram(
@@ -95,7 +95,7 @@ object Instrument {
             unit.foreach(builder.setUnit)
             description.foreach(builder.setDescription)
 
-            Histogram.double(builder.build(), ctxStorage)
+            Histogram.double(builder.build(), ctxStorage, logAnnotated)
           }
 
           override def observableCounter(

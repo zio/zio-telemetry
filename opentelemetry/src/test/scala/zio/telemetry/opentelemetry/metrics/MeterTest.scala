@@ -16,7 +16,7 @@ object MeterTest extends ZIOSpecDefault {
   val inMemoryMetricReaderLayer: ZLayer[Any, Nothing, InMemoryMetricReader] =
     ZLayer(ZIO.succeed(InMemoryMetricReader.create()))
 
-  val meterLayer: ZLayer[InMemoryMetricReader with ContextStorage, Nothing, Meter] = {
+  def meterLayer(logAnnotated: Boolean = false): ZLayer[InMemoryMetricReader with ContextStorage, Nothing, Meter] = {
     val jmeter  = ZLayer {
       for {
         metricReader  <- ZIO.service[InMemoryMetricReader]
@@ -24,7 +24,7 @@ object MeterTest extends ZIOSpecDefault {
         meter         <- ZIO.succeed(meterProvider.get("MeterTest"))
       } yield meter
     }
-    val builder = jmeter >>> Instrument.Builder.live
+    val builder = jmeter >>> Instrument.Builder.live(logAnnotated)
 
     builder >>> Meter.live
   }
@@ -44,7 +44,8 @@ object MeterTest extends ZIOSpecDefault {
     suite("zio opentelemetry")(
       suite("Meter")(
         normalSpec,
-        contextualSpec
+        contextualSpec,
+        logAnnotatedSpec
       )
     )
 
@@ -131,8 +132,26 @@ object MeterTest extends ZIOSpecDefault {
             } yield assertTrue(metricValue == 14L)
           }
         )
+      },
+      test("zio log annotations are not included when turned off") {
+        ZIO.serviceWithZIO[Meter] { meter =>
+          for {
+            reader          <- ZIO.service[InMemoryMetricReader]
+            counter         <- meter.counter("test_counter")
+            _               <- ZIO.logAnnotate("zio", "annotation") {
+                                 counter.inc()
+                               }
+            metric           = reader.collectAllMetrics().asScala.toList.head
+            metricPoint      = metric.getLongSumData.getPoints.asScala.toList.head
+            metricValue      = metricPoint.getValue
+            metricAttributes = metricPoint.getAttributes()
+          } yield assertTrue(
+            metricValue == 1L,
+            metricAttributes == Attributes.empty
+          )
+        }
       }
-    ).provide(inMemoryMetricReaderLayer, meterLayer, ContextStorage.fiberRef, observableRefLayer)
+    ).provide(inMemoryMetricReaderLayer, meterLayer(), ContextStorage.fiberRef, observableRefLayer)
 
   private val contextualSpec =
     suite("contextual")(
@@ -155,6 +174,46 @@ object MeterTest extends ZIOSpecDefault {
           )
         }
       }
-    ).provide(inMemoryMetricReaderLayer, meterLayer, ContextStorage.fiberRef, TracingTest.tracingMockLayer)
+    ).provide(inMemoryMetricReaderLayer, meterLayer(), ContextStorage.fiberRef, TracingTest.tracingMockLayer)
+
+  private val logAnnotatedSpec =
+    suite("log annotated")(
+      test("new attributes") {
+        ZIO.serviceWithZIO[Meter] { meter =>
+          for {
+            reader          <- ZIO.service[InMemoryMetricReader]
+            counter         <- meter.counter("test_counter")
+            _               <- ZIO.logAnnotate("zio", "annotation") {
+                                 counter.inc()
+                               }
+            metric           = reader.collectAllMetrics().asScala.toList.head
+            metricPoint      = metric.getLongSumData.getPoints.asScala.toList.head
+            metricValue      = metricPoint.getValue
+            metricAttributes = metricPoint.getAttributes()
+          } yield assertTrue(
+            metricValue == 1L,
+            metricAttributes == Attributes(Attribute.string("zio", "annotation"))
+          )
+        }
+      },
+      test("instrumented attributes override log annotated") {
+        ZIO.serviceWithZIO[Meter] { meter =>
+          for {
+            reader          <- ZIO.service[InMemoryMetricReader]
+            counter         <- meter.counter("test_counter")
+            _               <- ZIO.logAnnotate("zio", "annotation") {
+                                 counter.inc(Attributes(Attribute.string("zio", "annotation2")))
+                               }
+            metric           = reader.collectAllMetrics().asScala.toList.head
+            metricPoint      = metric.getLongSumData.getPoints.asScala.toList.head
+            metricValue      = metricPoint.getValue
+            metricAttributes = metricPoint.getAttributes()
+          } yield assertTrue(
+            metricValue == 1L,
+            metricAttributes == Attributes(Attribute.string("zio", "annotation2"))
+          )
+        }
+      }
+    ).provide(inMemoryMetricReaderLayer, meterLayer(logAnnotated = true), ContextStorage.fiberRef)
 
 }

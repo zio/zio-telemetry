@@ -5,7 +5,7 @@ import io.opentelemetry.api.metrics.LongCounter
 import io.opentelemetry.context.Context
 import zio._
 import zio.telemetry.opentelemetry.context.ContextStorage
-import zio.telemetry.opentelemetry.metrics.internal.Instrument
+import zio.telemetry.opentelemetry.metrics.internal.{Instrument, logAnnotatedAttributes}
 
 /**
  * A Counter instrument that records values of type `A`
@@ -42,14 +42,21 @@ trait Counter[-A] extends Instrument[A] {
 
 object Counter {
 
-  private[metrics] def long(counter: LongCounter, ctxStorage: ContextStorage): Counter[Long] =
+  private[metrics] def long(
+    counter: LongCounter,
+    ctxStorage: ContextStorage,
+    logAnnotated: Boolean
+  ): Counter[Long] =
     new Counter[Long] {
 
       override def record0(value: Long, attributes: Attributes = Attributes.empty, context: Context): Unit =
         counter.add(value, attributes, context)
 
       override def add(value: Long, attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
-        ctxStorage.get.map(record0(value, attributes, _))
+        for {
+          annotated <- logAnnotatedAttributes(attributes, logAnnotated)
+          ctx       <- ctxStorage.get
+        } yield record0(value, annotated, ctx)
 
       override def inc(attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
         add(1L, attributes)

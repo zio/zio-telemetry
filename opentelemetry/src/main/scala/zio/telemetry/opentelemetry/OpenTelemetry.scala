@@ -87,7 +87,8 @@ object OpenTelemetry {
   def metrics(
     instrumentationScopeName: String,
     instrumentationVersion: Option[String] = None,
-    schemaUrl: Option[String] = None
+    schemaUrl: Option[String] = None,
+    logAnnotated: Boolean = false
   ): URLayer[api.OpenTelemetry with ContextStorage, Meter with Instrument.Builder] = {
     val meterLayer   = ZLayer(
       ZIO.serviceWith[api.OpenTelemetry] { openTelemetry =>
@@ -99,7 +100,7 @@ object OpenTelemetry {
         builder.build()
       }
     )
-    val builderLayer = meterLayer >>> Instrument.Builder.live
+    val builderLayer = meterLayer >>> Instrument.Builder.live(logAnnotated)
 
     builderLayer >+> (builderLayer >>> Meter.live)
   }
