@@ -5,7 +5,7 @@ import io.opentelemetry.api.metrics.DoubleHistogram
 import io.opentelemetry.context.Context
 import zio._
 import zio.telemetry.opentelemetry.context.ContextStorage
-import zio.telemetry.opentelemetry.metrics.internal.Instrument
+import zio.telemetry.opentelemetry.metrics.internal.{Instrument, logAnnotatedAttributes}
 
 /**
  * A Histogram instrument that records values of type `A`
@@ -32,14 +32,21 @@ trait Histogram[-A] extends Instrument[A] {
 
 object Histogram {
 
-  private[metrics] def double(histogram: DoubleHistogram, ctxStorage: ContextStorage): Histogram[Double] =
+  private[metrics] def double(
+    histogram: DoubleHistogram,
+    ctxStorage: ContextStorage,
+    logAnnotated: Boolean
+  ): Histogram[Double] =
     new Histogram[Double] {
 
       override def record0(value: Double, attributes: Attributes = Attributes.empty, context: Context): Unit =
         histogram.record(value, attributes, context)
 
       override def record(value: Double, attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
-        ctxStorage.get.map(record0(value, attributes, _))
+        for {
+          annotated <- logAnnotatedAttributes(attributes, logAnnotated)
+          ctx       <- ctxStorage.get
+        } yield record0(value, annotated, ctx)
 
     }
 

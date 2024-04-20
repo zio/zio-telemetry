@@ -125,12 +125,13 @@ object MetricsApp extends ZIOAppDefault {
           _                    <- messageLengthCounter.add(message.length, Attributes(Attribute.string("message", message)))
         } yield message
 
-        // By wrapping our logic into a span, we make the `messageLengthCounter` data points correlated with a "root_span" automatically
-        logic @@ tracing.aspects.root("root_span")
+        // By wrapping our logic into a span, we make the `messageLengthCounter` data points correlated with a "root_span" automatically.
+        // Additionally we implicitly add one more attribute to the `messageLenghtCounter` as it is wrapped into a `ZIO.logAnnotate` call.
+        ZIO.logAnnotate("zio", "annotation")(logic) @@ tracing.aspects.root("root_span")
       }
       .provide(
         otelSdkLayer,
-        OpenTelemetry.metrics(instrumentationScopeName),
+        OpenTelemetry.metrics(instrumentationScopeName, logAnnotated = true),
         OpenTelemetry.tracing(instrumentationScopeName),
         OpenTelemetry.contextZIO,
         tickCounterLayer,

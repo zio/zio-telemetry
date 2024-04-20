@@ -187,6 +187,7 @@ object TracingApp extends ZIOAppDefault {
 
 To send [Metric signals](https://opentelemetry.io/docs/concepts/signals/metrics/), you will need a `Meter` service in your environment. For this, use the `OpenTelemetry.meter` layer which in turn requires an instance of `OpenTelemetry` provided by Java SDK and a suitable `ContextStorage` implementation. The `Meter` API lets you create [Counter](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#counter), [UpDownCounter](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#updowncounter), [Gauge](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#gauge), [Histogram](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#histogram) and their [asynchronous](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#asynchronous-instrument-api) (aka observable) counterparts. 
 As a rule of thumb, observable instruments must be initialized on an application startup. They are scoped, so you should not be worried about shutting them down manually.
+By default the metric instruments does not take ZIO log annotations into account. To turn it on pass `logAnnotated = true` parameter to the `OpenTelemetry.metrics` layer initializer.
 
 ```scala
 //> using scala "2.13.13"
@@ -316,12 +317,13 @@ object MetricsApp extends ZIOAppDefault {
           _                    <- messageLengthCounter.add(message.length, Attributes(Attribute.string("message", message)))
         } yield message
 
-        // By wrapping our logic into a span, we make the `messageLengthCounter` data points correlated with a "root_span" automatically
-        logic @@ tracing.aspects.root("root_span")
+        // By wrapping our logic into a span, we make the `messageLengthCounter` data points correlated with a "root_span" automatically.
+        // Additionally we implicitly add one more attribute to the `messageLenghtCounter` as it is wrapped into a `ZIO.logAnnotate` call.
+        ZIO.logAnnotate("zio", "annotation")(logic) @@ tracing.aspects.root("root_span")
       }
       .provide(
         otelSdkLayer,
-        OpenTelemetry.metrics(instrumentationScopeName),
+        OpenTelemetry.metrics(instrumentationScopeName, logAnnotated = true),
         OpenTelemetry.tracing(instrumentationScopeName),
         OpenTelemetry.contextZIO,
         tickCounterLayer,
