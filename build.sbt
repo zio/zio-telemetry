@@ -1,15 +1,16 @@
 import MimaSettings.mimaSettings
+import zio.sbt.githubactions.Step.SingleStep
 
 enablePlugins(ZioSbtEcosystemPlugin, ZioSbtCiPlugin)
 
 inThisBuild(
   List(
-    name              := "ZIO Telemetry",
-    organization      := "dev.zio",
-    zioVersion        := "2.0.22",
-    homepage          := Some(url("https://zio.dev/zio-telemetry/")),
-    licenses          := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-    developers        := List(
+    name                       := "ZIO Telemetry",
+    organization               := "dev.zio",
+    zioVersion                 := "2.0.22",
+    homepage                   := Some(url("https://zio.dev/zio-telemetry/")),
+    licenses                   := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+    developers                 := List(
       Developer(
         "mijicd",
         "Dejan Mijic",
@@ -29,11 +30,17 @@ inThisBuild(
         url("https://github.com/grouzen")
       )
     ),
-    ciEnabledBranches := Seq("series/2.x"),
-    pgpPassphrase     := sys.env.get("PGP_PASSWORD").map(_.toArray),
-    pgpPublicRing     := file("/tmp/public.asc"),
-    pgpSecretRing     := file("/tmp/secret.asc"),
-    scmInfo           := Some(
+    ciEnabledBranches          := Seq("series/2.x"),
+    ciCheckArtifactsBuildSteps ++= Seq(
+      SingleStep(
+        name = "Mima check",
+        run = Some("sbt mimaChecks")
+      )
+    ),
+    pgpPassphrase              := sys.env.get("PGP_PASSWORD").map(_.toArray),
+    pgpPublicRing              := file("/tmp/public.asc"),
+    pgpSecretRing              := file("/tmp/secret.asc"),
+    scmInfo                    := Some(
       ScmInfo(
         url("https://github.com/zio/zio-telemetry/"),
         "scm:git:git@github.com:zio/zio-telemetry.git"

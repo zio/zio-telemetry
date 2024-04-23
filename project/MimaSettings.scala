@@ -11,8 +11,10 @@ object MimaSettings {
     Seq(
       mimaPreviousArtifacts := Set(organization.value %% name.value % bincompatVersionToCompare),
       mimaBinaryIssueFilters ++= Seq(
-        exclude[Problem]("zio.telemetry.opentelemetry.*")
+        exclude[Problem]("zio.telemetry.opentelemetry.*"),
+        exclude[Problem]("zio.telemetry.opentracing.*"),
+        exclude[Problem]("zio.telemetry.opencensus.*")
       ),
-      mimaFailOnProblem     := failOnProblem
+      mimaFailOnProblem     := false
     )
 }

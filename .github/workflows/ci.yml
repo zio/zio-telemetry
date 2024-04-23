@@ -39,6 +39,8 @@ jobs:
       run: sbt +Test/compile
     - name: Check artifacts build process
       run: sbt +publishLocal
+    - name: Mima check
+      run: sbt mimaChecks
     - name: Check website build process
       run: sbt docs/clean; sbt docs/buildWebsite
   lint:
