@@ -1,3 +1,6 @@
+import MimaSettings.mimaSettings
+import zio.sbt.githubactions.Step.SingleStep
+
 enablePlugins(ZioSbtEcosystemPlugin, ZioSbtCiPlugin)
 
 inThisBuild(
@@ -28,6 +31,12 @@ inThisBuild(
       )
     ),
     ciEnabledBranches := Seq("series/2.x"),
+    ciCheckArtifactsBuildSteps ++= Seq(
+      SingleStep(
+        name = "Mima check",
+        run = Some("sbt mimaChecks")
+      )
+    ),
     pgpPassphrase     := sys.env.get("PGP_PASSWORD").map(_.toArray),
     pgpPublicRing     := file("/tmp/public.asc"),
     pgpSecretRing     := file("/tmp/secret.asc"),
@@ -48,6 +57,10 @@ addCommandAlias("docsCheck", "docs/checkReadme;docs/ciCheckGithubWorkflow")
 addCommandAlias(
   "compileExamples",
   "opentracingExample/compile;opentelemetryExample/compile;opentelemetryInstrumentationExample/compile"
+)
+addCommandAlias(
+  "mimaChecks",
+  "all opentracing/mimaReportBinaryIssues opentelemetry/mimaReportBinaryIssues opencensus/mimaReportBinaryIssues"
 )
 
 def stdModuleSettings(name: Option[String], packageName: Option[String]) =
@@ -89,6 +102,7 @@ lazy val opentracing =
       )
     )
     .settings(libraryDependencies ++= Dependencies.opentracing)
+    .settings(mimaSettings(failOnProblem = true))
 
 lazy val opentelemetry =
   project
@@ -101,6 +115,7 @@ lazy val opentelemetry =
       )
     )
     .settings(libraryDependencies ++= Dependencies.opentelemetry)
+    .settings(mimaSettings(failOnProblem = true))
 
 lazy val opencensus = project
   .in(file("opencensus"))
@@ -112,6 +127,7 @@ lazy val opencensus = project
     )
   )
   .settings(libraryDependencies ++= Dependencies.opencensus)
+  .settings(mimaSettings(failOnProblem = true))
 
 lazy val opentracingExample =
   project
