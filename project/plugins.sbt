@@ -10,6 +10,7 @@ addSbtPlugin("org.scoverage"                     % "sbt-scoverage"     % "2.0.11
 addSbtPlugin("dev.zio"                           % "zio-sbt-ci"        % zioSbtVersion)
 addSbtPlugin("dev.zio"                           % "zio-sbt-ecosystem" % zioSbtVersion)
 addSbtPlugin("dev.zio"                           % "zio-sbt-website"   % zioSbtVersion)
+addSbtPlugin("com.typesafe"                      % "sbt-mima-plugin"   % "1.1.3")
 
 libraryDependencies += "org.snakeyaml" % "snakeyaml-engine" % "2.7"
 

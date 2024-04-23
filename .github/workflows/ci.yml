@@ -92,6 +92,27 @@ jobs:
         fetch-depth: '0'
     - name: Test
       run: sbt +test
+  mima:
+    name: Mima
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Install libuv
+        run: sudo apt-get update && sudo apt-get install -y libuv1-dev
+      - name: Setup Scala
+        uses: actions/setup-java@v3.10.0
+        with:
+          distribution: temurin
+          java-version: "8"
+          check-latest: true
+      - name: Cache Dependencies
+        uses: coursier/cache-action@v6
+      - name: Git Checkout
+        uses: actions/checkout@v3.5.0
+        with:
+          fetch-depth: '0'
+      - name: Mima
+        run: sbt mimaChecks
   update-readme:
     name: Update README
     runs-on: ubuntu-latest

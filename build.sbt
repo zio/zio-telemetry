@@ -1,3 +1,5 @@
+import MimaSettings.mimaSettings
+
 enablePlugins(ZioSbtEcosystemPlugin, ZioSbtCiPlugin)
 
 inThisBuild(
@@ -49,6 +51,10 @@ addCommandAlias(
   "compileExamples",
   "opentracingExample/compile;opentelemetryExample/compile;opentelemetryInstrumentationExample/compile"
 )
+addCommandAlias(
+  "mimaChecks",
+  "all opentracing/mimaReportBinaryIssues opentelemetry/mimaReportBinaryIssues opencensus/mimaReportBinaryIssues"
+)
 
 def stdModuleSettings(name: Option[String], packageName: Option[String]) =
   stdSettings(name, packageName) ++
@@ -89,6 +95,7 @@ lazy val opentracing =
       )
     )
     .settings(libraryDependencies ++= Dependencies.opentracing)
+    .settings(mimaSettings(failOnProblem = true))
 
 lazy val opentelemetry =
   project
@@ -101,6 +108,7 @@ lazy val opentelemetry =
       )
     )
     .settings(libraryDependencies ++= Dependencies.opentelemetry)
+    .settings(mimaSettings(failOnProblem = true))
 
 lazy val opencensus = project
   .in(file("opencensus"))
@@ -112,6 +120,7 @@ lazy val opencensus = project
     )
   )
   .settings(libraryDependencies ++= Dependencies.opencensus)
+  .settings(mimaSettings(failOnProblem = true))
 
 lazy val opentracingExample =
   project
