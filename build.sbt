@@ -59,7 +59,7 @@ inThisBuild(
         "scm:git:git@github.com:zio/zio-telemetry.git"
       )
     ),
-    concurrentRestrictions += Tags.limit(missinglinkConflictsTag, 3)
+    concurrentRestrictions += Tags.limit(missinglinkConflictsTag, 1)
   )
 )
 

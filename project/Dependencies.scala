@@ -57,14 +57,14 @@ object Dependencies {
   lazy val opentelemetry = zio ++ Seq(
     Orgs.opentelemetry     % "opentelemetry-api"         % Versions.opentelemetry,
     Orgs.opentelemetry     % "opentelemetry-context"     % Versions.opentelemetry,
-    Orgs.scalaLangModules %% "scala-collection-compat" % Versions.scalaCollectionCompat,
+    Orgs.scalaLangModules %% "scala-collection-compat"   % Versions.scalaCollectionCompat,
     Orgs.opentelemetry     % "opentelemetry-sdk-testing" % Versions.opentelemetry % Test
   )
 
   lazy val opencensus = zio ++ Seq(
-    Orgs.opencensus        % "opencensus-api"               % Versions.opencensus,
-    Orgs.opencensus        % "opencensus-impl"              % Versions.opencensus,
-    Orgs.scalaLangModules %% "scala-collection-compat"      % Versions.scalaCollectionCompat % Test
+    Orgs.opencensus        % "opencensus-api"          % Versions.opencensus,
+    Orgs.opencensus        % "opencensus-impl"         % Versions.opencensus,
+    Orgs.scalaLangModules %% "scala-collection-compat" % Versions.scalaCollectionCompat % Test
   )
 
   lazy val example = zio ++ Seq(
