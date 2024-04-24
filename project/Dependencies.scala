@@ -1,4 +1,4 @@
-import sbt._
+import sbt.*
 
 object Dependencies {
 
@@ -8,6 +8,7 @@ object Dependencies {
     val opencensus            = "0.31.1"
     val scalaCollectionCompat = "2.12.0"
     val zio                   = "2.0.22"
+    val izumiReflect          = "2.3.8"
   }
 
   object Orgs {
@@ -41,7 +42,9 @@ object Dependencies {
   }
 
   lazy val zio = Seq(
-    Orgs.zio %% "zio" % Versions.zio
+    Orgs.zio %% "zio"             % Versions.zio,
+    Orgs.zio %% "izumi-reflect"   % Versions.izumiReflect,
+    Orgs.zio %% "zio-stacktracer" % Versions.zio
   )
 
   lazy val opentracing = zio ++ Seq(
@@ -59,10 +62,9 @@ object Dependencies {
   )
 
   lazy val opencensus = zio ++ Seq(
-    Orgs.opencensus        % "opencensus-api"               % Versions.opencensus,
-    Orgs.opencensus        % "opencensus-impl"              % Versions.opencensus,
-    Orgs.opencensus        % "opencensus-contrib-http-util" % Versions.opencensus,
-    Orgs.scalaLangModules %% "scala-collection-compat"      % Versions.scalaCollectionCompat % Test
+    Orgs.opencensus        % "opencensus-api"          % Versions.opencensus,
+    Orgs.opencensus        % "opencensus-impl"         % Versions.opencensus,
+    Orgs.scalaLangModules %% "scala-collection-compat" % Versions.scalaCollectionCompat % Test
   )
 
   lazy val example = zio ++ Seq(

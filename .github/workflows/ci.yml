@@ -41,6 +41,12 @@ jobs:
       run: sbt +publishLocal
     - name: Mima check
       run: sbt mimaChecks
+    - name: Undeclared dependencies check
+      run: sbt undeclaredCompileDependencies
+    - name: Unused dependencies check
+      run: sbt unusedCompileDependenciesTest
+    - name: MissingLink
+      run: sbt missinglinkCheck
     - name: Check website build process
       run: sbt docs/clean; sbt docs/buildWebsite
   lint:

@@ -1,4 +1,5 @@
 import MimaSettings.mimaSettings
+import ch.epfl.scala.sbtmissinglink.MissingLinkPlugin.missinglinkConflictsTag
 import zio.sbt.githubactions.Step.SingleStep
 
 enablePlugins(ZioSbtEcosystemPlugin, ZioSbtCiPlugin)
@@ -35,6 +36,18 @@ inThisBuild(
       SingleStep(
         name = "Mima check",
         run = Some("sbt mimaChecks")
+      ),
+      SingleStep(
+        name = "Undeclared dependencies check",
+        run = Some("sbt undeclaredCompileDependencies")
+      ),
+      SingleStep(
+        name = "Unused dependencies check",
+        run = Some("sbt unusedCompileDependenciesTest")
+      ),
+      SingleStep(
+        name = "MissingLink",
+        run = Some("sbt missinglinkCheck")
       )
     ),
     pgpPassphrase     := sys.env.get("PGP_PASSWORD").map(_.toArray),
@@ -45,7 +58,8 @@ inThisBuild(
         url("https://github.com/zio/zio-telemetry/"),
         "scm:git:git@github.com:zio/zio-telemetry.git"
       )
-    )
+    ),
+    concurrentRestrictions += Tags.limit(missinglinkConflictsTag, 1)
   )
 )
 
@@ -103,6 +117,7 @@ lazy val opentracing =
     )
     .settings(libraryDependencies ++= Dependencies.opentracing)
     .settings(mimaSettings(failOnProblem = true))
+    .settings(unusedCompileDependenciesFilter -= moduleFilter("org.scala-lang.modules", "scala-collection-compat"))
 
 lazy val opentelemetry =
   project
@@ -116,6 +131,7 @@ lazy val opentelemetry =
     )
     .settings(libraryDependencies ++= Dependencies.opentelemetry)
     .settings(mimaSettings(failOnProblem = true))
+    .settings(unusedCompileDependenciesFilter -= moduleFilter("org.scala-lang.modules", "scala-collection-compat"))
 
 lazy val opencensus = project
   .in(file("opencensus"))
@@ -128,6 +144,7 @@ lazy val opencensus = project
   )
   .settings(libraryDependencies ++= Dependencies.opencensus)
   .settings(mimaSettings(failOnProblem = true))
+  .settings(unusedCompileDependenciesFilter -= moduleFilter("io.opencensus", "opencensus-impl"))
 
 lazy val opentracingExample =
   project
@@ -180,5 +197,6 @@ lazy val docs =
       ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(opentracing, opentelemetry, opencensus),
       scalacOptions --= Seq("-Yno-imports", "-Xfatal-warnings")
     )
+    .settings(unusedCompileDependenciesFilter -= moduleFilter("org.scalameta", "mdoc"))
     .dependsOn(opentracing, opentelemetry, opencensus)
     .enablePlugins(WebsitePlugin)

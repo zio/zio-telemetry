@@ -52,10 +52,10 @@ object TracingTest extends ZIOSpecDefault {
           } yield assert(root)(isSome(anything)) &&
             assert(child)(
               isSome(
-                hasField[SpanData, SpanId](
+                hasField[SpanData, Either[String, SpanId]](
                   "parentSpanId",
-                  _.getParentSpanId,
-                  equalTo(root.get.getContext.getSpanId)
+                  spanData => Option(spanData.getParentSpanId).toRight("Span is root"),
+                  equalTo(root.map(_.getContext.getSpanId).toRight("Not found spanId"))
                 )
               )
             )
