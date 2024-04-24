@@ -1,4 +1,4 @@
-import sbt._
+import sbt.*
 
 object Dependencies {
 
@@ -8,6 +8,7 @@ object Dependencies {
     val opencensus            = "0.31.1"
     val scalaCollectionCompat = "2.12.0"
     val zio                   = "2.0.22"
+    val izumiReflect          = "2.3.8"
   }
 
   object Orgs {
@@ -41,27 +42,26 @@ object Dependencies {
   }
 
   lazy val zio = Seq(
-    Orgs.zio %% "zio" % Versions.zio
+    Orgs.zio %% "zio"             % Versions.zio,
+    Orgs.zio %% "izumi-reflect"   % Versions.izumiReflect,
+    Orgs.zio %% "zio-stacktracer" % Versions.zio
   )
 
   lazy val opentracing = zio ++ Seq(
     Orgs.opentracing       % "opentracing-api"         % Versions.opentracing,
     Orgs.opentracing       % "opentracing-noop"        % Versions.opentracing,
-    Orgs.scalaLangModules %% "scala-collection-compat" % Versions.scalaCollectionCompat,
     Orgs.opentracing       % "opentracing-mock"        % Versions.opentracing % Test
   )
 
   lazy val opentelemetry = zio ++ Seq(
     Orgs.opentelemetry     % "opentelemetry-api"         % Versions.opentelemetry,
     Orgs.opentelemetry     % "opentelemetry-context"     % Versions.opentelemetry,
-    Orgs.scalaLangModules %% "scala-collection-compat"   % Versions.scalaCollectionCompat,
     Orgs.opentelemetry     % "opentelemetry-sdk-testing" % Versions.opentelemetry % Test
   )
 
   lazy val opencensus = zio ++ Seq(
     Orgs.opencensus        % "opencensus-api"               % Versions.opencensus,
     Orgs.opencensus        % "opencensus-impl"              % Versions.opencensus,
-    Orgs.opencensus        % "opencensus-contrib-http-util" % Versions.opencensus,
     Orgs.scalaLangModules %% "scala-collection-compat"      % Versions.scalaCollectionCompat % Test
   )
 
