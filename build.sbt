@@ -117,6 +117,7 @@ lazy val opentracing =
     )
     .settings(libraryDependencies ++= Dependencies.opentracing)
     .settings(mimaSettings(failOnProblem = true))
+    .settings(unusedCompileDependenciesFilter -= moduleFilter("org.scala-lang.modules", "scala-collection-compat"))
 
 lazy val opentelemetry =
   project
@@ -130,6 +131,7 @@ lazy val opentelemetry =
     )
     .settings(libraryDependencies ++= Dependencies.opentelemetry)
     .settings(mimaSettings(failOnProblem = true))
+    .settings(unusedCompileDependenciesFilter -= moduleFilter("org.scala-lang.modules", "scala-collection-compat"))
 
 lazy val opencensus = project
   .in(file("opencensus"))

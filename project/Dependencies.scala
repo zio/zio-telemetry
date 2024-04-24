@@ -50,12 +50,14 @@ object Dependencies {
   lazy val opentracing = zio ++ Seq(
     Orgs.opentracing       % "opentracing-api"         % Versions.opentracing,
     Orgs.opentracing       % "opentracing-noop"        % Versions.opentracing,
+    Orgs.scalaLangModules %% "scala-collection-compat" % Versions.scalaCollectionCompat,
     Orgs.opentracing       % "opentracing-mock"        % Versions.opentracing % Test
   )
 
   lazy val opentelemetry = zio ++ Seq(
     Orgs.opentelemetry     % "opentelemetry-api"         % Versions.opentelemetry,
     Orgs.opentelemetry     % "opentelemetry-context"     % Versions.opentelemetry,
+    Orgs.scalaLangModules %% "scala-collection-compat" % Versions.scalaCollectionCompat,
     Orgs.opentelemetry     % "opentelemetry-sdk-testing" % Versions.opentelemetry % Test
   )
 
