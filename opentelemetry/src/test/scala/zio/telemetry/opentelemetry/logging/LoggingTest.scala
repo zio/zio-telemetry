@@ -134,7 +134,7 @@ object LoggingTest extends ZIOSpecDefault {
           }
         }.provide(
           loggingMockLayer("tracing context (fiberRef)"),
-          TracingTest.tracingMockLayer,
+          TracingTest.tracingMockLayer(),
           ContextStorage.fiberRef
         ),
         test("tracing context (openTelemtryContext)") {
@@ -167,7 +167,7 @@ object LoggingTest extends ZIOSpecDefault {
           }
         }.provide(
           loggingMockLayer("tracing context (openTelemtryContext)"),
-          TracingTest.tracingMockLayer,
+          TracingTest.tracingMockLayer(),
           ContextStorage.native
         )
       )

@@ -5,8 +5,8 @@ import io.opentelemetry.api.trace.{Span, SpanId, StatusCode, Tracer}
 import io.opentelemetry.context.Context
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
 import io.opentelemetry.sdk.trace.SdkTracerProvider
-import io.opentelemetry.sdk.trace.data.SpanData
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
+import io.opentelemetry.sdk.trace.data.SpanData
 import zio._
 import zio.telemetry.opentelemetry.common.{Attribute, Attributes}
 import zio.telemetry.opentelemetry.context.{ContextStorage, IncomingContextCarrier, OutgoingContextCarrier}
@@ -32,20 +32,21 @@ object TracingTest extends ZIOSpecDefault {
       ZEnvironment(inMemorySpanExporter).add(tracer)
     })
 
-  val tracingMockLayer: URLayer[ContextStorage, Tracing with InMemorySpanExporter with Tracer] =
-    inMemoryTracerLayer >>> (Tracing.live ++ inMemoryTracerLayer)
+  def tracingMockLayer(
+    logAnnotated: Boolean = false
+  ): URLayer[ContextStorage, Tracing with InMemorySpanExporter with Tracer] =
+    inMemoryTracerLayer >>> (Tracing.live(logAnnotated) ++ inMemoryTracerLayer)
 
   def getFinishedSpans: ZIO[InMemorySpanExporter, Nothing, List[SpanData]] =
-    ZIO
-      .service[InMemorySpanExporter]
-      .map(_.getFinishedSpanItems.asScala.toList)
+    ZIO.serviceWith[InMemorySpanExporter](_.getFinishedSpanItems.asScala.toList)
 
   def spec: Spec[Any, Throwable] =
     suite("zio opentelemetry")(
       suite("Tracing")(
         creationSpec,
         spansSpec,
-        spanScopedSpec
+        spanScopedSpec,
+        spanWithLogAnnotationsSpec
       )
     )
 
@@ -53,7 +54,7 @@ object TracingTest extends ZIOSpecDefault {
     suite("creation")(
       test("live") {
         for {
-          _             <- ZIO.scoped(Tracing.live.build)
+          _             <- ZIO.scoped(Tracing.live().build)
           finishedSpans <- getFinishedSpans
         } yield assert(finishedSpans)(hasSize(equalTo(0)))
       }.provide(inMemoryTracerLayer, ContextStorage.fiberRef)
@@ -549,7 +550,7 @@ object TracingTest extends ZIOSpecDefault {
           } yield assert(ko)(isSome(failureAssertion)) && assert(ok)(isSome(successAssertion))
         }
       }
-    ).provide(tracingMockLayer, ContextStorage.fiberRef)
+    ).provide(tracingMockLayer(), ContextStorage.fiberRef)
 
   private val spanScopedSpec =
     suite("scoped spans")(
@@ -651,5 +652,49 @@ object TracingTest extends ZIOSpecDefault {
           } yield assert(tags.get(AttributeKey.stringKey("string")))(equalTo("bar"))
         }
       }
-    ).provide(tracingMockLayer, ContextStorage.fiberRef)
+    ).provide(tracingMockLayer(), ContextStorage.fiberRef)
+
+  private val spanWithLogAnnotationsSpec = suite("spans with log annotations")(
+    test("add log annotations") {
+      ZIO.serviceWithZIO[Tracing] { tracing =>
+        import tracing.aspects._
+
+        for {
+          _     <- ZIO.logAnnotate("log-attribute", "foo") {
+                     ZIO.unit @@ span("Root", attributes = Attributes(Attribute.string("root-attribute", "bar")))
+                   }
+          spans <- getFinishedSpans
+          tags   = spans.head.getAttributes
+        } yield assert(tags.get(AttributeKey.stringKey("root-attribute")))(equalTo("bar")) &&
+          assert(tags.get(AttributeKey.stringKey("log-attribute")))(equalTo("foo"))
+      }
+    }.provide(tracingMockLayer(true), ContextStorage.fiberRef),
+    test("span attributes override log annotated") {
+      ZIO.serviceWithZIO[Tracing] { tracing =>
+        import tracing.aspects._
+
+        for {
+          _     <- ZIO.logAnnotate("some-attribute", "foo") {
+                     ZIO.unit @@ span("Root", attributes = Attributes(Attribute.string("some-attribute", "bar")))
+                   }
+          spans <- getFinishedSpans
+          tags   = spans.head.getAttributes
+        } yield assert(tags.get(AttributeKey.stringKey("some-attribute")))(equalTo("bar"))
+      }
+    }.provide(tracingMockLayer(true), ContextStorage.fiberRef),
+    test("not add log annotations") {
+      ZIO.serviceWithZIO[Tracing] { tracing =>
+        import tracing.aspects._
+
+        for {
+          _     <- ZIO.logAnnotate("log-attribute", "foo") {
+                     ZIO.unit @@ span("Root", attributes = Attributes(Attribute.string("root-attribute", "bar")))
+                   }
+          spans <- getFinishedSpans
+          tags   = spans.head.getAttributes
+        } yield assert(tags.get(AttributeKey.stringKey("root-attribute")))(equalTo("bar")) &&
+          assert(Option(tags.get(AttributeKey.stringKey("log-attribute"))))(isNone)
+      }
+    }.provide(tracingMockLayer(), ContextStorage.fiberRef)
+  )
 }

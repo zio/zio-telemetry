@@ -57,7 +57,8 @@ object OpenTelemetry {
   def tracing(
     instrumentationScopeName: String,
     instrumentationVersion: Option[String] = None,
-    schemaUrl: Option[String] = None
+    schemaUrl: Option[String] = None,
+    logAnnotated: Boolean = false
   ): URLayer[api.OpenTelemetry with ContextStorage, Tracing] = {
     val tracerLayer = ZLayer(
       ZIO.serviceWith[api.OpenTelemetry] { openTelemetry =>
@@ -70,7 +71,7 @@ object OpenTelemetry {
       }
     )
 
-    tracerLayer >>> Tracing.live
+    tracerLayer >>> Tracing.live(logAnnotated)
   }
 
   /**

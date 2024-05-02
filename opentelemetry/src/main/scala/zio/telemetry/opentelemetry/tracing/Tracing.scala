@@ -516,16 +516,16 @@ trait Tracing { self =>
 
 object Tracing {
 
-  def live: URLayer[Tracer with ContextStorage, Tracing] =
+  def live(logAnnotated: Boolean = false): URLayer[Tracer with ContextStorage, Tracing] =
     ZLayer.scoped {
       for {
         tracer     <- ZIO.service[Tracer]
         ctxStorage <- ZIO.service[ContextStorage]
-        tracing    <- scoped(tracer, ctxStorage)
+        tracing    <- scoped(tracer, ctxStorage, logAnnotated)
       } yield tracing
     }
 
-  def scoped(tracer: Tracer, ctxStorage: ContextStorage): URIO[Scope, Tracing] = {
+  def scoped(tracer: Tracer, ctxStorage: ContextStorage, logAnnotated: Boolean = false): URIO[Scope, Tracing] = {
     val acquire =
       ZIO.succeed {
         new Tracing { self =>
@@ -819,17 +819,18 @@ object Tracing {
             links: Seq[SpanContext]
           )(implicit trace: Trace): UIO[(UIO[Unit], Context)] =
             for {
-              nanos <- currentNanos
-              span  <- ZIO.succeed(
-                         tracer
-                           .spanBuilder(spanName)
-                           .setNoParent()
-                           .setAllAttributes(attributes)
-                           .setSpanKind(spanKind)
-                           .setStartTimestamp(nanos, TimeUnit.NANOSECONDS)
-                           .addLinks(links)
-                           .startSpan()
-                       )
+              nanos         <- currentNanos
+              allAttributes <- injectLogAnnotations(attributes)
+              span          <- ZIO.succeed(
+                                 tracer
+                                   .spanBuilder(spanName)
+                                   .setNoParent()
+                                   .setAllAttributes(allAttributes)
+                                   .setSpanKind(spanKind)
+                                   .setStartTimestamp(nanos, TimeUnit.NANOSECONDS)
+                                   .addLinks(links)
+                                   .startSpan()
+                               )
             } yield (endSpan(span), Context.root().`with`(span))
 
           private def createChild(
@@ -840,17 +841,18 @@ object Tracing {
             links: Seq[SpanContext]
           )(implicit trace: Trace): UIO[(UIO[Unit], Context)] =
             for {
-              nanos <- currentNanos
-              span  <- ZIO.succeed(
-                         tracer
-                           .spanBuilder(spanName)
-                           .setParent(parentCtx)
-                           .setAllAttributes(attributes)
-                           .setSpanKind(spanKind)
-                           .setStartTimestamp(nanos, TimeUnit.NANOSECONDS)
-                           .addLinks(links)
-                           .startSpan()
-                       )
+              nanos         <- currentNanos
+              allAttributes <- injectLogAnnotations(attributes)
+              span          <- ZIO.succeed(
+                                 tracer
+                                   .spanBuilder(spanName)
+                                   .setParent(parentCtx)
+                                   .setAllAttributes(allAttributes)
+                                   .setSpanKind(spanKind)
+                                   .setStartTimestamp(nanos, TimeUnit.NANOSECONDS)
+                                   .addLinks(links)
+                                   .startSpan()
+                               )
             } yield (endSpan(span), parentCtx.`with`(span))
 
           private implicit class SpanBuilderOps(spanBuilder: SpanBuilder) {
@@ -866,13 +868,14 @@ object Tracing {
             links: Seq[SpanContext]
           )(implicit trace: Trace): UIO[Context] =
             for {
-              nanos <- currentNanos
-              span  <-
+              nanos         <- currentNanos
+              allAttributes <- injectLogAnnotations(attributes)
+              span          <-
                 ZIO.succeed(
                   tracer
                     .spanBuilder(spanName)
                     .setParent(parentCtx)
-                    .setAllAttributes(attributes)
+                    .setAllAttributes(allAttributes)
                     .setSpanKind(spanKind)
                     .setStartTimestamp(nanos, TimeUnit.NANOSECONDS)
                     .addLinks(links)
@@ -907,6 +910,19 @@ object Tracing {
           )(implicit trace: Trace): UIO[Unit] =
             ZIO.succeed(propagator.instance.inject(ctx, carrier.kernel, carrier))
 
+          private def injectLogAnnotations(attributes: Attributes): UIO[Attributes] =
+            if (logAnnotated) {
+              for {
+                annotations <- ZIO.logAnnotations
+              } yield annotations
+                .foldLeft(Attributes.builder()) { case (builder, (annotationKey, annotationValue)) =>
+                  builder.put(annotationKey, annotationValue)
+                }
+                .putAll(attributes)
+                .build()
+            } else {
+              ZIO.succeed(attributes)
+            }
         }
       }
 
