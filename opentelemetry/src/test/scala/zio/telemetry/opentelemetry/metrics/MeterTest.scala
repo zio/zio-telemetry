@@ -174,7 +174,7 @@ object MeterTest extends ZIOSpecDefault {
           )
         }
       }
-    ).provide(inMemoryMetricReaderLayer, meterLayer(), ContextStorage.fiberRef, TracingTest.tracingMockLayer)
+    ).provide(inMemoryMetricReaderLayer, meterLayer(), ContextStorage.fiberRef, TracingTest.tracingMockLayer())
 
   private val logAnnotatedSpec =
     suite("log annotated")(
