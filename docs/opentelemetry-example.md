@@ -62,4 +62,16 @@ docker run \
   datalust/seq
 ```
 
-Run the application and fire a curl request as shown above. Head over to [Jaeger UI](http://localhost:16686/) and [Seq UI](http://localhost:80/) to see the result.
+Run proxy:
+```bash
+sbt "opentelemetryExample/runMain zio.telemetry.opentelemetry.example.ProxyApp jaeger-seq"
+```
+Run backend:
+```bash
+sbt "opentelemetryExample/runMain zio.telemetry.opentelemetry.example.BackendApp jaeger-seq"
+```
+Now perform the following request to see the results immediately:
+```bash
+curl -X GET http://localhost:8080/statuses
+```
+Head over to [Jaeger UI](http://localhost:16686/) and [Seq UI](http://localhost:80/) to see the result.
