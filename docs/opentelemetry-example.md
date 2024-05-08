@@ -62,4 +62,6 @@ docker run \
   datalust/seq
 ```
 
+Change in the application TracerProvider implementation to [TracerProvider.jaeger](https://github.com/zio/zio-telemetry/blob/series/2.x/opentelemetry-example/src/main/scala/zio/telemetry/opentelemetry/example/otel/TracerProvider.scala#L37) and LoggerProvider to [LoggerProvider.seq](https://github.com/zio/zio-telemetry/blob/series/2.x/opentelemetry-example/src/main/scala/zio/telemetry/opentelemetry/example/otel/LoggerProvider.scala#L36)
+
 Run the application and fire a curl request as shown above. Head over to [Jaeger UI](http://localhost:16686/) and [Seq UI](http://localhost:80/) to see the result.
