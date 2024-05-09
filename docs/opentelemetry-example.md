@@ -62,4 +62,6 @@ docker run \
   datalust/seq
 ```
 
+You must also switch the Tracing and Logging providers to Jaeger and Seq. For this, you need to swap the `stdout` providers we use by default in [OtelSdk.scala](https://github.com/zio/zio-telemetry/blob/series/2.x/opentelemetry-example/src/main/scala/zio/telemetry/opentelemetry/example/otel/OtelSdk.scala#L10) to [TracerProvider.jaeger](https://github.com/zio/zio-telemetry/blob/series/2.x/opentelemetry-example/src/main/scala/zio/telemetry/opentelemetry/example/otel/TracerProvider.scala#L37) and [LoggerProvider.seq](https://github.com/zio/zio-telemetry/blob/series/2.x/opentelemetry-example/src/main/scala/zio/telemetry/opentelemetry/example/otel/LoggerProvider.scala#L36)
+
 Run the application and fire a curl request as shown above. Head over to [Jaeger UI](http://localhost:16686/) and [Seq UI](http://localhost:80/) to see the result.
