@@ -8,7 +8,7 @@ object Dependencies {
     val opencensus            = "0.31.1"
     val scalaCollectionCompat = "2.12.0"
     val zio                   = "2.1.1"
-    val izumiReflect          = "2.3.8"
+    val izumiReflect          = "2.3.9"
   }
 
   object Orgs {
