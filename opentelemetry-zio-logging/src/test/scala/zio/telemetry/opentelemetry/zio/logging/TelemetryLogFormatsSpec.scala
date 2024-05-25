@@ -50,7 +50,7 @@ object TelemetryLogFormatsSpec extends ZIOSpecDefault {
                                 "traceId",
                                 TelemetryLogFormats.traceId(contextStorage)
                               )
-            zLogger         = format.toLogger.map(logs.append)
+            zLogger         = format.toLogger.map(logs.append(_))
             _              <- zio.ZIO.logInfo("TEST").withLogger(zLogger) @@ span("Span") @@ root("Root")
 
             spans <- getFinishedSpans
