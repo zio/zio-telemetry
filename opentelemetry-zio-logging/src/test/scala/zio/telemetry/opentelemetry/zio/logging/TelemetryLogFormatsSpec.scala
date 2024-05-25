@@ -38,25 +38,27 @@ object TelemetryLogFormatsSpec extends ZIOSpecDefault {
     ZIO.serviceWith[InMemorySpanExporter](_.getFinishedSpanItems.asScala.toList)
 
   override def spec: Spec[TestEnvironment with Scope, Any] =
-    suite("opentelemetry-zio-logging LogFormats")(test("SpanId and traceId are extracted") {
-      ZIO.serviceWithZIO[Tracing] { tracing =>
-        import tracing.aspects._
-        val logs = mutable.Buffer[String]()
+    suite("opentelemetry-zio-logging LogFormats") {
+      test("SpanId and traceId are extracted") {
+        ZIO.serviceWithZIO[Tracing] { tracing =>
+          import tracing.aspects._
+          val logs = mutable.Buffer[String]()
 
-        for {
-          contextStorage <- ZIO.service[ContextStorage]
-          format          = label("spanId", TelemetryLogFormats.spanId(contextStorage)) |-| label(
-                              "traceId",
-                              TelemetryLogFormats.traceId(contextStorage)
-                            )
-          zLogger         = format.toLogger.map(logs.append)
-          _              <- zio.ZIO.logInfo("TEST").withLogger(zLogger) @@ span("Span") @@ root("Root")
+          for {
+            contextStorage <- ZIO.service[ContextStorage]
+            format          = label("spanId", TelemetryLogFormats.spanId(contextStorage)) |-| label(
+                                "traceId",
+                                TelemetryLogFormats.traceId(contextStorage)
+                              )
+            zLogger         = format.toLogger.map(logs.append)
+            _              <- zio.ZIO.logInfo("TEST").withLogger(zLogger) @@ span("Span") @@ root("Root")
 
-          spans <- getFinishedSpans
-          child  = spans.find(_.getName == "Span").get
-          log    = logs.head
-        } yield assertTrue(log == s"spanId=${child.getSpanId} traceId=${child.getTraceId}")
+            spans <- getFinishedSpans
+            child  = spans.find(_.getName == "Span").get
+            log    = logs.head
+          } yield assertTrue(log == s"spanId=${child.getSpanId} traceId=${child.getTraceId}")
+        }
       }
-    }).provide(removeDefaultLoggers, tracingMockLayer(), ContextStorage.fiberRef)
+    }.provide(removeDefaultLoggers, tracingMockLayer(), ContextStorage.fiberRef)
 
 }
