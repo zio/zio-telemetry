@@ -10,6 +10,7 @@ const sidebars = {
         "opentracing-example",
         "opencensus",
         "opentelemetry",
+        "opentelemetry-zio-logging",
         "opentelemetry-example",
         "opentelemetry-instrumentation-example"
       ]

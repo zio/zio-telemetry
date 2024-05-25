@@ -103,7 +103,7 @@ lazy val root =
   project
     .in(file("."))
     .settings(publish / skip := true)
-    .aggregate(opentracing, opentelemetry, opencensus, docs)
+    .aggregate(opentracing, opentelemetry, opencensus, opentelemetryZioLogging, docs)
 
 lazy val opentracing =
   project
@@ -145,6 +145,19 @@ lazy val opencensus = project
   .settings(libraryDependencies ++= Dependencies.opencensus)
   .settings(mimaSettings(failOnProblem = true))
   .settings(unusedCompileDependenciesFilter -= moduleFilter("io.opencensus", "opencensus-impl"))
+
+lazy val opentelemetryZioLogging = project
+  .in(file("opentelemetry-zio-logging"))
+  .settings(enableZIO())
+  .settings(
+    stdModuleSettings(
+      name = Some("zio-opentelemetry-zio-logging"),
+      packageName = Some("zio.telemetry.opentelemetry.zio.logging")
+    )
+  )
+  .settings(libraryDependencies ++= Dependencies.opentelemetryZioLogging)
+  .settings(mimaSettings(failOnProblem = true))
+  .dependsOn(opentelemetry)
 
 lazy val opentracingExample =
   project
@@ -194,9 +207,14 @@ lazy val docs =
       projectName                                := "ZIO Telemetry",
       mainModuleName                             := (opentracing / moduleName).value,
       projectStage                               := ProjectStage.ProductionReady,
-      ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(opentracing, opentelemetry, opencensus),
+      ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(
+        opentracing,
+        opentelemetry,
+        opencensus,
+        opentelemetryZioLogging
+      ),
       scalacOptions --= Seq("-Yno-imports", "-Xfatal-warnings")
     )
     .settings(unusedCompileDependenciesFilter -= moduleFilter("org.scalameta", "mdoc"))
-    .dependsOn(opentracing, opentelemetry, opencensus)
+    .dependsOn(opentracing, opentelemetry, opencensus, opentelemetryZioLogging)
     .enablePlugins(WebsitePlugin)
