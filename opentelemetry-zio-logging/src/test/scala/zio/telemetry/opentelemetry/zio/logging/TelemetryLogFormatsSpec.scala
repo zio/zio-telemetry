@@ -3,8 +3,8 @@ package zio.telemetry.opentelemetry.zio.logging
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
 import io.opentelemetry.sdk.trace.SdkTracerProvider
-import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import io.opentelemetry.sdk.trace.data.SpanData
+import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import zio.Runtime.removeDefaultLoggers
 import zio.logging.LogFormat.label
 import zio.telemetry.opentelemetry.context.ContextStorage
