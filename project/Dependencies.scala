@@ -67,7 +67,7 @@ object Dependencies {
     Orgs.scalaLangModules %% "scala-collection-compat" % Versions.scalaCollectionCompat % Test
   )
 
-  lazy val opentelemetryZioLogging = Seq(
+  lazy val opentelemetryZioLogging = opentelemetry ++ Seq(
     Orgs.zio %% "zio-logging" % ExampleVersions.zioLogging
   )
 

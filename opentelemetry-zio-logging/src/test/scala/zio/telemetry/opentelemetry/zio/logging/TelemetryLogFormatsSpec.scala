@@ -38,7 +38,7 @@ object TelemetryLogFormatsSpec extends ZIOSpecDefault {
     ZIO.serviceWith[InMemorySpanExporter](_.getFinishedSpanItems.asScala.toList)
 
   override def spec: Spec[TestEnvironment with Scope, Any] =
-    suite("opentelemetry-zio-logging LogFormats") {
+    suiteAll("opentelemetry-zio-logging LogFormats") {
       test("SpanId and traceId are extracted") {
         ZIO.serviceWithZIO[Tracing] { tracing =>
           import tracing.aspects._
