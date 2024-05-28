@@ -8,6 +8,7 @@ object Dependencies {
     val opencensus            = "0.31.1"
     val scalaCollectionCompat = "2.12.0"
     val zio                   = "2.1.1"
+    val zioLogging            = "2.1.15"
     val izumiReflect          = "2.3.9"
   }
 
@@ -28,17 +29,16 @@ object Dependencies {
   }
 
   private object ExampleVersions {
-    val cats       = "2.7.0"
-    val grpcNetty  = "1.47.0"
-    val jaeger     = "1.8.0"
-    val slf4j      = "1.7.36"
-    val sttp3      = "3.7.0"
-    val zipkin     = "2.16.3"
-    val zioJson    = "0.3.0-RC10"
-    val zioConfig  = "3.0.1"
-    val zioHttp    = "3.0.0-RC2"
-    val zioLogging = "2.1.15"
-    val logback    = "1.4.11"
+    val cats      = "2.7.0"
+    val grpcNetty = "1.47.0"
+    val jaeger    = "1.8.0"
+    val slf4j     = "1.7.36"
+    val sttp3     = "3.7.0"
+    val zipkin    = "2.16.3"
+    val zioJson   = "0.3.0-RC10"
+    val zioConfig = "3.0.1"
+    val zioHttp   = "3.0.0-RC2"
+    val logback   = "1.4.11"
   }
 
   lazy val zio = Seq(
@@ -68,7 +68,7 @@ object Dependencies {
   )
 
   lazy val opentelemetryZioLogging = opentelemetry ++ Seq(
-    Orgs.zio %% "zio-logging" % ExampleVersions.zioLogging
+    Orgs.zio %% "zio-logging" % Versions.zioLogging
   )
 
   lazy val example = zio ++ Seq(
@@ -107,8 +107,8 @@ object Dependencies {
     Orgs.grpc                         % "grpc-netty-shaded"                  % ExampleVersions.grpcNetty,
     Orgs.opentelemetryInstrumentation % "opentelemetry-logback-appender-1.0" % "1.31.0-alpha",
     Orgs.zio                         %% "zio-http"                           % ExampleVersions.zioHttp,
-    Orgs.zio                         %% "zio-logging"                        % ExampleVersions.zioLogging,
-    Orgs.zio                         %% "zio-logging-slf4j2"                 % ExampleVersions.zioLogging,
+    Orgs.zio                         %% "zio-logging"                        % Versions.zioLogging,
+    Orgs.zio                         %% "zio-logging-slf4j2"                 % Versions.zioLogging,
     Orgs.logback                      % "logback-classic"                    % ExampleVersions.logback,
     Orgs.logback                      % "logback-core"                       % ExampleVersions.logback
   )

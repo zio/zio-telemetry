@@ -6,7 +6,6 @@ import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.data.SpanData
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import zio.Runtime.removeDefaultLoggers
-import zio.logging.LogFormat.label
 import zio.telemetry.opentelemetry.context.ContextStorage
 import zio.telemetry.opentelemetry.tracing.Tracing
 import zio.test.{Spec, TestEnvironment, ZIOSpecDefault, assertTrue}
@@ -45,20 +44,16 @@ object TelemetryLogFormatsSpec extends ZIOSpecDefault {
           val logs = mutable.Buffer[String]()
 
           for {
-            contextStorage <- ZIO.service[ContextStorage]
-            format          = label("spanId", TelemetryLogFormats.spanId(contextStorage)) |-| label(
-                                "traceId",
-                                TelemetryLogFormats.traceId(contextStorage)
-                              )
-            zLogger         = format.toLogger.map(logs.append(_))
-            _              <- zio.ZIO.logInfo("TEST").withLogger(zLogger) @@ span("Span") @@ root("Root")
-
-            spans <- getFinishedSpans
-            child  = spans.find(_.getName == "Span").get
-            log    = logs.head
+            zioLogging <- ZIO.service[ZioLogging]
+            format      = zioLogging.spanIdLabel() |-| zioLogging.traceIdLabel()
+            zLogger     = format.toLogger.map(logs.append(_))
+            _          <- zio.ZIO.logInfo("TEST").withLogger(zLogger) @@ span("Span") @@ root("Root")
+            spans      <- getFinishedSpans
+            child       = spans.find(_.getName == "Span").get
+            log         = logs.head
           } yield assertTrue(log == s"spanId=${child.getSpanId} traceId=${child.getTraceId}")
         }
       }
-    }.provide(removeDefaultLoggers, tracingMockLayer(), ContextStorage.fiberRef)
+    }.provide(removeDefaultLoggers, tracingMockLayer(), ContextStorage.fiberRef, ZioLogging.live)
 
 }

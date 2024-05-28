@@ -210,8 +210,8 @@ lazy val docs =
       ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(
         opentracing,
         opentelemetry,
-        opencensus,
-        opentelemetryZioLogging
+        opencensus
+        //  opentelemetryZioLogging TODO: Causes some weird import issues
       ),
       scalacOptions --= Seq("-Yno-imports", "-Xfatal-warnings")
     )
