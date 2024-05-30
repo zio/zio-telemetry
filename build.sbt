@@ -157,6 +157,7 @@ lazy val opentelemetryZioLogging = project
   )
   .settings(libraryDependencies ++= Dependencies.opentelemetryZioLogging)
   .settings(mimaSettings(failOnProblem = true))
+  .settings(missinglinkIgnoreDestinationPackages += IgnoredPackage("scala.reflect"))
   .dependsOn(opentelemetry)
 
 lazy val opentracingExample =

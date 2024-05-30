@@ -44,8 +44,8 @@ object TelemetryLogFormatsSpec extends ZIOSpecDefault {
           val logs = mutable.Buffer[String]()
 
           for {
-            zioLogging <- ZIO.service[ZioLogging]
-            format      = zioLogging.spanIdLabel() |-| zioLogging.traceIdLabel()
+            logFormats <- ZIO.service[LogFormats]
+            format      = logFormats.spanIdLabel |-| logFormats.traceIdLabel
             zLogger     = format.toLogger.map(logs.append(_))
             _          <- zio.ZIO.logInfo("TEST").withLogger(zLogger) @@ span("Span") @@ root("Root")
             spans      <- getFinishedSpans
@@ -54,6 +54,6 @@ object TelemetryLogFormatsSpec extends ZIOSpecDefault {
           } yield assertTrue(log == s"spanId=${child.getSpanId} traceId=${child.getTraceId}")
         }
       }
-    }.provide(removeDefaultLoggers, tracingMockLayer(), ContextStorage.fiberRef, ZioLogging.live)
+    }.provide(removeDefaultLoggers, tracingMockLayer(), ContextStorage.fiberRef, ZioLogging.logFormats)
 
 }

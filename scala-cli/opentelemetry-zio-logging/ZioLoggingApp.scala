@@ -1,7 +1,7 @@
 //> using scala "2.13.14"
 //> using dep dev.zio::zio:2.1.1
-//> using dep dev.zio::zio-opentelemetry:3.0.0-RC23+18-b26627af+20240528-0156-SNAPSHOT
-//> using dep dev.zio::zio-opentelemetry-zio-logging:3.0.0-RC23+18-b26627af+20240528-0156-SNAPSHOT
+//> using dep dev.zio::zio-opentelemetry:3.0.0-RC23+20-a55ed40c+20240530-2226-SNAPSHOT
+//> using dep dev.zio::zio-opentelemetry-zio-logging:3.0.0-RC23+20-a55ed40c+20240530-2226-SNAPSHOT
 //> using dep io.opentelemetry:opentelemetry-sdk:1.38.0
 //> using dep io.opentelemetry:opentelemetry-sdk-trace:1.38.0
 //> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.38.0
@@ -24,6 +24,7 @@ import zio.logging.LogFormat._
 import zio.telemetry.opentelemetry.tracing.Tracing
 import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.zio.logging.LogFormats
 import zio.telemetry.opentelemetry.zio.logging.ZioLogging
 
 object ZioLoggingApp extends ZIOAppDefault {
@@ -83,11 +84,11 @@ object ZioLoggingApp extends ZIOAppDefault {
     )
 
   // Setup zio-logging with spanId and traceId labels
-  val loggingLayer: URLayer[ZioLogging, Unit] = ZLayer {
+  val loggingLayer: URLayer[LogFormats, Unit] = ZLayer {
     for {
-      zioLogging <- ZIO.service[ZioLogging]
-      format = timestamp.fixed(32) |-| level |-| label("message", quoted(line)) |-| zioLogging.spanIdLabel() |-| zioLogging.traceIdLabel()
-      myConsoleLogger = console(format)
+      logFormats <- ZIO.service[LogFormats]
+      format = timestamp.fixed(32) |-| level |-| label("message", quoted(line)) |-| logFormats.spanIdLabel |-| logFormats.traceIdLabel
+      myConsoleLogger = console(format.highlight)
     } yield Runtime.removeDefaultLoggers >>> myConsoleLogger
   }.flatten
 
@@ -110,7 +111,7 @@ object ZioLoggingApp extends ZIOAppDefault {
         OpenTelemetry.logging(instrumentationScopeName),
         OpenTelemetry.tracing(instrumentationScopeName),
         OpenTelemetry.contextZIO,
-        ZioLogging.live,
+        ZioLogging.logFormats,
         loggingLayer
       )
 
