@@ -19,7 +19,8 @@ In order to use `zio-opentelemetry` feature with `zio-logging` you should use `z
 
 ### Log formats
 
-This library implements [Log Format](https://zio.dev/zio-logging/formatting-log-records) for span information (`spanId` and `traceId`)
+This library implements [Log Format](https://zio.dev/zio-logging/formatting-log-records) for span information (`spanId` and `traceId`). 
+To use them you need a `LogFormats` service in the environment. For this, use the `ZioLogging.logFormats` layer which in turn required a suitable `ContextStorage` implementation.
 
 ```scala
 //> using scala "2.13.14"
