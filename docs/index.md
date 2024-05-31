@@ -32,6 +32,12 @@ In order to use this library, we need to add the following line in our `build.sb
 libraryDependencies += "dev.zio" %% "zio-opentelemetry" % "<version>"
 ```
 
+If you're using [ZIO Logging](https://github.com/zio/zio-logging) you can combine OpenTelemetry with ZIO Logging using:
+
+```scala
+libraryDependencies += "dev.zio" %% "zio-opentelemetry-zio-logging" % "<version>"
+```
+
 For using [OpenTracing](https://opentracing.io/) client we should add the following line in our `build.sbt` file:
 
 ```scala
@@ -49,6 +55,7 @@ libraryDependencies += "dev.zio" %% "zio-opencensus" % "<version>"
 You can find examples with full source code and instructions of how to run by following the links:
 - [OpenTelemetry Example](opentelemetry-example.md)
 - [OpenTelemetry Instrumentation Example](opentelemetry-instrumentation-example.md)
+- [OpenTelemetry ZIO Logging Example](opentelemetry-zio-logging.md)
 - [OpenTracing Example](opentracing-example.md)
 
 ## Articles
