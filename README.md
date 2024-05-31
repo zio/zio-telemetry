@@ -32,7 +32,7 @@ In order to use this library, we need to add the following line in our `build.sb
 libraryDependencies += "dev.zio" %% "zio-opentelemetry" % "<version>"
 ```
 
-If you're also using [ZIO Logging](https://github.com/zio/zio-logging) you can combine OpenTelemetry with ZIO Logging using:
+If you're using [ZIO Logging](https://github.com/zio/zio-logging) you can combine OpenTelemetry with ZIO Logging using:
 
 ```scala
 libraryDependencies += "dev.zio" %% "zio-opentelemetry-zio-logging" % "<version>"
