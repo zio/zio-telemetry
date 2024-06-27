@@ -5,7 +5,7 @@ addSbtPlugin("com.github.sbt"                    % "sbt-unidoc"                %
 addSbtPlugin("ch.epfl.scala"                     % "sbt-bloop"                 % "1.5.18")
 addSbtPlugin("org.typelevel"                     % "sbt-tpolecat"              % "0.5.1")
 addSbtPlugin("org.scalameta"                     % "sbt-scalafmt"              % "2.5.2")
-addSbtPlugin("org.scalameta"                     % "sbt-mdoc"                  % "2.5.2")
+addSbtPlugin("org.scalameta"                     % "sbt-mdoc"                  % "2.5.3")
 addSbtPlugin("org.scoverage"                     % "sbt-scoverage"             % "2.0.12")
 addSbtPlugin("dev.zio"                           % "zio-sbt-ci"                % zioSbtVersion)
 addSbtPlugin("dev.zio"                           % "zio-sbt-ecosystem"         % zioSbtVersion)
