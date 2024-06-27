@@ -1,5 +1,5 @@
 //> using scala "2.13.14"
-//> using dep dev.zio::zio:2.1.3
+//> using dep dev.zio::zio:2.1.4
 //> using dep dev.zio::zio-opentelemetry:3.0.0-RC24
 
 import zio._
