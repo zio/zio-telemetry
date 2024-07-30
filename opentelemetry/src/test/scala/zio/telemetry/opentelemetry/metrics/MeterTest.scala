@@ -3,6 +3,9 @@ package zio.telemetry.opentelemetry.metrics
 import io.opentelemetry.sdk.metrics.SdkMeterProvider
 import io.opentelemetry.sdk.testing.exporter.InMemoryMetricReader
 import zio._
+import zio.metrics.MetricKeyType.Histogram.Boundaries
+import zio.metrics.Metric
+import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.common.{Attribute, Attributes}
 import zio.telemetry.opentelemetry.context.ContextStorage
 import zio.telemetry.opentelemetry.metrics.internal.Instrument
@@ -16,7 +19,9 @@ object MeterTest extends ZIOSpecDefault {
   val inMemoryMetricReaderLayer: ZLayer[Any, Nothing, InMemoryMetricReader] =
     ZLayer(ZIO.succeed(InMemoryMetricReader.create()))
 
-  def meterLayer(logAnnotated: Boolean = false): ZLayer[InMemoryMetricReader with ContextStorage, Nothing, Meter] = {
+  def meterLayer(
+    logAnnotated: Boolean = false
+  ): ZLayer[InMemoryMetricReader with ContextStorage, Nothing, Meter with Instrument.Builder] = {
     val jmeter  = ZLayer {
       for {
         metricReader  <- ZIO.service[InMemoryMetricReader]
@@ -26,7 +31,7 @@ object MeterTest extends ZIOSpecDefault {
     }
     val builder = jmeter >>> Instrument.Builder.live(logAnnotated)
 
-    builder >>> Meter.live
+    builder >+> Meter.live
   }
 
   val observableRefLayer: ULayer[Ref[Long]] =
@@ -45,7 +50,8 @@ object MeterTest extends ZIOSpecDefault {
       suite("Meter")(
         normalSpec,
         contextualSpec,
-        logAnnotatedSpec
+        logAnnotatedSpec,
+        zioMetricsSpec
       )
     )
 
@@ -215,5 +221,20 @@ object MeterTest extends ZIOSpecDefault {
         }
       }
     ).provide(inMemoryMetricReaderLayer, meterLayer(logAnnotated = true), ContextStorage.fiberRef)
+
+  private val zioMetricsSpec =
+    suite("ZIO metrics integration")(
+      test("histogram boundaries should be passed to OTEL") {
+        val histogram = Metric.histogram("test_histogram", Boundaries(Chunk(1, 2, 3)))
+
+        for {
+          reader     <- ZIO.service[InMemoryMetricReader]
+          _          <- histogram.update(2.0)
+          metric      = reader.collectAllMetrics().asScala.find(_.getName == "test_histogram").get
+          metricPoint = metric.getHistogramData().getPoints().asScala.toList.head
+          boundaries  = metricPoint.getBoundaries.asScala.map(_.toDouble).toSeq
+        } yield assertTrue(boundaries == Seq(1.0, 2.0, 3.0))
+      }
+    ).provide(inMemoryMetricReaderLayer, meterLayer(), ContextStorage.fiberRef, OpenTelemetry.zioMetrics)
 
 }
