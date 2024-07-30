@@ -3,8 +3,8 @@ package zio.telemetry.opentelemetry.metrics
 import io.opentelemetry.sdk.metrics.SdkMeterProvider
 import io.opentelemetry.sdk.testing.exporter.InMemoryMetricReader
 import zio._
-import zio.metrics.MetricKeyType.Histogram.Boundaries
 import zio.metrics.Metric
+import zio.metrics.MetricKeyType.Histogram.Boundaries
 import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.common.{Attribute, Attributes}
 import zio.telemetry.opentelemetry.context.ContextStorage
