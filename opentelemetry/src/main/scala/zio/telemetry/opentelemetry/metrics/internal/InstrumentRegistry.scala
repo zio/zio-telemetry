@@ -10,7 +10,7 @@ trait InstrumentRegistry {
 
   def getCounter(key: MetricKey.Counter): Counter[Long]
 
-  def getHistorgram(key: MetricKey.Histogram): Histogram[Double]
+  def getHistogram(key: MetricKey.Histogram): Histogram[Double]
 
   def getGauge(key: MetricKey.Gauge): AtomicDouble
 
@@ -33,8 +33,10 @@ private[opentelemetry] object InstrumentRegistry {
         def getCounter(key: MetricKey.Counter): Counter[Long] =
           getOrCreateInstrument[Counter, Long](key)(builder.counter(key.name, description = key.description))
 
-        def getHistorgram(key: MetricKey.Histogram): Histogram[Double] =
-          getOrCreateInstrument[Histogram, Double](key)(builder.histogram(key.name, description = key.description))
+        def getHistogram(key: MetricKey.Histogram): Histogram[Double] =
+          getOrCreateInstrument[Histogram, Double](key)(
+            builder.histogram(key.name, description = key.description, boundaries = Some(key.keyType.boundaries.values))
+          )
 
         def getGauge(key: MetricKey.Gauge): AtomicDouble =
           gauges.computeIfAbsent(
