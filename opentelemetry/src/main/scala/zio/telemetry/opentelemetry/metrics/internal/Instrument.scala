@@ -6,6 +6,8 @@ import zio._
 import zio.telemetry.opentelemetry.context.ContextStorage
 import zio.telemetry.opentelemetry.metrics.{Counter, Histogram, ObservableMeasurement, UpDownCounter}
 
+import scala.jdk.CollectionConverters._
+
 trait Instrument[-A] {
 
   def record0(
@@ -28,7 +30,12 @@ object Instrument {
       description: Option[String] = None
     ): UpDownCounter[Long]
 
-    def histogram(name: String, unit: Option[String] = None, description: Option[String] = None): Histogram[Double]
+    def histogram(
+      name: String,
+      unit: Option[String] = None,
+      description: Option[String] = None,
+      boundaries: Option[Chunk[Double]] = None
+    ): Histogram[Double]
 
     def observableCounter(
       name: String,
@@ -88,12 +95,14 @@ object Instrument {
           override def histogram(
             name: String,
             unit: Option[String] = None,
-            description: Option[String] = None
+            description: Option[String] = None,
+            boundaries: Option[Chunk[Double]] = None
           ): Histogram[Double] = {
             val builder = meter.histogramBuilder(name)
 
             unit.foreach(builder.setUnit)
             description.foreach(builder.setDescription)
+            boundaries.foreach(seq => builder.setExplicitBucketBoundariesAdvice(seq.map(Double.box).asJava))
 
             Histogram.double(builder.build(), ctxStorage, logAnnotated)
           }
