@@ -17,4 +17,4 @@ addSbtPlugin("ch.epfl.scala"                     % "sbt-missinglink"           %
 libraryDependencies += "org.snakeyaml" % "snakeyaml-engine" % "2.7"
 libraryDependencies += "com.spotify"   % "missinglink-core" % "0.2.11"
 
-resolvers += Resolver.sonatypeRepo("public")
+resolvers ++= Resolver.sonatypeOssRepos("public")
