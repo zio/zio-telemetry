@@ -1,4 +1,4 @@
-//> using scala "2.13.14"
+//> using scala "3.4.2"
 //> using dep dev.zio::zio:2.1.7
 //> using dep dev.zio::zio-opentelemetry:3.0.0-RC24
 //> using dep io.opentelemetry:opentelemetry-sdk:1.40.0
@@ -7,9 +7,9 @@
 //> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.22.0-alpha
 
 import io.opentelemetry.sdk.trace.SdkTracerProvider
-import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor
+import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import io.opentelemetry.sdk.metrics.SdkMeterProvider
-import io.opentelemetry.sdk.metrics.export.PeriodicMetricReader
+import io.opentelemetry.sdk.metrics.`export`.PeriodicMetricReader
 import io.opentelemetry.sdk.resources.Resource
 import io.opentelemetry.api.common
 import io.opentelemetry.semconv.ResourceAttributes
@@ -17,7 +17,7 @@ import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingMetricExporter
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.api
-import zio._
+import zio.*
 import zio.telemetry.opentelemetry.tracing.Tracing
 import zio.telemetry.opentelemetry.metrics.Meter
 import zio.telemetry.opentelemetry.common.Attributes
@@ -95,7 +95,7 @@ object MetricsApp extends ZIOAppDefault {
     )
 
   // Records the number of seconds elapsed since the application startup
-  val tickCounterLayer: RLayer[Meter with Ref[Long], Unit] =
+  val tickCounterLayer: RLayer[Meter & Ref[Long], Unit] =
     ZLayer.scoped(
       for {
         meter <- ZIO.service[Meter]

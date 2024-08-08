@@ -23,7 +23,7 @@ This library implements [Log Format](https://zio.dev/zio-logging/formatting-log-
 To use them you need a `LogFormats` service in the environment. For this, use the `ZioLogging.logFormats` layer which in turn required a suitable `ContextStorage` implementation.
 
 ```scala
-//> using scala "2.13.14"
+//> using scala "3.4.2"
 //> using dep dev.zio::zio:2.1.7
 //> using dep dev.zio::zio-opentelemetry:3.0.0-RC24
 //> using dep dev.zio::zio-opentelemetry-zio-logging:3.0.0-RC24
