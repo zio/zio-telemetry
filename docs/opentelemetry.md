@@ -97,12 +97,12 @@ Here are some of the main ones:
 Some of the methods above are available via [ZIO Aspect](https://zio.dev/reference/core/zio/#zio-aspect) syntax. 
 
 ```scala
-//> using scala "2.13.13"
-//> using dep dev.zio::zio:2.0.22
-//> using dep dev.zio::zio-opentelemetry:3.0.0-RC22
-//> using dep io.opentelemetry:opentelemetry-sdk:1.37.0
-//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.37.0
-//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.37.0
+//> using scala "2.13.14"
+//> using dep dev.zio::zio:2.1.6
+//> using dep dev.zio::zio-opentelemetry:3.0.0-RC24
+//> using dep io.opentelemetry:opentelemetry-sdk:1.40.0
+//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.40.0
+//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.40.0
 //> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.22.0-alpha
 
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter
@@ -190,12 +190,12 @@ As a rule of thumb, observable instruments must be initialized on an application
 By default the metric instruments does not take ZIO log annotations into account. To turn it on pass `logAnnotated = true` parameter to the `OpenTelemetry.metrics` layer initializer.
 
 ```scala
-//> using scala "2.13.13"
-//> using dep dev.zio::zio:2.0.22
-//> using dep dev.zio::zio-opentelemetry:3.0.0-RC22
-//> using dep io.opentelemetry:opentelemetry-sdk:1.37.0
-//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.37.0
-//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.37.0
+//> using scala "2.13.14"
+//> using dep dev.zio::zio:2.1.6
+//> using dep dev.zio::zio-opentelemetry:3.0.0-RC24
+//> using dep io.opentelemetry:opentelemetry-sdk:1.40.0
+//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.40.0
+//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.40.0
 //> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.22.0-alpha
 
 import io.opentelemetry.sdk.trace.SdkTracerProvider
@@ -342,12 +342,12 @@ To enable seamless integration with [ZIO metrics](https://zio.dev/reference/obse
 To send [Log signals](https://opentelemetry.io/docs/concepts/signals/logs/), you will need a `Logging` service in your environment. For this, use the `OpenTelemetry.logging` layer which in turn requires an instance of `OpenTelemetry` provided by Java SDK and a suitable `ContextStorage` implementation. You can achieve the same by incorporating [Logger MDC auto-instrumentation](https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/logger-mdc-instrumentation.md), so the rule of thumb is to use the `Logging` service when you need to propagate ZIO log annotations as log record attributes or, for some reason you don't want to use auto-instrumentation.
 
 ```scala
-//> using scala "2.13.13"
-//> using dep dev.zio::zio:2.0.22
-//> using dep dev.zio::zio-opentelemetry:3.0.0-RC22
-//> using dep io.opentelemetry:opentelemetry-sdk:1.37.0
-//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.37.0
-//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.37.0
+//> using scala "2.13.14"
+//> using dep dev.zio::zio:2.1.6
+//> using dep dev.zio::zio-opentelemetry:3.0.0-RC24
+//> using dep io.opentelemetry:opentelemetry-sdk:1.40.0
+//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.40.0
+//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.40.0
 //> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.22.0-alpha
 
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter
@@ -452,9 +452,9 @@ object LoggingApp extends ZIOAppDefault {
 To pass contextual information in [Baggage](https://opentelemetry.io/docs/concepts/signals/baggage/), you will need a `Baggage` service in your environment. For this, use the `OpenTelemetry.baggage` layer which in turn requires an instance of a suitable `ContextStorage` implementation. The `Baggage` API includes methods for getting/setting key/value pairs and injecting/extracting baggage data using the current context. By default the `Baggage` service does not take ZIO log annotations into account. To turn it on use `OpenTelemetry.baggage(logAnnotated = true)`.
 
 ```scala
-//> using scala "2.13.12"
-//> using dep dev.zio::zio:2.0.22
-//> using dep dev.zio::zio-opentelemetry:3.0.0-RC22
+//> using scala "2.13.14"
+//> using dep dev.zio::zio:2.1.6
+//> using dep dev.zio::zio-opentelemetry:3.0.0-RC24
 
 import zio._
 import zio.telemetry.opentelemetry.baggage.Baggage
@@ -481,12 +481,11 @@ object BaggageApp extends ZIOAppDefault {
         } yield message
       }
       .provide(
-        ContextStorage.fiberRef,
-        OpenTelemetry.baggage(logAnnotated = true)
+        OpenTelemetry.baggage(logAnnotated = true),
+        OpenTelemetry.contextZIO
       )
 
 }
-
 ```
 
 ### Context Propagation
@@ -495,12 +494,12 @@ Explicitly utilizing the context propagation API becomes relevant only when auto
 Please note that injection and extraction are not referentially transparent due to the use of the mutable OpenTelemetry carrier Java API.
 
 ```scala
-//> using scala "2.13.13"
-//> using dep dev.zio::zio:2.0.22
-//> using dep dev.zio::zio-opentelemetry:3.0.0-RC22
-//> using dep io.opentelemetry:opentelemetry-sdk:1.37.0
-//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.37.0
-//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.37.0
+//> using scala "2.13.14"
+//> using dep dev.zio::zio:2.1.6
+//> using dep dev.zio::zio-opentelemetry:3.0.0-RC24
+//> using dep io.opentelemetry:opentelemetry-sdk:1.40.0
+//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.40.0
+//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.40.0
 //> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.22.0-alpha
 
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter

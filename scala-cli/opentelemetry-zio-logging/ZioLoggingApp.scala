@@ -87,10 +87,12 @@ object ZioLoggingApp extends ZIOAppDefault {
   val loggingLayer: URLayer[LogFormats, Unit] = ZLayer {
     for {
       logFormats     <- ZIO.service[LogFormats]
-      format          = timestamp.fixed(32) |-| level |-| label(
-                          "message",
-                          quoted(line)
-                        ) |-| logFormats.spanIdLabel |-| logFormats.traceIdLabel
+      format          =
+        timestamp.fixed(32) |-|
+          level |-|
+          label("message", quoted(line)) |-|
+          logFormats.spanIdLabel |-|
+          logFormats.traceIdLabel
       myConsoleLogger = console(format.highlight)
     } yield Runtime.removeDefaultLoggers >>> myConsoleLogger
   }.flatten
