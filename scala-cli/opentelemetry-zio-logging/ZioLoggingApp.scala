@@ -1,10 +1,10 @@
 //> using scala "2.13.14"
-//> using dep dev.zio::zio:2.1.3
+//> using dep dev.zio::zio:2.1.7
 //> using dep dev.zio::zio-opentelemetry:3.0.0-RC24
 //> using dep dev.zio::zio-opentelemetry-zio-logging:3.0.0-RC24
-//> using dep io.opentelemetry:opentelemetry-sdk:1.39.0
-//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.39.0
-//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.39.0
+//> using dep io.opentelemetry:opentelemetry-sdk:1.40.0
+//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.40.0
+//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.40.0
 //> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.22.0-alpha
 
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter
@@ -87,10 +87,12 @@ object ZioLoggingApp extends ZIOAppDefault {
   val loggingLayer: URLayer[LogFormats, Unit] = ZLayer {
     for {
       logFormats     <- ZIO.service[LogFormats]
-      format          = timestamp.fixed(32) |-| level |-| label(
-                          "message",
-                          quoted(line)
-                        ) |-| logFormats.spanIdLabel |-| logFormats.traceIdLabel
+      format          =
+        timestamp.fixed(32) |-|
+          level |-|
+          label("message", quoted(line)) |-|
+          logFormats.spanIdLabel |-|
+          logFormats.traceIdLabel
       myConsoleLogger = console(format.highlight)
     } yield Runtime.removeDefaultLoggers >>> myConsoleLogger
   }.flatten

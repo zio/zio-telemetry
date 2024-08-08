@@ -22,7 +22,7 @@ private[opentelemetry] object OtelMetricListener {
         override def updateHistogram(key: MetricKey[MetricKeyType.Histogram], value: Double)(implicit
           unsafe: Unsafe
         ): Unit =
-          registry.getHistorgram(key).record0(value, attributes(key.tags))
+          registry.getHistogram(key).record0(value, attributes(key.tags))
 
         override def updateCounter(key: MetricKey[MetricKeyType.Counter], value: Double)(implicit
           unsafe: Unsafe

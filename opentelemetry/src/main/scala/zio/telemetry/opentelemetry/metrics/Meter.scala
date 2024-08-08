@@ -60,11 +60,14 @@ trait Meter {
    * @param description
    *   description is an optional free-form text provided by the author of the instrument. The API MUST treat it as an
    *   opaque string
+   * @param boundaries
+   *   the explicit bucket boundaries advice
    */
   def histogram(
     name: String,
     unit: Option[String] = None,
-    description: Option[String] = None
+    description: Option[String] = None,
+    boundaries: Option[Chunk[Double]] = None
   )(implicit trace: Trace): UIO[Histogram[Double]]
 
   /**
@@ -157,9 +160,10 @@ object Meter {
         override def histogram(
           name: String,
           unit: Option[String] = None,
-          description: Option[String] = None
+          description: Option[String] = None,
+          boundaries: Option[Chunk[Double]] = None
         )(implicit trace: Trace): UIO[Histogram[Double]] =
-          ZIO.succeed(builder.histogram(name, unit, description))
+          ZIO.succeed(builder.histogram(name, unit, description, boundaries))
 
         override def observableCounter(
           name: String,
