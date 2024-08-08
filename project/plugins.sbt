@@ -1,12 +1,12 @@
-val zioSbtVersion = "0.4.0-alpha.27"
+val zioSbtVersion = "0.4.0-alpha.28"
 
 addSbtPlugin("com.thoughtworks.sbt-api-mappings" % "sbt-api-mappings"          % "3.0.2")
 addSbtPlugin("com.github.sbt"                    % "sbt-unidoc"                % "0.5.0")
-addSbtPlugin("ch.epfl.scala"                     % "sbt-bloop"                 % "1.5.18")
+addSbtPlugin("ch.epfl.scala"                     % "sbt-bloop"                 % "1.6.0")
 addSbtPlugin("org.typelevel"                     % "sbt-tpolecat"              % "0.5.1")
 addSbtPlugin("org.scalameta"                     % "sbt-scalafmt"              % "2.5.2")
-addSbtPlugin("org.scalameta"                     % "sbt-mdoc"                  % "2.5.2")
-addSbtPlugin("org.scoverage"                     % "sbt-scoverage"             % "2.0.12")
+addSbtPlugin("org.scalameta"                     % "sbt-mdoc"                  % "2.5.4")
+addSbtPlugin("org.scoverage"                     % "sbt-scoverage"             % "2.1.0")
 addSbtPlugin("dev.zio"                           % "zio-sbt-ci"                % zioSbtVersion)
 addSbtPlugin("dev.zio"                           % "zio-sbt-ecosystem"         % zioSbtVersion)
 addSbtPlugin("dev.zio"                           % "zio-sbt-website"           % zioSbtVersion)
@@ -17,4 +17,4 @@ addSbtPlugin("ch.epfl.scala"                     % "sbt-missinglink"           %
 libraryDependencies += "org.snakeyaml" % "snakeyaml-engine" % "2.7"
 libraryDependencies += "com.spotify"   % "missinglink-core" % "0.2.11"
 
-resolvers += Resolver.sonatypeRepo("public")
+resolvers ++= Resolver.sonatypeOssRepos("public")
