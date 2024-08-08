@@ -24,7 +24,7 @@ To use them you need a `LogFormats` service in the environment. For this, use th
 
 ```scala
 //> using scala "2.13.14"
-//> using dep dev.zio::zio:2.1.6
+//> using dep dev.zio::zio:2.1.7
 //> using dep dev.zio::zio-opentelemetry:3.0.0-RC24
 //> using dep dev.zio::zio-opentelemetry-zio-logging:3.0.0-RC24
 //> using dep io.opentelemetry:opentelemetry-sdk:1.40.0

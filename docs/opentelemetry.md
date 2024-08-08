@@ -98,7 +98,7 @@ Some of the methods above are available via [ZIO Aspect](https://zio.dev/referen
 
 ```scala
 //> using scala "2.13.14"
-//> using dep dev.zio::zio:2.1.6
+//> using dep dev.zio::zio:2.1.7
 //> using dep dev.zio::zio-opentelemetry:3.0.0-RC24
 //> using dep io.opentelemetry:opentelemetry-sdk:1.40.0
 //> using dep io.opentelemetry:opentelemetry-sdk-trace:1.40.0
@@ -191,7 +191,7 @@ By default the metric instruments does not take ZIO log annotations into account
 
 ```scala
 //> using scala "2.13.14"
-//> using dep dev.zio::zio:2.1.6
+//> using dep dev.zio::zio:2.1.7
 //> using dep dev.zio::zio-opentelemetry:3.0.0-RC24
 //> using dep io.opentelemetry:opentelemetry-sdk:1.40.0
 //> using dep io.opentelemetry:opentelemetry-sdk-trace:1.40.0
@@ -343,7 +343,7 @@ To send [Log signals](https://opentelemetry.io/docs/concepts/signals/logs/), you
 
 ```scala
 //> using scala "2.13.14"
-//> using dep dev.zio::zio:2.1.6
+//> using dep dev.zio::zio:2.1.7
 //> using dep dev.zio::zio-opentelemetry:3.0.0-RC24
 //> using dep io.opentelemetry:opentelemetry-sdk:1.40.0
 //> using dep io.opentelemetry:opentelemetry-sdk-trace:1.40.0
@@ -453,7 +453,7 @@ To pass contextual information in [Baggage](https://opentelemetry.io/docs/concep
 
 ```scala
 //> using scala "2.13.14"
-//> using dep dev.zio::zio:2.1.6
+//> using dep dev.zio::zio:2.1.7
 //> using dep dev.zio::zio-opentelemetry:3.0.0-RC24
 
 import zio._
@@ -495,7 +495,7 @@ Please note that injection and extraction are not referentially transparent due 
 
 ```scala
 //> using scala "2.13.14"
-//> using dep dev.zio::zio:2.1.6
+//> using dep dev.zio::zio:2.1.7
 //> using dep dev.zio::zio-opentelemetry:3.0.0-RC24
 //> using dep io.opentelemetry:opentelemetry-sdk:1.40.0
 //> using dep io.opentelemetry:opentelemetry-sdk-trace:1.40.0
