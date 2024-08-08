@@ -1,5 +1,5 @@
 //> using scala "2.13.14"
-//> using dep dev.zio::zio:2.1.6
+//> using dep dev.zio::zio:2.1.7
 //> using dep dev.zio::zio-opentelemetry:3.0.0-RC24
 //> using dep dev.zio::zio-opentelemetry-zio-logging:3.0.0-RC24
 //> using dep io.opentelemetry:opentelemetry-sdk:1.40.0
@@ -87,10 +87,12 @@ object ZioLoggingApp extends ZIOAppDefault {
   val loggingLayer: URLayer[LogFormats, Unit] = ZLayer {
     for {
       logFormats     <- ZIO.service[LogFormats]
-      format          = timestamp.fixed(32) |-| level |-| label(
-                          "message",
-                          quoted(line)
-                        ) |-| logFormats.spanIdLabel |-| logFormats.traceIdLabel
+      format          =
+        timestamp.fixed(32) |-|
+          level |-|
+          label("message", quoted(line)) |-|
+          logFormats.spanIdLabel |-|
+          logFormats.traceIdLabel
       myConsoleLogger = console(format.highlight)
     } yield Runtime.removeDefaultLoggers >>> myConsoleLogger
   }.flatten
