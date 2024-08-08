@@ -449,7 +449,7 @@ object LoggingApp extends ZIOAppDefault {
 
 ### Baggage
 
-To pass contextual information in [Baggage](https://opentelemetry.io/docs/concepts/signals/baggage/), you will need a `Baggage` service in your environment. For this, use the `OpenTelemetry.logging` layer which in turn requires an instance of `OpenTelemetry` provided by Java SDK and a suitable `ContextStorage` implementation. The `Baggage` API includes methods for getting/setting key/value pairs and injecting/extracting baggage data using the current context. By default the `Baggage` service does not take ZIO log annotations into account. To turn it on use `OpenTelemetry.baggage(logAnnotated = true)`.
+To pass contextual information in [Baggage](https://opentelemetry.io/docs/concepts/signals/baggage/), you will need a `Baggage` service in your environment. For this, use the `OpenTelemetry.baggage` layer which in turn requires an instance of a suitable `ContextStorage` implementation. The `Baggage` API includes methods for getting/setting key/value pairs and injecting/extracting baggage data using the current context. By default the `Baggage` service does not take ZIO log annotations into account. To turn it on use `OpenTelemetry.baggage(logAnnotated = true)`.
 
 ```scala
 //> using scala "2.13.12"
