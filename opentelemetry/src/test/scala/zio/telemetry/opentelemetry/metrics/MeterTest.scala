@@ -12,6 +12,7 @@ import zio.telemetry.opentelemetry.metrics.internal.Instrument
 import zio.telemetry.opentelemetry.tracing.{Tracing, TracingTest}
 import zio.test.{TestEnvironment, ZIOSpecDefault, _}
 
+import java.time.temporal.ChronoUnit
 import scala.jdk.CollectionConverters._
 
 object MeterTest extends ZIOSpecDefault {
@@ -225,12 +226,23 @@ object MeterTest extends ZIOSpecDefault {
   private val zioMetricsSpec =
     suite("ZIO metrics integration")(
       test("histogram boundaries should be passed to OTEL") {
-        val histogram = Metric.histogram("test_histogram", Boundaries(Chunk(1, 2, 3)))
+        val histogram = Metric.histogram("test_histogram", Boundaries.fromChunk(Chunk(1, 2, 3)))
 
         for {
           reader     <- ZIO.service[InMemoryMetricReader]
           _          <- histogram.update(2.0)
           metric      = reader.collectAllMetrics().asScala.find(_.getName == "test_histogram").get
+          metricPoint = metric.getHistogramData().getPoints().asScala.toList.head
+          boundaries  = metricPoint.getBoundaries.asScala.map(_.toDouble).toSeq
+        } yield assertTrue(boundaries == Seq(1.0, 2.0, 3.0))
+      },
+      test("timer boundaries should be passed to OTEL") {
+        val timer = Metric.timer("test_timer", ChronoUnit.SECONDS, Chunk(1.0, 2.0, 3.0))
+
+        for {
+          reader     <- ZIO.service[InMemoryMetricReader]
+          _          <- timer.update(Duration.fromSeconds(2))
+          metric      = reader.collectAllMetrics().asScala.find(_.getName == "test_timer").get
           metricPoint = metric.getHistogramData().getPoints().asScala.toList.head
           boundaries  = metricPoint.getBoundaries.asScala.map(_.toDouble).toSeq
         } yield assertTrue(boundaries == Seq(1.0, 2.0, 3.0))

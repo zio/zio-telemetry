@@ -102,7 +102,15 @@ object Instrument {
 
             unit.foreach(builder.setUnit)
             description.foreach(builder.setDescription)
-            boundaries.foreach(seq => builder.setExplicitBucketBoundariesAdvice(seq.map(Double.box).asJava))
+            boundaries.foreach { seq =>
+              builder.setExplicitBucketBoundariesAdvice(
+                seq
+                  // ZIO uses explicit Double.MaxValue boundary as upper bound. OTEL uses internal "inf" value instead
+                  .filter(_ != Double.MaxValue)
+                  .map(Double.box)
+                  .asJava
+              )
+            }
 
             Histogram.double(builder.build(), ctxStorage, logAnnotated)
           }
