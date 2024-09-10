@@ -1,9 +1,9 @@
 //> using scala "3.5.0"
 //> using dep dev.zio::zio:2.1.9
 //> using dep dev.zio::zio-opentelemetry:3.0.0-RC26
-//> using dep io.opentelemetry:opentelemetry-sdk:1.41.0
-//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.41.0
-//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.41.0
+//> using dep io.opentelemetry:opentelemetry-sdk:1.42.1
+//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.42.1
+//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.42.1
 //> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.22.0-alpha
 
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter
