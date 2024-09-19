@@ -47,7 +47,7 @@ object LoggingTest extends ZIOSpecDefault {
             logRecords <- getFinishedLogRecords
           } yield {
             val r                        = logRecords.head
-            val body                     = r.getBody.asString()
+            val body                     = r.getBodyValue.asString()
             val severityNumber           = r.getSeverity.getSeverityNumber
             val severityText             = r.getSeverityText
             val instrumentationScopeName = r.getInstrumentationScopeInfo.getName
@@ -72,7 +72,7 @@ object LoggingTest extends ZIOSpecDefault {
             logRecords <- getFinishedLogRecords
           } yield {
             val r                        = logRecords.head
-            val body                     = r.getBody.asString()
+            val body                     = r.getBodyValue.asString()
             val severityNumber           = r.getSeverity.getSeverityNumber
             val severityText             = r.getSeverityText
             val instrumentationScopeName = r.getInstrumentationScopeInfo.getName
@@ -113,7 +113,7 @@ object LoggingTest extends ZIOSpecDefault {
                 logRecords <- getFinishedLogRecords
               } yield {
                 val r                        = logRecords.head
-                val body                     = r.getBody.asString()
+                val body                     = r.getBodyValue.asString()
                 val severityNumber           = r.getSeverity.getSeverityNumber
                 val severityText             = r.getSeverityText
                 val instrumentationScopeName = r.getInstrumentationScopeInfo.getName
@@ -146,7 +146,7 @@ object LoggingTest extends ZIOSpecDefault {
                 logRecords <- getFinishedLogRecords
               } yield {
                 val r                        = logRecords.head
-                val body                     = r.getBody.asString()
+                val body                     = r.getBodyValue.asString()
                 val severityNumber           = r.getSeverity.getSeverityNumber
                 val severityText             = r.getSeverityText
                 val instrumentationScopeName = r.getInstrumentationScopeInfo.getName
