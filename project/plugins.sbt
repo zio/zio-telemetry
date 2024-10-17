@@ -6,7 +6,7 @@ addSbtPlugin("ch.epfl.scala"                     % "sbt-bloop"                 %
 addSbtPlugin("org.typelevel"                     % "sbt-tpolecat"              % "0.5.2")
 addSbtPlugin("org.scalameta"                     % "sbt-scalafmt"              % "2.5.2")
 addSbtPlugin("org.scalameta"                     % "sbt-mdoc"                  % "2.6.1")
-addSbtPlugin("org.scoverage"                     % "sbt-scoverage"             % "2.2.0")
+addSbtPlugin("org.scoverage"                     % "sbt-scoverage"             % "2.2.1")
 addSbtPlugin("dev.zio"                           % "zio-sbt-ci"                % zioSbtVersion)
 addSbtPlugin("dev.zio"                           % "zio-sbt-ecosystem"         % zioSbtVersion)
 addSbtPlugin("dev.zio"                           % "zio-sbt-website"           % zioSbtVersion)

@@ -189,7 +189,7 @@ object OpenTracingTest extends ZIOSpecDefault {
             val zio = for {
               _ <- tracing.log("message")
               _ <- TestClock.adjust(duration)
-              _ <- tracing.log(Map("msg" -> "message", "size" -> 1))
+              _ <- tracing.log(Map("msg" -> "message", "size" -> "1"))
             } yield ()
 
             for {
@@ -209,7 +209,7 @@ object OpenTracingTest extends ZIOSpecDefault {
 
               val expected = List(
                 0L    -> Map("event" -> "message"),
-                1000L -> Map[String, Any]("msg" -> "message", "size" -> 1)
+                1000L -> Map("msg" -> "message", "size" -> "1")
               )
 
               assert(tags)(equalTo(expected))
