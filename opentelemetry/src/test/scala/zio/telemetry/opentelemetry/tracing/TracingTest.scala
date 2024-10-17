@@ -360,7 +360,7 @@ object TracingTest extends ZIOSpecDefault {
             ref      <- Ref.make(false)
             scope    <- Scope.make
             resource  = ZIO.addFinalizer(ref.set(true))
-            _        <- scope.extend(tracing.span("Resource")(resource))
+            _        <- scope.extend[Any](tracing.span("Resource")(resource))
             released <- ref.get
           } yield assert(released)(isFalse)
         }
