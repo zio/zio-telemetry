@@ -2,7 +2,7 @@ val zioSbtVersion = "0.4.0-alpha.28"
 
 addSbtPlugin("com.thoughtworks.sbt-api-mappings" % "sbt-api-mappings"          % "3.0.2")
 addSbtPlugin("com.github.sbt"                    % "sbt-unidoc"                % "0.5.0")
-addSbtPlugin("ch.epfl.scala"                     % "sbt-bloop"                 % "2.0.3")
+addSbtPlugin("ch.epfl.scala"                     % "sbt-bloop"                 % "2.0.5")
 addSbtPlugin("org.typelevel"                     % "sbt-tpolecat"              % "0.5.2")
 addSbtPlugin("org.scalameta"                     % "sbt-scalafmt"              % "2.5.2")
 addSbtPlugin("org.scalameta"                     % "sbt-mdoc"                  % "2.6.1")
