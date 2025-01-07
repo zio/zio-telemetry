@@ -1,6 +1,6 @@
 //> using scala "3.6.2"
 //> using dep dev.zio::zio:2.1.13
-//> using dep dev.zio::zio-opentelemetry:3.1.0
+//> using dep dev.zio::zio-opentelemetry:3.1.1
 
 import zio.*
 import zio.telemetry.opentelemetry.baggage.Baggage
