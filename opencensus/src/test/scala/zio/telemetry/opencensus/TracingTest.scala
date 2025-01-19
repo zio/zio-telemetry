@@ -23,10 +23,10 @@ object TracingTest extends ZIOSpecDefault {
       exporter -> OTracing.getTracer
     }
 
-  val exporterTracerLayer: ULayer[Ref[List[SpanData]] with Tracer] = ZLayer.fromZIOEnvironment(exporterTracer.map {
-    case (exporter, tracer) =>
+  val exporterTracerLayer: ULayer[Ref[List[SpanData]] with Tracer] =
+    ZLayer.fromZIOEnvironment(exporterTracer.map { case (exporter, tracer) =>
       ZEnvironment(exporter).add(tracer)
-  })
+    })
 
   val customLayer: ULayer[Ref[List[SpanData]] with Tracer with Tracing] =
     exporterTracerLayer ++ (exporterTracerLayer >>> Tracing.live)
