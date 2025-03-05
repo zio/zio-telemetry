@@ -154,7 +154,7 @@ object OpenTracing {
             current <- getCurrentSpanUnsafe
             _       <- currentSpan.set(root)
             res     <- zio
-                         .catchAllCause(c => error(root, c, tagError, logError) *> ZIO.done(Exit.Failure(c)))
+                         .catchAllCause(c => error(root, c, tagError, logError) *> ZIO.suspendSucceed(Exit.Failure(c)))
                          .ensuring(finish(root) *> currentSpan.set(current))
           } yield res
 
@@ -168,7 +168,7 @@ object OpenTracing {
             child   <- ZIO.succeed(tracer.buildSpan(operation).asChildOf(current).start())
             _       <- currentSpan.set(child)
             res     <- zio
-                         .catchAllCause(c => error(child, c, tagError, logError) *> ZIO.done(Exit.Failure(c)))
+                         .catchAllCause(c => error(child, c, tagError, logError) *> ZIO.suspendSucceed(Exit.Failure(c)))
                          .ensuring(finish(child) *> currentSpan.set(current))
           } yield res
 
@@ -188,9 +188,10 @@ object OpenTracing {
                   current <- getCurrentSpanUnsafe
                   span    <- ZIO.succeed(tracer.buildSpan(operation).asChildOf(spanCtx).start())
                   _       <- currentSpan.set(span)
-                  res     <- zio
-                               .catchAllCause(c => error(span, c, tagError, logError) *> ZIO.done(Exit.Failure(c)))
-                               .ensuring(finish(span) *> currentSpan.set(current))
+                  res     <-
+                    zio
+                      .catchAllCause(c => error(span, c, tagError, logError) *> ZIO.suspendSucceed(Exit.Failure(c)))
+                      .ensuring(finish(span) *> currentSpan.set(current))
                 } yield res
             )
 
