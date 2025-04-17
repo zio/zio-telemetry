@@ -5,7 +5,7 @@ import io.opentelemetry.sdk.metrics.SdkMeterProvider
 import io.opentelemetry.sdk.metrics.export.PeriodicMetricReader
 import io.opentelemetry.sdk.resources.Resource
 import io.opentelemetry.api.common.Attributes
-import io.opentelemetry.semconv.ResourceAttributes
+import io.opentelemetry.semconv.ServiceAttributes
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingMetricExporter
 
 object MeterProvider {
@@ -24,7 +24,7 @@ object MeterProvider {
             SdkMeterProvider
               .builder()
               .registerMetricReader(metricReader)
-              .setResource(Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, resourceName)))
+              .setResource(Resource.create(Attributes.of(ServiceAttributes.SERVICE_NAME, resourceName)))
               .build()
           )
         )

@@ -5,9 +5,9 @@ import io.opentelemetry.exporter.otlp.http.logs.OtlpHttpLogRecordExporter
 import io.opentelemetry.sdk.logs.SdkLoggerProvider
 import io.opentelemetry.sdk.logs.`export`.SimpleLogRecordProcessor
 import io.opentelemetry.sdk.resources.Resource
-import io.opentelemetry.semconv.ResourceAttributes
 import zio._
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingLogRecordExporter
+import io.opentelemetry.semconv.ServiceAttributes
 
 object LoggerProvider {
 
@@ -23,7 +23,7 @@ object LoggerProvider {
           ZIO.succeed(
             SdkLoggerProvider
               .builder()
-              .setResource(Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, resourceName)))
+              .setResource(Resource.create(Attributes.of(ServiceAttributes.SERVICE_NAME, resourceName)))
               .addLogRecordProcessor(logRecordProcessor)
               .build()
           )
@@ -50,7 +50,7 @@ object LoggerProvider {
           ZIO.succeed(
             SdkLoggerProvider
               .builder()
-              .setResource(Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, resourceName)))
+              .setResource(Resource.create(Attributes.of(ServiceAttributes.SERVICE_NAME, resourceName)))
               .addLogRecordProcessor(logRecordProcessor)
               .build()
           )
@@ -69,7 +69,7 @@ object LoggerProvider {
           ZIO.succeed(
             SdkLoggerProvider
               .builder()
-              .setResource(Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, resourceName)))
+              .setResource(Resource.create(Attributes.of(ServiceAttributes.SERVICE_NAME, resourceName)))
               .addLogRecordProcessor(logRecordProcessor)
               .build()
           )

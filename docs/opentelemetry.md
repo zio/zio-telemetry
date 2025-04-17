@@ -110,7 +110,7 @@ import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import io.opentelemetry.sdk.resources.Resource
-import io.opentelemetry.semconv.ResourceAttributes
+import io.opentelemetry.semconv.ServiceAttributes
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.api
@@ -134,7 +134,7 @@ object TracingApp extends ZIOAppDefault {
           ZIO.succeed(
             SdkTracerProvider
               .builder()
-              .setResource(Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, resourceName)))
+              .setResource(Resource.create(Attributes.of(ServiceAttributes.SERVICE_NAME, resourceName)))
               .addSpanProcessor(spanProcessor)
               .build()
           )
@@ -204,7 +204,7 @@ import io.opentelemetry.sdk.metrics.SdkMeterProvider
 import io.opentelemetry.sdk.metrics.`export`.PeriodicMetricReader
 import io.opentelemetry.sdk.resources.Resource
 import io.opentelemetry.api.common
-import io.opentelemetry.semconv.ResourceAttributes
+import io.opentelemetry.semconv.ServiceAttributes
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingMetricExporter
 import io.opentelemetry.sdk.OpenTelemetrySdk
@@ -234,7 +234,7 @@ object MetricsApp extends ZIOAppDefault {
             SdkMeterProvider
               .builder()
               .registerMetricReader(metricReader)
-              .setResource(Resource.create(common.Attributes.of(ResourceAttributes.SERVICE_NAME, resourceName)))
+              .setResource(Resource.create(common.Attributes.of(ServiceAttributes.SERVICE_NAME, resourceName)))
               .build()
           )
         )
@@ -250,7 +250,7 @@ object MetricsApp extends ZIOAppDefault {
           ZIO.succeed(
             SdkTracerProvider
               .builder()
-              .setResource(Resource.create(common.Attributes.of(ResourceAttributes.SERVICE_NAME, resourceName)))
+              .setResource(Resource.create(common.Attributes.of(ServiceAttributes.SERVICE_NAME, resourceName)))
               .addSpanProcessor(spanProcessor)
               .build()
           )
@@ -358,7 +358,7 @@ import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import io.opentelemetry.sdk.logs.SdkLoggerProvider
 import io.opentelemetry.sdk.logs.`export`.SimpleLogRecordProcessor
 import io.opentelemetry.sdk.resources.Resource
-import io.opentelemetry.semconv.ResourceAttributes
+import io.opentelemetry.semconv.ServiceAttributes
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.api
 import zio.*
@@ -381,7 +381,7 @@ object LoggingApp extends ZIOAppDefault {
           ZIO.succeed(
             SdkLoggerProvider
               .builder()
-              .setResource(Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, resourceName)))
+              .setResource(Resource.create(Attributes.of(ServiceAttributes.SERVICE_NAME, resourceName)))
               .addLogRecordProcessor(logRecordProcessor)
               .build()
           )
@@ -398,7 +398,7 @@ object LoggingApp extends ZIOAppDefault {
           ZIO.succeed(
             SdkTracerProvider
               .builder()
-              .setResource(Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, resourceName)))
+              .setResource(Resource.create(Attributes.of(ServiceAttributes.SERVICE_NAME, resourceName)))
               .addSpanProcessor(spanProcessor)
               .build()
           )
@@ -507,7 +507,7 @@ import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import io.opentelemetry.sdk.resources.Resource
-import io.opentelemetry.semconv.ResourceAttributes
+import io.opentelemetry.semconv.ServiceAttributes
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.api
@@ -537,7 +537,7 @@ object PropagatingApp extends ZIOAppDefault {
           ZIO.succeed(
             SdkTracerProvider
               .builder()
-              .setResource(Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, resourceName)))
+              .setResource(Resource.create(Attributes.of(ServiceAttributes.SERVICE_NAME, resourceName)))
               .addSpanProcessor(spanProcessor)
               .build()
           )

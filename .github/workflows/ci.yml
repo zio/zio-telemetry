@@ -44,6 +44,8 @@ jobs:
       run: sbt +Test/compile
     - name: Check artifacts build process
       run: sbt +publishLocal
+    - name: Compile examples
+      run: sbt compileExamples
     - name: Mima check
       run: sbt mimaChecks
     - name: Undeclared dependencies check
