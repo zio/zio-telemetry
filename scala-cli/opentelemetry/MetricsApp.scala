@@ -12,7 +12,7 @@ import io.opentelemetry.sdk.metrics.SdkMeterProvider
 import io.opentelemetry.sdk.metrics.`export`.PeriodicMetricReader
 import io.opentelemetry.sdk.resources.Resource
 import io.opentelemetry.api.common
-import io.opentelemetry.semconv.ResourceAttributes
+import io.opentelemetry.semconv.ServiceAttributes
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingMetricExporter
 import io.opentelemetry.sdk.OpenTelemetrySdk
@@ -42,7 +42,7 @@ object MetricsApp extends ZIOAppDefault {
             SdkMeterProvider
               .builder()
               .registerMetricReader(metricReader)
-              .setResource(Resource.create(common.Attributes.of(ResourceAttributes.SERVICE_NAME, resourceName)))
+              .setResource(Resource.create(common.Attributes.of(ServiceAttributes.SERVICE_NAME, resourceName)))
               .build()
           )
         )
@@ -58,7 +58,7 @@ object MetricsApp extends ZIOAppDefault {
           ZIO.succeed(
             SdkTracerProvider
               .builder()
-              .setResource(Resource.create(common.Attributes.of(ResourceAttributes.SERVICE_NAME, resourceName)))
+              .setResource(Resource.create(common.Attributes.of(ServiceAttributes.SERVICE_NAME, resourceName)))
               .addSpanProcessor(spanProcessor)
               .build()
           )
