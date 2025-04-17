@@ -34,6 +34,10 @@ inThisBuild(
     ciEnabledBranches := Seq("series/2.x"),
     ciCheckArtifactsBuildSteps ++= Seq(
       SingleStep(
+        name = "Compile examples",
+        run = Some("sbt compileExamples")
+      ),
+      SingleStep(
         name = "Mima check",
         run = Some("sbt mimaChecks")
       ),

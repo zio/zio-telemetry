@@ -40,7 +40,7 @@ import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import io.opentelemetry.sdk.logs.SdkLoggerProvider
 import io.opentelemetry.sdk.logs.`export`.SimpleLogRecordProcessor
 import io.opentelemetry.sdk.resources.Resource
-import io.opentelemetry.semconv.ResourceAttributes
+import io.opentelemetry.semconv.ServiceAttributes
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.api
 import zio.*
@@ -67,7 +67,7 @@ object ZioLoggingApp extends ZIOAppDefault {
           ZIO.succeed(
             SdkLoggerProvider
               .builder()
-              .setResource(Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, resourceName)))
+              .setResource(Resource.create(Attributes.of(ServiceAttributes.SERVICE_NAME, resourceName)))
               .addLogRecordProcessor(logRecordProcessor)
               .build()
           )
@@ -84,7 +84,7 @@ object ZioLoggingApp extends ZIOAppDefault {
           ZIO.succeed(
             SdkTracerProvider
               .builder()
-              .setResource(Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, resourceName)))
+              .setResource(Resource.create(Attributes.of(ServiceAttributes.SERVICE_NAME, resourceName)))
               .addSpanProcessor(spanProcessor)
               .build()
           )
