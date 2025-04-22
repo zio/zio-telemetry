@@ -1,17 +1,16 @@
 package zio.telemetry.opentelemetry.example.http
 
 import io.opentelemetry.api.trace.SpanKind
-import zio.http._
 import zio._
+import zio.http._
 import zio.json.EncoderOps
 import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator
 import zio.telemetry.opentelemetry.context.IncomingContextCarrier
-import zio.telemetry.opentelemetry.example.http.{Status => ServiceStatus}
+import zio.telemetry.opentelemetry.example.http.{BackendStatus => ServiceStatus}
+import zio.telemetry.opentelemetry.metrics.{Counter, Meter}
 import zio.telemetry.opentelemetry.tracing.Tracing
 import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
-import zio.telemetry.opentelemetry.metrics.Meter
-import zio.telemetry.opentelemetry.metrics.Counter
 
 case class BackendHttpApp(tracing: Tracing, baggage: Baggage, statusRequestsCounter: Counter[Long]) {
 
@@ -29,13 +28,16 @@ case class BackendHttpApp(tracing: Tracing, baggage: Baggage, statusRequestsCoun
 
     }
 
-  val routes: HttpApp[Any, Nothing] =
-    Http.collectZIO { case request @ Method.GET -> _ / "status" =>
-      val carrier = headersCarrier(request.headers)
+  val routes =
+    Routes(
+      Method.GET / "status" ->
+        handler { request: Request =>
+          val carrier = headersCarrier(request.headers)
 
-      (baggage.extract(BaggagePropagator.default, carrier) *> status) @@
-        extractSpan(TraceContextPropagator.default, carrier, "/status", SpanKind.SERVER)
-    }
+          (baggage.extract(BaggagePropagator.default, carrier) *> status) @@
+            extractSpan(TraceContextPropagator.default, carrier, "/status", SpanKind.SERVER)
+        }
+    )
 
   def status: UIO[Response] =
     for {

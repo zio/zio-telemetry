@@ -492,8 +492,8 @@ trait Tracing { self =>
       attributes: Attributes = Attributes.empty(),
       statusMapper: StatusMapper[E1, A1] = StatusMapper.default,
       links: Seq[SpanContext] = Seq.empty
-    ): ZIOAspect[Nothing, Any, Nothing, E1, A1, A1] =
-      new ZIOAspect[Nothing, Any, Nothing, E1, A1, A1] {
+    ): ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] =
+      new ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] {
         override def apply[R, E <: E1, A <: A1](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
           self.root(spanName, spanKind, attributes, statusMapper, links)(zio)
       }

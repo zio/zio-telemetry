@@ -4,10 +4,10 @@ import zio._
 import zio.config.magnolia._
 import zio.config.typesafe.TypesafeConfig
 import zio.http.Client
+import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.example.config.AppConfig
 import zio.telemetry.opentelemetry.example.http.{BackendClient, ProxyHttpApp, ProxyHttpServer}
 import zio.telemetry.opentelemetry.example.otel.OtelSdk
-import zio.telemetry.opentelemetry.OpenTelemetry
 
 object ProxyApp extends ZIOAppDefault {
 

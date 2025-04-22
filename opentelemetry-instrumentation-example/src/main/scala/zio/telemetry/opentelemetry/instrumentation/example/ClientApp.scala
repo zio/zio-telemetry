@@ -1,10 +1,10 @@
 package zio.telemetry.opentelemetry.instrumentation.example
 
-import zio.http._
 import zio._
 import zio.config.ReadError
 import zio.config.magnolia.descriptor
 import zio.config.typesafe.TypesafeConfig
+import zio.http._
 import zio.telemetry.opentelemetry.instrumentation.example.config.AppConfig
 import zio.telemetry.opentelemetry.instrumentation.example.http.HttpClient
 

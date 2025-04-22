@@ -1,14 +1,14 @@
 package zio.telemetry.opentelemetry.instrumentation.example
 
 import io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender
-import zio.logging.backend.SLF4J
 import zio._
 import zio.config.ReadError
-import zio.config.typesafe.TypesafeConfig
 import zio.config.magnolia._
+import zio.config.typesafe.TypesafeConfig
+import zio.logging.backend.SLF4J
+import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.instrumentation.example.config.AppConfig
 import zio.telemetry.opentelemetry.instrumentation.example.http.{HttpServer, HttpServerApp}
-import zio.telemetry.opentelemetry.OpenTelemetry
 
 object ServerApp extends ZIOAppDefault {
 

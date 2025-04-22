@@ -1,9 +1,9 @@
 package zio.telemetry.opentracing.example.http
 
-import zio.http._
 import zio.Console.printLine
-import zio.telemetry.opentracing.example.config.AppConfig
 import zio._
+import zio.http._
+import zio.telemetry.opentracing.example.config.AppConfig
 
 case class ProxyHttpServer(config: AppConfig, httpApp: ProxyHttpApp) {
 

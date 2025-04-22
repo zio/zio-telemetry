@@ -1,8 +1,8 @@
 package zio.telemetry.opentelemetry.example.otel
 
+import io.opentelemetry.sdk.OpenTelemetrySdk
 import zio._
 import zio.telemetry.opentelemetry.OpenTelemetry
-import io.opentelemetry.sdk.OpenTelemetrySdk
 
 object OtelSdk {
 

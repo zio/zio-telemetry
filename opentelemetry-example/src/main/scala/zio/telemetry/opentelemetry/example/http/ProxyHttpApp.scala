@@ -1,8 +1,8 @@
 package zio.telemetry.opentelemetry.example.http
 
 import io.opentelemetry.api.trace.{SpanKind, StatusCode}
-import zio.http._
 import zio._
+import zio.http._
 import zio.json.EncoderOps
 import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator
@@ -16,10 +16,13 @@ case class ProxyHttpApp(client: BackendClient, tracing: Tracing, baggage: Baggag
 
   private val statusMapper: StatusMapper[Throwable, Any] = StatusMapper.failureThrowable(_ => StatusCode.UNSET)
 
-  val routes: HttpApp[Any, Nothing] =
-    Http.collectZIO { case Method.GET -> _ / "statuses" =>
-      statuses @@ root("/statuses", SpanKind.SERVER, statusMapper = statusMapper)
-    }
+  val routes =
+    Routes(
+      Method.GET / "statuses" ->
+        handler {
+          statuses @@ root("/statuses", SpanKind.SERVER, statusMapper = statusMapper)
+        }
+    )
 
   def statuses: UIO[Response] = {
     val carrier = OutgoingContextCarrier.default()
@@ -30,7 +33,7 @@ case class ProxyHttpApp(client: BackendClient, tracing: Tracing, baggage: Baggag
       _        <- baggage.set("proxy-baggage", "value from proxy")
       _        <- tracing.injectSpan(TraceContextPropagator.default, carrier)
       _        <- baggage.inject(BaggagePropagator.default, carrier)
-      statuses <- client.status(carrier.kernel.toMap).catchAll(_ => ZIO.succeed(Statuses(List.empty)))
+      statuses <- client.status(carrier.kernel.toMap).catchAll(_ => ZIO.succeed(BackendStatuses(List.empty)))
       _        <- ZIO.logInfo("statuses processing finished on proxy")
     } yield Response.json(statuses.toJson)
   }

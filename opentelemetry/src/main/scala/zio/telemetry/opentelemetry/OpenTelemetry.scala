@@ -19,7 +19,7 @@ final class OpenTelemetry(
   def asJava: api.OpenTelemetry =
     underlying
 
-  def withAutoinstrumented[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+  def autoinstrumented[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
     ctxStorage.locally(Context.current())(zio)
 
 }

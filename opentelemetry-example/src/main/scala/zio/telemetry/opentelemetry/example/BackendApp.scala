@@ -1,14 +1,14 @@
 package zio.telemetry.opentelemetry.example
 
+import zio._
 import zio.config.magnolia._
 import zio.config.typesafe.TypesafeConfig
+import zio.metrics.jvm.DefaultJvmMetrics
+import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.example.config.AppConfig
 import zio.telemetry.opentelemetry.example.http.{BackendHttpApp, BackendHttpServer}
-import zio._
-import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.example.otel.OtelSdk
 import zio.telemetry.opentelemetry.metrics.Meter
-import zio.metrics.jvm.DefaultJvmMetrics
 
 object BackendApp extends ZIOAppDefault {
 

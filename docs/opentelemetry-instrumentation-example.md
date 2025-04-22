@@ -12,10 +12,12 @@ Start Jaeger by running the following command:
 docker run --rm -it \
   -d \
   -e COLLECTOR_OTLP_ENABLED=true \
-  -p 14250:14250 \
   -p 16686:16686 \
   -p 4317:4317 \
-  jaegertracing/all-in-one:1.47
+  -p 4318:4318 \
+  -p 5778:5778 \
+  -p 9411:9411 \
+  jaegertracing/jaeger:2.5.0
  ```
 
 To run Seq, you also need to specify an admin password (user is `admin`):
