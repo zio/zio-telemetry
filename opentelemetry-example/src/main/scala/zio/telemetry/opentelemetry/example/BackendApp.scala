@@ -54,8 +54,7 @@ object BackendApp extends ZIOAppDefault {
         OpenTelemetry.metrics(instrumentationScopeName),
         OpenTelemetry.logging(instrumentationScopeName),
         OpenTelemetry.baggage(),
-        OpenTelemetry.zioMetrics,
-        OpenTelemetry.contextZIO,
+        OpenTelemetry.zioMetrics(instrumentationScopeName),
         DefaultJvmMetrics.liveV2.unit,
         globalTickCounterLayer,
         tickRefLayer

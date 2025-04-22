@@ -28,8 +28,7 @@ object ProxyApp extends ZIOAppDefault {
         OtelSdk.custom(resourceName),
         OpenTelemetry.tracing(instrumentationScopeName),
         OpenTelemetry.logging(instrumentationScopeName),
-        OpenTelemetry.baggage(),
-        OpenTelemetry.contextZIO
+        OpenTelemetry.baggage()
       )
 
 }

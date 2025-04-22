@@ -32,10 +32,22 @@ object TracingTest extends ZIOSpecDefault {
       ZEnvironment(inMemorySpanExporter).add(tracer)
     })
 
+  def ctxStorageLayer: ULayer[ContextStorage] =
+    ZLayer.scoped(ContextStorage.rootScoped)
+
   def tracingMockLayer(
     logAnnotated: Boolean = false
   ): URLayer[ContextStorage, Tracing with InMemorySpanExporter with Tracer] =
-    inMemoryTracerLayer >>> (Tracing.live(logAnnotated) ++ inMemoryTracerLayer)
+    inMemoryTracerLayer >>> (tracingLiveLayer(logAnnotated) ++ inMemoryTracerLayer)
+
+  def tracingLiveLayer(logAnnotated: Boolean = false): URLayer[Tracer with ContextStorage, Tracing] =
+    ZLayer.scoped {
+      for {
+        ctxStorage <- ZIO.service[ContextStorage]
+        tracer     <- ZIO.service[Tracer]
+        tracing    <- Tracing.scoped(tracer, ctxStorage, logAnnotated)
+      } yield tracing
+    }
 
   def getFinishedSpans: ZIO[InMemorySpanExporter, Nothing, List[SpanData]] =
     ZIO.serviceWith[InMemorySpanExporter](_.getFinishedSpanItems.asScala.toList)
@@ -54,10 +66,10 @@ object TracingTest extends ZIOSpecDefault {
     suite("creation")(
       test("live") {
         for {
-          _             <- ZIO.scoped(Tracing.live().build)
+          _             <- ZIO.scoped(tracingLiveLayer().build)
           finishedSpans <- getFinishedSpans
         } yield assert(finishedSpans)(hasSize(equalTo(0)))
-      }.provide(inMemoryTracerLayer, ContextStorage.fiberRef)
+      }.provide(inMemoryTracerLayer, ctxStorageLayer)
     )
 
   private val spansSpec =
@@ -550,7 +562,7 @@ object TracingTest extends ZIOSpecDefault {
           } yield assert(ko)(isSome(failureAssertion)) && assert(ok)(isSome(successAssertion))
         }
       }
-    ).provide(tracingMockLayer(), ContextStorage.fiberRef)
+    ).provide(tracingMockLayer(), ctxStorageLayer)
 
   private val spanScopedSpec =
     suite("scoped spans")(
@@ -652,7 +664,7 @@ object TracingTest extends ZIOSpecDefault {
           } yield assert(tags.get(AttributeKey.stringKey("string")))(equalTo("bar"))
         }
       }
-    ).provide(tracingMockLayer(), ContextStorage.fiberRef)
+    ).provide(tracingMockLayer(), ctxStorageLayer)
 
   private val spanWithLogAnnotationsSpec = suite("spans with log annotations")(
     test("add log annotations") {
@@ -668,7 +680,7 @@ object TracingTest extends ZIOSpecDefault {
         } yield assert(tags.get(AttributeKey.stringKey("root-attribute")))(equalTo("bar")) &&
           assert(tags.get(AttributeKey.stringKey("log-attribute")))(equalTo("foo"))
       }
-    }.provide(tracingMockLayer(true), ContextStorage.fiberRef),
+    }.provide(tracingMockLayer(true), ctxStorageLayer),
     test("span attributes override log annotated") {
       ZIO.serviceWithZIO[Tracing] { tracing =>
         import tracing.aspects._
@@ -681,7 +693,7 @@ object TracingTest extends ZIOSpecDefault {
           tags   = spans.head.getAttributes
         } yield assert(tags.get(AttributeKey.stringKey("some-attribute")))(equalTo("bar"))
       }
-    }.provide(tracingMockLayer(true), ContextStorage.fiberRef),
+    }.provide(tracingMockLayer(true), ctxStorageLayer),
     test("not add log annotations") {
       ZIO.serviceWithZIO[Tracing] { tracing =>
         import tracing.aspects._
@@ -695,6 +707,6 @@ object TracingTest extends ZIOSpecDefault {
         } yield assert(tags.get(AttributeKey.stringKey("root-attribute")))(equalTo("bar")) &&
           assert(Option(tags.get(AttributeKey.stringKey("log-attribute"))))(isNone)
       }
-    }.provide(tracingMockLayer(), ContextStorage.fiberRef)
+    }.provide(tracingMockLayer(), ctxStorageLayer)
   )
 }

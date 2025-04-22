@@ -7,14 +7,16 @@ import zio.test.Assertion._
 import zio.test._
 
 import scala.collection.mutable
+// import io.opentelemetry.context.ContextStorage
+// import io.opentelemetry.api.baggage.Baggage
 
 object BaggageTest extends ZIOSpecDefault {
 
   def baggageLayer: ULayer[Baggage] =
-    ContextStorage.fiberRef >>> Baggage.live()
+    ZLayer.scoped(ContextStorage.rootScoped.map(Baggage.make(_)))
 
   def logAnnotatedBaggageLayer: ULayer[Baggage] =
-    (ContextStorage.fiberRef >>> Baggage.live(logAnnotated = true))
+    ZLayer.scoped(ContextStorage.rootScoped.map(Baggage.make(_, logAnnotated = true)))
 
   def spec: Spec[Environment with TestEnvironment with Scope, Any] =
     suite("zio opentelemetry")(

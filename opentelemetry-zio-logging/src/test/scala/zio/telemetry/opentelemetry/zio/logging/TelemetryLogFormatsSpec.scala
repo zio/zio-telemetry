@@ -6,7 +6,7 @@ import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.data.SpanData
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import zio.Runtime.removeDefaultLoggers
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.tracing.Tracing
 import zio.test.{Spec, TestEnvironment, ZIOSpecDefault, assertTrue}
 import zio.{Scope, UIO, ULayer, URLayer, ZEnvironment, ZIO, ZLayer}
@@ -30,8 +30,17 @@ object TelemetryLogFormatsSpec extends ZIOSpecDefault {
 
   def tracingMockLayer(
     logAnnotated: Boolean = false
-  ): URLayer[ContextStorage, Tracing with InMemorySpanExporter with Tracer] =
-    inMemoryTracerLayer >>> (Tracing.live(logAnnotated) ++ inMemoryTracerLayer)
+  ): URLayer[OpenTelemetry, Tracing with InMemorySpanExporter with Tracer] = {
+    val tracingLayer = ZLayer.scoped {
+      for {
+        openTelemetry <- ZIO.service[OpenTelemetry]
+        tracer        <- ZIO.service[Tracer]
+        tracing       <- Tracing.scoped(tracer, openTelemetry.ctxStorage, logAnnotated)
+      } yield tracing
+    }
+
+    inMemoryTracerLayer >>> (tracingLayer ++ inMemoryTracerLayer)
+  }
 
   def getFinishedSpans: ZIO[InMemorySpanExporter, Nothing, List[SpanData]] =
     ZIO.serviceWith[InMemorySpanExporter](_.getFinishedSpanItems.asScala.toList)
@@ -54,6 +63,6 @@ object TelemetryLogFormatsSpec extends ZIOSpecDefault {
           } yield assertTrue(log == s"spanId=${child.getSpanId} traceId=${child.getTraceId}")
         }
       }
-    }.provide(removeDefaultLoggers, tracingMockLayer(), ContextStorage.fiberRef, ZioLogging.logFormats)
+    }.provide(OpenTelemetry.noop, removeDefaultLoggers, tracingMockLayer(), ZioLogging.logFormats)
 
 }

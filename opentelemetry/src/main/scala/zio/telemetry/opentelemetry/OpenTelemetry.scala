@@ -1,6 +1,7 @@
 package zio.telemetry.opentelemetry
 
 import io.opentelemetry.api
+import io.opentelemetry.context.Context
 import zio._
 import zio.metrics.{MetricClient, MetricListener}
 import zio.telemetry.opentelemetry.baggage.Baggage
@@ -9,6 +10,19 @@ import zio.telemetry.opentelemetry.logging.Logging
 import zio.telemetry.opentelemetry.metrics.Meter
 import zio.telemetry.opentelemetry.metrics.internal.{Instrument, InstrumentRegistry, OtelMetricListener}
 import zio.telemetry.opentelemetry.tracing.Tracing
+
+final class OpenTelemetry(
+  private[opentelemetry] val underlying: api.OpenTelemetry,
+  private[opentelemetry] val ctxStorage: ContextStorage
+) {
+
+  def asJava: api.OpenTelemetry =
+    underlying
+
+  def withAutoinstrumented[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+    ctxStorage.locally(Context.current())(zio)
+
+}
 
 /**
  * The entrypoint to telemetry functionality for tracing, metrics, logging and baggage.
@@ -24,8 +38,13 @@ object OpenTelemetry {
    *   <a href="https://zio.dev/zio-telemetry/opentelemetry/#usage-with-opentelemetry-automatic-instrumentation">Usage
    *   with OpenTelemetry automatic instrumentation</a>
    */
-  val global: TaskLayer[api.OpenTelemetry] =
-    ZLayer(ZIO.attempt(api.GlobalOpenTelemetry.get()))
+  val global: TaskLayer[OpenTelemetry] =
+    ZLayer.scoped {
+      for {
+        underlying <- ZIO.attempt(api.GlobalOpenTelemetry.get())
+        ctxStorage <- ContextStorage.rootScoped
+      } yield new OpenTelemetry(underlying, ctxStorage)
+    }
 
   /**
    * Use when you need to configure an instance of OpenTelemetry programmatically.
@@ -37,11 +56,21 @@ object OpenTelemetry {
    *   scoped ZIO value that returns a configured instance of [[io.opentelemetry.api.OpenTelemetry]], thus ensuring that
    *   the returned instance will be closed.
    */
-  def custom(zio: => ZIO[Scope, Throwable, api.OpenTelemetry]): TaskLayer[api.OpenTelemetry] =
-    ZLayer.scoped(zio)
+  def custom(zio: => ZIO[Scope, Throwable, api.OpenTelemetry]): TaskLayer[OpenTelemetry] =
+    ZLayer.scoped {
+      for {
+        underlying <- zio
+        ctxStorage <- ContextStorage.rootScoped
+      } yield new OpenTelemetry(underlying, ctxStorage)
+    }
 
-  val noop: ULayer[api.OpenTelemetry] =
-    ZLayer.succeed(api.OpenTelemetry.noop())
+  val noop: TaskLayer[OpenTelemetry] =
+    ZLayer.scoped {
+      for {
+        underlying <- ZIO.attempt(api.OpenTelemetry.noop())
+        ctxStorage <- ContextStorage.rootScoped
+      } yield new OpenTelemetry(underlying, ctxStorage)
+    }
 
   /**
    * Use when you need to instrument spans manually.
@@ -59,19 +88,24 @@ object OpenTelemetry {
     instrumentationVersion: Option[String] = None,
     schemaUrl: Option[String] = None,
     logAnnotated: Boolean = false
-  ): URLayer[api.OpenTelemetry with ContextStorage, Tracing] = {
-    val tracerLayer = ZLayer(
-      ZIO.serviceWith[api.OpenTelemetry] { openTelemetry =>
-        val builder = openTelemetry.tracerBuilder(instrumentationScopeName)
+  ): URLayer[OpenTelemetry, Tracing] = {
+    def buildTracer(openTelemetry: api.OpenTelemetry) = {
+      val builder = openTelemetry.tracerBuilder(instrumentationScopeName)
 
-        instrumentationVersion.foreach(builder.setInstrumentationVersion)
-        schemaUrl.foreach(builder.setSchemaUrl)
+      instrumentationVersion.foreach(builder.setInstrumentationVersion)
+      schemaUrl.foreach(builder.setSchemaUrl)
 
-        builder.build
-      }
-    )
+      builder.build
+    }
 
-    tracerLayer >>> Tracing.live(logAnnotated)
+    ZLayer.scoped {
+      for {
+        openTelemetry <- ZIO.service[OpenTelemetry]
+        tracer         = buildTracer(openTelemetry.underlying)
+        tracing       <- Tracing.scoped(tracer, openTelemetry.ctxStorage, logAnnotated)
+      } yield tracing
+
+    }
   }
 
   /**
@@ -90,43 +124,24 @@ object OpenTelemetry {
     instrumentationVersion: Option[String] = None,
     schemaUrl: Option[String] = None,
     logAnnotated: Boolean = false
-  ): URLayer[api.OpenTelemetry with ContextStorage, Meter with Instrument.Builder] = {
-    val meterLayer   = ZLayer(
-      ZIO.serviceWith[api.OpenTelemetry] { openTelemetry =>
-        val builder = openTelemetry.meterBuilder(instrumentationScopeName)
+  ): URLayer[OpenTelemetry, Meter] = {
+    def buildMeter(openTelemetry: api.OpenTelemetry) = {
+      val builder = openTelemetry.meterBuilder(instrumentationScopeName)
 
-        instrumentationVersion.foreach(builder.setInstrumentationVersion)
-        schemaUrl.foreach(builder.setSchemaUrl)
+      instrumentationVersion.foreach(builder.setInstrumentationVersion)
+      schemaUrl.foreach(builder.setSchemaUrl)
 
-        builder.build()
-      }
-    )
-    val builderLayer = meterLayer >>> Instrument.Builder.live(logAnnotated)
-
-    builderLayer >+> (builderLayer >>> Meter.live)
-  }
-
-  /**
-   * Use when you want to allow a seamless integration with ZIO runtime and JVM metrics.
-   *
-   * By default this layer enables the propagation of ZIO runtime metrics only. For JVM metrics you need to provide
-   * `DefaultJvmMetrics.live.unit`.
-   */
-  def zioMetrics: URLayer[Instrument.Builder, Unit] = {
-    val metricListenerLifecycleLayer = ZLayer.scoped {
-      ZIO.serviceWithZIO[MetricListener] { metricListener =>
-        Unsafe.unsafe { implicit unsafe =>
-          ZIO.acquireRelease(
-            ZIO.succeed(MetricClient.addListener(metricListener))
-          )(_ => ZIO.succeed(MetricClient.removeListener(metricListener)))
-        }
-      }
+      builder.build()
     }
 
-    Runtime.enableRuntimeMetrics >>>
-      InstrumentRegistry.concurrent >>>
-      OtelMetricListener.zioMetrics >>>
-      metricListenerLifecycleLayer
+    ZLayer {
+      for {
+        openTelemetry <- ZIO.service[OpenTelemetry]
+        jmeter         = buildMeter(openTelemetry.underlying)
+        builder        = Instrument.Builder.make(jmeter, openTelemetry.ctxStorage, logAnnotated)
+        meter          = Meter.make(builder)
+      } yield meter
+    }
   }
 
   /**
@@ -141,11 +156,14 @@ object OpenTelemetry {
   def logging(
     instrumentationScopeName: String,
     logLevel: LogLevel = LogLevel.Info
-  ): URLayer[api.OpenTelemetry with ContextStorage, Unit] = {
-    val loggerProviderLayer = ZLayer(ZIO.serviceWith[api.OpenTelemetry](_.getLogsBridge))
-
-    loggerProviderLayer >>> Logging.live(instrumentationScopeName, logLevel)
-  }
+  ): URLayer[OpenTelemetry, Unit] =
+    ZLayer.scoped {
+      for {
+        openTelemetry <- ZIO.service[OpenTelemetry]
+        loggerProvider = openTelemetry.underlying.getLogsBridge
+        _             <- Logging.make(loggerProvider, openTelemetry.ctxStorage, instrumentationScopeName, logLevel)
+      } yield ()
+    }
 
   /**
    * Use when you need to pass contextual information between spans.
@@ -153,19 +171,55 @@ object OpenTelemetry {
    * @param logAnnotated
    *   propagate ZIO log annotations as Baggage key/values if it is set to true
    */
-  def baggage(logAnnotated: Boolean = false): URLayer[ContextStorage, Baggage] =
-    Baggage.live(logAnnotated)
+  def baggage(logAnnotated: Boolean = false): URLayer[OpenTelemetry, Baggage] =
+    ZLayer(ZIO.serviceWith[OpenTelemetry](openTelemetry => Baggage.make(openTelemetry.ctxStorage, logAnnotated)))
 
   /**
-   * Use when you do not use automatic instrumentation.
+   * Use when you want to allow a seamless integration with ZIO runtime and JVM metrics.
+   *
+   * By default this layer enables the propagation of ZIO runtime metrics only. For JVM metrics you need to provide
+   * `DefaultJvmMetrics.live.unit`.
    */
-  def contextZIO: ULayer[ContextStorage] =
-    ContextStorage.fiberRef
+  def zioMetrics(
+    instrumentationScopeName: String,
+    instrumentationVersion: Option[String] = None,
+    schemaUrl: Option[String] = None
+  ): URLayer[OpenTelemetry, Unit] = {
+    def buildMeter(openTelemetry: api.OpenTelemetry) = {
+      val builder = openTelemetry.meterBuilder(instrumentationScopeName)
 
-  /**
-   * Use when you use automatic instrumentation.
-   */
-  def contextJVM: ULayer[ContextStorage] =
-    ContextStorage.native
+      instrumentationVersion.foreach(builder.setInstrumentationVersion)
+      schemaUrl.foreach(builder.setSchemaUrl)
+
+      builder.build()
+    }
+
+    val metricListenerLifecycleLayer = ZLayer.scoped {
+      ZIO.serviceWithZIO[MetricListener] { metricListener =>
+        Unsafe.unsafe { implicit unsafe =>
+          ZIO.acquireRelease(
+            ZIO.succeed(MetricClient.addListener(metricListener))
+          )(_ => ZIO.succeed(MetricClient.removeListener(metricListener)))
+        }
+      }
+    }
+
+    val registryLayer =
+      ZLayer {
+        for {
+          openTelemetry <- ZIO.service[OpenTelemetry]
+          jmeter         = buildMeter(openTelemetry.underlying)
+          builder        = Instrument.Builder.make(jmeter, openTelemetry.ctxStorage)
+          registry       = InstrumentRegistry.concurrent(builder)
+        } yield registry
+      }
+
+    val zioMetricsLayer = ZLayer(ZIO.serviceWith[InstrumentRegistry](OtelMetricListener.zioMetrics(_)))
+
+    Runtime.enableRuntimeMetrics >>>
+      registryLayer >>>
+      zioMetricsLayer >>>
+      metricListenerLifecycleLayer
+  }
 
 }

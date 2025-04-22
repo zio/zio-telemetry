@@ -1,5 +1,6 @@
 package zio.telemetry.opentelemetry.metrics
 
+import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.metrics.SdkMeterProvider
 import io.opentelemetry.sdk.testing.exporter.InMemoryMetricReader
 import zio._
@@ -20,19 +21,51 @@ object MeterTest extends ZIOSpecDefault {
   val inMemoryMetricReaderLayer: ZLayer[Any, Nothing, InMemoryMetricReader] =
     ZLayer(ZIO.succeed(InMemoryMetricReader.create()))
 
+  val inMemoryMeterProvider: ULayer[SdkMeterProvider] = {
+    val meterProviderLayer =
+      ZLayer {
+        for {
+          metricReader  <- ZIO.service[InMemoryMetricReader]
+          meterProvider <- ZIO.succeed(SdkMeterProvider.builder().registerMetricReader(metricReader).build())
+        } yield meterProvider
+      }
+
+    inMemoryMetricReaderLayer >>> meterProviderLayer
+  }
+
+  val otelLayer: RLayer[SdkMeterProvider, OpenTelemetry] =
+    ZLayer.scoped {
+      for {
+        ctxStorage    <- ContextStorage.rootScoped
+        meterProvider <- ZIO.service[SdkMeterProvider]
+        underlying    <- ZIO.fromAutoCloseable(
+                           ZIO.succeed(
+                             OpenTelemetrySdk
+                               .builder()
+                               .setMeterProvider(meterProvider)
+                               .build
+                           )
+                         )
+      } yield new OpenTelemetry(underlying, ctxStorage)
+    }
+
+  def ctxStorageLayer: ULayer[ContextStorage] =
+    ZLayer.scoped(ContextStorage.rootScoped)
+
   def meterLayer(
     logAnnotated: Boolean = false
-  ): ZLayer[InMemoryMetricReader with ContextStorage, Nothing, Meter with Instrument.Builder] = {
-    val jmeter  = ZLayer {
+  ): ZLayer[ContextStorage, Nothing, Meter] = {
+    val meterLayer = ZLayer {
       for {
-        metricReader  <- ZIO.service[InMemoryMetricReader]
-        meterProvider <- ZIO.succeed(SdkMeterProvider.builder().registerMetricReader(metricReader).build())
-        meter         <- ZIO.succeed(meterProvider.get("MeterTest"))
+        ctxStorage    <- ZIO.service[ContextStorage]
+        meterProvider <- ZIO.service[SdkMeterProvider]
+        jmeter        <- ZIO.succeed(meterProvider.get("MeterTest"))
+        builder        = Instrument.Builder.make(jmeter, ctxStorage, logAnnotated)
+        meter          = Meter.make(builder)
       } yield meter
     }
-    val builder = jmeter >>> Instrument.Builder.live(logAnnotated)
 
-    builder >+> Meter.live
+    inMemoryMeterProvider >>> meterLayer
   }
 
   val observableRefLayer: ULayer[Ref[Long]] =
@@ -158,7 +191,7 @@ object MeterTest extends ZIOSpecDefault {
           )
         }
       }
-    ).provide(inMemoryMetricReaderLayer, meterLayer(), ContextStorage.fiberRef, observableRefLayer)
+    ).provide(inMemoryMetricReaderLayer, meterLayer(), ctxStorageLayer, observableRefLayer)
 
   private val contextualSpec =
     suite("contextual")(
@@ -181,7 +214,7 @@ object MeterTest extends ZIOSpecDefault {
           )
         }
       }
-    ).provide(inMemoryMetricReaderLayer, meterLayer(), ContextStorage.fiberRef, TracingTest.tracingMockLayer())
+    ).provide(inMemoryMetricReaderLayer, meterLayer(), ctxStorageLayer, TracingTest.tracingMockLayer())
 
   private val logAnnotatedSpec =
     suite("log annotated")(
@@ -221,7 +254,7 @@ object MeterTest extends ZIOSpecDefault {
           )
         }
       }
-    ).provide(inMemoryMetricReaderLayer, meterLayer(logAnnotated = true), ContextStorage.fiberRef)
+    ).provide(inMemoryMetricReaderLayer, meterLayer(logAnnotated = true), ctxStorageLayer)
 
   private val zioMetricsSpec =
     suite("ZIO metrics integration")(
@@ -247,6 +280,11 @@ object MeterTest extends ZIOSpecDefault {
           boundaries  = metricPoint.getBoundaries.asScala.map(_.toDouble).toSeq
         } yield assertTrue(boundaries == Seq(1.0, 2.0, 3.0))
       }
-    ).provide(inMemoryMetricReaderLayer, meterLayer(), ContextStorage.fiberRef, OpenTelemetry.zioMetrics)
+    ).provide(
+      inMemoryMeterProvider,
+      otelLayer,
+      inMemoryMetricReaderLayer,
+      OpenTelemetry.zioMetrics("MeterTest")
+    )
 
 }

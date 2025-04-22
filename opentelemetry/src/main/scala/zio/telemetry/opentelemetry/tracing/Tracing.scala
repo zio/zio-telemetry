@@ -514,16 +514,7 @@ trait Tracing { self =>
 
 }
 
-object Tracing {
-
-  def live(logAnnotated: Boolean = false): URLayer[Tracer with ContextStorage, Tracing] =
-    ZLayer.scoped {
-      for {
-        tracer     <- ZIO.service[Tracer]
-        ctxStorage <- ZIO.service[ContextStorage]
-        tracing    <- scoped(tracer, ctxStorage, logAnnotated)
-      } yield tracing
-    }
+private[opentelemetry] object Tracing {
 
   def scoped(tracer: Tracer, ctxStorage: ContextStorage, logAnnotated: Boolean = false): URIO[Scope, Tracing] = {
     val acquire =

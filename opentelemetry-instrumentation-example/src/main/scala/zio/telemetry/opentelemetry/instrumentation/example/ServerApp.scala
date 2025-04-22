@@ -1,6 +1,5 @@
 package zio.telemetry.opentelemetry.instrumentation.example
 
-import io.opentelemetry.api
 import io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender
 import zio.logging.backend.SLF4J
 import zio._
@@ -24,16 +23,15 @@ object ServerApp extends ZIOAppDefault {
   override def run: Task[ExitCode] =
     (for {
       server        <- ZIO.service[HttpServer]
-      openTelemetry <- ZIO.service[api.OpenTelemetry]
-      _             <- ZIO.attempt(OpenTelemetryAppender.install(openTelemetry))
+      openTelemetry <- ZIO.service[OpenTelemetry]
+      _             <- ZIO.attempt(OpenTelemetryAppender.install(openTelemetry.asJava))
       exitCode      <- server.start.exitCode
     } yield exitCode).provide(
       configLayer,
       HttpServer.live,
       HttpServerApp.live,
       OpenTelemetry.global,
-      OpenTelemetry.tracing(instrumentationScopeName),
-      OpenTelemetry.contextJVM
+      OpenTelemetry.tracing(instrumentationScopeName)
     )
 
 }

@@ -2,27 +2,24 @@ package zio.telemetry.opentelemetry.logging
 
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.logs.{Logger, LoggerProvider, Severity}
-import io.opentelemetry.context.Context
 import zio._
 import zio.telemetry.opentelemetry.context.ContextStorage
 
-object Logging {
+private[opentelemetry] object Logging {
 
-  def live(
+  def make(
+    loggerProvider: LoggerProvider,
+    ctxStorage: ContextStorage,
     instrumentationScopeName: String,
     logLevel: LogLevel = LogLevel.Info
-  ): URLayer[ContextStorage with LoggerProvider, Unit] =
-    ZLayer.scoped(
-      for {
-        loggerProvider <- ZIO.service[LoggerProvider]
-        ctxStorage     <- ZIO.service[ContextStorage]
-        logger         <- ZIO.succeed(
-                            zioLogger(instrumentationScopeName)(ctxStorage, loggerProvider)
-                              .filterLogLevel(_ >= logLevel)
-                          )
-        _              <- ZIO.withLoggerScoped(logger)
-      } yield ()
-    )
+  ): URIO[Scope, Unit] =
+    for {
+      logger <- ZIO.succeed(
+                  zioLogger(instrumentationScopeName)(ctxStorage, loggerProvider)
+                    .filterLogLevel(_ >= logLevel)
+                )
+      _      <- ZIO.withLoggerScoped(logger)
+    } yield ()
 
   private def zioLogger(instrumentationScopeName: String)(
     ctxStorage: ContextStorage,
@@ -49,13 +46,7 @@ object Logging {
         builder.setSeverity(severityMapping(logLevel))
         annotations.foreach { case (k, v) => builder.setAttribute(AttributeKey.stringKey(k), v) }
 
-        ctxStorage match {
-          case cs: ContextStorage.ZIOFiberRef =>
-            context.get(cs.ref).foreach(builder.setContext)
-          case _: ContextStorage.Native.type  =>
-            builder.setContext(Context.current())
-        }
-
+        context.get(ctxStorage.ref).foreach(builder.setContext)
         builder.emit()
       }
 

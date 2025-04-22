@@ -1,7 +1,10 @@
 package zio.telemetry.opentelemetry.zio.logging
 
+import io.opentelemetry.api.trace.{Span, SpanContext}
+import zio.FiberRefs
 import zio.logging.LogFormat
 import zio.logging.LogFormat.label
+import zio.telemetry.opentelemetry.context.ContextStorage
 
 trait LogFormats {
 
@@ -24,4 +27,29 @@ trait LogFormats {
    * Label with `spanId` key and [[spanId]] value
    */
   def spanIdLabel: LogFormat = label("spanId", spanId)
+}
+
+private[opentelemetry] object LogFormats {
+
+  def make(ctxStorage: ContextStorage): LogFormats =
+    new LogFormats {
+
+      override def traceId: LogFormat = LogFormat.make { (builder, _, _, _, _, _, fiberRefs, _, _) =>
+        getSpanContext(ctxStorage, fiberRefs).map(_.getTraceId).fold(())(builder.appendText(_))
+      }
+
+      override def spanId: LogFormat = LogFormat.make { (builder, _, _, _, _, _, fiberRefs, _, _) =>
+        getSpanContext(ctxStorage, fiberRefs).map(_.getSpanId).fold(())(builder.appendText(_))
+      }
+
+      private def getSpanContext(ctxStorage: ContextStorage, fiberRefs: FiberRefs): Option[SpanContext] = {
+        val maybeOtelContext = fiberRefs.get(ctxStorage.ref)
+
+        maybeOtelContext
+          .map(Span.fromContext)
+          .map(_.getSpanContext)
+      }
+
+    }
+
 }

@@ -27,13 +27,25 @@ object LoggingTest extends ZIOSpecDefault {
       ZEnvironment(inMemoryLogRecordExporter).add(loggerProvider)
     })
 
+  def ctxStorageLayer: ULayer[ContextStorage] =
+    ZLayer.scoped(ContextStorage.rootScoped)
+
   def loggingMockLayer(
     instrumentationScopeName: String,
     logLevel: LogLevel = LogLevel.Info
-  ): URLayer[ContextStorage, InMemoryLogRecordExporter with LoggerProvider] =
+  ): URLayer[ContextStorage, InMemoryLogRecordExporter with LoggerProvider] = {
+    val loggingLayer = ZLayer.scoped {
+      for {
+        ctxStorage     <- ZIO.service[ContextStorage]
+        loggerProvider <- ZIO.service[LoggerProvider]
+        _              <- Logging.make(loggerProvider, ctxStorage, instrumentationScopeName, logLevel)
+      } yield ()
+    }
+
     Runtime.removeDefaultLoggers >>>
       inMemoryLoggerProviderLayer >>>
-      (Logging.live(instrumentationScopeName, logLevel) ++ inMemoryLoggerProviderLayer)
+      (loggingLayer ++ inMemoryLoggerProviderLayer)
+  }
 
   def getFinishedLogRecords: ZIO[InMemoryLogRecordExporter, Nothing, List[LogRecordData]] =
     ZIO.service[InMemoryLogRecordExporter].map(_.getFinishedLogRecordItems.asScala.toList)
@@ -64,7 +76,7 @@ object LoggingTest extends ZIOSpecDefault {
             assert(traceId)(equalTo("00000000000000000000000000000000")) &&
             assert(spanId)(equalTo("0000000000000000"))
           }
-        }.provide(loggingMockLayer("without tracing context"), ContextStorage.fiberRef),
+        }.provide(loggingMockLayer("without tracing context"), ctxStorageLayer),
         test("filter log level") {
           for {
             _          <- ZIO.logInfo("test")
@@ -89,7 +101,7 @@ object LoggingTest extends ZIOSpecDefault {
             assert(traceId)(equalTo("00000000000000000000000000000000")) &&
             assert(spanId)(equalTo("0000000000000000"))
           }
-        }.provide(loggingMockLayer("filter log level", LogLevel.Warning), ContextStorage.fiberRef),
+        }.provide(loggingMockLayer("filter log level", LogLevel.Warning), ctxStorageLayer),
         test("multiple loggers") {
           for {
             logRecords1 <-
@@ -103,7 +115,7 @@ object LoggingTest extends ZIOSpecDefault {
             assert(r1.getInstrumentationScopeInfo.getName)(equalTo("test1")) &&
             assert(r2.getInstrumentationScopeInfo.getName)(equalTo("test2"))
           }
-        }.provide(ContextStorage.fiberRef),
+        }.provide(ctxStorageLayer),
         test("tracing context (fiberRef)") {
           ZIO.serviceWithZIO[Tracing] { tracing =>
             tracing.root("ROOT")(
@@ -135,7 +147,7 @@ object LoggingTest extends ZIOSpecDefault {
         }.provide(
           loggingMockLayer("tracing context (fiberRef)"),
           TracingTest.tracingMockLayer(),
-          ContextStorage.fiberRef
+          ctxStorageLayer
         ),
         test("tracing context (openTelemtryContext)") {
           ZIO.serviceWithZIO[Tracing] { tracing =>
@@ -168,7 +180,7 @@ object LoggingTest extends ZIOSpecDefault {
         }.provide(
           loggingMockLayer("tracing context (openTelemtryContext)"),
           TracingTest.tracingMockLayer(),
-          ContextStorage.native
+          ctxStorageLayer
         )
       )
     )
