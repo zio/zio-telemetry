@@ -8,9 +8,9 @@ import zio.config.typesafe.TypesafeConfig
 import zio.logging.backend.SLF4J
 import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.instrumentation.example.config.AppConfig
-import zio.telemetry.opentelemetry.instrumentation.example.http.{HttpServer, HttpServerApp}
+import zio.telemetry.opentelemetry.instrumentation.example.http.{BackendHttpApp, BackendHttpServer}
 
-object ServerApp extends ZIOAppDefault {
+object BackendApp extends ZIOAppDefault {
 
   override val bootstrap: ZLayer[ZIOAppArgs, Any, Any] =
     Runtime.removeDefaultLoggers >>> SLF4J.slf4j
@@ -23,14 +23,14 @@ object ServerApp extends ZIOAppDefault {
 
   override def run: Task[ExitCode] =
     (for {
-      server        <- ZIO.service[HttpServer]
+      server        <- ZIO.service[BackendHttpServer]
       openTelemetry <- ZIO.service[OpenTelemetry]
       _             <- ZIO.attempt(OpenTelemetryAppender.install(openTelemetry.asJava))
       exitCode      <- server.start.exitCode
     } yield exitCode).provide(
       configLayer,
-      HttpServer.live,
-      HttpServerApp.live,
+      BackendHttpServer.live,
+      BackendHttpApp.live,
       OpenTelemetry.global,
       OpenTelemetry.tracing(instrumentationScopeName)
     )

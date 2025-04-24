@@ -44,25 +44,35 @@ OTEL_AGENT_PATH=$(cs fetch --classpath "io.opentelemetry.javaagent:opentelemetry
 Then start the server application
 ```bash
 sbt -J-javaagent:$OTEL_AGENT_PATH \
-    -J-Dotel.service.name=example-server \
+    -J-Dotel.service.name=opentelemetry-example-backend \
     -J-Dotel.traces.sampler=always_on \
     -J-Dotel.traces.exporter=otlp \
     -J-Dotel.logs.exporter=otlp \
     -J-Dotel.exporter.otlp.logs.protocol="http/protobuf" \
     -J-Dotel.exporter.otlp.logs.endpoint="http://localhost:5341/ingest/otlp/v1/logs" \
     -J-Dotel.metrics.exporter=none \
-    "opentelemetryInstrumentationExample/runMain zio.telemetry.opentelemetry.instrumentation.example.ServerApp"
+    -J-Dotel.instrumentation.zio.enabled=false \
+    "opentelemetryInstrumentationExample/runMain zio.telemetry.opentelemetry.instrumentation.example.BackendApp"
  ```
 
-and the client application which will send one request to the server application
+and the proxy application which will send your client requests over to the server application
 ```bash
 sbt -J-javaagent:$OTEL_AGENT_PATH \
-    -J-Dotel.service.name=example-client \
+    -J-Dotel.service.name=opentelemetry-example-proxy \
     -J-Dotel.traces.sampler=always_on \
     -J-Dotel.traces.exporter=otlp \
+    -J-Dotel.logs.exporter=otlp \
+    -J-Dotel.exporter.otlp.logs.protocol="http/protobuf" \
+    -J-Dotel.exporter.otlp.logs.endpoint="http://localhost:5341/ingest/otlp/v1/logs" \
     -J-Dotel.metrics.exporter=none \
-    "opentelemetryInstrumentationExample/runMain zio.telemetry.opentelemetry.instrumentation.example.ClientApp"
+    -J-Dotel.instrumentation.zio.enabled=false \
+    "opentelemetryInstrumentationExample/runMain zio.telemetry.opentelemetry.instrumentation.example.ProxyApp"
  ```
+
+Now perform the following request to see the results immediately:
+```bash
+curl -X GET http://localhost:8080/proxy
+```
 
 Head over to [Jaeger UI](http://localhost:16686/) and [Seq UI](http://localhost:80/) to see the result.
 
