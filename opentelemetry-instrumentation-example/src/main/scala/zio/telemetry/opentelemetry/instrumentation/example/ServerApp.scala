@@ -15,7 +15,8 @@ object ServerApp extends ZIOAppDefault {
   override val bootstrap: ZLayer[ZIOAppArgs, Any, Any] =
     Runtime.removeDefaultLoggers >>> SLF4J.slf4j
 
-  private val instrumentationScopeName = "zio.telemetry.opentelemetry.instrumentation.example.ServerApp"
+  private val instrumentationScopeName =
+    "zio.telemetry.opentelemetry.instrumentation.example.ServerApp"
 
   private val configLayer: Layer[ReadError[String], AppConfig] =
     TypesafeConfig.fromResourcePath(descriptor[AppConfig])

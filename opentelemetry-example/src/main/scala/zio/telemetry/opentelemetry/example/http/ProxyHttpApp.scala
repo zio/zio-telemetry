@@ -14,7 +14,8 @@ case class ProxyHttpApp(client: BackendClient, tracing: Tracing, baggage: Baggag
 
   import tracing.aspects._
 
-  private val statusMapper: StatusMapper[Throwable, Any] = StatusMapper.failureThrowable(_ => StatusCode.UNSET)
+  private val statusMapper: StatusMapper[Throwable, Any] =
+    StatusMapper.failureThrowable(_ => StatusCode.UNSET)
 
   val routes =
     Routes(

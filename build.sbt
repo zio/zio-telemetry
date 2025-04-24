@@ -82,6 +82,14 @@ addCommandAlias(
   "mimaChecks",
   "all opentracing/mimaReportBinaryIssues opentelemetry/mimaReportBinaryIssues opencensus/mimaReportBinaryIssues"
 )
+addCommandAlias(
+  "fmtExamples",
+  List(
+    "opentracingExample/scalafmtAll;opentracingExample/scalafixAll",
+    "opentelemetryExample/scalafmtAll;opentelemetryExample/scalafixAll",
+    "opentelemetryInstrumentationExample/scalafmtAll;opentelemetryInstrumentationExample/scalafixAll"
+  ).mkString(";")
+)
 
 def stdModuleSettings(name: Option[String], packageName: Option[String]) =
   stdSettings(name, packageName) ++

@@ -36,13 +36,7 @@ object BackendClient {
       for {
         client     <- ZIO.service[zio.http.Client]
         config     <- ZIO.service[AppConfig]
-        backendUrl <- ZIO.fromEither(
-                        URL
-                          .decode(s"http://${config.backend.host}:${config.backend.port}")
-                          .left
-                          .map(new IllegalArgumentException(_))
-                      )
-
+        backendUrl <- ZIO.fromEither(URL.decode(s"http://${config.backend.host}:${config.backend.port}"))
       } yield BackendClient(client.batched, backendUrl)
     }
 

@@ -26,12 +26,7 @@ object HttpClient {
       for {
         client     <- ZIO.service[zio.http.Client]
         config     <- ZIO.service[AppConfig]
-        backendUrl <- ZIO.fromEither(
-                        URL
-                          .decode(s"http://${config.server.host}:${config.server.port}")
-                          .left
-                          .map(new IllegalArgumentException(_))
-                      )
+        backendUrl <- ZIO.fromEither(URL.decode(s"http://${config.server.host}:${config.server.port}"))
       } yield HttpClient(client.batched, backendUrl)
     }
 
