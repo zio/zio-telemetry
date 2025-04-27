@@ -1,6 +1,7 @@
 package zio.telemetry.opentelemetry.zio.logging
 
 import io.opentelemetry.api.trace.{Span, SpanContext}
+import io.opentelemetry.context.Context
 import zio.FiberRefs
 import zio.logging.LogFormat
 import zio.logging.LogFormat.label
@@ -43,7 +44,10 @@ private[opentelemetry] object LogFormats {
       }
 
       private def getSpanContext(ctxStorage: ContextStorage, fiberRefs: FiberRefs): Option[SpanContext] = {
-        val maybeOtelContext = fiberRefs.get(ctxStorage.ref)
+        val maybeOtelContext = ctxStorage match {
+          case cs: ContextStorage.ZIOFiberRef     => fiberRefs.get(cs.ref)
+          case ContextStorage.JavaOtelThreadLocal => Some(Context.current())
+        }
 
         maybeOtelContext
           .map(Span.fromContext)

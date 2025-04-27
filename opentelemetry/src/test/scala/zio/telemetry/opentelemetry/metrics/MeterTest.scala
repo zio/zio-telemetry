@@ -36,7 +36,7 @@ object MeterTest extends ZIOSpecDefault {
   val otelLayer: RLayer[SdkMeterProvider, OpenTelemetry] =
     ZLayer.scoped {
       for {
-        ctxStorage    <- ContextStorage.rootScoped
+        ctxStorage    <- ContextStorage.zioFiberRefScoped
         meterProvider <- ZIO.service[SdkMeterProvider]
         underlying    <- ZIO.fromAutoCloseable(
                            ZIO.succeed(
@@ -46,11 +46,11 @@ object MeterTest extends ZIOSpecDefault {
                                .build
                            )
                          )
-      } yield new OpenTelemetry(underlying, ctxStorage)
+      } yield new OpenTelemetry.OpenTelemetrySdk(underlying, ctxStorage)
     }
 
   def ctxStorageLayer: ULayer[ContextStorage] =
-    ZLayer.scoped(ContextStorage.rootScoped)
+    ZLayer.scoped(ContextStorage.zioFiberRefScoped)
 
   def meterLayer(
     logAnnotated: Boolean = false

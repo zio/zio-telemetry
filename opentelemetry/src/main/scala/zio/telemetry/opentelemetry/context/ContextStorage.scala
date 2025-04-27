@@ -3,38 +3,66 @@ package zio.telemetry.opentelemetry.context
 import io.opentelemetry.context.Context
 import zio._
 
-/**
- * The implementation that uses [[zio.FiberRef]] as a storage for [[io.opentelemetry.context.Context]]
- *
- * @param ref
- */
-final class ContextStorage(private[zio] val ref: FiberRef[Context]) {
+sealed trait ContextStorage {
 
-  def get(implicit trace: Trace): UIO[Context] =
-    ref.get
+  def get(implicit trace: Trace): UIO[Context]
 
-  def set(context: Context)(implicit trace: Trace): UIO[Unit] =
-    ref.set(context)
+  def locally[R, E, A](ctx: Context)(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
-  def getAndSet(context: Context)(implicit trace: Trace): UIO[Context] =
-    ref.getAndSet(context)
-
-  def updateAndGet(f: Context => Context)(implicit trace: Trace): UIO[Context] =
-    ref.updateAndGet(f)
-
-  def locally[R, E, A](context: Context)(zio: ZIO[R, E, A])(implicit
-    trace: Trace
-  ): ZIO[R, E, A] =
-    ref.locally(context)(zio)
-
-  def locallyScoped(context: Context)(implicit trace: Trace): ZIO[Scope, Nothing, Unit] =
-    ref.locallyScoped(context)
+  def locallyScoped(ctx: Context)(implicit trace: Trace): ZIO[Scope, Nothing, Unit]
 
 }
 
 private[opentelemetry] object ContextStorage {
 
-  def rootScoped: URIO[Scope, ContextStorage] =
-    FiberRef.make[Context](Context.root()).map(new ContextStorage(_))
+  /**
+   * The implementation that uses [[zio.FiberRef]] as a storage for [[io.opentelemetry.context.Context]]
+   *
+   * @param ref
+   */
+  final class ZIOFiberRef(private[opentelemetry] val ref: FiberRef[Context]) extends ContextStorage {
+
+    override def get(implicit trace: Trace): UIO[Context] =
+      ref.get
+
+    override def locally[R, E, A](context: Context)(zio: => ZIO[R, E, A])(implicit
+      trace: Trace
+    ): ZIO[R, E, A] =
+      ref.locally(context)(zio)
+
+    override def locallyScoped(context: Context)(implicit trace: Trace): ZIO[Scope, Nothing, Unit] =
+      ref.locallyScoped(context)
+
+  }
+
+  /**
+   * The implementation that uses [[java.lang.ThreadLocal]] as a storage for [[io.opentelemetry.context.Context]]
+   */
+  object JavaOtelThreadLocal extends ContextStorage {
+
+    override def get(implicit trace: Trace): UIO[Context] =
+      ZIO.succeed(Context.current())
+
+    override def locally[R, E, A](ctx: Context)(zio: => ZIO[R, E, A])(implicit
+      trace: Trace
+    ): ZIO[R, E, A] =
+      ZIO.acquireReleaseWith {
+        ZIO.succeed(ctx.makeCurrent())
+      } { scope =>
+        ZIO.succeed(scope.close())
+      }(_ => zio)
+
+    override def locallyScoped(ctx: Context)(implicit trace: Trace): ZIO[Scope, Nothing, Unit] =
+      ZIO
+        .acquireRelease(
+          ZIO.succeed(ctx.makeCurrent())
+        ) { scope =>
+          ZIO.succeed(scope.close())
+        }
+        .unit
+  }
+
+  def zioFiberRefScoped: URIO[Scope, ContextStorage] =
+    FiberRef.make[Context](Context.root()).map(new ZIOFiberRef(_))
 
 }

@@ -28,7 +28,7 @@ object LoggingTest extends ZIOSpecDefault {
     })
 
   def ctxStorageLayer: ULayer[ContextStorage] =
-    ZLayer.scoped(ContextStorage.rootScoped)
+    ZLayer.scoped(ContextStorage.zioFiberRefScoped)
 
   def loggingMockLayer(
     instrumentationScopeName: String,

@@ -1,31 +1,13 @@
 package zio.telemetry.opentelemetry.baggage
 
-import io.opentelemetry.api.baggage.{Baggage => Baggaje, BaggageBuilder, BaggageEntryMetadata}
+import io.opentelemetry.api.baggage.{Baggage => Baggaje, BaggageBuilder, BaggageEntry, BaggageEntryMetadata}
 import io.opentelemetry.context.Context
 import zio._
-import zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator
-import zio.telemetry.opentelemetry.context.{ContextStorage, IncomingContextCarrier, OutgoingContextCarrier}
+import zio.telemetry.opentelemetry.context.ContextStorage
 
 import scala.jdk.CollectionConverters._
 
 trait Baggage { self =>
-
-  /**
-   * Extracts the baggage data from carrier `C` into the current context.
-   *
-   * @param propagator
-   *   implementation of [[zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator]]
-   * @param carrier
-   *   mutable data from which the parent span is extracted
-   * @param trace
-   * @tparam C
-   *   carrier
-   * @return
-   */
-  def extract[C](
-    propagator: BaggagePropagator,
-    carrier: IncomingContextCarrier[C]
-  )(implicit trace: Trace): UIO[Unit]
 
   /**
    * Gets the value by a given name.
@@ -63,30 +45,13 @@ trait Baggage { self =>
   def getCurrentBaggageUnsafe(implicit trace: Trace): UIO[Baggaje]
 
   /**
-   * Injects the baggage data from the current context into carrier `C`.
-   *
-   * @param propagator
-   *   implementation of [[zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator]]
-   * @param carrier
-   *   mutable data from which the parent span is extracted
-   * @param trace
-   * @tparam C
-   *   carrier
-   * @return
-   */
-  def inject[C](
-    propagator: BaggagePropagator,
-    carrier: OutgoingContextCarrier[C]
-  )(implicit trace: Trace): UIO[Unit]
-
-  /**
    * Removes the name/value by a given name.
    *
    * @param name
    * @param trace
    * @return
    */
-  def remove(name: String)(implicit trace: Trace): UIO[Unit]
+  def remove[R, E, A](name: String)(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   /**
    * Sets the new value for a given name.
@@ -96,7 +61,10 @@ trait Baggage { self =>
    * @param trace
    * @return
    */
-  def set(name: String, value: String)(implicit trace: Trace): UIO[Unit]
+  def set[R, E, A](
+    name: String,
+    value: String
+  )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   /**
    * Sets the new value and metadata for a given name.
@@ -108,7 +76,39 @@ trait Baggage { self =>
    * @param trace
    * @return
    */
-  def setWithMetadata(name: String, value: String, metadata: String)(implicit trace: Trace): UIO[Unit]
+  def setWithMetadata[R, E, A](
+    name: String,
+    value: String,
+    metadata: String
+  )(zio: => ZIO[R, E, A])(implicit
+    trace: Trace
+  ): ZIO[R, E, A]
+
+  object aspects {
+
+    def remove(name: String): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.remove(name)(zio)
+      }
+
+    def set(name: String, value: String): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.set(name, value)(zio)
+      }
+
+    def setWithMetadata(
+      name: String,
+      value: String,
+      metadata: String
+    ): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.setWithMetadata(name, value, metadata)(zio)
+      }
+
+  }
 
 }
 
@@ -117,82 +117,74 @@ private[opentelemetry] object Baggage {
   def make(ctxStorage: ContextStorage, logAnnotated: Boolean = false): Baggage =
     new Baggage { self =>
       override def getCurrentBaggageUnsafe(implicit trace: Trace): UIO[Baggaje] =
-        injectLogAnnotations *>
-          getCurrentContext.map(Baggaje.fromContext)
+        for {
+          ctx       <- getCurrentContextUnsafe
+          baggage    = Baggaje.fromContext(ctx)
+          annotated <- withLogAnnotations(baggage)
+        } yield annotated
 
       override def get(name: String)(implicit trace: Trace): UIO[Option[String]] =
-        injectLogAnnotations *>
-          getCurrentBaggageUnsafe.map(baggage => Option(baggage.getEntryValue(name)))
+        getCurrentBaggageUnsafe.map(baggage => Option(baggage.getEntryValue(name)))
 
       override def getAll(implicit trace: Trace): UIO[Map[String, String]] =
-        injectLogAnnotations *>
-          getCurrentBaggageUnsafe.map(_.asMap().asScala.toMap.map { case (k, v) => k -> v.getValue })
+        getCurrentBaggageUnsafe.map(asScalaMap(_).map { case (k, v) => k -> v.getValue })
 
       override def getAllWithMetadata(implicit trace: Trace): UIO[Map[String, (String, String)]] =
-        injectLogAnnotations *>
-          getCurrentBaggageUnsafe.map(
-            _.asMap().asScala.toMap.map { case (k, v) => (k, (v.getValue, v.getMetadata.getValue)) }
-          )
+        getCurrentBaggageUnsafe.map(
+          asScalaMap(_).map { case (k, v) => (k, (v.getValue, v.getMetadata.getValue)) }
+        )
 
-      override def set(name: String, value: String)(implicit trace: Trace): UIO[Unit] =
-        injectLogAnnotations *> modifyBuilder(_.put(name, value)).unit
+      override def set[R, E, A](
+        name: String,
+        value: String
+      )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+        modifyBuilder(_.put(name, value))(zio)
 
-      override def setWithMetadata(name: String, value: String, metadata: String)(implicit trace: Trace): UIO[Unit] =
-        injectLogAnnotations *> modifyBuilder(_.put(name, value, BaggageEntryMetadata.create(metadata))).unit
+      override def setWithMetadata[R, E, A](
+        name: String,
+        value: String,
+        metadata: String
+      )(zio: => ZIO[R, E, A])(implicit
+        trace: Trace
+      ): ZIO[R, E, A] =
+        modifyBuilder(_.put(name, value, BaggageEntryMetadata.create(metadata)))(zio)
 
-      override def remove(name: String)(implicit trace: Trace): UIO[Unit] =
-        injectLogAnnotations *> modifyBuilder(_.remove(name)).unit
+      override def remove[R, E, A](name: String)(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+        modifyBuilder(_.remove(name))(zio)
 
-      override def inject[C](
-        propagator: BaggagePropagator,
-        carrier: OutgoingContextCarrier[C]
-      )(implicit trace: Trace): UIO[Unit] =
-        for {
-          _   <- injectLogAnnotations
-          ctx <- getCurrentContext
-          _   <- ZIO.succeed(propagator.instance.inject(ctx, carrier.kernel, carrier))
-        } yield ()
-
-      override def extract[C](
-        propagator: BaggagePropagator,
-        carrier: IncomingContextCarrier[C]
-      )(implicit trace: Trace): UIO[Unit] =
-        injectLogAnnotations *>
-          ZIO.uninterruptible {
-            modifyContext(ctx => propagator.instance.extract(ctx, carrier.kernel, carrier)).unit
-          }
-
-      private def getCurrentContext(implicit trace: Trace): UIO[Context] =
+      private def getCurrentContextUnsafe(implicit trace: Trace): UIO[Context] =
         ctxStorage.get
 
-      private def modifyBuilder(body: BaggageBuilder => BaggageBuilder)(implicit trace: Trace): UIO[Context] =
-        modifyContext { ctx =>
-          body(Baggaje.fromContext(ctx).toBuilder)
-            .build()
-            .storeInContext(ctx)
-        }
+      private def modifyBuilder[R, E, A](
+        f: BaggageBuilder => BaggageBuilder
+      )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+        for {
+          ctx       <- getCurrentContextUnsafe
+          baggage   <- getCurrentBaggageUnsafe
+          updatedCtx = f(baggage.toBuilder)
+                         .build()
+                         .storeInContext(ctx)
+          result    <- ctxStorage.locally(updatedCtx)(zio)
+        } yield result
 
-      private def modifyContext(body: Context => Context)(implicit trace: Trace): UIO[Context] =
-        ctxStorage.updateAndGet(body)
+      private def withLogAnnotations(baggage: Baggaje)(implicit trace: Trace): UIO[Baggaje] =
+        if (logAnnotated) {
+          ZIO.logAnnotations.map { annotations =>
+            val annotationsWithMetadata = annotations.map { case (k, v) =>
+              (k, (v, BaggageEntryMetadata.create("zio log annotation")))
+            }
+            val currentWithMetadata     = asScalaMap(baggage).map { case (k, v) => (k, (v.getValue, v.getMetadata)) }
+            val merged                  = annotationsWithMetadata ++ currentWithMetadata
+            val builder                 = baggage.toBuilder
 
-      private def injectLogAnnotations(implicit trace: Trace): UIO[Unit] =
-        ZIO
-          .when(logAnnotated) {
-            for {
-              annotations            <- ZIO.logAnnotations
-              annotationsWithMetadata = annotations.map { case (k, v) =>
-                                          (k, (v, BaggageEntryMetadata.create("zio log annotation")))
-                                        }
-              current                <- getCurrentContext
-                                          .map(Baggaje.fromContext)
-                                          .map(_.asMap().asScala.toMap.map { case (k, v) => (k, (v.getValue, v.getMetadata)) })
-              _                      <- modifyBuilder { builder =>
-                                          (annotationsWithMetadata ++ current).foreach { case (k, (v, m)) => builder.put(k, v, m) }
-                                          builder
-                                        }
-            } yield ()
+            merged.foreach { case (k, (v, m)) => builder.put(k, v, m) }
+            builder.build
           }
-          .unit
+        } else ZIO.succeed(baggage)
+
+      private def asScalaMap(baggage: Baggaje): Map[String, BaggageEntry] =
+        baggage.asMap().asScala.toMap.map { case (k, v) => k -> v }
+
     }
 
 }

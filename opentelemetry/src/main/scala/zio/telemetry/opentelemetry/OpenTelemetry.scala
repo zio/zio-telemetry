@@ -11,16 +11,17 @@ import zio.telemetry.opentelemetry.metrics.Meter
 import zio.telemetry.opentelemetry.metrics.internal.{Instrument, InstrumentRegistry, OtelMetricListener}
 import zio.telemetry.opentelemetry.tracing.Tracing
 
-final class OpenTelemetry(
-  private[opentelemetry] val underlying: api.OpenTelemetry,
-  private[opentelemetry] val ctxStorage: ContextStorage
-) {
+trait OpenTelemetry {
 
-  def asJava: api.OpenTelemetry =
-    underlying
+  private[opentelemetry] def underlying: api.OpenTelemetry
+
+  private[opentelemetry] def ctxStorage: ContextStorage
 
   def autoinstrumented[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
     ctxStorage.locally(Context.current())(zio)
+
+  def asJava: api.OpenTelemetry =
+    underlying
 
 }
 
@@ -28,6 +29,11 @@ final class OpenTelemetry(
  * The entrypoint to telemetry functionality for tracing, metrics, logging and baggage.
  */
 object OpenTelemetry {
+
+  final class OpenTelemetrySdk private[opentelemetry] (
+    val underlying: api.OpenTelemetry,
+    val ctxStorage: ContextStorage
+  ) extends OpenTelemetry
 
   /**
    * A global singleton for the entrypoint to telemetry functionality for tracing, metrics, logging and baggage. Should
@@ -42,8 +48,7 @@ object OpenTelemetry {
     ZLayer.scoped {
       for {
         underlying <- ZIO.attempt(api.GlobalOpenTelemetry.get())
-        ctxStorage <- ContextStorage.rootScoped
-      } yield new OpenTelemetry(underlying, ctxStorage)
+      } yield new OpenTelemetrySdk(underlying, ContextStorage.JavaOtelThreadLocal)
     }
 
   /**
@@ -60,16 +65,16 @@ object OpenTelemetry {
     ZLayer.scoped {
       for {
         underlying <- zio
-        ctxStorage <- ContextStorage.rootScoped
-      } yield new OpenTelemetry(underlying, ctxStorage)
+        ctxStorage <- ContextStorage.zioFiberRefScoped
+      } yield new OpenTelemetrySdk(underlying, ctxStorage)
     }
 
   val noop: TaskLayer[OpenTelemetry] =
     ZLayer.scoped {
       for {
         underlying <- ZIO.attempt(api.OpenTelemetry.noop())
-        ctxStorage <- ContextStorage.rootScoped
-      } yield new OpenTelemetry(underlying, ctxStorage)
+        ctxStorage <- ContextStorage.zioFiberRefScoped
+      } yield new OpenTelemetrySdk(underlying, ctxStorage)
     }
 
   /**
