@@ -1,6 +1,6 @@
 package zio.telemetry.opentelemetry.baggage
 
-import io.opentelemetry.api.baggage.{Baggage => Baggaje, BaggageBuilder, BaggageEntry, BaggageEntryMetadata}
+import io.opentelemetry.api.baggage.{Baggage => JBaggage, BaggageBuilder, BaggageEntry, BaggageEntryMetadata}
 import io.opentelemetry.context.Context
 import zio._
 import zio.telemetry.opentelemetry.context.ContextStorage
@@ -42,7 +42,7 @@ trait Baggage { self =>
    * @param trace
    * @return
    */
-  def getCurrentBaggageUnsafe(implicit trace: Trace): UIO[Baggaje]
+  def getCurrentBaggageUnsafe(implicit trace: Trace): UIO[JBaggage]
 
   /**
    * Removes the name/value by a given name.
@@ -116,10 +116,10 @@ private[opentelemetry] object Baggage {
 
   def make(ctxStorage: ContextStorage, logAnnotated: Boolean = false): Baggage =
     new Baggage { self =>
-      override def getCurrentBaggageUnsafe(implicit trace: Trace): UIO[Baggaje] =
+      override def getCurrentBaggageUnsafe(implicit trace: Trace): UIO[JBaggage] =
         for {
           ctx       <- getCurrentContextUnsafe
-          baggage    = Baggaje.fromContext(ctx)
+          baggage    = JBaggage.fromContext(ctx)
           annotated <- withLogAnnotations(baggage)
         } yield annotated
 
@@ -167,7 +167,7 @@ private[opentelemetry] object Baggage {
           result    <- ctxStorage.locally(updatedCtx)(zio)
         } yield result
 
-      private def withLogAnnotations(baggage: Baggaje)(implicit trace: Trace): UIO[Baggaje] =
+      private def withLogAnnotations(baggage: JBaggage)(implicit trace: Trace): UIO[JBaggage] =
         if (logAnnotated) {
           ZIO.logAnnotations.map { annotations =>
             val annotationsWithMetadata = annotations.map { case (k, v) =>
@@ -182,7 +182,7 @@ private[opentelemetry] object Baggage {
           }
         } else ZIO.succeed(baggage)
 
-      private def asScalaMap(baggage: Baggaje): Map[String, BaggageEntry] =
+      private def asScalaMap(baggage: JBaggage): Map[String, BaggageEntry] =
         baggage.asMap().asScala.toMap.map { case (k, v) => k -> v }
 
     }
