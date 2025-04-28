@@ -723,9 +723,9 @@ private[opentelemetry] object Tracing {
               links.foldLeft(spanBuilder) { case (builder, link) => builder.addLink(link) }
           }
 
-          private def endSpan(span: Span)(implicit trace: Trace): UIO[Unit]       =
+          private def endSpan(span: Span)(implicit trace: Trace): UIO[Unit] =
             currentNanos.flatMap(nanos => ZIO.succeed(span.end(nanos, TimeUnit.NANOSECONDS)))
-          
+
           private def withLogAnnotations(attributes: Attributes): UIO[Attributes] =
             if (logAnnotated) {
               ZIO.logAnnotations.map { annotations =>

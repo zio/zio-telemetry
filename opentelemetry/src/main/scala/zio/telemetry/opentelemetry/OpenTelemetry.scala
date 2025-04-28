@@ -23,6 +23,20 @@ trait OpenTelemetry {
   def asJava: api.OpenTelemetry =
     underlying
 
+  /**
+   * Use when you need to pass contextual information between spans.
+   */
+  val baggage: Baggage =
+    Baggage.make(ctxStorage)
+
+  /**
+   * Configure Baggage instance
+   *
+   * @param logAnnotated
+   *   propagate ZIO log annotations as Baggage key/values if it is set to true
+   */
+  def withBaggage(logAnnotated: Boolean): OpenTelemetry
+
 }
 
 /**
@@ -30,10 +44,17 @@ trait OpenTelemetry {
  */
 object OpenTelemetry {
 
-  final class OpenTelemetrySdk private[opentelemetry] (
+  class OpenTelemetrySdk private[opentelemetry] (
     val underlying: api.OpenTelemetry,
     val ctxStorage: ContextStorage
-  ) extends OpenTelemetry
+  ) extends OpenTelemetry {
+
+    override def withBaggage(logAnnotated: Boolean): OpenTelemetrySdk =
+      new OpenTelemetrySdk(underlying, ctxStorage) {
+        override val baggage: Baggage = Baggage.make(ctxStorage, logAnnotated)
+      }
+
+  }
 
   /**
    * A global singleton for the entrypoint to telemetry functionality for tracing, metrics, logging and baggage. Should
@@ -169,15 +190,6 @@ object OpenTelemetry {
         _             <- Logging.make(loggerProvider, openTelemetry.ctxStorage, instrumentationScopeName, logLevel)
       } yield ()
     }
-
-  /**
-   * Use when you need to pass contextual information between spans.
-   *
-   * @param logAnnotated
-   *   propagate ZIO log annotations as Baggage key/values if it is set to true
-   */
-  def baggage(logAnnotated: Boolean = false): URLayer[OpenTelemetry, Baggage] =
-    ZLayer(ZIO.serviceWith[OpenTelemetry](openTelemetry => Baggage.make(openTelemetry.ctxStorage, logAnnotated)))
 
   /**
    * Use when you want to allow a seamless integration with ZIO runtime and JVM metrics.
