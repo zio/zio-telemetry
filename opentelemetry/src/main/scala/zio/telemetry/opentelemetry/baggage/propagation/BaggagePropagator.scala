@@ -2,7 +2,7 @@ package zio.telemetry.opentelemetry.baggage.propagation
 
 import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator
 import io.opentelemetry.context.propagation.TextMapPropagator
-import zio.telemetry.opentelemetry.internal.Propagator
+import zio.telemetry.opentelemetry.context.internal.Propagator
 
 trait BaggagePropagator extends Propagator
 

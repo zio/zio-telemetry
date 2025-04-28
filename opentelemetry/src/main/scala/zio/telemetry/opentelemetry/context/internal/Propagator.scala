@@ -1,4 +1,4 @@
-package zio.telemetry.opentelemetry.internal
+package zio.telemetry.opentelemetry.context.internal
 
 import io.opentelemetry.context.propagation.TextMapPropagator
 

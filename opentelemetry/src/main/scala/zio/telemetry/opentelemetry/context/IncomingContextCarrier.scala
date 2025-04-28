@@ -1,7 +1,7 @@
 package zio.telemetry.opentelemetry.context
 
 import io.opentelemetry.context.propagation.TextMapGetter
-import zio.telemetry.opentelemetry.internal.ContextCarrier
+import zio.telemetry.opentelemetry.context.internal.ContextCarrier
 
 import java.lang
 import scala.collection.mutable
