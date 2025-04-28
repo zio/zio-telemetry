@@ -5,7 +5,7 @@ import io.opentelemetry.api.trace._
 import io.opentelemetry.context.Context
 import zio._
 import zio.telemetry.opentelemetry.common.Attribute
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.context.internal.ContextStorage
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext

@@ -1,4 +1,4 @@
-package zio.telemetry.opentelemetry.context
+package zio.telemetry.opentelemetry.context.internal
 
 import io.opentelemetry.context.Context
 import zio._

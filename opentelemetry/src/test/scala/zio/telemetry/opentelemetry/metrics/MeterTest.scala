@@ -8,7 +8,7 @@ import zio.metrics.Metric
 import zio.metrics.MetricKeyType.Histogram.Boundaries
 import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.common.{Attribute, Attributes}
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.context.internal.ContextStorage
 import zio.telemetry.opentelemetry.metrics.internal.Instrument
 import zio.telemetry.opentelemetry.tracing.{Tracing, TracingTest}
 import zio.test.{TestEnvironment, ZIOSpecDefault, _}

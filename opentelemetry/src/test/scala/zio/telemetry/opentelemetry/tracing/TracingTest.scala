@@ -9,7 +9,7 @@ import io.opentelemetry.sdk.trace.data.SpanData
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import zio._
 import zio.telemetry.opentelemetry.common.{Attribute, Attributes}
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.context.internal.ContextStorage
 import zio.test.Assertion._
 import zio.test.{Spec, TestClock, ZIOSpecDefault, assert}
 

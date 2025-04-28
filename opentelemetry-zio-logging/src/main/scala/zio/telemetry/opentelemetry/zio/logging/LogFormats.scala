@@ -5,7 +5,7 @@ import io.opentelemetry.context.Context
 import zio.FiberRefs
 import zio.logging.LogFormat
 import zio.logging.LogFormat.label
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.context.internal.ContextStorage
 
 trait LogFormats {
 

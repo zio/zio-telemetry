@@ -3,7 +3,7 @@ package zio.telemetry.opentelemetry.baggage
 import io.opentelemetry.api.baggage.{Baggage => JBaggage, BaggageBuilder, BaggageEntry, BaggageEntryMetadata}
 import io.opentelemetry.context.Context
 import zio._
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.context.internal.ContextStorage
 
 import scala.jdk.CollectionConverters._
 

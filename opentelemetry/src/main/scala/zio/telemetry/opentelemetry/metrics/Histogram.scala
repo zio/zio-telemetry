@@ -4,7 +4,7 @@ import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.metrics.DoubleHistogram
 import io.opentelemetry.context.Context
 import zio._
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.context.internal.ContextStorage
 import zio.telemetry.opentelemetry.metrics.internal.{Instrument, logAnnotatedAttributes}
 
 /**

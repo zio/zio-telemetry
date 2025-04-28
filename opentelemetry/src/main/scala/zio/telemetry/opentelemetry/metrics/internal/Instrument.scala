@@ -3,7 +3,7 @@ package zio.telemetry.opentelemetry.metrics.internal
 import io.opentelemetry.api
 import io.opentelemetry.context.Context
 import zio._
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.context.internal.ContextStorage
 import zio.telemetry.opentelemetry.metrics.{Counter, Histogram, ObservableMeasurement, UpDownCounter}
 
 import scala.jdk.CollectionConverters._

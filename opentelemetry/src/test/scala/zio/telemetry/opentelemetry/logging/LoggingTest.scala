@@ -6,7 +6,7 @@ import io.opentelemetry.sdk.logs.data.LogRecordData
 import io.opentelemetry.sdk.logs.`export`.SimpleLogRecordProcessor
 import io.opentelemetry.sdk.testing.exporter.InMemoryLogRecordExporter
 import zio._
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.context.internal.ContextStorage
 import zio.telemetry.opentelemetry.tracing.{Tracing, TracingTest}
 import zio.test.Assertion._
 import zio.test._

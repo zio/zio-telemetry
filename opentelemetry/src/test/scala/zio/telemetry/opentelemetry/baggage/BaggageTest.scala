@@ -1,7 +1,7 @@
 package zio.telemetry.opentelemetry.baggage
 
 import zio._
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.context.internal.ContextStorage
 import zio.test.Assertion._
 import zio.test._
 

@@ -4,7 +4,7 @@ import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.logs.{Logger, LoggerProvider, Severity}
 import io.opentelemetry.context.Context
 import zio._
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.context.internal.ContextStorage
 
 private[opentelemetry] object Logging {
 

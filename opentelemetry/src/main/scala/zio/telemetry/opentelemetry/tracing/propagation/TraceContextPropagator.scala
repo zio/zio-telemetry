@@ -2,7 +2,7 @@ package zio.telemetry.opentelemetry.tracing.propagation
 
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.propagation.TextMapPropagator
-import zio.telemetry.opentelemetry.context.internal.Propagator
+import zio.telemetry.opentelemetry.context.Propagator
 
 trait TraceContextPropagator extends Propagator
 
