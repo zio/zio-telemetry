@@ -3,7 +3,7 @@ package zio.telemetry.opentelemetry.context.internal
 import io.opentelemetry.context.Context
 import zio._
 
-sealed trait ContextStorage {
+private[opentelemetry] sealed trait ContextStorage {
 
   def get(implicit trace: Trace): UIO[Context]
 
