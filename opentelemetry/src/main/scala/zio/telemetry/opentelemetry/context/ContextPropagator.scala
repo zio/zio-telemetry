@@ -21,7 +21,7 @@ trait ContextPropagator {
 object ContextPropagator {
 
   /**
-   * Instance of W3C Trace Context Propagator.
+   * An instance of W3C Trace Context Propagator.
    *
    * @see
    *   <a href="https://www.w3.org/TR/trace-context/">Trace Context</a>
@@ -33,7 +33,7 @@ object ContextPropagator {
     }
 
   /**
-   * Instance of W3C Baggage Propagator.
+   * An instance of W3C Baggage Propagator.
    *
    * @see
    *   <a href="https://www.w3.org/TR/baggage/">Propagation format for distributed context: Baggage</a>
@@ -53,10 +53,19 @@ object ContextPropagator {
         TextMapPropagator.noop
     }
 
+  /**
+   * Returns a propagator which simply delegates injection and extraction to the provided propagators.
+   */
   def combined(propagators: ContextPropagator*): ContextPropagator =
     new ContextPropagator {
       override val instance: TextMapPropagator =
         TextMapPropagator.composite(propagators.map(_.instance): _*)
     }
+
+  /**
+   * An instance consists of both W3C Baggage and W3C Trace Context propagators.
+   */
+  val default: ContextPropagator =
+    combined(w3cTraceContext, w3cBaggage)
 
 }
