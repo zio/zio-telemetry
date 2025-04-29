@@ -2,7 +2,7 @@ package zio.telemetry.opentelemetry.context
 
 import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
-import io.opentelemetry.context.propagation.TextMapPropagator
+import io.opentelemetry.context.propagation.{ContextPropagators, TextMapPropagator}
 
 trait ContextPropagator {
 
@@ -67,5 +67,11 @@ object ContextPropagator {
    */
   val default: ContextPropagator =
     combined(w3cTraceContext, w3cBaggage)
+
+  def fromJava(propagators: ContextPropagators): ContextPropagator =
+    new ContextPropagator {
+      override val instance: TextMapPropagator =
+        propagators.getTextMapPropagator
+    }
 
 }

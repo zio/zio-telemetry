@@ -86,7 +86,8 @@ object OpenTelemetry {
     ZLayer.scoped {
       for {
         underlying <- ZIO.attempt(api.GlobalOpenTelemetry.get())
-      } yield new OpenTelemetrySdk(underlying, ContextStorage.JavaOtelThreadLocal)
+        propagator  = ContextPropagator.fromJava(underlying.getPropagators)
+      } yield new OpenTelemetrySdk(underlying, ContextStorage.JavaOtelThreadLocal).withContextPropagator(propagator)
     }
 
   /**
@@ -112,7 +113,7 @@ object OpenTelemetry {
       for {
         underlying <- ZIO.attempt(api.OpenTelemetry.noop())
         ctxStorage <- ContextStorage.zioFiberRefScoped
-      } yield new OpenTelemetrySdk(underlying, ctxStorage)
+      } yield new OpenTelemetrySdk(underlying, ctxStorage).withContextPropagator(ContextPropagator.noop)
     }
 
   /**
