@@ -6,6 +6,7 @@ import zio._
 import zio.metrics.{MetricClient, MetricListener}
 import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.context.internal.ContextStorage
+import zio.telemetry.opentelemetry.context.{ContextPropagator, IncomingContextCarrier, OutgoingContextCarrier}
 import zio.telemetry.opentelemetry.logging.Logging
 import zio.telemetry.opentelemetry.metrics.Meter
 import zio.telemetry.opentelemetry.metrics.internal.{Instrument, InstrumentRegistry, OtelMetricListener}
@@ -13,12 +14,14 @@ import zio.telemetry.opentelemetry.tracing.Tracing
 
 trait OpenTelemetry {
 
-  private[opentelemetry] def underlying: api.OpenTelemetry
-
-  private[opentelemetry] def ctxStorage: ContextStorage
-
-  def autoinstrumented[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+  def autoinstrumented[R, E, A](zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
     ctxStorage.locally(Context.current())(zio)
+
+  def propagate[C](carrier: OutgoingContextCarrier[C]): UIO[Unit] =
+    ctxStorage.get.map(ctxPropagator.instance.inject(_, carrier.kernel, carrier)).unit
+
+  def continue[R, E, A, C](carrier: IncomingContextCarrier[C])(zio: => ZIO[R, E, A]): ZIO[R, E, A] =
+    ctxStorage.locally(ctxPropagator.instance.extract(Context.root, carrier.kernel, carrier))(zio)
 
   def asJava: api.OpenTelemetry =
     underlying
@@ -29,6 +32,9 @@ trait OpenTelemetry {
   val baggage: Baggage =
     Baggage.make(ctxStorage)
 
+  val ctxPropagator: ContextPropagator =
+    ContextPropagator.default
+
   /**
    * Configure Baggage instance
    *
@@ -36,6 +42,12 @@ trait OpenTelemetry {
    *   propagate ZIO log annotations as Baggage key/values if it is set to true
    */
   def withBaggage(logAnnotated: Boolean): OpenTelemetry
+
+  def withContextPropagator(propagator: ContextPropagator): OpenTelemetry
+
+  private[opentelemetry] def underlying: api.OpenTelemetry
+
+  private[opentelemetry] def ctxStorage: ContextStorage
 
 }
 
@@ -52,6 +64,11 @@ object OpenTelemetry {
     override def withBaggage(logAnnotated: Boolean): OpenTelemetrySdk =
       new OpenTelemetrySdk(underlying, ctxStorage) {
         override val baggage: Baggage = Baggage.make(ctxStorage, logAnnotated)
+      }
+
+    override def withContextPropagator(propagator: ContextPropagator): OpenTelemetrySdk =
+      new OpenTelemetrySdk(underlying, ctxStorage) {
+        override val ctxPropagator = propagator
       }
 
   }
