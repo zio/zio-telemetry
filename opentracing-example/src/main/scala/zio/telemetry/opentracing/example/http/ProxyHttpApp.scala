@@ -13,8 +13,6 @@ import scala.jdk.CollectionConverters._
 
 case class ProxyHttpApp(client: BackendClient, tracing: OpenTracing) {
 
-  import tracing.aspects._
-
   val routes: Routes[Any, Nothing] =
     Routes(
       Method.GET / "statuses" ->
@@ -29,7 +27,7 @@ case class ProxyHttpApp(client: BackendClient, tracing: OpenTracing) {
             statuses <- client
                           .status(headers)
                           .catchAll(_ => ZIO.succeed(BackendStatuses(List.empty)))
-          } yield Response.json(statuses.toJson)) @@ root("/statuses")
+          } yield Response.json(statuses.toJson)) @@ tracing.aspects.root("/statuses")
         }
     )
 

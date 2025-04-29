@@ -7,14 +7,12 @@ import zio.telemetry.opentelemetry.tracing.Tracing
 
 case class BackendHttpApp(openTelemetry: OpenTelemetry, tracing: Tracing) {
 
-  import tracing.aspects._
-
   val routes =
     Routes(
       Method.GET / "example-endpoint" ->
         handler {
           openTelemetry.autoinstrumented(
-            exampleEndpoint @@ span("example-endpoint")
+            exampleEndpoint @@ tracing.aspects.span("example-endpoint")
           )
         }
     )

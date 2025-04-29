@@ -7,14 +7,12 @@ import zio.telemetry.opentelemetry.tracing.Tracing
 
 case class ProxyHttpApp(openTelemetry: OpenTelemetry, client: BackendClient, tracing: Tracing) {
 
-  import tracing.aspects._
-
   val routes =
     Routes(
       Method.GET / "proxy" ->
         handler {
           openTelemetry.autoinstrumented(
-            proxy @@ span("proxy")
+            proxy @@ tracing.aspects.span("proxy")
           )
         }
     )

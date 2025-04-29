@@ -10,8 +10,6 @@ import zio.telemetry.opentelemetry.tracing.{StatusMapper, Tracing}
 
 case class ProxyHttpApp(openTelemetry: OpenTelemetry, client: BackendClient, tracing: Tracing) {
 
-  import tracing.aspects._
-
   private val statusMapper: StatusMapper[Throwable, Any] =
     StatusMapper.failureThrowable(_ => StatusCode.UNSET)
 
@@ -19,7 +17,7 @@ case class ProxyHttpApp(openTelemetry: OpenTelemetry, client: BackendClient, tra
     Routes(
       Method.GET / "statuses" ->
         handler {
-          statuses @@ root("/statuses", SpanKind.SERVER, statusMapper = statusMapper)
+          statuses @@ tracing.aspects.root("/statuses", SpanKind.SERVER, statusMapper = statusMapper)
         }
     )
 
