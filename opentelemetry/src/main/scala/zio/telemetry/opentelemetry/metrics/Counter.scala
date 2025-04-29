@@ -18,8 +18,7 @@ trait Counter[-A] extends Instrument[A] {
   /**
    * Records a value.
    *
-   * It uses the context taken from the [[zio.telemetry.opentelemetry.context.internal.ContextStorage]] to associate with this
-   * measurement.
+   * It uses the context taken from the ContextStorage to associate with this measurement.
    *
    * @param value
    *   increment amount. MUST be non-negative
@@ -31,8 +30,7 @@ trait Counter[-A] extends Instrument[A] {
   /**
    * Increments a counter by one.
    *
-   * It uses the context taken from the [[zio.telemetry.opentelemetry.context.internal.ContextStorage]] to associate with this
-   * measurement.
+   * It uses the context taken from the ContextStorage to associate with this measurement.
    *
    * @param attributes
    *   set of attributes to associate with the value

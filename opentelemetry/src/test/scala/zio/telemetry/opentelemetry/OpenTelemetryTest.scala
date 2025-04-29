@@ -84,7 +84,7 @@ object OpenTelemetryTest extends ZIOSpecDefault {
   def getFinishedSpans: ZIO[InMemorySpanExporter, Nothing, List[SpanData]] =
     ZIO.serviceWith[InMemorySpanExporter](_.getFinishedSpanItems.asScala.toList)
 
-  val ctxStoragesMap =
+  val ctxStoragesMap: Map[String, ULayer[ContextStorage]] =
     Map(
       "zio fiber ref"          -> zioFiberRefCtxStorageLayer,
       "java otel thread local" -> javaOtelThreadLocalLayer

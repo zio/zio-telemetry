@@ -18,8 +18,7 @@ trait Histogram[-A] extends Instrument[A] {
   /**
    * Records a value.
    *
-   * It uses the context taken from the [[zio.telemetry.opentelemetry.context.internal.ContextStorage]] to associate with this
-   * measurement.
+   * It uses the context taken from the ContextStorage to associate with this measurement.
    *
    * @param value
    *   increment amount. MUST be non-negative
