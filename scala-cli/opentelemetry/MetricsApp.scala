@@ -23,7 +23,7 @@ import zio.telemetry.opentelemetry.metrics.Meter
 import zio.telemetry.opentelemetry.common.Attributes
 import zio.telemetry.opentelemetry.common.Attribute
 import zio.telemetry.opentelemetry.OpenTelemetry
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.context.internal.ContextStorage
 
 object MetricsApp extends ZIOAppDefault {
 

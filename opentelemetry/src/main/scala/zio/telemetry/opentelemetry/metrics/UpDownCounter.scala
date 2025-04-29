@@ -18,7 +18,7 @@ trait UpDownCounter[-A] extends Instrument[A] {
   /**
    * Records a value.
    *
-   * It uses the context taken from the [[zio.telemetry.opentelemetry.context.ContextStorage]] to associate with this
+   * It uses the context taken from the [[zio.telemetry.opentelemetry.context.internal.ContextStorage]] to associate with this
    * measurement.
    *
    * @param value
@@ -31,7 +31,7 @@ trait UpDownCounter[-A] extends Instrument[A] {
   /**
    * Increments a counter by one.
    *
-   * It uses the context taken from the [[zio.telemetry.opentelemetry.context.ContextStorage]] to associate with this
+   * It uses the context taken from the [[zio.telemetry.opentelemetry.context.internal.ContextStorage]] to associate with this
    * measurement.
    *
    * @param attributes
@@ -42,7 +42,7 @@ trait UpDownCounter[-A] extends Instrument[A] {
   /**
    * Decrements a counter by one.
    *
-   * It uses the context taken from the [[zio.telemetry.opentelemetry.context.ContextStorage]] to associate with this
+   * It uses the context taken from the [[zio.telemetry.opentelemetry.context.internal.ContextStorage]] to associate with this
    * measurement.
    *
    * @param attributes

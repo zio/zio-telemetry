@@ -23,7 +23,7 @@ import zio.logging.console
 import zio.logging.LogFormat._
 import zio.telemetry.opentelemetry.tracing.Tracing
 import zio.telemetry.opentelemetry.OpenTelemetry
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.context.internal.ContextStorage
 import zio.telemetry.opentelemetry.zio.logging.LogFormats
 import zio.telemetry.opentelemetry.zio.logging.ZioLogging
 
