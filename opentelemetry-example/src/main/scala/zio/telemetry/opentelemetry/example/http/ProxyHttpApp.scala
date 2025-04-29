@@ -4,13 +4,11 @@ import io.opentelemetry.api.trace.{SpanKind, StatusCode}
 import zio._
 import zio.http._
 import zio.json.EncoderOps
-import zio.telemetry.opentelemetry.baggage.Baggage
-import zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator
+import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.context.OutgoingContextCarrier
-import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 import zio.telemetry.opentelemetry.tracing.{StatusMapper, Tracing}
 
-case class ProxyHttpApp(client: BackendClient, tracing: Tracing, baggage: Baggage) {
+case class ProxyHttpApp(openTelemetry: OpenTelemetry, client: BackendClient, tracing: Tracing) {
 
   import tracing.aspects._
 
@@ -28,22 +26,22 @@ case class ProxyHttpApp(client: BackendClient, tracing: Tracing, baggage: Baggag
   def statuses: UIO[Response] = {
     val carrier = OutgoingContextCarrier.default()
 
-    for {
-      _        <- tracing.setAttribute("http.method", "get")
-      _        <- tracing.addEvent("proxy-event")
-      _        <- baggage.set("proxy-baggage", "value from proxy")
-      _        <- tracing.injectSpan(TraceContextPropagator.default, carrier)
-      _        <- baggage.inject(BaggagePropagator.default, carrier)
-      statuses <- client.status(carrier.kernel.toMap).catchAll(_ => ZIO.succeed(BackendStatuses(List.empty)))
-      _        <- ZIO.logInfo("statuses processing finished on proxy")
-    } yield Response.json(statuses.toJson)
+    openTelemetry.baggage.set("proxy-baggage", "value from proxy")(
+      for {
+        _        <- tracing.setAttribute("http.method", "get")
+        _        <- tracing.addEvent("proxy-event")
+        _        <- openTelemetry.propagate(carrier)
+        statuses <- client.status(carrier.kernel.toMap).catchAll(_ => ZIO.succeed(BackendStatuses(List.empty)))
+        _        <- ZIO.logInfo("statuses processing finished on proxy")
+      } yield Response.json(statuses.toJson)
+    )
   }
 
 }
 
 object ProxyHttpApp {
 
-  val live: URLayer[BackendClient with Tracing with Baggage, ProxyHttpApp] =
+  val live: URLayer[OpenTelemetry with BackendClient with Tracing, ProxyHttpApp] =
     ZLayer.fromFunction(ProxyHttpApp.apply _)
 
 }
