@@ -17,7 +17,6 @@ object BaggageTest extends ZIOSpecDefault {
     suite("zio opentelemetry")(
       suite("Baggage")(
         operationsSpec,
-        // propagationSpec,
         logAnnotatedSpec
       )
     )
@@ -49,37 +48,6 @@ object BaggageTest extends ZIOSpecDefault {
         }
       }.provideLayer(baggageLayer)
     )
-
-  // private def propagationSpec =
-  //   suite("propagation")(
-  //     test("inject/extract") {
-  //       def setAndInject(): URIO[Baggage, Map[String, String]] =
-  //         ZIO.serviceWithZIO[Baggage] { baggage =>
-  //           val carrier = OutgoingContextCarrier.default()
-
-  //           for {
-  //             _ <- baggage.set("some", "thing")
-  //             _ <- baggage.inject(BaggagePropagator.default, carrier)
-  //           } yield carrier.kernel.toMap
-  //         }
-
-  //       def extractAndGet(extractCarrier: Map[String, String]): URIO[Baggage, Option[String]] =
-  //         ZIO.serviceWithZIO[Baggage] { baggage =>
-  //           for {
-  //             _     <- baggage.extract(
-  //                        BaggagePropagator.default,
-  //                        IncomingContextCarrier.default(mutable.Map.empty ++ extractCarrier)
-  //                      )
-  //             thing <- baggage.get("some")
-  //           } yield thing
-  //         }
-
-  //       for {
-  //         carrier <- setAndInject().provideLayer(baggageLayer)
-  //         thing   <- extractAndGet(carrier).provideLayer(baggageLayer)
-  //       } yield assert(thing)(isSome(equalTo("thing")))
-  //     }
-  //   )
 
   private def logAnnotatedSpec =
     suite("log annotated")(

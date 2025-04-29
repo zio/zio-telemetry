@@ -230,46 +230,6 @@ object TracingTest extends ZIOSpecDefault {
             assert(tags)(equalTo(List("In legacy code", "Finishing legacy code")))
         }
       },
-      // test("inject - extract roundtrip") {
-      //   ZIO.serviceWithZIO[Tracing] { tracing =>
-      //     import tracing.aspects._
-
-      //     val carrier: mutable.Map[String, String] = mutable.Map().empty
-
-      //     val roundtrip =
-      //       (for {
-      //         _ <-
-      //           tracing.injectSpan(
-      //             TraceContextPropagator.default,
-      //             OutgoingContextCarrier.default(carrier)
-      //           ) @@
-      //             span("foo")
-      //         _ <-
-      //           ZIO.unit @@
-      //             extractSpan(
-      //               TraceContextPropagator.default,
-      //               IncomingContextCarrier.default(carrier),
-      //               "baz"
-      //             ) @@
-      //             span("bar")
-      //       } yield ()) @@ span("ROOT")
-
-      //     for {
-      //       _     <- roundtrip
-      //       spans <- getFinishedSpans
-      //       root   = spans.find(_.getName == "ROOT")
-      //       foo    = spans.find(_.getName == "foo")
-      //       bar    = spans.find(_.getName == "bar")
-      //       baz    = spans.find(_.getName == "baz")
-      //     } yield assert(root)(isSome(anything)) &&
-      //       assert(foo)(isSome(anything)) &&
-      //       assert(bar)(isSome(anything)) &&
-      //       assert(baz)(isSome(anything)) &&
-      //       assert(foo.get.getParentSpanId)(equalTo(root.get.getSpanId)) &&
-      //       assert(bar.get.getParentSpanId)(equalTo(root.get.getSpanId)) &&
-      //       assert(baz.get.getParentSpanId)(equalTo(foo.get.getSpanId))
-      //   }
-      // },
       test("setAttribute") {
         ZIO.serviceWithZIO[Tracing] { tracing =>
           import tracing.aspects._
