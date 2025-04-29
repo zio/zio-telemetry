@@ -145,7 +145,7 @@ object OpenTelemetry {
     ZLayer.scoped {
       for {
         openTelemetry <- ZIO.service[OpenTelemetry]
-        tracer         = buildTracer(openTelemetry.underlying)
+        tracer         = buildTracer(openTelemetry.asJava)
         tracing       <- Tracing.scoped(tracer, openTelemetry.ctxStorage, logAnnotated)
       } yield tracing
 
@@ -181,7 +181,7 @@ object OpenTelemetry {
     ZLayer {
       for {
         openTelemetry <- ZIO.service[OpenTelemetry]
-        jmeter         = buildMeter(openTelemetry.underlying)
+        jmeter         = buildMeter(openTelemetry.asJava)
         builder        = Instrument.Builder.make(jmeter, openTelemetry.ctxStorage, logAnnotated)
         meter          = Meter.make(builder)
       } yield meter
@@ -204,7 +204,7 @@ object OpenTelemetry {
     ZLayer.scoped {
       for {
         openTelemetry <- ZIO.service[OpenTelemetry]
-        loggerProvider = openTelemetry.underlying.getLogsBridge
+        loggerProvider = openTelemetry.asJava.getLogsBridge
         _             <- Logging.make(loggerProvider, openTelemetry.ctxStorage, instrumentationScopeName, logLevel)
       } yield ()
     }
@@ -243,7 +243,7 @@ object OpenTelemetry {
       ZLayer {
         for {
           openTelemetry <- ZIO.service[OpenTelemetry]
-          jmeter         = buildMeter(openTelemetry.underlying)
+          jmeter         = buildMeter(openTelemetry.asJava)
           builder        = Instrument.Builder.make(jmeter, openTelemetry.ctxStorage)
           registry       = InstrumentRegistry.concurrent(builder)
         } yield registry
