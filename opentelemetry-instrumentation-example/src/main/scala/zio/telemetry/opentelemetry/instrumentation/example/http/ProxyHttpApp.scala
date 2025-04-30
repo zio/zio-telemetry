@@ -11,9 +11,9 @@ case class ProxyHttpApp(openTelemetry: OpenTelemetry, client: BackendClient, tra
     Routes(
       Method.GET / "proxy" ->
         handler {
-          openTelemetry.autoinstrumented(
-            proxy @@ tracing.aspects.span("proxy")
-          )
+          proxy @@
+            tracing.aspects.span("proxy") @@
+            openTelemetry.aspects.autoinstrumented
         }
     )
 

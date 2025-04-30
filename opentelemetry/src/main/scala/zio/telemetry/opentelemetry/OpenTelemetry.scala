@@ -12,7 +12,7 @@ import zio.telemetry.opentelemetry.metrics.Meter
 import zio.telemetry.opentelemetry.metrics.internal.{Instrument, InstrumentRegistry, OtelMetricListener}
 import zio.telemetry.opentelemetry.tracing.Tracing
 
-trait OpenTelemetry {
+trait OpenTelemetry { self =>
 
   def autoinstrumented[R, E, A](zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
     ctxStorage.locally(Context.current())(zio)
@@ -48,6 +48,22 @@ trait OpenTelemetry {
   private[opentelemetry] def underlying: api.OpenTelemetry
 
   private[opentelemetry] def ctxStorage: ContextStorage
+
+  object aspects {
+
+    def autoinstrumented: ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.autoinstrumented(zio)
+      }
+
+    def continue[C](carrier: IncomingContextCarrier[C]): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.continue(carrier)(zio)
+      }
+
+  }
 
 }
 

@@ -108,11 +108,10 @@ object OpenTelemetryTest extends ZIOSpecDefault {
                          tracing.aspects.span("foo") @@
                          tracing.aspects.root("ROOT")
 
-                  _ <- openTelemetry.continue(IncomingContextCarrier.default(carrier))(
-                         ZIO.unit @@
-                           tracing.aspects.span("baz") @@
-                           tracing.aspects.span("bar")
-                       )
+                  _ <- ZIO.unit @@
+                         tracing.aspects.span("baz") @@
+                         tracing.aspects.span("bar") @@
+                         openTelemetry.aspects.continue(IncomingContextCarrier.default(carrier))
 
                   spans <- getFinishedSpans
                   root   = spans.find(_.getName == "ROOT")
@@ -145,9 +144,8 @@ object OpenTelemetryTest extends ZIOSpecDefault {
                   _ <- openTelemetry.propagate(OutgoingContextCarrier.default(kernel)) @@
                          openTelemetry.baggage.aspects.set("some", "thing")
 
-                  thing <- openTelemetry.continue(IncomingContextCarrier.default(kernel))(
-                             openTelemetry.baggage.get("some")
-                           )
+                  thing <- openTelemetry.baggage.get("some") @@
+                             openTelemetry.aspects.continue(IncomingContextCarrier.default(kernel))
                 } yield assert(thing)(isSome(equalTo("thing")))
               }.provide(
                 OpenTelemetryTestKit.layer,

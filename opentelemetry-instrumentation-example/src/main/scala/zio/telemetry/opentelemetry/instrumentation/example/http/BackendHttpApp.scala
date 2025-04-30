@@ -11,9 +11,9 @@ case class BackendHttpApp(openTelemetry: OpenTelemetry, tracing: Tracing) {
     Routes(
       Method.GET / "example-endpoint" ->
         handler {
-          openTelemetry.autoinstrumented(
-            exampleEndpoint @@ tracing.aspects.span("example-endpoint")
-          )
+          exampleEndpoint @@
+            tracing.aspects.span("example-endpoint") @@
+            openTelemetry.aspects.autoinstrumented
         }
     )
 

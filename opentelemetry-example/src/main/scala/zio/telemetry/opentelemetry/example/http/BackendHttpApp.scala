@@ -30,9 +30,9 @@ case class BackendHttpApp(openTelemetry: OpenTelemetry, tracing: Tracing, status
         handler { request: Request =>
           val carrier = headersCarrier(request.headers)
 
-          openTelemetry.continue(carrier)(
-            status @@ tracing.aspects.span("/status", SpanKind.SERVER)
-          )
+          status @@
+            tracing.aspects.span("/status", SpanKind.SERVER) @@
+            openTelemetry.aspects.continue(carrier)
         }
     )
 
