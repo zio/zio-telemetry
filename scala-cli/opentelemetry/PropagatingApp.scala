@@ -1,6 +1,6 @@
 //> using scala "3.6.4"
 //> using dep dev.zio::zio:2.1.17
-//> using dep dev.zio::zio-opentelemetry:3.1.4
+//> using dep dev.zio::zio-opentelemetry:4.0.0-RC1
 //> using dep io.opentelemetry:opentelemetry-sdk:1.49.0
 //> using dep io.opentelemetry:opentelemetry-sdk-trace:1.49.0
 //> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.49.0
@@ -17,19 +17,15 @@ import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.api
 import zio.*
 import zio.telemetry.opentelemetry.baggage.Baggage
-import zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator
 import zio.telemetry.opentelemetry.tracing.Tracing
-import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 import zio.telemetry.opentelemetry.OpenTelemetry
-import zio.telemetry.opentelemetry.context.internal.ContextStorage
 import zio.telemetry.opentelemetry.context.IncomingContextCarrier
 import zio.telemetry.opentelemetry.context.OutgoingContextCarrier
 import scala.collection.mutable
 
 object PropagatingApp extends ZIOAppDefault {
 
-  val instrumentationScopeName = "dev.zio.PropagatingApp"
-  val resourceName             = "propagating-app"
+  val resourceName = "propagating-app"
 
   // Prints to stdout in OTLP Json format
   val stdoutTracerProvider: RIO[Scope, SdkTracerProvider] =
@@ -48,7 +44,7 @@ object PropagatingApp extends ZIOAppDefault {
         )
     } yield tracerProvider
 
-  val otelSdkLayer: TaskLayer[api.OpenTelemetry] =
+  def otelSdkLayer: TaskLayer[OpenTelemetry] =
     OpenTelemetry.custom(
       for {
         tracerProvider <- stdoutTracerProvider
@@ -63,60 +59,51 @@ object PropagatingApp extends ZIOAppDefault {
       } yield sdk
     )
 
-  override def run =
-    ZIO
-      .serviceWithZIO[Tracing] { tracing =>
-        val tracePropagator   = TraceContextPropagator.default
-        val baggagePropagator = BaggagePropagator.default
-        // Using the same kernel and carriers for baggage and tracing context propagation is safe
-        // since their encodings occupy different keys in the OTEL context.
-        val kernel            = mutable.Map.empty[String, String]
-        val outgoingCarrier   = OutgoingContextCarrier.default(kernel)
-        val incomingCarrier   = IncomingContextCarrier.default(kernel)
+  override def run = {
+    // Representing upstream service
+    val upstreamService =
+      for {
+        openTelemetry <- ZIO.service[OpenTelemetry]
+        tracing       <- ZIO.service[Tracing]
+        message       <- Console.readLine
+        carrier        = OutgoingContextCarrier.default()
+        // Run the logic, wrapping it into a root span
+        kernel        <- (for {
+                           // Emulate the computation to be wrapped in a root span
+                           _ <- ZIO.logInfo(s"Message length is ${message.length}")
+                           // Propagate the current span and baggage data using outgoing carrier
+                           _ <- openTelemetry.propagate(carrier)
+                         } yield carrier.kernel.toMap) @@
+                           // Set the baggage data
+                           openTelemetry.baggage.aspects.set("message", message) @@
+                           tracing.aspects.root("upstream_root_span")
 
-        ZIO.serviceWithZIO[Baggage] { baggage =>
-          // Representing upstream service
-          val upstreamService = for {
-            // Read user input
-            message <- Console.readLine
-            // Set and propagate the baggage data using outgoing carrier
-            _       <- baggage.set("message", message)
-            _       <- baggage.inject(baggagePropagator, outgoingCarrier)
-            // Emulate the computation to be wrapped in a root span
-            logic    = for {
-                         _ <- ZIO.logInfo(s"Message length is ${message.length}")
-                         // Inject the current span using outgoing carrier
-                         _ <- tracing.injectSpan(tracePropagator, outgoingCarrier)
-                       } yield ()
-            // Run the logic, wrapping it into a root span
-            _       <- logic @@ tracing.aspects.root("upstream_root_span")
-          } yield ()
+      } yield kernel
 
-          // Representing downstream service
-          val downstreamService = for {
-            // Extract the baggage data using incoming carrier
-            _      <- baggage.extract(baggagePropagator, incomingCarrier)
-            data   <- baggage.getAll
-            message = data("message")
-            // Emulate the logic that computes message length and sets an attribute of the current span
-            logic   = for {
-                        _ <- ZIO.logInfo(s"Message length is ${message.length}")
-                        _ <- tracing.setAttribute("message", message)
-                      } yield ()
-            // Run the logic, wrapping it into a child span of the upstream root span
-            _      <- logic @@ tracing.aspects.extractSpan(tracePropagator, incomingCarrier, "downstream_root_span")
-          } yield ()
+    // Representing downstream service
+    def downstreamService(kernel: Map[String, String]) =
+      for {
+        openTelemetry <- ZIO.service[OpenTelemetry]
+        tracing       <- ZIO.service[Tracing]
+        carrier        = IncomingContextCarrier.default(mutable.Map.from(kernel))
+        // Emulate the logic that computes message length and sets an attribute of the current span
+        logic          = for {
+                           message <- openTelemetry.baggage.get("message").map(_.getOrElse("NO MESSAGE"))
+                           _       <- ZIO.logInfo(s"Message length is ${message.length}")
+                           _       <- tracing.setAttribute("message", message)
+                         } yield ()
+        // Run the logic, wrapping it into a child span of the upstream root span
+        _             <- logic @@
+                           tracing.aspects.span("downstream_root_span") @@
+                           // Extract the the upstream span and baggage data using incoming carrier
+                           openTelemetry.aspects.continue(carrier)
+      } yield ()
 
-          // Simulate the interaction between services
-          upstreamService *> downstreamService
-        }
-
-      }
-      .provide(
-        otelSdkLayer,
-        OpenTelemetry.tracing(instrumentationScopeName),
-        OpenTelemetry.baggage(),
-        OpenTelemetry.contextZIO
-      )
+    // Simulate the interaction between services
+    for {
+      kernel <- upstreamService.provide(otelSdkLayer, OpenTelemetry.tracing("upstream.service"))
+      _      <- downstreamService(kernel).provide(otelSdkLayer, OpenTelemetry.tracing("downstream.service"))
+    } yield ()
+  }
 
 }

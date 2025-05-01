@@ -1,6 +1,6 @@
 //> using scala "3.6.4"
 //> using dep dev.zio::zio:2.1.17
-//> using dep dev.zio::zio-opentelemetry:3.1.4
+//> using dep dev.zio::zio-opentelemetry:4.0.0-RC1
 //> using dep io.opentelemetry:opentelemetry-sdk:1.49.0
 //> using dep io.opentelemetry:opentelemetry-sdk-trace:1.49.0
 //> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.49.0
@@ -18,7 +18,6 @@ import io.opentelemetry.api
 import zio.*
 import zio.telemetry.opentelemetry.tracing.Tracing
 import zio.telemetry.opentelemetry.OpenTelemetry
-import zio.telemetry.opentelemetry.context.internal.ContextStorage
 
 object TracingApp extends ZIOAppDefault {
 
@@ -42,7 +41,7 @@ object TracingApp extends ZIOAppDefault {
         )
     } yield tracerProvider
 
-  val otelSdkLayer: TaskLayer[api.OpenTelemetry] =
+  val otelSdkLayer: TaskLayer[OpenTelemetry] =
     OpenTelemetry.custom(
       for {
         tracerProvider <- stdoutTracerProvider
@@ -77,8 +76,7 @@ object TracingApp extends ZIOAppDefault {
       }
       .provide(
         otelSdkLayer,
-        OpenTelemetry.tracing(instrumentationScopeName),
-        OpenTelemetry.contextZIO
+        OpenTelemetry.tracing(instrumentationScopeName)
       )
 
 }

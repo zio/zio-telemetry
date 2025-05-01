@@ -1,7 +1,7 @@
 //> using scala "3.6.4"
 //> using dep dev.zio::zio:2.1.17
-//> using dep dev.zio::zio-opentelemetry:3.1.4
-//> using dep dev.zio::zio-opentelemetry-zio-logging:3.1.4
+//> using dep dev.zio::zio-opentelemetry:4.0.0-RC1
+//> using dep dev.zio::zio-opentelemetry-zio-logging:4.0.0-RC1
 //> using dep io.opentelemetry:opentelemetry-sdk:1.49.0
 //> using dep io.opentelemetry:opentelemetry-sdk-trace:1.49.0
 //> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.49.0
@@ -19,13 +19,14 @@ import io.opentelemetry.semconv.ServiceAttributes
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.api
 import zio.*
-import zio.logging.console
+import zio.logging.consoleLogger
 import zio.logging.LogFormat._
 import zio.telemetry.opentelemetry.tracing.Tracing
 import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.context.internal.ContextStorage
 import zio.telemetry.opentelemetry.zio.logging.LogFormats
 import zio.telemetry.opentelemetry.zio.logging.ZioLogging
+import zio.logging.ConsoleLoggerConfig
 
 object ZioLoggingApp extends ZIOAppDefault {
 
@@ -66,7 +67,7 @@ object ZioLoggingApp extends ZIOAppDefault {
         )
     } yield tracerProvider
 
-  val otelSdkLayer: TaskLayer[api.OpenTelemetry] =
+  val otelSdkLayer: TaskLayer[OpenTelemetry] =
     OpenTelemetry.custom(
       for {
         tracerProvider <- stdoutTracerProvider
@@ -93,7 +94,7 @@ object ZioLoggingApp extends ZIOAppDefault {
           label("message", quoted(line)) |-|
           logFormats.spanIdLabel |-|
           logFormats.traceIdLabel
-      myConsoleLogger = console(format.highlight)
+      myConsoleLogger = consoleLogger(ConsoleLoggerConfig.default.copy(format = format.highlight))
     } yield Runtime.removeDefaultLoggers >>> myConsoleLogger
   }.flatten
 
@@ -114,7 +115,6 @@ object ZioLoggingApp extends ZIOAppDefault {
         otelSdkLayer,
         OpenTelemetry.logging(instrumentationScopeName),
         OpenTelemetry.tracing(instrumentationScopeName),
-        OpenTelemetry.contextZIO,
         ZioLogging.logFormats,
         loggingLayer
       )
