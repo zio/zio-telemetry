@@ -1,7 +1,7 @@
 //> using scala "3.8.4"
 //> using dep dev.zio::zio:2.1.26
-//> using dep dev.zio::zio-opentelemetry:3.1.17
-//> using dep dev.zio::zio-opentelemetry-zio-logging:3.1.17
+//> using dep dev.zio::zio-opentelemetry:4.0.0-RC11
+//> using dep dev.zio::zio-opentelemetry-zio-logging:4.0.0-RC11
 //> using dep io.opentelemetry:opentelemetry-sdk:1.63.0
 //> using dep io.opentelemetry:opentelemetry-sdk-trace:1.63.0
 //> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.63.0
@@ -19,13 +19,14 @@ import io.opentelemetry.semconv.ServiceAttributes
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.api
 import zio.*
-import zio.logging.console
+import zio.logging.consoleLogger
 import zio.logging.LogFormat._
-import zio.telemetry.opentelemetry.tracing.Tracing
+import zio.telemetry.opentelemetry.trace.Tracer
 import zio.telemetry.opentelemetry.OpenTelemetry
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.context.internal.ContextStorage
 import zio.telemetry.opentelemetry.zio.logging.LogFormats
 import zio.telemetry.opentelemetry.zio.logging.ZioLogging
+import zio.logging.ConsoleLoggerConfig
 
 object ZioLoggingApp extends ZIOAppDefault {
 
@@ -66,7 +67,7 @@ object ZioLoggingApp extends ZIOAppDefault {
         )
     } yield tracerProvider
 
-  val otelSdkLayer: TaskLayer[api.OpenTelemetry] =
+  val otelSdkLayer: TaskLayer[OpenTelemetry] =
     OpenTelemetry.custom(
       for {
         tracerProvider <- stdoutTracerProvider
@@ -84,7 +85,7 @@ object ZioLoggingApp extends ZIOAppDefault {
     )
 
   // Setup zio-logging with spanId and traceId labels
-  val loggingLayer: URLayer[LogFormats, Unit] = ZLayer {
+  val loggerLayer: URLayer[LogFormats, Unit] = ZLayer {
     for {
       logFormats     <- ZIO.service[LogFormats]
       format          =
@@ -93,13 +94,13 @@ object ZioLoggingApp extends ZIOAppDefault {
           label("message", quoted(line)) |-|
           logFormats.spanIdLabel |-|
           logFormats.traceIdLabel
-      myConsoleLogger = console(format.highlight)
+      myConsoleLogger = consoleLogger(ConsoleLoggerConfig.default.copy(format = format.highlight))
     } yield Runtime.removeDefaultLoggers >>> myConsoleLogger
   }.flatten
 
   override def run =
     ZIO
-      .serviceWithZIO[Tracing] { tracing =>
+      .serviceWithZIO[Tracer] { tracer =>
         val logic = for {
           // Read user input
           message <- Console.readLine
@@ -108,15 +109,14 @@ object ZioLoggingApp extends ZIOAppDefault {
         } yield ()
 
         // All log messages produced by `logic` will be correlated with a "root_span" automatically
-        logic @@ tracing.aspects.root("root_span")
+        logic @@ tracer.aspects.root("root_span")
       }
       .provide(
         otelSdkLayer,
-        OpenTelemetry.logging(instrumentationScopeName),
-        OpenTelemetry.tracing(instrumentationScopeName),
-        OpenTelemetry.contextZIO,
+        OpenTelemetry.logger(instrumentationScopeName),
+        OpenTelemetry.tracer(instrumentationScopeName),
         ZioLogging.logFormats,
-        loggingLayer
+        loggerLayer
       )
 
 }

@@ -4,7 +4,7 @@ import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.metrics.DoubleHistogram
 import io.opentelemetry.context.Context
 import zio._
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.context.internal.ContextStorage
 import zio.telemetry.opentelemetry.metrics.internal.{Instrument, logAnnotatedAttributes}
 
 /**
@@ -18,8 +18,7 @@ trait Histogram[-A] extends Instrument[A] {
   /**
    * Records a value.
    *
-   * It uses the context taken from the [[zio.telemetry.opentelemetry.context.ContextStorage]] to associate with this
-   * measurement.
+   * It uses the context taken from the ContextStorage to associate with this measurement.
    *
    * @param value
    *   increment amount. MUST be non-negative

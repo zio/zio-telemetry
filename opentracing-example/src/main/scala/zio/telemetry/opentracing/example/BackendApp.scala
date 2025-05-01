@@ -1,11 +1,11 @@
 package zio.telemetry.opentracing.example
 
+import zio._
 import zio.config.magnolia._
 import zio.config.typesafe.TypesafeConfig
+import zio.telemetry.opentracing.OpenTracing
 import zio.telemetry.opentracing.example.config.AppConfig
 import zio.telemetry.opentracing.example.http.{BackendHttpApp, BackendHttpServer}
-import zio._
-import zio.telemetry.opentracing.OpenTracing
 
 object BackendApp extends ZIOAppDefault {
 

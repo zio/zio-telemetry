@@ -3,9 +3,8 @@ package zio.telemetry.opentracing.example.http
 import io.opentracing.propagation.Format.Builtin.{HTTP_HEADERS => HttpHeadersFormat}
 import io.opentracing.propagation.TextMapAdapter
 import io.opentracing.tag.Tags
-import sttp.model.Method.GET
-import zio.http._
 import zio._
+import zio.http._
 import zio.json.EncoderOps
 import zio.telemetry.opentracing.OpenTracing
 
@@ -14,22 +13,23 @@ import scala.jdk.CollectionConverters._
 
 case class ProxyHttpApp(client: BackendClient, tracing: OpenTracing) {
 
-  import tracing.aspects._
-
-  def routes: HttpApp[Any, Nothing] =
-    Http.collectZIO { case Method.GET -> Root / "statuses" =>
-      (for {
-        _        <- tracing.tag(Tags.SPAN_KIND.getKey, Tags.SPAN_KIND_CLIENT)
-        _        <- tracing.tag(Tags.HTTP_METHOD.getKey, GET.method)
-        _        <- tracing.setBaggageItem("proxy-baggage-item-key", "proxy-baggage-item-value")
-        carrier   = new TextMapAdapter(mutable.Map.empty[String, String].asJava)
-        _        <- tracing.inject(HttpHeadersFormat, carrier)
-        headers  <- extractHeaders(carrier)
-        statuses <- client
-                      .status(headers)
-                      .catchAll(_ => ZIO.succeed(Statuses(List.empty)))
-      } yield Response.json(statuses.toJson)) @@ root("/statuses")
-    }
+  val routes: Routes[Any, Nothing] =
+    Routes(
+      Method.GET / "statuses" ->
+        handler {
+          (for {
+            _        <- tracing.tag(Tags.SPAN_KIND.getKey, Tags.SPAN_KIND_CLIENT)
+            _        <- tracing.tag(Tags.HTTP_METHOD.getKey, "GET")
+            _        <- tracing.setBaggageItem("proxy-baggage-item-key", "proxy-baggage-item-value")
+            carrier   = new TextMapAdapter(mutable.Map.empty[String, String].asJava)
+            _        <- tracing.inject(HttpHeadersFormat, carrier)
+            headers  <- extractHeaders(carrier)
+            statuses <- client
+                          .status(headers)
+                          .catchAll(_ => ZIO.succeed(BackendStatuses(List.empty)))
+          } yield Response.json(statuses.toJson)) @@ tracing.aspects.root("/statuses")
+        }
+    )
 
   private def extractHeaders(adapter: TextMapAdapter): UIO[Map[String, String]] = {
     val m = mutable.Map.empty[String, String]

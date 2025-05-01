@@ -1,7 +1,7 @@
 package zio.telemetry.opentelemetry.example.http
 
-import zio.http._
 import zio._
+import zio.http._
 import zio.telemetry.opentelemetry.example.config.AppConfig
 
 case class BackendHttpServer(config: AppConfig, httpApp: BackendHttpApp) {

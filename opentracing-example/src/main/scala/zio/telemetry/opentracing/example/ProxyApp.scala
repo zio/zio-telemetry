@@ -1,9 +1,9 @@
 package zio.telemetry.opentracing.example
 
 import zio._
-import zio.http._
 import zio.config.magnolia._
 import zio.config.typesafe.TypesafeConfig
+import zio.http._
 import zio.telemetry.opentracing.OpenTracing
 import zio.telemetry.opentracing.example.config.AppConfig
 import zio.telemetry.opentracing.example.http.{BackendClient, ProxyHttpApp, ProxyHttpServer}

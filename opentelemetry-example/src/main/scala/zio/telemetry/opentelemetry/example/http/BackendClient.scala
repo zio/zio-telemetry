@@ -1,38 +1,41 @@
 package zio.telemetry.opentelemetry.example.http
 
 import zio._
-import zio.http.{Header, Headers, Request, URL}
+import zio.http._
 import zio.json._
 import zio.telemetry.opentelemetry.example.config.AppConfig
+import zio.telemetry.opentelemetry.example.http.BackendClient.BatchedClient
 
 import java.nio.charset.StandardCharsets
 
-case class BackendClient(backend: zio.http.Client, config: AppConfig) {
+case class BackendClient(backend: BatchedClient, backendUrl: URL) {
 
-  private val backendUrl =
-    URL
-      .decode(s"http://${config.backend.host}:${config.backend.port}")
-      .left
-      .map(new IllegalArgumentException(_))
-
-  def status(headers: Map[String, String]): Task[Statuses] =
+  def status(headers: Map[String, String]): Task[BackendStatuses] =
     for {
-      url      <- ZIO.fromEither(backendUrl)
-      request   = Request
-                    .get(url.withPath("status"))
-                    .copy(headers = Headers(headers.map(x => Header.Custom(x._1, x._2))))
-      response <- backend.request(request)
+      response <- backend.request(
+                    Request
+                      .get(backendUrl / "status")
+                      .copy(headers = Headers(headers.map(x => Header.Custom(x._1, x._2))))
+                  )
       json     <- response.body.asString(StandardCharsets.UTF_8)
       status   <- ZIO
-                    .fromEither(JsonDecoder[Status].decodeJson(json))
-                    .catchAll(_ => ZIO.succeed(Status.down("backend")))
-    } yield Statuses(List(status, Status.up("proxy")))
+                    .fromEither(JsonDecoder[BackendStatus].decodeJson(json))
+                    .catchAll(_ => ZIO.succeed(BackendStatus.down("backend")))
+    } yield BackendStatuses(List(status, BackendStatus.up("proxy")))
 
 }
 
 object BackendClient {
 
+  type BatchedClient = ZClient[Any, Any, Body, Throwable, Response]
+
   val live: RLayer[AppConfig with zio.http.Client, BackendClient] =
-    ZLayer.fromFunction(BackendClient.apply _)
+    ZLayer {
+      for {
+        client     <- ZIO.service[zio.http.Client]
+        config     <- ZIO.service[AppConfig]
+        backendUrl <- ZIO.fromEither(URL.decode(s"http://${config.backend.host}:${config.backend.port}"))
+      } yield BackendClient(client.batched, backendUrl)
+    }
 
 }

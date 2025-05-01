@@ -1,28 +1,26 @@
-package zio.telemetry.opentelemetry.logging
+package zio.telemetry.opentelemetry.logs
 
 import io.opentelemetry.api.common.AttributeKey
-import io.opentelemetry.api.logs.{Logger, LoggerProvider, Severity}
+import io.opentelemetry.api.logs.{Logger => JLogger, LoggerProvider, Severity}
 import io.opentelemetry.context.Context
 import zio._
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.context.internal.ContextStorage
 
-object Logging {
+private[opentelemetry] object Logger {
 
-  def live(
+  def make(
+    loggerProvider: LoggerProvider,
+    ctxStorage: ContextStorage,
     instrumentationScopeName: String,
     logLevel: LogLevel = LogLevel.Info
-  ): URLayer[ContextStorage with LoggerProvider, Unit] =
-    ZLayer.scoped(
-      for {
-        loggerProvider <- ZIO.service[LoggerProvider]
-        ctxStorage     <- ZIO.service[ContextStorage]
-        logger         <- ZIO.succeed(
-                            zioLogger(instrumentationScopeName)(ctxStorage, loggerProvider)
-                              .filterLogLevel(_ >= logLevel)
-                          )
-        _              <- ZIO.withLoggerScoped(logger)
-      } yield ()
-    )
+  ): URIO[Scope, Unit] =
+    for {
+      logger <- ZIO.succeed(
+                  zioLogger(instrumentationScopeName)(ctxStorage, loggerProvider)
+                    .filterLogLevel(_ >= logLevel)
+                )
+      _      <- ZIO.withLoggerScoped(logger)
+    } yield ()
 
   private def zioLogger(instrumentationScopeName: String)(
     ctxStorage: ContextStorage,
@@ -30,7 +28,7 @@ object Logging {
   ): ZLogger[String, Unit] =
     new ZLogger[String, Unit] {
 
-      val logger: Logger = loggerProvider.get(instrumentationScopeName)
+      val logger: JLogger = loggerProvider.get(instrumentationScopeName)
 
       override def apply(
         trace: Trace,
@@ -50,9 +48,9 @@ object Logging {
         annotations.foreach { case (k, v) => builder.setAttribute(AttributeKey.stringKey(k), v) }
 
         ctxStorage match {
-          case cs: ContextStorage.ZIOFiberRef =>
+          case cs: ContextStorage.ZIOFiberRef             =>
             context.get(cs.ref).foreach(builder.setContext)
-          case _: ContextStorage.Native.type  =>
+          case _: ContextStorage.JavaOtelThreadLocal.type =>
             builder.setContext(Context.current())
         }
 

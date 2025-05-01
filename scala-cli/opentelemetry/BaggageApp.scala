@@ -1,34 +1,34 @@
 //> using scala "3.8.4"
 //> using dep dev.zio::zio:2.1.26
-//> using dep dev.zio::zio-opentelemetry:3.1.17
+//> using dep dev.zio::zio-opentelemetry:4.0.0-RC11
 
 import zio.*
 import zio.telemetry.opentelemetry.baggage.Baggage
-import zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator
-import zio.telemetry.opentelemetry.context.ContextStorage
 import zio.telemetry.opentelemetry.OpenTelemetry
 
 object BaggageApp extends ZIOAppDefault {
 
   override def run =
     ZIO
-      .serviceWithZIO[Baggage] { baggage =>
-        for {
-          // Read user input
-          message <- Console.readLine
+      .serviceWithZIO[OpenTelemetry] { openTelemetry =>
+        // Read user input
+        Console.readLine.flatMap { message =>
           // Set baggage key/value
-          _       <- baggage.set("message", message)
-          // Read all baggage data including ZIO log annotations
-          data    <- ZIO.logAnnotate("message2", "annotation")(
-                       baggage.getAll
-                     )
-          // Print the resulting data
-          _       <- Console.printLine(s"Baggage data: $data")
-        } yield message
+          openTelemetry.baggage.set("message", message) {
+            for {
+              // Read all baggage data including ZIO log annotations
+              data <- ZIO.logAnnotate("message2", "annotation")(
+                        openTelemetry.baggage.getAll
+                      )
+              // Print the resulting data
+              _    <- Console.printLine(s"Baggage data: $data")
+            } yield ()
+          }
+        }
+
       }
       .provide(
-        OpenTelemetry.baggage(logAnnotated = true),
-        OpenTelemetry.contextZIO
+        OpenTelemetry.noop
       )
 
 }
