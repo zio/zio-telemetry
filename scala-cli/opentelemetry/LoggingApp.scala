@@ -1,6 +1,6 @@
 //> using scala "3.6.4"
 //> using dep dev.zio::zio:2.1.17
-//> using dep dev.zio::zio-opentelemetry:3.1.4+22-01a2d4f5+20250501-1912-SNAPSHOT
+//> using dep dev.zio::zio-opentelemetry:4.0.0-RC1
 //> using dep io.opentelemetry:opentelemetry-sdk:1.49.0
 //> using dep io.opentelemetry:opentelemetry-sdk-trace:1.49.0
 //> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.49.0
@@ -18,7 +18,7 @@ import io.opentelemetry.semconv.ServiceAttributes
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.api
 import zio.*
-import zio.telemetry.opentelemetry.tracing.Tracing
+import zio.telemetry.opentelemetry.trace.Tracer
 import zio.telemetry.opentelemetry.OpenTelemetry
 
 object LoggingApp extends ZIOAppDefault {
@@ -79,7 +79,7 @@ object LoggingApp extends ZIOAppDefault {
 
   override def run =
     ZIO
-      .serviceWithZIO[Tracing] { tracing =>
+      .serviceWithZIO[Tracer] { tracer =>
         val logic = for {
           // Read user input
           message <- Console.readLine
@@ -90,12 +90,12 @@ object LoggingApp extends ZIOAppDefault {
         } yield ()
 
         // All log messages produced by `logic` will be correlated with a "root_span" automatically
-        logic @@ tracing.aspects.root("root_span")
+        logic @@ tracer.aspects.root("root_span")
       }
       .provide(
         otelSdkLayer,
-        OpenTelemetry.logging(instrumentationScopeName),
-        OpenTelemetry.tracing(instrumentationScopeName)
+        OpenTelemetry.logger(instrumentationScopeName),
+        OpenTelemetry.tracer(instrumentationScopeName)
       )
 
 }

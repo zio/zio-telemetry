@@ -1,7 +1,7 @@
-package zio.telemetry.opentelemetry.tracing
+package zio.telemetry.opentelemetry.trace
 
 import io.opentelemetry.api.common.{AttributeKey, Attributes}
-import io.opentelemetry.api.trace._
+import io.opentelemetry.api.trace.{Span, SpanBuilder, SpanContext, SpanKind, StatusCode, Tracer => JTracer}
 import io.opentelemetry.context.Context
 import zio._
 import zio.telemetry.opentelemetry.common.Attribute
@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters._
 
-trait Tracing { self =>
+trait Tracer { self =>
 
   /**
    * Adds an event to the current span.
@@ -72,10 +72,10 @@ trait Tracing { self =>
    * It also could be useful in combination with `extractSpanUnsafe` or `spanUnsafe`:
    * {{{
    *   for {
-   *     (span, finalize) <- tracing.spanUnsafe("unsafe-span")
+   *     (span, finalize) <- tracer.spanUnsafe("unsafe-span")
    *     // run some logic that would be wrapped in the span
    *     // modify the span
-   *     _                <- zio @@ tracing.inSpan(span, "child-of-unsafe-span")
+   *     _                <- zio @@ tracer.inSpan(span, "child-of-unsafe-span")
    *   } yield ()
    * }}}
    *
@@ -417,12 +417,12 @@ trait Tracing { self =>
 
 }
 
-private[opentelemetry] object Tracing {
+private[opentelemetry] object Tracer {
 
-  def scoped(tracer: Tracer, ctxStorage: ContextStorage, logAnnotated: Boolean = false): URIO[Scope, Tracing] = {
+  def scoped(tracer: JTracer, ctxStorage: ContextStorage, logAnnotated: Boolean = false): URIO[Scope, Tracer] = {
     val acquire =
       ZIO.succeed {
-        new Tracing { self =>
+        new Tracer { self =>
           override def getCurrentContextUnsafe(implicit trace: Trace): UIO[Context] =
             ctxStorage.get
 
@@ -741,8 +741,8 @@ private[opentelemetry] object Tracing {
         }
       }
 
-    def release(tracing: Tracing) =
-      tracing.getCurrentSpanUnsafe.flatMap(span => ZIO.succeed(span.end()))
+    def release(tracer: Tracer) =
+      tracer.getCurrentSpanUnsafe.flatMap(span => ZIO.succeed(span.end()))
 
     ZIO.acquireRelease(acquire)(release)
   }

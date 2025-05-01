@@ -1,7 +1,7 @@
-package zio.telemetry.opentelemetry.tracing
+package zio.telemetry.opentelemetry.trace
 
 import io.opentelemetry.api.trace.StatusCode
-import zio.telemetry.opentelemetry.tracing.StatusMapper.Result
+import zio.telemetry.opentelemetry.trace.StatusMapper.Result
 
 /**
  * Maps the result of a wrapped ZIO effect to the status of the [[io.opentelemetry.api.trace.Span]].
@@ -50,7 +50,7 @@ object StatusMapper {
 
   final case class Result[+T](statusCode: StatusCode, error: Option[T] = None)
 
-  private[tracing] def apply[E, A](
+  private[opentelemetry] def apply[E, A](
     failure: PartialFunction[E, Result[Throwable]],
     success: PartialFunction[A, Result[String]]
   ): StatusMapper[E, A] =

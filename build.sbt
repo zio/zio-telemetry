@@ -67,8 +67,7 @@ inThisBuild(
     // TODO: remove once it is updated in zio-sbt
     scala212          := "2.12.20",
     scala213          := "2.13.16",
-    scala3            := "3.6.4",
-    semanticdbEnabled := true
+    scala3            := "3.6.4"
   )
 )
 

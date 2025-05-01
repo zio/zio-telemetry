@@ -8,9 +8,9 @@ import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.context.IncomingContextCarrier
 import zio.telemetry.opentelemetry.example.http.{BackendStatus => ServiceStatus}
 import zio.telemetry.opentelemetry.metrics.{Counter, Meter}
-import zio.telemetry.opentelemetry.tracing.Tracing
+import zio.telemetry.opentelemetry.trace.Tracer
 
-case class BackendHttpApp(openTelemetry: OpenTelemetry, tracing: Tracing, statusRequestsCounter: Counter[Long]) {
+case class BackendHttpApp(openTelemetry: OpenTelemetry, tracer: Tracer, statusRequestsCounter: Counter[Long]) {
 
   def headersCarrier(initial: Headers): IncomingContextCarrier[Headers] =
     new IncomingContextCarrier[Headers] {
@@ -31,7 +31,7 @@ case class BackendHttpApp(openTelemetry: OpenTelemetry, tracing: Tracing, status
           val carrier = headersCarrier(request.headers)
 
           status @@
-            tracing.aspects.span("/status", SpanKind.SERVER) @@
+            tracer.aspects.span("/status", SpanKind.SERVER) @@
             openTelemetry.aspects.continue(carrier)
         }
     )
@@ -39,10 +39,10 @@ case class BackendHttpApp(openTelemetry: OpenTelemetry, tracing: Tracing, status
   def status: UIO[Response] =
     for {
       proxyBaggage <- openTelemetry.baggage.get("proxy-baggage")
-      _            <- tracing.setAttribute("proxy-baggage", proxyBaggage.getOrElse("NO BAGGAGE"))
-      _            <- tracing.addEvent("event from backend before response")
+      _            <- tracer.setAttribute("proxy-baggage", proxyBaggage.getOrElse("NO BAGGAGE"))
+      _            <- tracer.addEvent("event from backend before response")
       response     <- ZIO.succeed(Response.json(ServiceStatus.up("backend").toJson))
-      _            <- tracing.addEvent("event from backend after response")
+      _            <- tracer.addEvent("event from backend after response")
       _            <- ZIO.logInfo("status processing finished on backend")
       _            <- statusRequestsCounter.inc()
     } yield response
@@ -51,7 +51,7 @@ case class BackendHttpApp(openTelemetry: OpenTelemetry, tracing: Tracing, status
 
 object BackendHttpApp {
 
-  val live: URLayer[OpenTelemetry with Tracing with Meter, BackendHttpApp] = {
+  val live: URLayer[OpenTelemetry with Tracer with Meter, BackendHttpApp] = {
     val counterLayer = ZLayer(ZIO.serviceWithZIO[Meter](_.counter("status_requests_count")))
 
     counterLayer >>> ZLayer.fromFunction(BackendHttpApp.apply _)

@@ -1,6 +1,6 @@
 package zio.telemetry.opentelemetry
 
-import io.opentelemetry.api.trace.Tracer
+import io.opentelemetry.api.trace.{Tracer => JTracer}
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
 import io.opentelemetry.sdk.trace.SdkTracerProvider
@@ -10,7 +10,7 @@ import zio._
 import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.context.internal.ContextStorage
 import zio.telemetry.opentelemetry.context.{ContextPropagator, IncomingContextCarrier, OutgoingContextCarrier}
-import zio.telemetry.opentelemetry.tracing.Tracing
+import zio.telemetry.opentelemetry.trace.Tracer
 import zio.test.Assertion._
 import zio.test._
 
@@ -49,14 +49,14 @@ object OpenTelemetryTest extends ZIOSpecDefault {
 
   }
 
-  val inMemoryTracer: UIO[(InMemorySpanExporter, Tracer)] = for {
+  val inMemoryTracer: UIO[(InMemorySpanExporter, JTracer)] = for {
     spanExporter   <- ZIO.succeed(InMemorySpanExporter.create())
     spanProcessor  <- ZIO.succeed(SimpleSpanProcessor.create(spanExporter))
     tracerProvider <- ZIO.succeed(SdkTracerProvider.builder().addSpanProcessor(spanProcessor).build())
     tracer          = tracerProvider.get("OpenTelemetryTest")
   } yield (spanExporter, tracer)
 
-  val inMemoryTracerLayer: ULayer[InMemorySpanExporter with Tracer] =
+  val inMemoryTracerLayer: ULayer[InMemorySpanExporter with JTracer] =
     ZLayer.fromZIOEnvironment(inMemoryTracer.map { case (inMemorySpanExporter, tracer) =>
       ZEnvironment(inMemorySpanExporter).add(tracer)
     })
@@ -67,18 +67,18 @@ object OpenTelemetryTest extends ZIOSpecDefault {
   def javaOtelThreadLocalLayer: ULayer[ContextStorage] =
     ZLayer.succeed(ContextStorage.JavaOtelThreadLocal)
 
-  def tracingMockLayer(
+  def tracerMockLayer(
     logAnnotated: Boolean = false
-  ): URLayer[ContextStorage, Tracing with InMemorySpanExporter with Tracer] =
-    inMemoryTracerLayer >>> (tracingLiveLayer(logAnnotated) ++ inMemoryTracerLayer)
+  ): URLayer[ContextStorage, Tracer with InMemorySpanExporter with JTracer] =
+    inMemoryTracerLayer >>> (tracerLiveLayer(logAnnotated) ++ inMemoryTracerLayer)
 
-  def tracingLiveLayer(logAnnotated: Boolean = false): URLayer[Tracer with ContextStorage, Tracing] =
+  def tracerLiveLayer(logAnnotated: Boolean = false): URLayer[JTracer with ContextStorage, Tracer] =
     ZLayer.scoped {
       for {
         ctxStorage <- ZIO.service[ContextStorage]
-        tracer     <- ZIO.service[Tracer]
-        tracing    <- Tracing.scoped(tracer, ctxStorage, logAnnotated)
-      } yield tracing
+        jtracer    <- ZIO.service[JTracer]
+        tracer     <- Tracer.scoped(jtracer, ctxStorage, logAnnotated)
+      } yield tracer
     }
 
   def getFinishedSpans: ZIO[InMemorySpanExporter, Nothing, List[SpanData]] =
@@ -94,7 +94,7 @@ object OpenTelemetryTest extends ZIOSpecDefault {
     suite("zio opentelemetry")(
       suite("OpenTelemetry")(
         suite("manual context propagation")(
-          suite("tracing")(
+          suite("tracer")(
             ctxStoragesMap.map { case (testName, ctxStorageLayer) =>
               test(testName) {
                 val carrier: scala.collection.mutable.Map[String, String] =
@@ -102,15 +102,15 @@ object OpenTelemetryTest extends ZIOSpecDefault {
 
                 for {
                   openTelemetry <- ZIO.service[OpenTelemetry]
-                  tracing       <- ZIO.service[Tracing]
+                  tracer        <- ZIO.service[Tracer]
 
                   _ <- openTelemetry.propagate(OutgoingContextCarrier.default(carrier)) @@
-                         tracing.aspects.span("foo") @@
-                         tracing.aspects.root("ROOT")
+                         tracer.aspects.span("foo") @@
+                         tracer.aspects.root("ROOT")
 
                   _ <- ZIO.unit @@
-                         tracing.aspects.span("baz") @@
-                         tracing.aspects.span("bar") @@
+                         tracer.aspects.span("baz") @@
+                         tracer.aspects.span("bar") @@
                          openTelemetry.aspects.continue(IncomingContextCarrier.default(carrier))
 
                   spans <- getFinishedSpans
@@ -128,7 +128,7 @@ object OpenTelemetryTest extends ZIOSpecDefault {
               }.provide(
                 OpenTelemetryTestKit.layer,
                 ctxStorageLayer,
-                tracingMockLayer()
+                tracerMockLayer()
               )
             }
           ),

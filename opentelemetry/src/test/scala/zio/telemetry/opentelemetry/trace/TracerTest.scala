@@ -1,7 +1,7 @@
-package zio.telemetry.opentelemetry.tracing
+package zio.telemetry.opentelemetry.trace
 
 import io.opentelemetry.api.common.AttributeKey
-import io.opentelemetry.api.trace.{Span, SpanId, StatusCode, Tracer}
+import io.opentelemetry.api.trace.{Span, SpanId, StatusCode, Tracer => JTracer}
 import io.opentelemetry.context.Context
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
 import io.opentelemetry.sdk.trace.SdkTracerProvider
@@ -16,16 +16,16 @@ import zio.test.{Spec, TestClock, ZIOSpecDefault, assert}
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
 
-object TracingTest extends ZIOSpecDefault {
+object TracerTest extends ZIOSpecDefault {
 
-  val inMemoryTracer: UIO[(InMemorySpanExporter, Tracer)] = for {
+  val inMemoryTracer: UIO[(InMemorySpanExporter, JTracer)] = for {
     spanExporter   <- ZIO.succeed(InMemorySpanExporter.create())
     spanProcessor  <- ZIO.succeed(SimpleSpanProcessor.create(spanExporter))
     tracerProvider <- ZIO.succeed(SdkTracerProvider.builder().addSpanProcessor(spanProcessor).build())
     tracer          = tracerProvider.get("TracingTest")
   } yield (spanExporter, tracer)
 
-  val inMemoryTracerLayer: ULayer[InMemorySpanExporter with Tracer] =
+  val inMemoryTracerLayer: ULayer[InMemorySpanExporter with JTracer] =
     ZLayer.fromZIOEnvironment(inMemoryTracer.map { case (inMemorySpanExporter, tracer) =>
       ZEnvironment(inMemorySpanExporter).add(tracer)
     })
@@ -33,18 +33,18 @@ object TracingTest extends ZIOSpecDefault {
   def ctxStorageLayer: ULayer[ContextStorage] =
     ZLayer.scoped(ContextStorage.zioFiberRefScoped)
 
-  def tracingMockLayer(
+  def tracerMockLayer(
     logAnnotated: Boolean = false
-  ): URLayer[ContextStorage, Tracing with InMemorySpanExporter with Tracer] =
-    inMemoryTracerLayer >>> (tracingLiveLayer(logAnnotated) ++ inMemoryTracerLayer)
+  ): URLayer[ContextStorage, Tracer with InMemorySpanExporter with Tracer] =
+    inMemoryTracerLayer >>> (tracerLiveLayer(logAnnotated) ++ inMemoryTracerLayer)
 
-  def tracingLiveLayer(logAnnotated: Boolean = false): URLayer[Tracer with ContextStorage, Tracing] =
+  def tracerLiveLayer(logAnnotated: Boolean = false): URLayer[JTracer with ContextStorage, Tracer] =
     ZLayer.scoped {
       for {
         ctxStorage <- ZIO.service[ContextStorage]
-        tracer     <- ZIO.service[Tracer]
-        tracing    <- Tracing.scoped(tracer, ctxStorage, logAnnotated)
-      } yield tracing
+        jtracer    <- ZIO.service[JTracer]
+        tracer     <- zio.telemetry.opentelemetry.trace.Tracer.scoped(jtracer, ctxStorage, logAnnotated)
+      } yield tracer
     }
 
   def getFinishedSpans: ZIO[InMemorySpanExporter, Nothing, List[SpanData]] =
@@ -64,7 +64,7 @@ object TracingTest extends ZIOSpecDefault {
     suite("creation")(
       test("live") {
         for {
-          _             <- ZIO.scoped(tracingLiveLayer().build)
+          _             <- ZIO.scoped(tracerLiveLayer().build)
           finishedSpans <- getFinishedSpans
         } yield assert(finishedSpans)(hasSize(equalTo(0)))
       }.provide(inMemoryTracerLayer, ctxStorageLayer)
@@ -73,8 +73,8 @@ object TracingTest extends ZIOSpecDefault {
   private val spansSpec =
     suite("spans")(
       test("root") {
-        ZIO.serviceWithZIO[Tracing] { tracing =>
-          import tracing.aspects._
+        ZIO.serviceWithZIO[Tracer] { tracer =>
+          import tracer.aspects._
 
           for {
             _     <- ZIO.unit @@ root("ROOT2") @@ root("ROOT")
@@ -94,8 +94,8 @@ object TracingTest extends ZIOSpecDefault {
         }
       },
       test("span") {
-        ZIO.serviceWithZIO[Tracing] { tracing =>
-          import tracing.aspects._
+        ZIO.serviceWithZIO[Tracer] { tracer =>
+          import tracer.aspects._
 
           for {
             _     <- ZIO.unit @@ span("Child") @@ span("Root")
@@ -115,8 +115,8 @@ object TracingTest extends ZIOSpecDefault {
         }
       },
       test("inSpan") {
-        ZIO.serviceWithZIO[Tracing] { tracing =>
-          import tracing.aspects._
+        ZIO.serviceWithZIO[Tracer] { tracer =>
+          import tracer.aspects._
 
           for {
             res                       <- inMemoryTracer
@@ -140,11 +140,11 @@ object TracingTest extends ZIOSpecDefault {
         }
       },
       test("scopedEffect") {
-        ZIO.serviceWithZIO[Tracing] { tracing =>
-          import tracing.aspects._
+        ZIO.serviceWithZIO[Tracer] { tracer =>
+          import tracer.aspects._
 
           for {
-            _     <- tracing.scopedEffect {
+            _     <- tracer.scopedEffect {
                        val span = Span.current()
                        span.addEvent("In legacy code")
                        if (Context.current() == Context.root()) throw new RuntimeException("Current context is root!")
@@ -168,11 +168,11 @@ object TracingTest extends ZIOSpecDefault {
         }
       },
       test("scopedEffectTotal") {
-        ZIO.serviceWithZIO[Tracing] { tracing =>
-          import tracing.aspects._
+        ZIO.serviceWithZIO[Tracer] { tracer =>
+          import tracer.aspects._
 
           for {
-            _     <- tracing.scopedEffectTotal {
+            _     <- tracer.scopedEffectTotal {
                        val span = Span.current()
                        span.addEvent("In legacy code")
                        if (Context.current() == Context.root()) throw new RuntimeException("Current context is root!")
@@ -198,11 +198,11 @@ object TracingTest extends ZIOSpecDefault {
         }
       },
       test("scopedEffectFromFuture") {
-        ZIO.serviceWithZIO[Tracing] { tracing =>
-          import tracing.aspects._
+        ZIO.serviceWithZIO[Tracer] { tracer =>
+          import tracer.aspects._
 
           for {
-            result <- tracing.scopedEffectFromFuture { _ =>
+            result <- tracer.scopedEffectFromFuture { _ =>
                         Future.successful {
                           val span = Span.current()
                           span.addEvent("In legacy code")
@@ -231,17 +231,17 @@ object TracingTest extends ZIOSpecDefault {
         }
       },
       test("setAttribute") {
-        ZIO.serviceWithZIO[Tracing] { tracing =>
-          import tracing.aspects._
+        ZIO.serviceWithZIO[Tracer] { tracer =>
+          import tracer.aspects._
 
           for {
             _     <- (for {
-                       _ <- tracing.setAttribute("boolean", value = true)
-                       _ <- tracing.setAttribute("int", 1)
-                       _ <- tracing.setAttribute("string", "foo")
-                       _ <- tracing.setAttribute("booleans", Seq(true, false))
-                       _ <- tracing.setAttribute("longs", Seq(1L, 2L))
-                       _ <- tracing.setAttribute("strings", Seq("foo", "bar"))
+                       _ <- tracer.setAttribute("boolean", value = true)
+                       _ <- tracer.setAttribute("int", 1)
+                       _ <- tracer.setAttribute("string", "foo")
+                       _ <- tracer.setAttribute("booleans", Seq(true, false))
+                       _ <- tracer.setAttribute("longs", Seq(1L, 2L))
+                       _ <- tracer.setAttribute("strings", Seq("foo", "bar"))
                      } yield ()) @@ span("foo")
             spans <- getFinishedSpans
             tags   = spans.head.getAttributes
@@ -258,15 +258,15 @@ object TracingTest extends ZIOSpecDefault {
         }
       },
       test("addEvent & addEventWithAttributes") {
-        ZIO.serviceWithZIO[Tracing] { tracing =>
-          import tracing.aspects._
+        ZIO.serviceWithZIO[Tracer] { tracer =>
+          import tracer.aspects._
 
           val duration = 1000.micros
 
           val log = for {
-            _ <- tracing.addEvent("message")
+            _ <- tracer.addEvent("message")
             _ <- TestClock.adjust(duration)
-            _ <- tracing.addEventWithAttributes(
+            _ <- tracer.addEventWithAttributes(
                    "message2",
                    Attributes(Attribute.string("msg", "message"), Attribute.long("size", 1L))
                  )
@@ -294,8 +294,8 @@ object TracingTest extends ZIOSpecDefault {
         }
       },
       test("addLinks") {
-        ZIO.serviceWithZIO[Tracing] { tracing =>
-          import tracing.aspects._
+        ZIO.serviceWithZIO[Tracer] { tracer =>
+          import tracer.aspects._
 
           for {
             res                        <- inMemoryTracer
@@ -325,19 +325,19 @@ object TracingTest extends ZIOSpecDefault {
         }
       },
       test("resources") {
-        ZIO.serviceWithZIO[Tracing] { tracing =>
+        ZIO.serviceWithZIO[Tracer] { tracer =>
           for {
             ref      <- Ref.make(false)
             scope    <- Scope.make
             resource  = ZIO.addFinalizer(ref.set(true))
-            _        <- scope.extend[Any](tracing.span("Resource")(resource))
+            _        <- scope.extend[Any](tracer.span("Resource")(resource))
             released <- ref.get
           } yield assert(released)(isFalse)
         }
       },
       test("status mapper for successful span") {
-        ZIO.serviceWithZIO[Tracing] { tracing =>
-          import tracing.aspects._
+        ZIO.serviceWithZIO[Tracer] { tracer =>
+          import tracer.aspects._
 
           val assertStatusCodeError =
             hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.ERROR))
@@ -360,7 +360,9 @@ object TracingTest extends ZIOSpecDefault {
           val assertion = assertStatusCodeError && assertRecordedExceptionAttributes && assertStatusDescriptionError
 
           val statusMapper =
-            StatusMapper.success[String](_ => StatusCode.ERROR)(r => Option(s"My error message. Result = $r"))
+            zio.telemetry.opentelemetry.trace.StatusMapper.success[String](_ => StatusCode.ERROR)(r =>
+              Option(s"My error message. Result = $r")
+            )
 
           for {
             _     <-
@@ -371,8 +373,8 @@ object TracingTest extends ZIOSpecDefault {
         }
       },
       test("status mapper for failed span") {
-        ZIO.serviceWithZIO[Tracing] { tracing =>
-          import tracing.aspects._
+        ZIO.serviceWithZIO[Tracer] { tracer =>
+          import tracer.aspects._
 
           val assertStatusCodeError =
             hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.ERROR))
@@ -393,7 +395,7 @@ object TracingTest extends ZIOSpecDefault {
             )
 
           val assertion    = assertStatusCodeError && assertRecordedExceptionAttributes && assertStatusDescriptionError
-          val statusMapper = StatusMapper.failureThrowable(_ => StatusCode.ERROR)
+          val statusMapper = zio.telemetry.opentelemetry.trace.StatusMapper.failureThrowable(_ => StatusCode.ERROR)
 
           val failedEffect: ZIO[Any, Throwable, Unit] =
             ZIO.fail(new RuntimeException("some_error")).when(true).unit
@@ -411,8 +413,8 @@ object TracingTest extends ZIOSpecDefault {
         }
       },
       test("status mapper for failed span when error type is not Throwable") {
-        ZIO.serviceWithZIO[Tracing] { tracing =>
-          import tracing.aspects._
+        ZIO.serviceWithZIO[Tracer] { tracer =>
+          import tracer.aspects._
 
           val assertStatusCodeError =
             hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.ERROR))
@@ -434,7 +436,9 @@ object TracingTest extends ZIOSpecDefault {
 
           val assertion    = assertStatusCodeError && assertRecordedExceptionAttributes && assertStatusDescriptionError
           val statusMapper =
-            StatusMapper.failure[Error](_ => StatusCode.ERROR)(e => Option(new RuntimeException(e.msg)))
+            zio.telemetry.opentelemetry.trace.StatusMapper.failure[Error](_ => StatusCode.ERROR)(e =>
+              Option(new RuntimeException(e.msg))
+            )
 
           final case class Error(msg: String)
           val failedEffect: ZIO[Any, Error, Unit] =
@@ -453,8 +457,8 @@ object TracingTest extends ZIOSpecDefault {
         }
       },
       test("status mapper without description for failed span") {
-        ZIO.serviceWithZIO[Tracing] { tracing =>
-          import tracing.aspects._
+        ZIO.serviceWithZIO[Tracer] { tracer =>
+          import tracer.aspects._
 
           val assertStatusCodeUnset =
             hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.UNSET))
@@ -471,7 +475,7 @@ object TracingTest extends ZIOSpecDefault {
             )
 
           val assertion    = assertStatusCodeUnset && assertRecordedExceptionAttributes && assertStatusDescriptionEmpty
-          val statusMapper = StatusMapper.failureThrowable(_ => StatusCode.UNSET)
+          val statusMapper = zio.telemetry.opentelemetry.trace.StatusMapper.failureThrowable(_ => StatusCode.UNSET)
 
           val failedEffect: ZIO[Any, Throwable, Unit] =
             ZIO.fail(new RuntimeException("some_error")).when(true).unit
@@ -501,12 +505,13 @@ object TracingTest extends ZIOSpecDefault {
         val failureAssertion = assertErrorStatusCodeUnset && assertStatusDescriptionEmpty
         val successAssertion = assertSuccessStatusCodeOk && assertStatusDescriptionEmpty
 
-        val failureMapper = StatusMapper.failureThrowable(_ => StatusCode.UNSET)
-        val successMapper = StatusMapper.successNoDescription[Unit](_ => StatusCode.OK)
-        val statusMapper  = StatusMapper.both(failureMapper, successMapper)
+        val failureMapper = zio.telemetry.opentelemetry.trace.StatusMapper.failureThrowable(_ => StatusCode.UNSET)
+        val successMapper =
+          zio.telemetry.opentelemetry.trace.StatusMapper.successNoDescription[Unit](_ => StatusCode.OK)
+        val statusMapper  = zio.telemetry.opentelemetry.trace.StatusMapper.both(failureMapper, successMapper)
 
-        ZIO.serviceWithZIO[Tracing] { tracing =>
-          import tracing.aspects._
+        ZIO.serviceWithZIO[Tracer] { tracer =>
+          import tracer.aspects._
 
           for {
             _     <- (
@@ -520,15 +525,15 @@ object TracingTest extends ZIOSpecDefault {
           } yield assert(ko)(isSome(failureAssertion)) && assert(ok)(isSome(successAssertion))
         }
       }
-    ).provide(tracingMockLayer(), ctxStorageLayer)
+    ).provide(tracerMockLayer(), ctxStorageLayer)
 
   private val spanScopedSpec =
     suite("scoped spans")(
       test("span") {
-        ZIO.serviceWithZIO[Tracing] { tracing =>
+        ZIO.serviceWithZIO[Tracer] { tracer =>
           for {
             _     <- ZIO.scoped[Any](
-                       tracing.spanScoped("Root") *> ZIO.scoped[Any](tracing.spanScoped("Child"))
+                       tracer.spanScoped("Root") *> ZIO.scoped[Any](tracer.spanScoped("Child"))
                      )
             spans <- getFinishedSpans
             root   = spans.find(_.getName == "Root")
@@ -546,12 +551,12 @@ object TracingTest extends ZIOSpecDefault {
         }
       },
       test("span single scope") {
-        ZIO.serviceWithZIO[Tracing] { tracing =>
+        ZIO.serviceWithZIO[Tracer] { tracer =>
           for {
             _     <- ZIO.scoped[Any](
                        for {
-                         _ <- tracing.spanScoped("Root")
-                         _ <- tracing.spanScoped("Child")
+                         _ <- tracer.spanScoped("Root")
+                         _ <- tracer.spanScoped("Child")
                        } yield ()
                      )
             spans <- getFinishedSpans
@@ -570,7 +575,7 @@ object TracingTest extends ZIOSpecDefault {
         }
       },
       test("status mapper for failed span") {
-        ZIO.serviceWithZIO[Tracing] { tracing =>
+        ZIO.serviceWithZIO[Tracer] { tracer =>
           val assertStatusCodeError =
             hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.ERROR))
 
@@ -590,7 +595,9 @@ object TracingTest extends ZIOSpecDefault {
             )
 
           val assertion    = assertStatusCodeError && assertRecordedExceptionAttributes && assertStatusDescriptionError
-          val statusMapper = StatusMapper.failure[Any](_ => StatusCode.ERROR)(e => Option(e.asInstanceOf[Throwable]))
+          val statusMapper = zio.telemetry.opentelemetry.trace.StatusMapper.failure[Any](_ => StatusCode.ERROR)(e =>
+            Option(e.asInstanceOf[Throwable])
+          )
 
           val failedEffect: ZIO[Any, Throwable, Unit] =
             ZIO.fail(new RuntimeException("some_error")).unit
@@ -598,9 +605,9 @@ object TracingTest extends ZIOSpecDefault {
           for {
             _     <- ZIO
                        .scoped[Any](
-                         tracing.spanScoped("Root", statusMapper = statusMapper) *>
+                         tracer.spanScoped("Root", statusMapper = statusMapper) *>
                            ZIO.scoped[Any](
-                             tracing.spanScoped("Child", statusMapper = statusMapper) *> failedEffect
+                             tracer.spanScoped("Child", statusMapper = statusMapper) *> failedEffect
                            )
                        )
                        .ignore
@@ -611,23 +618,23 @@ object TracingTest extends ZIOSpecDefault {
         }
       },
       test("setAttribute") {
-        ZIO.serviceWithZIO[Tracing] { tracing =>
+        ZIO.serviceWithZIO[Tracer] { tracer =>
           for {
             _     <- ZIO.scoped[Any](for {
-                       _ <- tracing.spanScoped("foo")
-                       _ <- tracing.setAttribute("string", "bar")
+                       _ <- tracer.spanScoped("foo")
+                       _ <- tracer.setAttribute("string", "bar")
                      } yield ())
             spans <- getFinishedSpans
             tags   = spans.head.getAttributes
           } yield assert(tags.get(AttributeKey.stringKey("string")))(equalTo("bar"))
         }
       }
-    ).provide(tracingMockLayer(), ctxStorageLayer)
+    ).provide(tracerMockLayer(), ctxStorageLayer)
 
   private val spanWithLogAnnotationsSpec = suite("spans with log annotations")(
     test("add log annotations") {
-      ZIO.serviceWithZIO[Tracing] { tracing =>
-        import tracing.aspects._
+      ZIO.serviceWithZIO[Tracer] { tracer =>
+        import tracer.aspects._
 
         for {
           _     <- ZIO.logAnnotate("log-attribute", "foo") {
@@ -638,10 +645,10 @@ object TracingTest extends ZIOSpecDefault {
         } yield assert(tags.get(AttributeKey.stringKey("root-attribute")))(equalTo("bar")) &&
           assert(tags.get(AttributeKey.stringKey("log-attribute")))(equalTo("foo"))
       }
-    }.provide(tracingMockLayer(true), ctxStorageLayer),
+    }.provide(tracerMockLayer(true), ctxStorageLayer),
     test("span attributes override log annotated") {
-      ZIO.serviceWithZIO[Tracing] { tracing =>
-        import tracing.aspects._
+      ZIO.serviceWithZIO[Tracer] { tracer =>
+        import tracer.aspects._
 
         for {
           _     <- ZIO.logAnnotate("some-attribute", "foo") {
@@ -651,10 +658,10 @@ object TracingTest extends ZIOSpecDefault {
           tags   = spans.head.getAttributes
         } yield assert(tags.get(AttributeKey.stringKey("some-attribute")))(equalTo("bar"))
       }
-    }.provide(tracingMockLayer(true), ctxStorageLayer),
+    }.provide(tracerMockLayer(true), ctxStorageLayer),
     test("not add log annotations") {
-      ZIO.serviceWithZIO[Tracing] { tracing =>
-        import tracing.aspects._
+      ZIO.serviceWithZIO[Tracer] { tracer =>
+        import tracer.aspects._
 
         for {
           _     <- ZIO.logAnnotate("log-attribute", "foo") {
@@ -665,6 +672,6 @@ object TracingTest extends ZIOSpecDefault {
         } yield assert(tags.get(AttributeKey.stringKey("root-attribute")))(equalTo("bar")) &&
           assert(Option(tags.get(AttributeKey.stringKey("log-attribute"))))(isNone)
       }
-    }.provide(tracingMockLayer(), ctxStorageLayer)
+    }.provide(tracerMockLayer(), ctxStorageLayer)
   )
 }

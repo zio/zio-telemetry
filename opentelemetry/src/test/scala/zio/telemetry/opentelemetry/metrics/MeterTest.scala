@@ -1,8 +1,12 @@
 package zio.telemetry.opentelemetry.metrics
 
+import io.opentelemetry.api.trace.{Tracer => JTracer}
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.metrics.SdkMeterProvider
-import io.opentelemetry.sdk.testing.exporter.InMemoryMetricReader
+import io.opentelemetry.sdk.testing.exporter.{InMemoryMetricReader, InMemorySpanExporter}
+import io.opentelemetry.sdk.trace.SdkTracerProvider
+import io.opentelemetry.sdk.trace.data.SpanData
+import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import zio._
 import zio.metrics.Metric
 import zio.metrics.MetricKeyType.Histogram.Boundaries
@@ -10,13 +14,25 @@ import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.common.{Attribute, Attributes}
 import zio.telemetry.opentelemetry.context.internal.ContextStorage
 import zio.telemetry.opentelemetry.metrics.internal.Instrument
-import zio.telemetry.opentelemetry.tracing.{Tracing, TracingTest}
+import zio.telemetry.opentelemetry.trace.Tracer
 import zio.test.{TestEnvironment, ZIOSpecDefault, _}
 
 import java.time.temporal.ChronoUnit
 import scala.jdk.CollectionConverters._
 
 object MeterTest extends ZIOSpecDefault {
+
+  val inMemoryTracer: UIO[(InMemorySpanExporter, JTracer)] = for {
+    spanExporter   <- ZIO.succeed(InMemorySpanExporter.create())
+    spanProcessor  <- ZIO.succeed(SimpleSpanProcessor.create(spanExporter))
+    tracerProvider <- ZIO.succeed(SdkTracerProvider.builder().addSpanProcessor(spanProcessor).build())
+    tracer          = tracerProvider.get("TracingTest")
+  } yield (spanExporter, tracer)
+
+  val inMemoryTracerLayer: ULayer[InMemorySpanExporter with JTracer] =
+    ZLayer.fromZIOEnvironment(inMemoryTracer.map { case (inMemorySpanExporter, tracer) =>
+      ZEnvironment(inMemorySpanExporter).add(tracer)
+    })
 
   val inMemoryMetricReaderLayer: ZLayer[Any, Nothing, InMemoryMetricReader] =
     ZLayer(ZIO.succeed(InMemoryMetricReader.create()))
@@ -52,6 +68,20 @@ object MeterTest extends ZIOSpecDefault {
   def ctxStorageLayer: ULayer[ContextStorage] =
     ZLayer.scoped(ContextStorage.zioFiberRefScoped)
 
+  def tracerMockLayer(
+    logAnnotated: Boolean = false
+  ): URLayer[ContextStorage, Tracer with InMemorySpanExporter with JTracer] =
+    inMemoryTracerLayer >>> (tracerLiveLayer(logAnnotated) ++ inMemoryTracerLayer)
+
+  def tracerLiveLayer(logAnnotated: Boolean = false): URLayer[JTracer with ContextStorage, Tracer] =
+    ZLayer.scoped {
+      for {
+        ctxStorage <- ZIO.service[ContextStorage]
+        jtracer    <- ZIO.service[JTracer]
+        tracer     <- zio.telemetry.opentelemetry.trace.Tracer.scoped(jtracer, ctxStorage, logAnnotated)
+      } yield tracer
+    }
+
   def meterLayer(
     logAnnotated: Boolean = false
   ): ZLayer[ContextStorage, Nothing, Meter] = {
@@ -78,6 +108,9 @@ object MeterTest extends ZIOSpecDefault {
                  .forkDaemon
       } yield ref
     )
+
+  def getFinishedSpans: ZIO[InMemorySpanExporter, Nothing, List[SpanData]] =
+    ZIO.serviceWith[InMemorySpanExporter](_.getFinishedSpanItems.asScala.toList)
 
   override def spec: Spec[TestEnvironment with Scope, Any] =
     suite("zio opentelemetry")(
@@ -199,10 +232,10 @@ object MeterTest extends ZIOSpecDefault {
         ZIO.serviceWithZIO[Meter] { meter =>
           for {
             reader        <- ZIO.service[InMemoryMetricReader]
-            tracing       <- ZIO.service[Tracing]
+            tracer        <- ZIO.service[Tracer]
             counter       <- meter.counter("test_counter")
-            _             <- counter.inc() @@ tracing.aspects.span("counter_span")
-            span          <- TracingTest.getFinishedSpans.map(_.head)
+            _             <- counter.inc() @@ tracer.aspects.span("counter_span")
+            span          <- getFinishedSpans.map(_.head)
             metric         = reader.collectAllMetrics().asScala.toList.head
             metricPoint    = metric.getLongSumData().getPoints().asScala.head
             metricExemplar = metricPoint.getExemplars().asScala.toList.head
@@ -214,7 +247,7 @@ object MeterTest extends ZIOSpecDefault {
           )
         }
       }
-    ).provide(inMemoryMetricReaderLayer, meterLayer(), ctxStorageLayer, TracingTest.tracingMockLayer())
+    ).provide(inMemoryMetricReaderLayer, meterLayer(), ctxStorageLayer, tracerMockLayer())
 
   private val logAnnotatedSpec =
     suite("log annotated")(

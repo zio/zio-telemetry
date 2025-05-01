@@ -18,7 +18,7 @@ import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingMetricExporter
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.api
 import zio.*
-import zio.telemetry.opentelemetry.tracing.Tracing
+import zio.telemetry.opentelemetry.trace.Tracer
 import zio.telemetry.opentelemetry.metrics.Meter
 import zio.telemetry.opentelemetry.common.Attributes
 import zio.telemetry.opentelemetry.common.Attribute
@@ -111,7 +111,7 @@ object MetricsApp extends ZIOAppDefault {
 
   override def run =
     ZIO
-      .serviceWithZIO[Tracing] { tracing =>
+      .serviceWithZIO[Tracer] { tracer =>
         val logic = for {
           meter                <- ZIO.service[Meter]
           // Create a counter
@@ -126,12 +126,12 @@ object MetricsApp extends ZIOAppDefault {
 
         // By wrapping our logic into a span, we make the `messageLengthCounter` data points correlated with a "root_span" automatically.
         // Additionally we implicitly add one more attribute to the `messageLenghtCounter` as it is wrapped into a `ZIO.logAnnotate` call.
-        ZIO.logAnnotate("zio", "annotation")(logic) @@ tracing.aspects.root("root_span")
+        ZIO.logAnnotate("zio", "annotation")(logic) @@ tracer.aspects.root("root_span")
       }
       .provide(
         otelSdkLayer,
         OpenTelemetry.metrics(instrumentationScopeName, logAnnotated = true),
-        OpenTelemetry.tracing(instrumentationScopeName),
+        OpenTelemetry.tracer(instrumentationScopeName),
         tickCounterLayer,
         tickRefLayer
       )

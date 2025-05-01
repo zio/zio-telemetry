@@ -1,12 +1,12 @@
-package zio.telemetry.opentelemetry.logging
+package zio.telemetry.opentelemetry.logs
 
 import io.opentelemetry.api.common.AttributeKey
-import io.opentelemetry.api.logs.{Logger, LoggerProvider, Severity}
+import io.opentelemetry.api.logs.{Logger => JLogger, LoggerProvider, Severity}
 import io.opentelemetry.context.Context
 import zio._
 import zio.telemetry.opentelemetry.context.internal.ContextStorage
 
-private[opentelemetry] object Logging {
+private[opentelemetry] object Logger {
 
   def make(
     loggerProvider: LoggerProvider,
@@ -28,7 +28,7 @@ private[opentelemetry] object Logging {
   ): ZLogger[String, Unit] =
     new ZLogger[String, Unit] {
 
-      val logger: Logger = loggerProvider.get(instrumentationScopeName)
+      val logger: JLogger = loggerProvider.get(instrumentationScopeName)
 
       override def apply(
         trace: Trace,

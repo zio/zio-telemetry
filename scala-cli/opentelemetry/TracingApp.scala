@@ -16,7 +16,7 @@ import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.api
 import zio.*
-import zio.telemetry.opentelemetry.tracing.Tracing
+import zio.telemetry.opentelemetry.trace.Tracer
 import zio.telemetry.opentelemetry.OpenTelemetry
 
 object TracingApp extends ZIOAppDefault {
@@ -58,25 +58,25 @@ object TracingApp extends ZIOAppDefault {
 
   override def run =
     ZIO
-      .serviceWithZIO[Tracing] { tracing =>
+      .serviceWithZIO[Tracer] { tracer =>
         val logic = for {
           // Set an attribute to the current span
-          _       <- tracing.setAttribute("attr1", "value1")
+          _       <- tracer.setAttribute("attr1", "value1")
           // Add an event to the current span
-          _       <- tracing.addEvent("Waiting for the user input")
+          _       <- tracer.addEvent("Waiting for the user input")
           // Read user input
           message <- Console.readLine
           // Add another event to the current span
-          _       <- tracing.addEvent(s"User typed: $message")
+          _       <- tracer.addEvent(s"User typed: $message")
         } yield message
 
         // Create a root span with a lifetime equal to the runtime of the given ZIO effect.
         // We use ZIO Aspect's @@ syntax here just for the sake of example.
-        logic @@ tracing.aspects.root("root_span", SpanKind.INTERNAL)
+        logic @@ tracer.aspects.root("root_span", SpanKind.INTERNAL)
       }
       .provide(
         otelSdkLayer,
-        OpenTelemetry.tracing(instrumentationScopeName)
+        OpenTelemetry.tracer(instrumentationScopeName)
       )
 
 }

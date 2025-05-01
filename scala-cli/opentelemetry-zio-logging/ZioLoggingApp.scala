@@ -21,7 +21,7 @@ import io.opentelemetry.api
 import zio.*
 import zio.logging.consoleLogger
 import zio.logging.LogFormat._
-import zio.telemetry.opentelemetry.tracing.Tracing
+import zio.telemetry.opentelemetry.trace.Tracer
 import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.context.internal.ContextStorage
 import zio.telemetry.opentelemetry.zio.logging.LogFormats
@@ -85,7 +85,7 @@ object ZioLoggingApp extends ZIOAppDefault {
     )
 
   // Setup zio-logging with spanId and traceId labels
-  val loggingLayer: URLayer[LogFormats, Unit] = ZLayer {
+  val loggerLayer: URLayer[LogFormats, Unit] = ZLayer {
     for {
       logFormats     <- ZIO.service[LogFormats]
       format          =
@@ -100,7 +100,7 @@ object ZioLoggingApp extends ZIOAppDefault {
 
   override def run =
     ZIO
-      .serviceWithZIO[Tracing] { tracing =>
+      .serviceWithZIO[Tracer] { tracer =>
         val logic = for {
           // Read user input
           message <- Console.readLine
@@ -109,14 +109,14 @@ object ZioLoggingApp extends ZIOAppDefault {
         } yield ()
 
         // All log messages produced by `logic` will be correlated with a "root_span" automatically
-        logic @@ tracing.aspects.root("root_span")
+        logic @@ tracer.aspects.root("root_span")
       }
       .provide(
         otelSdkLayer,
-        OpenTelemetry.logging(instrumentationScopeName),
-        OpenTelemetry.tracing(instrumentationScopeName),
+        OpenTelemetry.logger(instrumentationScopeName),
+        OpenTelemetry.tracer(instrumentationScopeName),
         ZioLogging.logFormats,
-        loggingLayer
+        loggerLayer
       )
 
 }

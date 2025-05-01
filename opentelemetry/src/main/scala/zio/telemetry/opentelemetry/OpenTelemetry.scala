@@ -7,20 +7,22 @@ import zio.metrics.{MetricClient, MetricListener}
 import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.context.internal.ContextStorage
 import zio.telemetry.opentelemetry.context.{ContextPropagator, IncomingContextCarrier, OutgoingContextCarrier}
-import zio.telemetry.opentelemetry.logging.Logging
+import zio.telemetry.opentelemetry.logs.Logger
 import zio.telemetry.opentelemetry.metrics.Meter
 import zio.telemetry.opentelemetry.metrics.internal.{Instrument, InstrumentRegistry, OtelMetricListener}
-import zio.telemetry.opentelemetry.tracing.Tracing
+import zio.telemetry.opentelemetry.trace.Tracer
 
 trait OpenTelemetry { self =>
 
   def autoinstrumented[R, E, A](zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
     ctxStorage.locally(Context.current())(zio)
 
-  def propagate[C](carrier: OutgoingContextCarrier[C]): UIO[Unit] =
+  def propagate[C](carrier: OutgoingContextCarrier[C])(implicit trace: Trace): UIO[Unit] =
     ctxStorage.get.map(ctxPropagator.instance.inject(_, carrier.kernel, carrier)).unit
 
-  def continue[R, E, A, C](carrier: IncomingContextCarrier[C])(zio: => ZIO[R, E, A]): ZIO[R, E, A] =
+  def continue[R, E, A, C](
+    carrier: IncomingContextCarrier[C]
+  )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
     ctxStorage.locally(ctxPropagator.instance.extract(Context.root, carrier.kernel, carrier))(zio)
 
   def asJava: api.OpenTelemetry =
@@ -31,9 +33,6 @@ trait OpenTelemetry { self =>
    */
   val baggage: Baggage =
     Baggage.make(ctxStorage)
-
-  val ctxPropagator: ContextPropagator =
-    ContextPropagator.default
 
   /**
    * Configure Baggage instance
@@ -48,6 +47,9 @@ trait OpenTelemetry { self =>
   private[opentelemetry] def underlying: api.OpenTelemetry
 
   private[opentelemetry] def ctxStorage: ContextStorage
+
+  private[opentelemetry] val ctxPropagator: ContextPropagator =
+    ContextPropagator.default
 
   object aspects {
 
@@ -68,7 +70,7 @@ trait OpenTelemetry { self =>
 }
 
 /**
- * The entrypoint to telemetry functionality for tracing, metrics, logging and baggage.
+ * The entrypoint to telemetry functionality for tracer, metrics, logger and baggage.
  */
 object OpenTelemetry {
 
@@ -90,8 +92,8 @@ object OpenTelemetry {
   }
 
   /**
-   * A global singleton for the entrypoint to telemetry functionality for tracing, metrics, logging and baggage. Should
-   * be used with <a href="https://opentelemetry.io/docs/instrumentation/java/automatic/agent-config/">SDK
+   * A global singleton for the entrypoint to telemetry functionality for tracer, metrics, logger and baggage. Should be
+   * used with <a href="https://opentelemetry.io/docs/instrumentation/java/automatic/agent-config/">SDK
    * Autoconfiguration</a> module and/or <a href="">Automatic instrumentation</a> Java agent.
    *
    * @see
@@ -143,12 +145,12 @@ object OpenTelemetry {
    * @param schemaUrl
    *   schema URL
    */
-  def tracing(
+  def tracer(
     instrumentationScopeName: String,
     instrumentationVersion: Option[String] = None,
     schemaUrl: Option[String] = None,
     logAnnotated: Boolean = false
-  ): URLayer[OpenTelemetry, Tracing] = {
+  ): URLayer[OpenTelemetry, Tracer] = {
     def buildTracer(openTelemetry: api.OpenTelemetry) = {
       val builder = openTelemetry.tracerBuilder(instrumentationScopeName)
 
@@ -161,9 +163,9 @@ object OpenTelemetry {
     ZLayer.scoped {
       for {
         openTelemetry <- ZIO.service[OpenTelemetry]
-        tracer         = buildTracer(openTelemetry.asJava)
-        tracing       <- Tracing.scoped(tracer, openTelemetry.ctxStorage, logAnnotated)
-      } yield tracing
+        jtracer        = buildTracer(openTelemetry.asJava)
+        tracer        <- Tracer.scoped(jtracer, openTelemetry.ctxStorage, logAnnotated)
+      } yield tracer
 
     }
   }
@@ -213,7 +215,7 @@ object OpenTelemetry {
    * @param logLevel
    *   configures the logger to propagate the log records only when the log level is more than specified
    */
-  def logging(
+  def logger(
     instrumentationScopeName: String,
     logLevel: LogLevel = LogLevel.Info
   ): URLayer[OpenTelemetry, Unit] =
@@ -221,7 +223,7 @@ object OpenTelemetry {
       for {
         openTelemetry <- ZIO.service[OpenTelemetry]
         loggerProvider = openTelemetry.asJava.getLogsBridge
-        _             <- Logging.make(loggerProvider, openTelemetry.ctxStorage, instrumentationScopeName, logLevel)
+        _             <- Logger.make(loggerProvider, openTelemetry.ctxStorage, instrumentationScopeName, logLevel)
       } yield ()
     }
 

@@ -3,16 +3,16 @@ package zio.telemetry.opentelemetry.instrumentation.example.http
 import zio._
 import zio.http._
 import zio.telemetry.opentelemetry.OpenTelemetry
-import zio.telemetry.opentelemetry.tracing.Tracing
+import zio.telemetry.opentelemetry.trace.Tracer
 
-case class ProxyHttpApp(openTelemetry: OpenTelemetry, client: BackendClient, tracing: Tracing) {
+case class ProxyHttpApp(openTelemetry: OpenTelemetry, client: BackendClient, tracer: Tracer) {
 
   val routes =
     Routes(
       Method.GET / "proxy" ->
         handler {
           proxy @@
-            tracing.aspects.span("proxy") @@
+            tracer.aspects.span("proxy") @@
             openTelemetry.aspects.autoinstrumented
         }
     )
@@ -29,7 +29,7 @@ case class ProxyHttpApp(openTelemetry: OpenTelemetry, client: BackendClient, tra
 
 object ProxyHttpApp {
 
-  val live: URLayer[OpenTelemetry with BackendClient with Tracing, ProxyHttpApp] =
+  val live: URLayer[OpenTelemetry with BackendClient with Tracer, ProxyHttpApp] =
     ZLayer.fromFunction(ProxyHttpApp.apply _)
 
 }

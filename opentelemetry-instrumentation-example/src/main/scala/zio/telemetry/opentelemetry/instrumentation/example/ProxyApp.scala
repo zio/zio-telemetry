@@ -33,7 +33,7 @@ object ProxyApp extends ZIOAppDefault {
       ProxyHttpServer.live,
       ProxyHttpApp.live,
       OpenTelemetry.global,
-      OpenTelemetry.tracing(instrumentationScopeName)
+      OpenTelemetry.tracer(instrumentationScopeName)
     )
 
 }

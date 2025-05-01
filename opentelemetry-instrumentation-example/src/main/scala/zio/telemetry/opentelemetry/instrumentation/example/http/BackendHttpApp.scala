@@ -3,24 +3,24 @@ package zio.telemetry.opentelemetry.instrumentation.example.http
 import zio._
 import zio.http._
 import zio.telemetry.opentelemetry.OpenTelemetry
-import zio.telemetry.opentelemetry.tracing.Tracing
+import zio.telemetry.opentelemetry.trace.Tracer
 
-case class BackendHttpApp(openTelemetry: OpenTelemetry, tracing: Tracing) {
+case class BackendHttpApp(openTelemetry: OpenTelemetry, tracer: Tracer) {
 
   val routes =
     Routes(
       Method.GET / "example-endpoint" ->
         handler {
           exampleEndpoint @@
-            tracing.aspects.span("example-endpoint") @@
+            tracer.aspects.span("example-endpoint") @@
             openTelemetry.aspects.autoinstrumented
         }
     )
 
   private def exampleEndpoint: UIO[Response] =
     for {
-      _ <- tracing.addEvent("executing endpoint logic")
-      _ <- tracing.setAttribute("zio", "telemetry")
+      _ <- tracer.addEvent("executing endpoint logic")
+      _ <- tracer.setAttribute("zio", "telemetry")
       _ <- ZIO.logInfo("example endpoint processing finished on the server")
     } yield Response.text("welcome")
 
@@ -28,7 +28,7 @@ case class BackendHttpApp(openTelemetry: OpenTelemetry, tracing: Tracing) {
 
 object BackendHttpApp {
 
-  val live: URLayer[OpenTelemetry with Tracing, BackendHttpApp] =
+  val live: URLayer[OpenTelemetry with Tracer, BackendHttpApp] =
     ZLayer.fromFunction(BackendHttpApp.apply _)
 
 }

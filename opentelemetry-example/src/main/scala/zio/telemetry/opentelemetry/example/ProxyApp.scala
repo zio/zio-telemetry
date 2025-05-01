@@ -26,8 +26,8 @@ object ProxyApp extends ZIOAppDefault {
         ProxyHttpServer.live,
         ProxyHttpApp.live,
         OtelSdk.custom(resourceName),
-        OpenTelemetry.tracing(instrumentationScopeName),
-        OpenTelemetry.logging(instrumentationScopeName)
+        OpenTelemetry.tracer(instrumentationScopeName),
+        OpenTelemetry.logger(instrumentationScopeName)
       )
 
 }
