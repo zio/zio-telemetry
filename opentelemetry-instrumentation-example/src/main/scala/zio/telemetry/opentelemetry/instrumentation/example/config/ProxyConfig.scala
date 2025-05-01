@@ -1,3 +1,3 @@
 package zio.telemetry.opentelemetry.instrumentation.example.config
 
-case class AppConfig(proxy: ProxyConfig, backend: BackendConfig)
+final case class ProxyConfig(host: String, port: Int)

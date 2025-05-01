@@ -1,4 +1,4 @@
-package zio.telemetry.opentelemetry.internal
+package zio.telemetry.opentelemetry.context.internal
 
 private[opentelemetry] trait ContextCarrier[T] {
 

@@ -1,18 +1,17 @@
-package zio.telemetry.opentelemetry.tracing
+package zio.telemetry.opentelemetry.trace
 
 import io.opentelemetry.api.common.{AttributeKey, Attributes}
-import io.opentelemetry.api.trace._
+import io.opentelemetry.api.trace.{Span, SpanBuilder, SpanContext, SpanKind, StatusCode, Tracer => JTracer}
 import io.opentelemetry.context.Context
 import zio._
 import zio.telemetry.opentelemetry.common.Attribute
-import zio.telemetry.opentelemetry.context.{ContextStorage, IncomingContextCarrier, OutgoingContextCarrier}
-import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
+import zio.telemetry.opentelemetry.context.internal.ContextStorage
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters._
 
-trait Tracing { self =>
+trait Tracer { self =>
 
   /**
    * Adds an event to the current span.
@@ -36,72 +35,6 @@ trait Tracing { self =>
     name: String,
     attributes: Attributes
   )(implicit trace: Trace): UIO[Unit]
-
-  /**
-   * Extracts the span from carrier `C` and set its child span with name 'spanName' as the current span.
-   *
-   * Ends the span when the effect finishes.
-   *
-   * @param propagator
-   *   implementation of [[zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator]]
-   * @param carrier
-   *   mutable data from which the parent span is extracted
-   * @param spanName
-   *   name of the child span
-   * @param spanKind
-   *   kind of the child span
-   * @param statusMapper
-   *   status mapper
-   * @param links
-   *   spanContexts of the linked Spans
-   * @param zio
-   *   body of the child span
-   * @param trace
-   * @tparam C
-   *   carrier
-   * @tparam R
-   * @tparam E
-   * @tparam A
-   * @return
-   */
-  def extractSpan[C, R, E, E1 <: E, A, A1 <: A](
-    propagator: TraceContextPropagator,
-    carrier: IncomingContextCarrier[C],
-    spanName: String,
-    spanKind: SpanKind = SpanKind.INTERNAL,
-    attributes: Attributes = Attributes.empty(),
-    statusMapper: StatusMapper[E, A] = StatusMapper.default,
-    links: Seq[SpanContext] = Seq.empty
-  )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1]
-
-  /**
-   * Extracts the span from carrier `C` and unsafely set its child span with name 'spanName' as the current span.
-   *
-   * You need to make sure to call the finalize effect to end the span.
-   *
-   * Primarily useful for interop.
-   *
-   * @param propagator
-   *   implementation of [[zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator]]
-   * @param carrier
-   *   mutable data from which the parent span is extracted
-   * @param spanName
-   *   name of the child span
-   * @param spanKind
-   *   kind of the child span
-   * @param trace
-   * @tparam C
-   *   carrier
-   * @return
-   */
-  def extractSpanUnsafe[C](
-    propagator: TraceContextPropagator,
-    carrier: IncomingContextCarrier[C],
-    spanName: String,
-    spanKind: SpanKind = SpanKind.INTERNAL,
-    attributes: Attributes = Attributes.empty(),
-    links: Seq[SpanContext] = Seq.empty
-  )(implicit trace: Trace): UIO[(Span, UIO[Any])]
 
   /**
    * Gets the current Context
@@ -128,23 +61,6 @@ trait Tracing { self =>
   def getCurrentSpanUnsafe(implicit trace: Trace): UIO[Span]
 
   /**
-   * Injects the current span into carrier `C`.
-   *
-   * @param propagator
-   *   implementation of [[zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator]]
-   * @param carrier
-   *   mutable data from which the parent span is extracted
-   * @param trace
-   * @tparam C
-   *   carrier
-   * @return
-   */
-  def injectSpan[C](
-    propagator: TraceContextPropagator,
-    carrier: OutgoingContextCarrier[C]
-  )(implicit trace: Trace): UIO[Unit]
-
-  /**
    * Mark this effect as the child of an externally provided span. Ends the span when the effect finishes.
    * zio-opentelemetry will mark the span as being the child of the external one.
    *
@@ -156,10 +72,10 @@ trait Tracing { self =>
    * It also could be useful in combination with `extractSpanUnsafe` or `spanUnsafe`:
    * {{{
    *   for {
-   *     (span, finalize) <- tracing.spanUnsafe("unsafe-span")
+   *     (span, finalize) <- tracer.spanUnsafe("unsafe-span")
    *     // run some logic that would be wrapped in the span
    *     // modify the span
-   *     _                <- zio @@ tracing.inSpan(span, "child-of-unsafe-span")
+   *     _                <- zio @@ tracer.inSpan(span, "child-of-unsafe-span")
    *   } yield ()
    * }}}
    *
@@ -454,24 +370,11 @@ trait Tracing { self =>
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     attributes: Attributes = Attributes.empty(),
+    statusMapper: StatusMapper[Any, Unit] = StatusMapper.default,
     links: Seq[SpanContext] = Seq.empty
-  )(implicit trace: Trace): UIO[(Span, UIO[Any])]
+  )(implicit trace: Trace): ZIO[Scope, Nothing, Span]
 
   object aspects {
-
-    def extractSpan[C, E1, A1](
-      propagator: TraceContextPropagator,
-      carrier: IncomingContextCarrier[C],
-      spanName: String,
-      spanKind: SpanKind = SpanKind.INTERNAL,
-      attributes: Attributes = Attributes.empty(),
-      statusMapper: StatusMapper[E1, A1] = StatusMapper.default,
-      links: Seq[SpanContext] = Seq.empty
-    ): ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] =
-      new ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] {
-        override def apply[R, E <: E1, A <: A1](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
-          self.extractSpan(propagator, carrier, spanName, spanKind, attributes, statusMapper, links)(zio)
-      }
 
     def inSpan[E1, A1](
       span: Span,
@@ -492,8 +395,8 @@ trait Tracing { self =>
       attributes: Attributes = Attributes.empty(),
       statusMapper: StatusMapper[E1, A1] = StatusMapper.default,
       links: Seq[SpanContext] = Seq.empty
-    ): ZIOAspect[Nothing, Any, Nothing, E1, A1, A1] =
-      new ZIOAspect[Nothing, Any, Nothing, E1, A1, A1] {
+    ): ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] =
+      new ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] {
         override def apply[R, E <: E1, A <: A1](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
           self.root(spanName, spanKind, attributes, statusMapper, links)(zio)
       }
@@ -514,21 +417,12 @@ trait Tracing { self =>
 
 }
 
-object Tracing {
+private[opentelemetry] object Tracer {
 
-  def live(logAnnotated: Boolean = false): URLayer[Tracer with ContextStorage, Tracing] =
-    ZLayer.scoped {
-      for {
-        tracer     <- ZIO.service[Tracer]
-        ctxStorage <- ZIO.service[ContextStorage]
-        tracing    <- scoped(tracer, ctxStorage, logAnnotated)
-      } yield tracing
-    }
-
-  def scoped(tracer: Tracer, ctxStorage: ContextStorage, logAnnotated: Boolean = false): URIO[Scope, Tracing] = {
+  def scoped(tracer: JTracer, ctxStorage: ContextStorage, logAnnotated: Boolean = false): URIO[Scope, Tracer] = {
     val acquire =
       ZIO.succeed {
-        new Tracing { self =>
+        new Tracer { self =>
           override def getCurrentContextUnsafe(implicit trace: Trace): UIO[Context] =
             ctxStorage.get
 
@@ -537,41 +431,6 @@ object Tracing {
 
           override def getCurrentSpanContextUnsafe(implicit trace: Trace): UIO[SpanContext] =
             getCurrentSpanUnsafe.map(_.getSpanContext())
-
-          override def extractSpan[C, R, E, E1 <: E, A, A1 <: A](
-            propagator: TraceContextPropagator,
-            carrier: IncomingContextCarrier[C],
-            spanName: String,
-            spanKind: SpanKind = SpanKind.INTERNAL,
-            attributes: Attributes = Attributes.empty(),
-            statusMapper: StatusMapper[E, A] = StatusMapper.default,
-            links: Seq[SpanContext] = Seq.empty
-          )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
-            extractContext(propagator, carrier).flatMap { context =>
-              ZIO.acquireReleaseWith {
-                createChild(context, spanName, spanKind, attributes, links)
-              } { case (endSpan, _) =>
-                endSpan
-              } { case (_, ctx) =>
-                finalizeSpanUsingEffect(zio, ctx, statusMapper)
-              }
-            }
-
-          override def extractSpanUnsafe[C](
-            propagator: TraceContextPropagator,
-            carrier: IncomingContextCarrier[C],
-            spanName: String,
-            spanKind: SpanKind = SpanKind.INTERNAL,
-            attributes: Attributes = Attributes.empty(),
-            links: Seq[SpanContext] = Seq.empty
-          )(implicit trace: Trace): UIO[(Span, UIO[Any])] =
-            for {
-              ctx        <- extractContext(propagator, carrier)
-              updatedCtx <- createChildUnsafe(ctx, spanName, spanKind, attributes, links)
-              oldCtx     <- ctxStorage.getAndSet(updatedCtx)
-              span       <- getCurrentSpanUnsafe
-              finalize    = endCurrentSpan *> ctxStorage.set(oldCtx)
-            } yield (span, finalize)
 
           override def root[R, E, E1 <: E, A, A1 <: A](
             spanName: String,
@@ -633,15 +492,28 @@ object Tracing {
             spanName: String,
             spanKind: SpanKind = SpanKind.INTERNAL,
             attributes: Attributes = Attributes.empty(),
+            statusMapper: StatusMapper[Any, Unit] = StatusMapper.default,
             links: Seq[SpanContext] = Seq.empty
-          )(implicit trace: Trace): UIO[(Span, UIO[Any])] =
+          )(implicit trace: Trace): ZIO[Scope, Nothing, Span] =
             for {
-              ctx        <- getCurrentContextUnsafe
-              updatedCtx <- createChildUnsafe(ctx, spanName, spanKind, attributes, links)
-              _          <- ctxStorage.set(updatedCtx)
-              span       <- getCurrentSpanUnsafe
-              finalize    = endCurrentSpan *> ctxStorage.set(ctx)
-            } yield (span, finalize)
+              old         <- getCurrentContextUnsafe
+              scoped      <- ZIO.acquireReleaseExit {
+                               for {
+                                 childUnsafe   <- createChild(old, spanName, spanKind, attributes, links)
+                                 (endSpan, ctx) = childUnsafe
+                                 span           = Span.fromContext(ctx)
+                                 _             <- ctxStorage.locallyScoped(ctx)
+                               } yield (span, endSpan, ctx)
+                             } { case ((_, endSpan, ctx), exit) =>
+                               val setStatus = exit match {
+                                 case Exit.Success(_)     => ZIO.unit
+                                 case Exit.Failure(cause) => setFailureStatus(Span.fromContext(ctx), cause, statusMapper)
+                               }
+
+                               setStatus *> endSpan
+                             }
+              (span, _, _) = scoped
+            } yield span
 
           override def scopedEffect[A](effect: => A)(implicit trace: Trace): Task[A] =
             for {
@@ -674,15 +546,6 @@ object Tracing {
                           finally scope.close()
                         }
             } yield effect
-
-          override def injectSpan[C](
-            propagator: TraceContextPropagator,
-            carrier: OutgoingContextCarrier[C]
-          )(implicit trace: Trace): UIO[Unit] =
-            for {
-              ctx <- getCurrentContextUnsafe
-              _   <- injectContext(ctx, propagator, carrier)
-            } yield ()
 
           override def inSpan[R, E, E1 <: E, A, A1 <: A](
             span: Span,
@@ -820,7 +683,7 @@ object Tracing {
           )(implicit trace: Trace): UIO[(UIO[Unit], Context)] =
             for {
               nanos         <- currentNanos
-              allAttributes <- injectLogAnnotations(attributes)
+              allAttributes <- withLogAnnotations(attributes)
               span          <- ZIO.succeed(
                                  tracer
                                    .spanBuilder(spanName)
@@ -842,7 +705,7 @@ object Tracing {
           )(implicit trace: Trace): UIO[(UIO[Unit], Context)] =
             for {
               nanos         <- currentNanos
-              allAttributes <- injectLogAnnotations(attributes)
+              allAttributes <- withLogAnnotations(attributes)
               span          <- ZIO.succeed(
                                  tracer
                                    .spanBuilder(spanName)
@@ -860,74 +723,26 @@ object Tracing {
               links.foldLeft(spanBuilder) { case (builder, link) => builder.addLink(link) }
           }
 
-          private def createChildUnsafe(
-            parentCtx: Context,
-            spanName: String,
-            spanKind: SpanKind,
-            attributes: Attributes,
-            links: Seq[SpanContext]
-          )(implicit trace: Trace): UIO[Context] =
-            for {
-              nanos         <- currentNanos
-              allAttributes <- injectLogAnnotations(attributes)
-              span          <-
-                ZIO.succeed(
-                  tracer
-                    .spanBuilder(spanName)
-                    .setParent(parentCtx)
-                    .setAllAttributes(allAttributes)
-                    .setSpanKind(spanKind)
-                    .setStartTimestamp(nanos, TimeUnit.NANOSECONDS)
-                    .addLinks(links)
-                    .startSpan()
-                )
-            } yield parentCtx.`with`(span)
-
           private def endSpan(span: Span)(implicit trace: Trace): UIO[Unit] =
             currentNanos.flatMap(nanos => ZIO.succeed(span.end(nanos, TimeUnit.NANOSECONDS)))
 
-          private def endCurrentSpan(implicit trace: Trace): UIO[Any] =
-            getCurrentSpanUnsafe.flatMap(endSpan)
-
-          /**
-           * Extract and returns the context from carrier `C`.
-           */
-          private def extractContext[C](
-            propagator: TraceContextPropagator,
-            carrier: IncomingContextCarrier[C]
-          )(implicit trace: Trace): UIO[Context] =
-            ZIO.uninterruptible {
-              ZIO.succeed(propagator.instance.extract(Context.root(), carrier.kernel, carrier))
-            }
-
-          /**
-           * Injects the context into carrier `C`.
-           */
-          private def injectContext[C](
-            ctx: Context,
-            propagator: TraceContextPropagator,
-            carrier: OutgoingContextCarrier[C]
-          )(implicit trace: Trace): UIO[Unit] =
-            ZIO.succeed(propagator.instance.inject(ctx, carrier.kernel, carrier))
-
-          private def injectLogAnnotations(attributes: Attributes): UIO[Attributes] =
+          private def withLogAnnotations(attributes: Attributes): UIO[Attributes] =
             if (logAnnotated) {
-              for {
-                annotations <- ZIO.logAnnotations
-              } yield annotations
-                .foldLeft(Attributes.builder()) { case (builder, (annotationKey, annotationValue)) =>
-                  builder.put(annotationKey, annotationValue)
-                }
-                .putAll(attributes)
-                .build()
-            } else {
-              ZIO.succeed(attributes)
-            }
+              ZIO.logAnnotations.map { annotations =>
+                annotations
+                  .foldLeft(Attributes.builder()) { case (builder, (annotationKey, annotationValue)) =>
+                    builder.put(annotationKey, annotationValue)
+                  }
+                  .putAll(attributes)
+                  .build()
+              }
+            } else ZIO.succeed(attributes)
+
         }
       }
 
-    def release(tracing: Tracing) =
-      tracing.getCurrentSpanUnsafe.flatMap(span => ZIO.succeed(span.end()))
+    def release(tracer: Tracer) =
+      tracer.getCurrentSpanUnsafe.flatMap(span => ZIO.succeed(span.end()))
 
     ZIO.acquireRelease(acquire)(release)
   }

@@ -134,89 +134,85 @@ trait Meter {
 
 object Meter {
 
-  def live: URLayer[Instrument.Builder, Meter] =
-    ZLayer(
-      for {
-        builder <- ZIO.service[Instrument.Builder]
-      } yield new Meter {
+  def make(builder: Instrument.Builder): Meter =
+    new Meter {
 
-        private val unsafeRuntime =
-          Runtime.default.unsafe
+      private val unsafeRuntime =
+        Runtime.default.unsafe
 
-        override def counter(
-          name: String,
-          unit: Option[String] = None,
-          description: Option[String] = None
-        )(implicit trace: Trace): UIO[Counter[Long]] =
-          ZIO.succeed(builder.counter(name, unit, description))
+      override def counter(
+        name: String,
+        unit: Option[String] = None,
+        description: Option[String] = None
+      )(implicit trace: Trace): UIO[Counter[Long]] =
+        ZIO.succeed(builder.counter(name, unit, description))
 
-        override def upDownCounter(
-          name: String,
-          unit: Option[String] = None,
-          description: Option[String] = None
-        )(implicit trace: Trace): UIO[UpDownCounter[Long]] =
-          ZIO.succeed(builder.upDownCounter(name, unit, description))
+      override def upDownCounter(
+        name: String,
+        unit: Option[String] = None,
+        description: Option[String] = None
+      )(implicit trace: Trace): UIO[UpDownCounter[Long]] =
+        ZIO.succeed(builder.upDownCounter(name, unit, description))
 
-        override def histogram(
-          name: String,
-          unit: Option[String] = None,
-          description: Option[String] = None,
-          boundaries: Option[Chunk[Double]] = None
-        )(implicit trace: Trace): UIO[Histogram[Double]] =
-          ZIO.succeed(builder.histogram(name, unit, description, boundaries))
+      override def histogram(
+        name: String,
+        unit: Option[String] = None,
+        description: Option[String] = None,
+        boundaries: Option[Chunk[Double]] = None
+      )(implicit trace: Trace): UIO[Histogram[Double]] =
+        ZIO.succeed(builder.histogram(name, unit, description, boundaries))
 
-        override def observableCounter(
-          name: String,
-          unit: Option[String] = None,
-          description: Option[String] = None
-        )(callback: ObservableMeasurement[Long] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit] =
-          ZIO
-            .fromAutoCloseable(
-              ZIO.attempt {
-                builder.observableCounter(name, unit, description) { om =>
-                  Unsafe.unsafe { implicit unsafe =>
-                    unsafeRuntime.run(callback(om)).getOrThrowFiberFailure()
-                  }
+      override def observableCounter(
+        name: String,
+        unit: Option[String] = None,
+        description: Option[String] = None
+      )(callback: ObservableMeasurement[Long] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit] =
+        ZIO
+          .fromAutoCloseable(
+            ZIO.attempt {
+              builder.observableCounter(name, unit, description) { om =>
+                Unsafe.unsafe { implicit unsafe =>
+                  unsafeRuntime.run(callback(om)).getOrThrowFiberFailure()
                 }
               }
-            )
-            .unit
+            }
+          )
+          .unit
 
-        override def observableUpDownCounter(
-          name: String,
-          unit: Option[String] = None,
-          description: Option[String] = None
-        )(callback: ObservableMeasurement[Long] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit] =
-          ZIO
-            .fromAutoCloseable(
-              ZIO.attempt {
-                builder.observableUpDownCounter(name, unit, description) { om =>
-                  Unsafe.unsafe { implicit unsafe =>
-                    unsafeRuntime.run(callback(om)).getOrThrowFiberFailure()
-                  }
+      override def observableUpDownCounter(
+        name: String,
+        unit: Option[String] = None,
+        description: Option[String] = None
+      )(callback: ObservableMeasurement[Long] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit] =
+        ZIO
+          .fromAutoCloseable(
+            ZIO.attempt {
+              builder.observableUpDownCounter(name, unit, description) { om =>
+                Unsafe.unsafe { implicit unsafe =>
+                  unsafeRuntime.run(callback(om)).getOrThrowFiberFailure()
                 }
               }
-            )
-            .unit
+            }
+          )
+          .unit
 
-        override def observableGauge(
-          name: String,
-          unit: Option[String] = None,
-          description: Option[String] = None
-        )(callback: ObservableMeasurement[Double] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit] =
-          ZIO
-            .fromAutoCloseable(
-              ZIO.attempt {
-                builder.observableGauge(name, unit, description) { om =>
-                  Unsafe.unsafe { implicit unsafe =>
-                    unsafeRuntime.run(callback(om)).getOrThrowFiberFailure()
-                  }
+      override def observableGauge(
+        name: String,
+        unit: Option[String] = None,
+        description: Option[String] = None
+      )(callback: ObservableMeasurement[Double] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit] =
+        ZIO
+          .fromAutoCloseable(
+            ZIO.attempt {
+              builder.observableGauge(name, unit, description) { om =>
+                Unsafe.unsafe { implicit unsafe =>
+                  unsafeRuntime.run(callback(om)).getOrThrowFiberFailure()
                 }
               }
-            )
-            .unit
+            }
+          )
+          .unit
 
-      }
-    )
+    }
 
 }

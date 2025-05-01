@@ -65,7 +65,9 @@ inThisBuild(
     ),
     concurrentRestrictions += Tags.limit(missinglinkConflictsTag, 1),
     // TODO: remove once it is updated in zio-sbt
-    scala213          := "2.13.16"
+    scala212          := "2.12.20",
+    scala213          := "2.13.16",
+    scala3            := "3.6.4"
   )
 )
 
@@ -82,11 +84,19 @@ addCommandAlias(
   "mimaChecks",
   "all opentracing/mimaReportBinaryIssues opentelemetry/mimaReportBinaryIssues opencensus/mimaReportBinaryIssues"
 )
+addCommandAlias(
+  "fmtExamples",
+  List(
+    "opentracingExample/scalafmtAll;opentracingExample/scalafixAll",
+    "opentelemetryExample/scalafmtAll;opentelemetryExample/scalafixAll",
+    "opentelemetryInstrumentationExample/scalafmtAll;opentelemetryInstrumentationExample/scalafixAll"
+  ).mkString(";")
+)
 
 def stdModuleSettings(name: Option[String], packageName: Option[String]) =
   stdSettings(name, packageName) ++
     Seq(
-      crossScalaVersions := Seq(scala212.value, scala213.value, scala3.value),
+      crossScalaVersions := Seq(scala213.value, scala212.value, scala3.value),
       // Fix 'Flag set repeatedly' error allegedly introduced by the usage of sdtSettings: https://github.com/zio/zio-sbt/issues/221
       scalacOptions --= Seq(
         "-deprecation",

@@ -35,9 +35,9 @@ object Dependencies {
     val slf4j     = "1.7.36"
     val sttp3     = "3.7.0"
     val zipkin    = "2.16.3"
-    val zioJson   = "0.3.0-RC10"
+    val zioJson   = "0.7.39"
     val zioConfig = "3.0.1"
-    val zioHttp   = "3.0.0-RC2"
+    val zioHttp   = "3.2.0"
     val logback   = "1.4.11"
   }
 
@@ -75,17 +75,16 @@ object Dependencies {
   )
 
   lazy val example = zio ++ Seq(
-    Orgs.typelevel               %% "cats-core"           % ExampleVersions.cats,
-    Orgs.jaegertracing            % "jaeger-core"         % ExampleVersions.jaeger,
-    Orgs.jaegertracing            % "jaeger-client"       % ExampleVersions.jaeger,
-    Orgs.jaegertracing            % "jaeger-zipkin"       % ExampleVersions.jaeger,
-    Orgs.softwaremillSttpClient3 %% "zio-json"            % ExampleVersions.sttp3,
-    Orgs.zio                     %% "zio-json"            % ExampleVersions.zioJson,
-    Orgs.zio                     %% "zio-config"          % ExampleVersions.zioConfig,
-    Orgs.zio                     %% "zio-config-magnolia" % ExampleVersions.zioConfig,
-    Orgs.zio                     %% "zio-config-typesafe" % ExampleVersions.zioConfig,
+    Orgs.typelevel    %% "cats-core"           % ExampleVersions.cats,
+    Orgs.jaegertracing % "jaeger-core"         % ExampleVersions.jaeger,
+    Orgs.jaegertracing % "jaeger-client"       % ExampleVersions.jaeger,
+    Orgs.jaegertracing % "jaeger-zipkin"       % ExampleVersions.jaeger,
+    Orgs.zio          %% "zio-json"            % ExampleVersions.zioJson,
+    Orgs.zio          %% "zio-config"          % ExampleVersions.zioConfig,
+    Orgs.zio          %% "zio-config-magnolia" % ExampleVersions.zioConfig,
+    Orgs.zio          %% "zio-config-typesafe" % ExampleVersions.zioConfig,
     // runtime to avoid warning in examples
-    Orgs.slf4j                    % "slf4j-simple"        % ExampleVersions.slf4j % Runtime
+    Orgs.slf4j         % "slf4j-simple"        % ExampleVersions.slf4j % Runtime
   )
 
   lazy val opentracingExample = example ++ Seq(

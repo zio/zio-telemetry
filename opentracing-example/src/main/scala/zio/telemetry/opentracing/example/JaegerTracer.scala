@@ -1,9 +1,8 @@
 package zio.telemetry.opentracing.example
 
-import io.jaegertracing.Configuration
-import io.jaegertracing.internal
 import io.jaegertracing.internal.samplers.ConstSampler
 import io.jaegertracing.zipkin.ZipkinV2Reporter
+import io.jaegertracing.{Configuration, internal}
 import io.opentracing.Tracer
 import org.apache.http.client.utils.URIBuilder
 import zio._

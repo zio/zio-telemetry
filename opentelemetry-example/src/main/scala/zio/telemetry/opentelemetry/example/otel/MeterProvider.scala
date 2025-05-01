@@ -1,12 +1,12 @@
 package zio.telemetry.opentelemetry.example.otel
 
-import zio._
+import io.opentelemetry.api.common.Attributes
+import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingMetricExporter
 import io.opentelemetry.sdk.metrics.SdkMeterProvider
 import io.opentelemetry.sdk.metrics.export.PeriodicMetricReader
 import io.opentelemetry.sdk.resources.Resource
-import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.semconv.ServiceAttributes
-import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingMetricExporter
+import zio._
 
 object MeterProvider {
 
