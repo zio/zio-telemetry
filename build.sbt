@@ -33,7 +33,7 @@ inThisBuild(
         url("https://github.com/grouzen")
       )
     ),
-    ciEnabledBranches := Seq("series/2.x"),
+    ciEnabledBranches := Seq("series/2.x", "v4.0.0-rc"),
     ciCheckArtifactsBuildSteps ++= Seq(
       SingleStep(
         name = "Compile examples",

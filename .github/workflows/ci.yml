@@ -12,6 +12,7 @@ env:
   push:
     branches:
     - series/2.x
+    - v4.0.0-rc
   pull_request:
     branches-ignore:
     - gh-pages
