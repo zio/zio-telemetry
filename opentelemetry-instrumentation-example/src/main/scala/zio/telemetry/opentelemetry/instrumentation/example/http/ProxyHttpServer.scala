@@ -1,14 +1,13 @@
-package zio.telemetry.opentracing.example.http
+package zio.telemetry.opentelemetry.instrumentation.example.http
 
-import zio.Console.printLine
 import zio._
 import zio.http._
-import zio.telemetry.opentracing.example.config.AppConfig
+import zio.telemetry.opentelemetry.instrumentation.example.config.AppConfig
 
 case class ProxyHttpServer(config: AppConfig, httpApp: ProxyHttpApp) {
 
   def start: ZIO[Any, Throwable, Nothing] =
-    printLine(s"Starting ProxyHttpServer on port ${config.proxy.port}") *>
+    ZIO.logInfo(s"Starting ProxyHttpServer on port ${config.proxy.port}") *>
       Server.serve(httpApp.routes).provide(Server.defaultWithPort(config.proxy.port))
 
 }

@@ -4,7 +4,7 @@ import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.metrics.LongUpDownCounter
 import io.opentelemetry.context.Context
 import zio._
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.context.internal.ContextStorage
 import zio.telemetry.opentelemetry.metrics.internal.{Instrument, logAnnotatedAttributes}
 
 /**
@@ -18,8 +18,7 @@ trait UpDownCounter[-A] extends Instrument[A] {
   /**
    * Records a value.
    *
-   * It uses the context taken from the [[zio.telemetry.opentelemetry.context.ContextStorage]] to associate with this
-   * measurement.
+   * It uses the context taken from the ContextStorage to associate with this measurement.
    *
    * @param value
    *   increment amount. May be positive, negative or zero
@@ -31,8 +30,7 @@ trait UpDownCounter[-A] extends Instrument[A] {
   /**
    * Increments a counter by one.
    *
-   * It uses the context taken from the [[zio.telemetry.opentelemetry.context.ContextStorage]] to associate with this
-   * measurement.
+   * It uses the context taken from the ContextStorage to associate with this measurement.
    *
    * @param attributes
    *   set of attributes to associate with the value
@@ -42,8 +40,7 @@ trait UpDownCounter[-A] extends Instrument[A] {
   /**
    * Decrements a counter by one.
    *
-   * It uses the context taken from the [[zio.telemetry.opentelemetry.context.ContextStorage]] to associate with this
-   * measurement.
+   * It uses the context taken from the ContextStorage to associate with this measurement.
    *
    * @param attributes
    *   set of attributes to associate with the value

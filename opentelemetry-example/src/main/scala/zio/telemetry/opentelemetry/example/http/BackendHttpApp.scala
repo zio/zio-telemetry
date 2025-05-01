@@ -1,21 +1,16 @@
 package zio.telemetry.opentelemetry.example.http
 
 import io.opentelemetry.api.trace.SpanKind
-import zio.http._
 import zio._
+import zio.http._
 import zio.json.EncoderOps
-import zio.telemetry.opentelemetry.baggage.Baggage
-import zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator
+import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.context.IncomingContextCarrier
-import zio.telemetry.opentelemetry.example.http.{Status => ServiceStatus}
-import zio.telemetry.opentelemetry.tracing.Tracing
-import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
-import zio.telemetry.opentelemetry.metrics.Meter
-import zio.telemetry.opentelemetry.metrics.Counter
+import zio.telemetry.opentelemetry.example.http.{BackendStatus => ServiceStatus}
+import zio.telemetry.opentelemetry.metrics.{Counter, Meter}
+import zio.telemetry.opentelemetry.trace.Tracer
 
-case class BackendHttpApp(tracing: Tracing, baggage: Baggage, statusRequestsCounter: Counter[Long]) {
-
-  import tracing.aspects._
+case class BackendHttpApp(openTelemetry: OpenTelemetry, tracer: Tracer, statusRequestsCounter: Counter[Long]) {
 
   def headersCarrier(initial: Headers): IncomingContextCarrier[Headers] =
     new IncomingContextCarrier[Headers] {
@@ -29,21 +24,25 @@ case class BackendHttpApp(tracing: Tracing, baggage: Baggage, statusRequestsCoun
 
     }
 
-  val routes: HttpApp[Any, Nothing] =
-    Http.collectZIO { case request @ Method.GET -> _ / "status" =>
-      val carrier = headersCarrier(request.headers)
+  val routes =
+    Routes(
+      Method.GET / "status" ->
+        handler { request: Request =>
+          val carrier = headersCarrier(request.headers)
 
-      (baggage.extract(BaggagePropagator.default, carrier) *> status) @@
-        extractSpan(TraceContextPropagator.default, carrier, "/status", SpanKind.SERVER)
-    }
+          status @@
+            tracer.aspects.span("/status", SpanKind.SERVER) @@
+            openTelemetry.aspects.continue(carrier)
+        }
+    )
 
   def status: UIO[Response] =
     for {
-      proxyBaggage <- baggage.get("proxy-baggage")
-      _            <- tracing.setAttribute("proxy-baggage", proxyBaggage.getOrElse("NO BAGGAGE"))
-      _            <- tracing.addEvent("event from backend before response")
+      proxyBaggage <- openTelemetry.baggage.get("proxy-baggage")
+      _            <- tracer.setAttribute("proxy-baggage", proxyBaggage.getOrElse("NO BAGGAGE"))
+      _            <- tracer.addEvent("event from backend before response")
       response     <- ZIO.succeed(Response.json(ServiceStatus.up("backend").toJson))
-      _            <- tracing.addEvent("event from backend after response")
+      _            <- tracer.addEvent("event from backend after response")
       _            <- ZIO.logInfo("status processing finished on backend")
       _            <- statusRequestsCounter.inc()
     } yield response
@@ -52,7 +51,7 @@ case class BackendHttpApp(tracing: Tracing, baggage: Baggage, statusRequestsCoun
 
 object BackendHttpApp {
 
-  val live: URLayer[Tracing with Meter with Baggage, BackendHttpApp] = {
+  val live: URLayer[OpenTelemetry with Tracer with Meter, BackendHttpApp] = {
     val counterLayer = ZLayer(ZIO.serviceWithZIO[Meter](_.counter("status_requests_count")))
 
     counterLayer >>> ZLayer.fromFunction(BackendHttpApp.apply _)

@@ -1,15 +1,20 @@
 package zio.telemetry.opentelemetry.metrics
 
+import io.opentelemetry.api.trace.{Tracer => JTracer}
+import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.metrics.SdkMeterProvider
-import io.opentelemetry.sdk.testing.exporter.InMemoryMetricReader
+import io.opentelemetry.sdk.testing.exporter.{InMemoryMetricReader, InMemorySpanExporter}
+import io.opentelemetry.sdk.trace.SdkTracerProvider
+import io.opentelemetry.sdk.trace.data.SpanData
+import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import zio._
 import zio.metrics.Metric
 import zio.metrics.MetricKeyType.Histogram.Boundaries
 import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.common.{Attribute, Attributes}
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.context.internal.ContextStorage
 import zio.telemetry.opentelemetry.metrics.internal.Instrument
-import zio.telemetry.opentelemetry.tracing.{Tracing, TracingTest}
+import zio.telemetry.opentelemetry.trace.Tracer
 import zio.test.{TestEnvironment, ZIOSpecDefault, _}
 
 import java.time.temporal.ChronoUnit
@@ -17,22 +22,80 @@ import scala.jdk.CollectionConverters._
 
 object MeterTest extends ZIOSpecDefault {
 
+  val inMemoryTracer: UIO[(InMemorySpanExporter, JTracer)] = for {
+    spanExporter   <- ZIO.succeed(InMemorySpanExporter.create())
+    spanProcessor  <- ZIO.succeed(SimpleSpanProcessor.create(spanExporter))
+    tracerProvider <- ZIO.succeed(SdkTracerProvider.builder().addSpanProcessor(spanProcessor).build())
+    tracer          = tracerProvider.get("TracingTest")
+  } yield (spanExporter, tracer)
+
+  val inMemoryTracerLayer: ULayer[InMemorySpanExporter with JTracer] =
+    ZLayer.fromZIOEnvironment(inMemoryTracer.map { case (inMemorySpanExporter, tracer) =>
+      ZEnvironment(inMemorySpanExporter).add(tracer)
+    })
+
   val inMemoryMetricReaderLayer: ZLayer[Any, Nothing, InMemoryMetricReader] =
     ZLayer(ZIO.succeed(InMemoryMetricReader.create()))
 
+  val inMemoryMeterProvider: ULayer[SdkMeterProvider] = {
+    val meterProviderLayer =
+      ZLayer {
+        for {
+          metricReader  <- ZIO.service[InMemoryMetricReader]
+          meterProvider <- ZIO.succeed(SdkMeterProvider.builder().registerMetricReader(metricReader).build())
+        } yield meterProvider
+      }
+
+    inMemoryMetricReaderLayer >>> meterProviderLayer
+  }
+
+  val otelLayer: RLayer[SdkMeterProvider, OpenTelemetry] =
+    ZLayer.scoped {
+      for {
+        ctxStorage    <- ContextStorage.zioFiberRefScoped
+        meterProvider <- ZIO.service[SdkMeterProvider]
+        underlying    <- ZIO.fromAutoCloseable(
+                           ZIO.succeed(
+                             OpenTelemetrySdk
+                               .builder()
+                               .setMeterProvider(meterProvider)
+                               .build
+                           )
+                         )
+      } yield new OpenTelemetry.OpenTelemetrySdk(underlying, ctxStorage)
+    }
+
+  def ctxStorageLayer: ULayer[ContextStorage] =
+    ZLayer.scoped(ContextStorage.zioFiberRefScoped)
+
+  def tracerMockLayer(
+    logAnnotated: Boolean = false
+  ): URLayer[ContextStorage, Tracer with InMemorySpanExporter with JTracer] =
+    inMemoryTracerLayer >>> (tracerLiveLayer(logAnnotated) ++ inMemoryTracerLayer)
+
+  def tracerLiveLayer(logAnnotated: Boolean = false): URLayer[JTracer with ContextStorage, Tracer] =
+    ZLayer.scoped {
+      for {
+        ctxStorage <- ZIO.service[ContextStorage]
+        jtracer    <- ZIO.service[JTracer]
+        tracer     <- zio.telemetry.opentelemetry.trace.Tracer.scoped(jtracer, ctxStorage, logAnnotated)
+      } yield tracer
+    }
+
   def meterLayer(
     logAnnotated: Boolean = false
-  ): ZLayer[InMemoryMetricReader with ContextStorage, Nothing, Meter with Instrument.Builder] = {
-    val jmeter  = ZLayer {
+  ): ZLayer[ContextStorage, Nothing, Meter] = {
+    val meterLayer = ZLayer {
       for {
-        metricReader  <- ZIO.service[InMemoryMetricReader]
-        meterProvider <- ZIO.succeed(SdkMeterProvider.builder().registerMetricReader(metricReader).build())
-        meter         <- ZIO.succeed(meterProvider.get("MeterTest"))
+        ctxStorage    <- ZIO.service[ContextStorage]
+        meterProvider <- ZIO.service[SdkMeterProvider]
+        jmeter        <- ZIO.succeed(meterProvider.get("MeterTest"))
+        builder        = Instrument.Builder.make(jmeter, ctxStorage, logAnnotated)
+        meter          = Meter.make(builder)
       } yield meter
     }
-    val builder = jmeter >>> Instrument.Builder.live(logAnnotated)
 
-    builder >+> Meter.live
+    inMemoryMeterProvider >>> meterLayer
   }
 
   val observableRefLayer: ULayer[Ref[Long]] =
@@ -45,6 +108,9 @@ object MeterTest extends ZIOSpecDefault {
                  .forkDaemon
       } yield ref
     )
+
+  def getFinishedSpans: ZIO[InMemorySpanExporter, Nothing, List[SpanData]] =
+    ZIO.serviceWith[InMemorySpanExporter](_.getFinishedSpanItems.asScala.toList)
 
   override def spec: Spec[TestEnvironment with Scope, Any] =
     suite("zio opentelemetry")(
@@ -158,7 +224,7 @@ object MeterTest extends ZIOSpecDefault {
           )
         }
       }
-    ).provide(inMemoryMetricReaderLayer, meterLayer(), ContextStorage.fiberRef, observableRefLayer)
+    ).provide(inMemoryMetricReaderLayer, meterLayer(), ctxStorageLayer, observableRefLayer)
 
   private val contextualSpec =
     suite("contextual")(
@@ -166,10 +232,10 @@ object MeterTest extends ZIOSpecDefault {
         ZIO.serviceWithZIO[Meter] { meter =>
           for {
             reader        <- ZIO.service[InMemoryMetricReader]
-            tracing       <- ZIO.service[Tracing]
+            tracer        <- ZIO.service[Tracer]
             counter       <- meter.counter("test_counter")
-            _             <- counter.inc() @@ tracing.aspects.span("counter_span")
-            span          <- TracingTest.getFinishedSpans.map(_.head)
+            _             <- counter.inc() @@ tracer.aspects.span("counter_span")
+            span          <- getFinishedSpans.map(_.head)
             metric         = reader.collectAllMetrics().asScala.toList.head
             metricPoint    = metric.getLongSumData().getPoints().asScala.head
             metricExemplar = metricPoint.getExemplars().asScala.toList.head
@@ -181,7 +247,7 @@ object MeterTest extends ZIOSpecDefault {
           )
         }
       }
-    ).provide(inMemoryMetricReaderLayer, meterLayer(), ContextStorage.fiberRef, TracingTest.tracingMockLayer())
+    ).provide(inMemoryMetricReaderLayer, meterLayer(), ctxStorageLayer, tracerMockLayer())
 
   private val logAnnotatedSpec =
     suite("log annotated")(
@@ -221,7 +287,7 @@ object MeterTest extends ZIOSpecDefault {
           )
         }
       }
-    ).provide(inMemoryMetricReaderLayer, meterLayer(logAnnotated = true), ContextStorage.fiberRef)
+    ).provide(inMemoryMetricReaderLayer, meterLayer(logAnnotated = true), ctxStorageLayer)
 
   private val zioMetricsSpec =
     suite("ZIO metrics integration")(
@@ -247,6 +313,11 @@ object MeterTest extends ZIOSpecDefault {
           boundaries  = metricPoint.getBoundaries.asScala.map(_.toDouble).toSeq
         } yield assertTrue(boundaries == Seq(1.0, 2.0, 3.0))
       }
-    ).provide(inMemoryMetricReaderLayer, meterLayer(), ContextStorage.fiberRef, OpenTelemetry.zioMetrics)
+    ).provide(
+      inMemoryMeterProvider,
+      otelLayer,
+      inMemoryMetricReaderLayer,
+      OpenTelemetry.zioMetrics("MeterTest")
+    )
 
 }

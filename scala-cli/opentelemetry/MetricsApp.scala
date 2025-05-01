@@ -1,6 +1,6 @@
 //> using scala "3.7.1"
 //> using dep dev.zio::zio:2.1.19
-//> using dep dev.zio::zio-opentelemetry:3.1.5
+//> using dep dev.zio::zio-opentelemetry:4.0.0-RC1
 //> using dep io.opentelemetry:opentelemetry-sdk:1.51.0
 //> using dep io.opentelemetry:opentelemetry-sdk-trace:1.51.0
 //> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.51.0
@@ -18,12 +18,11 @@ import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingMetricExporter
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.api
 import zio.*
-import zio.telemetry.opentelemetry.tracing.Tracing
+import zio.telemetry.opentelemetry.trace.Tracer
 import zio.telemetry.opentelemetry.metrics.Meter
 import zio.telemetry.opentelemetry.common.Attributes
 import zio.telemetry.opentelemetry.common.Attribute
 import zio.telemetry.opentelemetry.OpenTelemetry
-import zio.telemetry.opentelemetry.context.ContextStorage
 
 object MetricsApp extends ZIOAppDefault {
 
@@ -65,7 +64,7 @@ object MetricsApp extends ZIOAppDefault {
         )
     } yield tracerProvider
 
-  val otelSdkLayer: TaskLayer[api.OpenTelemetry] =
+  val otelSdkLayer: TaskLayer[OpenTelemetry] =
     OpenTelemetry.custom(
       for {
         tracerProvider <- stdoutTracerProvider
@@ -112,7 +111,7 @@ object MetricsApp extends ZIOAppDefault {
 
   override def run =
     ZIO
-      .serviceWithZIO[Tracing] { tracing =>
+      .serviceWithZIO[Tracer] { tracer =>
         val logic = for {
           meter                <- ZIO.service[Meter]
           // Create a counter
@@ -127,13 +126,12 @@ object MetricsApp extends ZIOAppDefault {
 
         // By wrapping our logic into a span, we make the `messageLengthCounter` data points correlated with a "root_span" automatically.
         // Additionally we implicitly add one more attribute to the `messageLenghtCounter` as it is wrapped into a `ZIO.logAnnotate` call.
-        ZIO.logAnnotate("zio", "annotation")(logic) @@ tracing.aspects.root("root_span")
+        ZIO.logAnnotate("zio", "annotation")(logic) @@ tracer.aspects.root("root_span")
       }
       .provide(
         otelSdkLayer,
         OpenTelemetry.metrics(instrumentationScopeName, logAnnotated = true),
-        OpenTelemetry.tracing(instrumentationScopeName),
-        OpenTelemetry.contextZIO,
+        OpenTelemetry.tracer(instrumentationScopeName),
         tickCounterLayer,
         tickRefLayer
       )
