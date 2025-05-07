@@ -440,7 +440,7 @@ private[opentelemetry] object Tracer {
             links: Seq[SpanContext] = Seq.empty
           )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
             ZIO.acquireReleaseWith {
-              createRoot(spanName, spanKind, attributes, links)
+              startRoot(spanName, spanKind, attributes, links)
             } { case (endSpan, _) =>
               endSpan
             } { case (_, ctx) =>
@@ -454,9 +454,9 @@ private[opentelemetry] object Tracer {
             statusMapper: StatusMapper[E, A] = StatusMapper.default,
             links: Seq[SpanContext] = Seq.empty
           )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
-            getCurrentContextUnsafe.flatMap { old =>
+            getCurrentContextUnsafe.flatMap { parentCtx =>
               ZIO.acquireReleaseWith {
-                createChild(old, spanName, spanKind, attributes, links)
+                startChild(parentCtx, spanName, spanKind, attributes, links)
               } { case (endSpan, _) =>
                 endSpan
               } { case (_, ctx) =>
@@ -471,10 +471,10 @@ private[opentelemetry] object Tracer {
             statusMapper: StatusMapper[Any, Unit] = StatusMapper.default,
             links: Seq[SpanContext]
           )(implicit trace: Trace): ZIO[Scope, Nothing, Unit] =
-            getCurrentContextUnsafe.flatMap { old =>
+            getCurrentContextUnsafe.flatMap { parentCtx =>
               ZIO.acquireReleaseExit {
                 for {
-                  childUnsafe <- createChild(old, spanName, spanKind, attributes, links)
+                  childUnsafe <- startChild(parentCtx, spanName, spanKind, attributes, links)
                   (_, ctx)     = childUnsafe
                   _           <- ctxStorage.locallyScoped(ctx)
                 } yield childUnsafe
@@ -496,15 +496,16 @@ private[opentelemetry] object Tracer {
             links: Seq[SpanContext] = Seq.empty
           )(implicit trace: Trace): ZIO[Scope, Nothing, Span] =
             for {
-              old         <- getCurrentContextUnsafe
+              parentCtx   <- getCurrentContextUnsafe
               scoped      <- ZIO.acquireReleaseExit {
                                for {
-                                 childUnsafe   <- createChild(old, spanName, spanKind, attributes, links)
+                                 childUnsafe   <- startChild(parentCtx, spanName, spanKind, attributes, links)
                                  (endSpan, ctx) = childUnsafe
                                  span           = Span.fromContext(ctx)
                                  _             <- ctxStorage.locallyScoped(ctx)
                                } yield (span, endSpan, ctx)
                              } { case ((_, endSpan, ctx), exit) =>
+                                // exit.mapBoth()
                                val setStatus = exit match {
                                  case Exit.Success(_)     => ZIO.unit
                                  case Exit.Failure(cause) => setFailureStatus(Span.fromContext(ctx), cause, statusMapper)
@@ -556,7 +557,7 @@ private[opentelemetry] object Tracer {
             links: Seq[SpanContext] = Seq.empty
           )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
             ZIO.acquireReleaseWith {
-              createChild(Context.root().`with`(span), spanName, spanKind, attributes, links)
+              startChild(Context.root().`with`(span), spanName, spanKind, attributes, links)
             } { case (endSpan, _) =>
               endSpan
             } { case (_, ctx) =>
@@ -675,7 +676,7 @@ private[opentelemetry] object Tracer {
           private def currentNanos(implicit trace: Trace): UIO[Long] =
             Clock.currentTime(TimeUnit.NANOSECONDS)
 
-          private def createRoot(
+          private def startRoot(
             spanName: String,
             spanKind: SpanKind,
             attributes: Attributes,
@@ -696,7 +697,7 @@ private[opentelemetry] object Tracer {
                                )
             } yield (endSpan(span), Context.root().`with`(span))
 
-          private def createChild(
+          private def startChild(
             parentCtx: Context,
             spanName: String,
             spanKind: SpanKind,
