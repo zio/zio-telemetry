@@ -1,7 +1,7 @@
 package zio.telemetry.opentelemetry.trace
 
 import io.opentelemetry.api.common.AttributeKey
-import io.opentelemetry.api.trace.{Span, SpanId, StatusCode, Tracer => JTracer}
+import io.opentelemetry.api.trace.{Span => JSpan, SpanId, StatusCode, Tracer => JTracer}
 import io.opentelemetry.context.Context
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
 import io.opentelemetry.sdk.trace.SdkTracerProvider
@@ -145,7 +145,7 @@ object TracerTest extends ZIOSpecDefault {
 
           for {
             _     <- tracer.scopedEffect {
-                       val span = Span.current()
+                       val span = JSpan.current()
                        span.addEvent("In legacy code")
                        if (Context.current() == Context.root()) throw new RuntimeException("Current context is root!")
                        span.addEvent("Finishing legacy code")
@@ -173,7 +173,7 @@ object TracerTest extends ZIOSpecDefault {
 
           for {
             _     <- tracer.scopedEffectTotal {
-                       val span = Span.current()
+                       val span = JSpan.current()
                        span.addEvent("In legacy code")
                        if (Context.current() == Context.root()) throw new RuntimeException("Current context is root!")
                        Thread.sleep(10)
@@ -204,7 +204,7 @@ object TracerTest extends ZIOSpecDefault {
           for {
             result <- tracer.scopedEffectFromFuture { _ =>
                         Future.successful {
-                          val span = Span.current()
+                          val span = JSpan.current()
                           span.addEvent("In legacy code")
                           if (Context.current() == Context.root())
                             throw new RuntimeException("Current context is root!")

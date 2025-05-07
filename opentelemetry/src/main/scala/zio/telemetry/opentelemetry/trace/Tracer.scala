@@ -1,7 +1,7 @@
 package zio.telemetry.opentelemetry.trace
 
 import io.opentelemetry.api.common.{AttributeKey, Attributes}
-import io.opentelemetry.api.trace.{Span, SpanBuilder, SpanContext, SpanKind, StatusCode, Tracer => JTracer}
+import io.opentelemetry.api.trace.{Span => JSpan, SpanBuilder, SpanContext, SpanKind, StatusCode, Tracer => JTracer}
 import io.opentelemetry.context.Context
 import zio._
 import zio.telemetry.opentelemetry.common.Attribute
@@ -37,14 +37,6 @@ trait Tracer { self =>
   )(implicit trace: Trace): UIO[Unit]
 
   /**
-   * Gets the current Context
-   *
-   * @param trace
-   * @return
-   */
-  def getCurrentContextUnsafe(implicit trace: Trace): UIO[Context]
-
-  /**
    * Gets the current SpanContext.
    *
    * @param trace
@@ -58,7 +50,7 @@ trait Tracer { self =>
    * @param trace
    * @return
    */
-  def getCurrentSpanUnsafe(implicit trace: Trace): UIO[Span]
+  def getCurrentSpanUnsafe(implicit trace: Trace): UIO[JSpan]
 
   /**
    * Mark this effect as the child of an externally provided span. Ends the span when the effect finishes.
@@ -98,7 +90,7 @@ trait Tracer { self =>
    * @return
    */
   def inSpan[R, E, E1 <: E, A, A1 <: A](
-    span: Span,
+    span: JSpan,
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     attributes: Attributes = Attributes.empty(),
@@ -372,12 +364,12 @@ trait Tracer { self =>
     attributes: Attributes = Attributes.empty(),
     statusMapper: StatusMapper[Any, Unit] = StatusMapper.default,
     links: Seq[SpanContext] = Seq.empty
-  )(implicit trace: Trace): ZIO[Scope, Nothing, Span]
+  )(implicit trace: Trace): ZIO[Scope, Nothing, JSpan]
 
   object aspects {
 
     def inSpan[E1, A1](
-      span: Span,
+      span: JSpan,
       spanName: String,
       spanKind: SpanKind = SpanKind.INTERNAL,
       attributes: Attributes = Attributes.empty(),
@@ -423,11 +415,8 @@ private[opentelemetry] object Tracer {
     val acquire =
       ZIO.succeed {
         new Tracer { self =>
-          override def getCurrentContextUnsafe(implicit trace: Trace): UIO[Context] =
-            ctxStorage.get
-
-          override def getCurrentSpanUnsafe(implicit trace: Trace): UIO[Span] =
-            getCurrentContextUnsafe.map(Span.fromContext)
+          override def getCurrentSpanUnsafe(implicit trace: Trace): UIO[JSpan] =
+            ctxStorage.get.map(JSpan.fromContext)
 
           override def getCurrentSpanContextUnsafe(implicit trace: Trace): UIO[SpanContext] =
             getCurrentSpanUnsafe.map(_.getSpanContext())
@@ -454,7 +443,7 @@ private[opentelemetry] object Tracer {
             statusMapper: StatusMapper[E, A] = StatusMapper.default,
             links: Seq[SpanContext] = Seq.empty
           )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
-            getCurrentContextUnsafe.flatMap { parentCtx =>
+            ctxStorage.get.flatMap { parentCtx =>
               ZIO.acquireReleaseWith {
                 startChild(parentCtx, spanName, spanKind, attributes, links)
               } { case (endSpan, _) =>
@@ -471,7 +460,7 @@ private[opentelemetry] object Tracer {
             statusMapper: StatusMapper[Any, Unit] = StatusMapper.default,
             links: Seq[SpanContext]
           )(implicit trace: Trace): ZIO[Scope, Nothing, Unit] =
-            getCurrentContextUnsafe.flatMap { parentCtx =>
+            ctxStorage.get.flatMap { parentCtx =>
               ZIO.acquireReleaseExit {
                 for {
                   childUnsafe <- startChild(parentCtx, spanName, spanKind, attributes, links)
@@ -481,7 +470,7 @@ private[opentelemetry] object Tracer {
               } { case ((endSpan, ctx), exit) =>
                 val setStatus = exit match {
                   case Exit.Success(_)     => ZIO.unit
-                  case Exit.Failure(cause) => setFailureStatus(Span.fromContext(ctx), cause, statusMapper)
+                  case Exit.Failure(cause) => setFailureStatus(JSpan.fromContext(ctx), cause, statusMapper)
                 }
 
                 setStatus *> endSpan
@@ -494,21 +483,20 @@ private[opentelemetry] object Tracer {
             attributes: Attributes = Attributes.empty(),
             statusMapper: StatusMapper[Any, Unit] = StatusMapper.default,
             links: Seq[SpanContext] = Seq.empty
-          )(implicit trace: Trace): ZIO[Scope, Nothing, Span] =
+          )(implicit trace: Trace): ZIO[Scope, Nothing, JSpan] =
             for {
-              parentCtx   <- getCurrentContextUnsafe
+              parentCtx   <- ctxStorage.get
               scoped      <- ZIO.acquireReleaseExit {
                                for {
                                  childUnsafe   <- startChild(parentCtx, spanName, spanKind, attributes, links)
                                  (endSpan, ctx) = childUnsafe
-                                 span           = Span.fromContext(ctx)
+                                 span           = JSpan.fromContext(ctx)
                                  _             <- ctxStorage.locallyScoped(ctx)
                                } yield (span, endSpan, ctx)
                              } { case ((_, endSpan, ctx), exit) =>
-                                // exit.mapBoth()
                                val setStatus = exit match {
                                  case Exit.Success(_)     => ZIO.unit
-                                 case Exit.Failure(cause) => setFailureStatus(Span.fromContext(ctx), cause, statusMapper)
+                                 case Exit.Failure(cause) => setFailureStatus(JSpan.fromContext(ctx), cause, statusMapper)
                                }
 
                                setStatus *> endSpan
@@ -518,7 +506,7 @@ private[opentelemetry] object Tracer {
 
           override def scopedEffect[A](effect: => A)(implicit trace: Trace): Task[A] =
             for {
-              ctx    <- getCurrentContextUnsafe
+              ctx    <- ctxStorage.get
               effect <- ZIO.attempt {
                           val scope = ctx.makeCurrent()
                           try effect
@@ -528,7 +516,7 @@ private[opentelemetry] object Tracer {
 
           override def scopedEffectTotal[A](effect: => A)(implicit trace: Trace): UIO[A] =
             for {
-              ctx    <- getCurrentContextUnsafe
+              ctx    <- ctxStorage.get
               effect <- ZIO.succeed {
                           val scope = ctx.makeCurrent()
                           try effect
@@ -540,7 +528,7 @@ private[opentelemetry] object Tracer {
             make: ExecutionContext => scala.concurrent.Future[A]
           )(implicit trace: Trace): Task[A] =
             for {
-              ctx    <- getCurrentContextUnsafe
+              ctx    <- ctxStorage.get
               effect <- ZIO.fromFuture { implicit ec =>
                           val scope = ctx.makeCurrent()
                           try make(ec)
@@ -549,7 +537,7 @@ private[opentelemetry] object Tracer {
             } yield effect
 
           override def inSpan[R, E, E1 <: E, A, A1 <: A](
-            span: Span,
+            span: JSpan,
             spanName: String,
             spanKind: SpanKind = SpanKind.INTERNAL,
             attributes: Attributes = Attributes.empty(),
@@ -628,7 +616,7 @@ private[opentelemetry] object Tracer {
             getCurrentSpanUnsafe.map(_.setAttribute(AttributeKey.doubleArrayKey(name), v)).unit
           }
 
-          private def setSuccessStatus[E, A](span: Span, a: A, statusMapper: StatusMapper[E, A]): UIO[Span] =
+          private def setSuccessStatus[E, A](span: JSpan, a: A, statusMapper: StatusMapper[E, A]): UIO[JSpan] =
             statusMapper.success
               .lift(a)
               .fold(ZIO.succeed(span)) { case StatusMapper.Result(statusCode, maybeError) =>
@@ -641,10 +629,10 @@ private[opentelemetry] object Tracer {
               }
 
           private def setFailureStatus[E, A](
-            span: Span,
+            span: JSpan,
             cause: Cause[E],
             statusMapper: StatusMapper[E, A]
-          )(implicit trace: Trace): UIO[Span] = {
+          )(implicit trace: Trace): UIO[JSpan] = {
             val result =
               cause.failureOption
                 .flatMap(statusMapper.failure.lift)
@@ -670,8 +658,8 @@ private[opentelemetry] object Tracer {
           )(implicit trace: Trace): ZIO[R, E, A] =
             ctxStorage
               .locally(ctx)(zio)
-              .tapErrorCause(setFailureStatus(Span.fromContext(ctx), _, statusMapper))
-              .tap(setSuccessStatus(Span.fromContext(ctx), _, statusMapper))
+              .tapErrorCause(setFailureStatus(JSpan.fromContext(ctx), _, statusMapper))
+              .tap(setSuccessStatus(JSpan.fromContext(ctx), _, statusMapper))
 
           private def currentNanos(implicit trace: Trace): UIO[Long] =
             Clock.currentTime(TimeUnit.NANOSECONDS)
@@ -724,7 +712,7 @@ private[opentelemetry] object Tracer {
               links.foldLeft(spanBuilder) { case (builder, link) => builder.addLink(link) }
           }
 
-          private def endSpan(span: Span)(implicit trace: Trace): UIO[Unit] =
+          private def endSpan(span: JSpan)(implicit trace: Trace): UIO[Unit] =
             currentNanos.flatMap(nanos => ZIO.succeed(span.end(nanos, TimeUnit.NANOSECONDS)))
 
           private def withLogAnnotations(attributes: Attributes): UIO[Attributes] =

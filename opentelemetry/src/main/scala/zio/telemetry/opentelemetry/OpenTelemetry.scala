@@ -25,9 +25,6 @@ trait OpenTelemetry { self =>
   )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
     ctxStorage.locally(ctxPropagator.instance.extract(Context.root, carrier.kernel, carrier))(zio)
 
-  def asJava: api.OpenTelemetry =
-    underlying
-
   /**
    * Use when you need to pass contextual information between spans.
    */
@@ -50,6 +47,16 @@ trait OpenTelemetry { self =>
 
   private[opentelemetry] val ctxPropagator: ContextPropagator =
     ContextPropagator.default
+
+  object unsafe {
+
+    def getCurrentContext(implicit trace: Trace): UIO[Context] =
+      self.ctxStorage.get
+
+    def asJava: api.OpenTelemetry =
+      self.underlying
+
+  }
 
   object aspects {
 
@@ -163,7 +170,7 @@ object OpenTelemetry {
     ZLayer.scoped {
       for {
         openTelemetry <- ZIO.service[OpenTelemetry]
-        jtracer        = buildTracer(openTelemetry.asJava)
+        jtracer        = buildTracer(openTelemetry.unsafe.asJava)
         tracer        <- Tracer.scoped(jtracer, openTelemetry.ctxStorage, logAnnotated)
       } yield tracer
 
@@ -199,7 +206,7 @@ object OpenTelemetry {
     ZLayer {
       for {
         openTelemetry <- ZIO.service[OpenTelemetry]
-        jmeter         = buildMeter(openTelemetry.asJava)
+        jmeter         = buildMeter(openTelemetry.unsafe.asJava)
         builder        = Instrument.Builder.make(jmeter, openTelemetry.ctxStorage, logAnnotated)
         meter          = Meter.make(builder)
       } yield meter
@@ -222,7 +229,7 @@ object OpenTelemetry {
     ZLayer.scoped {
       for {
         openTelemetry <- ZIO.service[OpenTelemetry]
-        loggerProvider = openTelemetry.asJava.getLogsBridge
+        loggerProvider = openTelemetry.unsafe.asJava.getLogsBridge
         _             <- Logger.make(loggerProvider, openTelemetry.ctxStorage, instrumentationScopeName, logLevel)
       } yield ()
     }
@@ -261,7 +268,7 @@ object OpenTelemetry {
       ZLayer {
         for {
           openTelemetry <- ZIO.service[OpenTelemetry]
-          jmeter         = buildMeter(openTelemetry.asJava)
+          jmeter         = buildMeter(openTelemetry.unsafe.asJava)
           builder        = Instrument.Builder.make(jmeter, openTelemetry.ctxStorage)
           registry       = InstrumentRegistry.concurrent(builder)
         } yield registry
