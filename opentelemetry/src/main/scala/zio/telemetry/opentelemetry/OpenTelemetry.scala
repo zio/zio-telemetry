@@ -1,6 +1,6 @@
 package zio.telemetry.opentelemetry
 
-import io.opentelemetry.api.{OpenTelemetry => JOpenTelemetry, GlobalOpenTelemetry}
+import io.opentelemetry.api.{GlobalOpenTelemetry, OpenTelemetry => JOpenTelemetry}
 import io.opentelemetry.context.Context
 import zio._
 import zio.metrics.{MetricClient, MetricListener}
@@ -131,6 +131,9 @@ object OpenTelemetry {
         ctxStorage <- ContextStorage.zioFiberRefScoped
       } yield new OpenTelemetrySdk(ctxStorage, underlying, ctxPropagator, logAnnotated)
     }
+
+  def custom(zio: => ZIO[Scope, Throwable, JOpenTelemetry]): TaskLayer[OpenTelemetry] =
+    custom()(zio)
 
   def noop(logAnnotated: Boolean = false): TaskLayer[OpenTelemetry] =
     ZLayer.scoped {

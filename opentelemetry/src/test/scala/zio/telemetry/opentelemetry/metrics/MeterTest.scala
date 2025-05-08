@@ -62,7 +62,7 @@ object MeterTest extends ZIOSpecDefault {
                                .build
                            )
                          )
-      } yield new OpenTelemetry.OpenTelemetrySdk(underlying, ctxStorage)
+      } yield new OpenTelemetry.OpenTelemetrySdk(ctxStorage, underlying)
     }
 
   def ctxStorageLayer: ULayer[ContextStorage] =

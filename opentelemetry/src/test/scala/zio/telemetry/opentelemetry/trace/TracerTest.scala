@@ -35,7 +35,7 @@ object TracerTest extends ZIOSpecDefault {
 
   def tracerMockLayer(
     logAnnotated: Boolean = false
-  ): URLayer[ContextStorage, Tracer with InMemorySpanExporter with Tracer] =
+  ): URLayer[ContextStorage, Tracer with InMemorySpanExporter with JTracer] =
     inMemoryTracerLayer >>> (tracerLiveLayer(logAnnotated) ++ inMemoryTracerLayer)
 
   def tracerLiveLayer(logAnnotated: Boolean = false): URLayer[JTracer with ContextStorage, Tracer] =
@@ -116,24 +116,22 @@ object TracerTest extends ZIOSpecDefault {
       },
       test("inSpan") {
         ZIO.serviceWithZIO[Tracer] { tracer =>
-          import tracer.aspects._
-
           for {
-            res                       <- inMemoryTracer
-            (_, tracer)                = res
-            externallyProvidedRootSpan = tracer.spanBuilder("external").startSpan()
-            scope                      = externallyProvidedRootSpan.makeCurrent()
-            _                         <- ZIO.unit @@ inSpan(externallyProvidedRootSpan, "zio-otel-child")
-            _                          = externallyProvidedRootSpan.end()
-            _                          = scope.close()
-            spans                     <- getFinishedSpans
-            child                      = spans.find(_.getName == "zio-otel-child")
+            res         <- inMemoryTracer
+            (_, jtracer) = res
+            span         = Span.make(jtracer.spanBuilder("external").startSpan())
+            scope        = span.unsafe.asJava.makeCurrent()
+            _           <- ZIO.unit @@ tracer.aspects.inSpan(span, "zio-otel-child")
+            _           <- span.end
+            _            = scope.close()
+            spans       <- getFinishedSpans
+            child        = spans.find(_.getName == "zio-otel-child")
           } yield assert(child)(
             isSome(
               hasField[SpanData, String](
                 "parent",
                 _.getParentSpanId,
-                equalTo(externallyProvidedRootSpan.getSpanContext.getSpanId)
+                equalTo(span.getContext.getSpanId)
               )
             )
           )
@@ -232,17 +230,17 @@ object TracerTest extends ZIOSpecDefault {
       },
       test("setAttribute") {
         ZIO.serviceWithZIO[Tracer] { tracer =>
-          import tracer.aspects._
-
           for {
-            _     <- (for {
-                       _ <- tracer.setAttribute("boolean", value = true)
-                       _ <- tracer.setAttribute("int", 1)
-                       _ <- tracer.setAttribute("string", "foo")
-                       _ <- tracer.setAttribute("booleans", Seq(true, false))
-                       _ <- tracer.setAttribute("longs", Seq(1L, 2L))
-                       _ <- tracer.setAttribute("strings", Seq("foo", "bar"))
-                     } yield ()) @@ span("foo")
+            _     <- tracer.span("foo") { span =>
+                       for {
+                         _ <- span.setAttribute("boolean", value = true)
+                         _ <- span.setAttribute("int", 1)
+                         _ <- span.setAttribute("string", "foo")
+                         _ <- span.setAttribute("booleans", Seq(true, false))
+                         _ <- span.setAttribute("longs", Seq(1L, 2L))
+                         _ <- span.setAttribute("strings", Seq("foo", "bar"))
+                       } yield ()
+                     }
             spans <- getFinishedSpans
             tags   = spans.head.getAttributes
           } yield assert(tags.get(AttributeKey.booleanKey("boolean")))(equalTo(Boolean.box(true))) &&
@@ -259,22 +257,20 @@ object TracerTest extends ZIOSpecDefault {
       },
       test("addEvent & addEventWithAttributes") {
         ZIO.serviceWithZIO[Tracer] { tracer =>
-          import tracer.aspects._
-
           val duration = 1000.micros
 
-          val log = for {
-            _ <- tracer.addEvent("message")
-            _ <- TestClock.adjust(duration)
-            _ <- tracer.addEventWithAttributes(
-                   "message2",
-                   Attributes(Attribute.string("msg", "message"), Attribute.long("size", 1L))
-                 )
-          } yield ()
-
           for {
-            _     <- log @@ span("foo")
-            _     <- ZIO.unit @@ span("Child") @@ span("Root")
+            _     <- tracer.span("foo") { span =>
+                       for {
+                         _ <- span.addEvent("message")
+                         _ <- TestClock.adjust(duration)
+                         _ <- span.addEventWithAttributes(
+                                "message2",
+                                Attributes(Attribute.string("msg", "message"), Attribute.long("size", 1L))
+                              )
+                       } yield ()
+                     }
+            _     <- ZIO.unit @@ tracer.aspects.span("Child") @@ tracer.aspects.span("Root")
             spans <- getFinishedSpans
             tags   = spans.collect {
                        case span if span.getName == "foo" =>
@@ -330,7 +326,7 @@ object TracerTest extends ZIOSpecDefault {
             ref      <- Ref.make(false)
             scope    <- Scope.make
             resource  = ZIO.addFinalizer(ref.set(true))
-            _        <- scope.extend[Any](tracer.span("Resource")(resource))
+            _        <- scope.extend[Any](resource @@ tracer.aspects.span("Resource"))
             released <- ref.get
           } yield assert(released)(isFalse)
         }
@@ -621,8 +617,8 @@ object TracerTest extends ZIOSpecDefault {
         ZIO.serviceWithZIO[Tracer] { tracer =>
           for {
             _     <- ZIO.scoped[Any](for {
-                       _ <- tracer.spanScoped("foo")
-                       _ <- tracer.setAttribute("string", "bar")
+                       span <- tracer.spanScoped("foo")
+                       _    <- span.setAttribute("string", "bar")
                      } yield ())
             spans <- getFinishedSpans
             tags   = spans.head.getAttributes
@@ -631,47 +627,48 @@ object TracerTest extends ZIOSpecDefault {
       }
     ).provide(tracerMockLayer(), ctxStorageLayer)
 
-  private val spanWithLogAnnotationsSpec = suite("spans with log annotations")(
-    test("add log annotations") {
-      ZIO.serviceWithZIO[Tracer] { tracer =>
-        import tracer.aspects._
+  private val spanWithLogAnnotationsSpec =
+    suite("spans with log annotations")(
+      test("with log annotations") {
+        ZIO.serviceWithZIO[Tracer] { tracer =>
+          import tracer.aspects._
 
-        for {
-          _     <- ZIO.logAnnotate("log-attribute", "foo") {
-                     ZIO.unit @@ span("Root", attributes = Attributes(Attribute.string("root-attribute", "bar")))
-                   }
-          spans <- getFinishedSpans
-          tags   = spans.head.getAttributes
-        } yield assert(tags.get(AttributeKey.stringKey("root-attribute")))(equalTo("bar")) &&
-          assert(tags.get(AttributeKey.stringKey("log-attribute")))(equalTo("foo"))
-      }
-    }.provide(tracerMockLayer(true), ctxStorageLayer),
-    test("span attributes override log annotated") {
-      ZIO.serviceWithZIO[Tracer] { tracer =>
-        import tracer.aspects._
+          for {
+            _     <- ZIO.logAnnotate("log-attribute", "foo") {
+                       ZIO.unit @@ span("Root", attributes = Attributes(Attribute.string("root-attribute", "bar")))
+                     }
+            spans <- getFinishedSpans
+            tags   = spans.head.getAttributes
+          } yield assert(tags.get(AttributeKey.stringKey("root-attribute")))(equalTo("bar")) &&
+            assert(tags.get(AttributeKey.stringKey("log-attribute")))(equalTo("foo"))
+        }
+      }.provide(tracerMockLayer(true), ctxStorageLayer),
+      test("span attributes override log annotated") {
+        ZIO.serviceWithZIO[Tracer] { tracer =>
+          import tracer.aspects._
 
-        for {
-          _     <- ZIO.logAnnotate("some-attribute", "foo") {
-                     ZIO.unit @@ span("Root", attributes = Attributes(Attribute.string("some-attribute", "bar")))
-                   }
-          spans <- getFinishedSpans
-          tags   = spans.head.getAttributes
-        } yield assert(tags.get(AttributeKey.stringKey("some-attribute")))(equalTo("bar"))
-      }
-    }.provide(tracerMockLayer(true), ctxStorageLayer),
-    test("not add log annotations") {
-      ZIO.serviceWithZIO[Tracer] { tracer =>
-        import tracer.aspects._
+          for {
+            _     <- ZIO.logAnnotate("some-attribute", "foo") {
+                       ZIO.unit @@ span("Root", attributes = Attributes(Attribute.string("some-attribute", "bar")))
+                     }
+            spans <- getFinishedSpans
+            tags   = spans.head.getAttributes
+          } yield assert(tags.get(AttributeKey.stringKey("some-attribute")))(equalTo("bar"))
+        }
+      }.provide(tracerMockLayer(true), ctxStorageLayer),
+      test("without log annotations") {
+        ZIO.serviceWithZIO[Tracer] { tracer =>
+          import tracer.aspects._
 
-        for {
-          _     <- ZIO.logAnnotate("log-attribute", "foo") {
-                     ZIO.unit @@ span("Root", attributes = Attributes(Attribute.string("root-attribute", "bar")))
-                   }
-          spans <- getFinishedSpans
-          tags   = spans.head.getAttributes
-        } yield assert(tags.get(AttributeKey.stringKey("root-attribute")))(equalTo("bar")) &&
-          assert(Option(tags.get(AttributeKey.stringKey("log-attribute"))))(isNone)
-      }
-    }.provide(tracerMockLayer(), ctxStorageLayer)
-  )
+          for {
+            _     <- ZIO.logAnnotate("log-attribute", "foo") {
+                       ZIO.unit @@ span("Root", attributes = Attributes(Attribute.string("root-attribute", "bar")))
+                     }
+            spans <- getFinishedSpans
+            tags   = spans.head.getAttributes
+          } yield assert(tags.get(AttributeKey.stringKey("root-attribute")))(equalTo("bar")) &&
+            assert(Option(tags.get(AttributeKey.stringKey("log-attribute"))))(isNone)
+        }
+      }.provide(tracerMockLayer(), ctxStorageLayer)
+    )
 }

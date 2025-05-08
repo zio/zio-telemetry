@@ -67,13 +67,13 @@ trait Tracer { self =>
    * @return
    */
   def inSpan[R, E, E1 <: E, A, A1 <: A](
-    span: JSpan,
+    span: Span,
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     attributes: Attributes = Attributes.empty(),
     statusMapper: StatusMapper[E, A] = StatusMapper.default,
     links: Seq[SpanContext] = Seq.empty
-  )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1]
+  )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1]
 
   /**
    * Sets the current span to be the new root span with name 'spanName'.
@@ -102,7 +102,7 @@ trait Tracer { self =>
     attributes: Attributes = Attributes.empty(),
     statusMapper: StatusMapper[E, A] = StatusMapper.default,
     links: Seq[SpanContext] = Seq.empty
-  )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1]
+  )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1]
 
   /**
    * Introduces a thread-local scope during the execution allowing for non-zio context propagation.
@@ -176,7 +176,7 @@ trait Tracer { self =>
     attributes: Attributes = Attributes.empty(),
     statusMapper: StatusMapper[E, A] = StatusMapper.default,
     links: Seq[SpanContext] = Seq.empty
-  )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1]
+  )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1]
 
   /**
    * Sets the current span to be the child of the current span with name 'spanName'.
@@ -198,7 +198,7 @@ trait Tracer { self =>
     attributes: Attributes = Attributes.empty(),
     statusMapper: StatusMapper[Any, Unit] = StatusMapper.default,
     links: Seq[SpanContext] = Seq.empty
-  )(implicit trace: Trace): ZIO[Scope, Nothing, Unit]
+  )(implicit trace: Trace): ZIO[Scope, Nothing, Span]
 
   /**
    * Unsafely sets the current span to be the child of the current span with name 'spanName'.
@@ -214,18 +214,18 @@ trait Tracer { self =>
    * @param trace
    * @return
    */
-  def spanUnsafe(
+  def spanUnmanaged(
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     attributes: Attributes = Attributes.empty(),
     statusMapper: StatusMapper[Any, Unit] = StatusMapper.default,
     links: Seq[SpanContext] = Seq.empty
-  )(implicit trace: Trace): ZIO[Scope, Nothing, JSpan]
+  )(implicit trace: Trace): ZIO[Scope, Nothing, Span]
 
   object aspects {
 
     def inSpan[E1, A1](
-      span: JSpan,
+      span: Span,
       spanName: String,
       spanKind: SpanKind = SpanKind.INTERNAL,
       attributes: Attributes = Attributes.empty(),
@@ -234,7 +234,7 @@ trait Tracer { self =>
     ): ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] =
       new ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] {
         override def apply[R, E <: E1, A <: A1](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
-          self.inSpan(span, spanName, spanKind, attributes, statusMapper, links)(zio)
+          self.inSpan(span, spanName, spanKind, attributes, statusMapper, links)(_ => zio)
       }
 
     def root[E1, A1](
@@ -246,7 +246,7 @@ trait Tracer { self =>
     ): ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] =
       new ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] {
         override def apply[R, E <: E1, A <: A1](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
-          self.root(spanName, spanKind, attributes, statusMapper, links)(zio)
+          self.root(spanName, spanKind, attributes, statusMapper, links)(_ => zio)
       }
 
     def span[E1, A1](
@@ -258,7 +258,7 @@ trait Tracer { self =>
     ): ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] =
       new ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] {
         override def apply[R, E <: E1, A <: A1](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
-          self.span(spanName, spanKind, attributes, statusMapper, links)(zio)
+          self.span(spanName, spanKind, attributes, statusMapper, links)(_ => zio)
       }
 
   }
@@ -283,13 +283,13 @@ private[opentelemetry] object Tracer {
             attributes: Attributes = Attributes.empty(),
             statusMapper: StatusMapper[E, A] = StatusMapper.default,
             links: Seq[SpanContext] = Seq.empty
-          )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
+          )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
             ZIO.acquireReleaseWith {
               startRoot(spanName, spanKind, attributes, links)
-            } { case (endSpan, _) =>
-              endSpan
-            } { case (_, ctx) =>
-              finalizeSpanUsingEffect(zio, ctx, statusMapper)
+            } { case (span, _) =>
+              endSpan(span)
+            } { case (span, ctx) =>
+              finalizeSpanUsingEffect(f(span), ctx, statusMapper)
             }
 
           override def span[R, E, E1 <: E, A, A1 <: A](
@@ -298,16 +298,17 @@ private[opentelemetry] object Tracer {
             attributes: Attributes = Attributes.empty(),
             statusMapper: StatusMapper[E, A] = StatusMapper.default,
             links: Seq[SpanContext] = Seq.empty
-          )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
-            ctxStorage.get.flatMap { parentCtx =>
-              ZIO.acquireReleaseWith {
-                startChild(parentCtx, spanName, spanKind, attributes, links)
-              } { case (endSpan, _) =>
-                endSpan
-              } { case (_, ctx) =>
-                finalizeSpanUsingEffect(zio, ctx, statusMapper)
-              }
-            }
+          )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
+            for {
+              parentCtx <- ctxStorage.get
+              result    <- ZIO.acquireReleaseWith {
+                             startChild(parentCtx, spanName, spanKind, attributes, links)
+                           } { case (span, _) =>
+                             endSpan(span)
+                           } { case (span, ctx) =>
+                             finalizeSpanUsingEffect(f(span), ctx, statusMapper)
+                           }
+            } yield result
 
           override def spanScoped(
             spanName: String,
@@ -315,49 +316,50 @@ private[opentelemetry] object Tracer {
             attributes: Attributes,
             statusMapper: StatusMapper[Any, Unit] = StatusMapper.default,
             links: Seq[SpanContext]
-          )(implicit trace: Trace): ZIO[Scope, Nothing, Unit] =
-            ctxStorage.get.flatMap { parentCtx =>
-              ZIO.acquireReleaseExit {
-                for {
-                  childUnsafe <- startChild(parentCtx, spanName, spanKind, attributes, links)
-                  (_, ctx)     = childUnsafe
-                  _           <- ctxStorage.locallyScoped(ctx)
-                } yield childUnsafe
-              } { case ((endSpan, ctx), exit) =>
-                val setStatus = exit match {
-                  case Exit.Success(_)     => ZIO.unit
-                  case Exit.Failure(cause) => setFailureStatus(JSpan.fromContext(ctx), cause, statusMapper)
-                }
+          )(implicit trace: Trace): ZIO[Scope, Nothing, Span] =
+            for {
+              parentCtx <- ctxStorage.get
+              childSpan <- ZIO.acquireReleaseExit {
+                             for {
+                               childSpan  <- startChild(parentCtx, spanName, spanKind, attributes, links)
+                               (span, ctx) = childSpan
+                               _          <- ctxStorage.locallyScoped(ctx)
+                             } yield childSpan
+                           } { case ((span, ctx), exit) =>
+                             val setStatus = exit match {
+                               case Exit.Success(_)     => ZIO.unit
+                               case Exit.Failure(cause) => setFailureStatus(Span.fromContext(ctx), cause, statusMapper)
+                             }
 
-                setStatus *> endSpan
-              }.unit
-            }
+                             setStatus *> endSpan(span)
+                           }
+              (span, _)  = childSpan
+            } yield span
 
-          override def spanUnsafe(
+          override def spanUnmanaged(
             spanName: String,
             spanKind: SpanKind = SpanKind.INTERNAL,
             attributes: Attributes = Attributes.empty(),
             statusMapper: StatusMapper[Any, Unit] = StatusMapper.default,
             links: Seq[SpanContext] = Seq.empty
-          )(implicit trace: Trace): ZIO[Scope, Nothing, JSpan] =
+          )(implicit trace: Trace): ZIO[Scope, Nothing, Span] =
             for {
-              parentCtx   <- ctxStorage.get
-              scoped      <- ZIO.acquireReleaseExit {
-                               for {
-                                 childUnsafe   <- startChild(parentCtx, spanName, spanKind, attributes, links)
-                                 (endSpan, ctx) = childUnsafe
-                                 span           = JSpan.fromContext(ctx)
-                                 _             <- ctxStorage.locallyScoped(ctx)
-                               } yield (span, endSpan, ctx)
-                             } { case ((_, endSpan, ctx), exit) =>
-                               val setStatus = exit match {
-                                 case Exit.Success(_)     => ZIO.unit
-                                 case Exit.Failure(cause) => setFailureStatus(JSpan.fromContext(ctx), cause, statusMapper)
-                               }
-
-                               setStatus *> endSpan
+              parentCtx <- ctxStorage.get
+              childSpan <- ZIO.acquireReleaseExit {
+                             for {
+                               childSpan  <- startChild(parentCtx, spanName, spanKind, attributes, links)
+                               (span, ctx) = childSpan
+                               _          <- ctxStorage.locallyScoped(ctx)
+                             } yield childSpan
+                           } { case ((span, ctx), exit) =>
+                             val setStatus = exit match {
+                               case Exit.Success(_)     => ZIO.unit
+                               case Exit.Failure(cause) => setFailureStatus(Span.fromContext(ctx), cause, statusMapper)
                              }
-              (span, _, _) = scoped
+
+                             setStatus *> endSpan(span)
+                           }
+              (span, _)  = childSpan
             } yield span
 
           override def scopedEffect[A](effect: => A)(implicit trace: Trace): Task[A] =
@@ -393,50 +395,50 @@ private[opentelemetry] object Tracer {
             } yield effect
 
           override def inSpan[R, E, E1 <: E, A, A1 <: A](
-            span: JSpan,
+            span: Span,
             spanName: String,
             spanKind: SpanKind = SpanKind.INTERNAL,
             attributes: Attributes = Attributes.empty(),
             statusMapper: StatusMapper[E, A] = StatusMapper.default,
             links: Seq[SpanContext] = Seq.empty
-          )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
+          )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
             ZIO.acquireReleaseWith {
-              startChild(Context.root().`with`(span), spanName, spanKind, attributes, links)
-            } { case (endSpan, _) =>
-              endSpan
-            } { case (_, ctx) =>
-              finalizeSpanUsingEffect(zio, ctx, statusMapper)
+              startChild(Context.root().`with`(span.unsafe.asJava), spanName, spanKind, attributes, links)
+            } { case (span0, _) =>
+              endSpan(span0)
+            } { case (span0, ctx) =>
+              finalizeSpanUsingEffect(f(span0), ctx, statusMapper)
             }
 
-          private def setSuccessStatus[E, A](span: JSpan, a: A, statusMapper: StatusMapper[E, A]): UIO[JSpan] =
+          private def setSuccessStatus[E, A](span: Span, a: A, statusMapper: StatusMapper[E, A]): UIO[Unit] =
             statusMapper.success
               .lift(a)
-              .fold(ZIO.succeed(span)) { case StatusMapper.Result(statusCode, maybeError) =>
+              .fold(ZIO.unit) { case StatusMapper.Result(statusCode, maybeError) =>
                 if (statusCode == StatusCode.ERROR)
-                  maybeError.fold(ZIO.succeed(span.setStatus(statusCode)))(errorMessage =>
-                    ZIO.succeed(span.setStatus(statusCode, errorMessage))
-                  )
+                  maybeError.fold(span.setStatus(statusCode)) { errorMessage =>
+                    span.setStatus(statusCode, errorMessage)
+                  }
                 else
-                  ZIO.succeed(span.setStatus(statusCode))
+                  span.setStatus(statusCode)
               }
 
           private def setFailureStatus[E, A](
-            span: JSpan,
+            span: Span,
             cause: Cause[E],
             statusMapper: StatusMapper[E, A]
-          )(implicit trace: Trace): UIO[JSpan] = {
+          )(implicit trace: Trace): UIO[Unit] = {
             val result =
               cause.failureOption
                 .flatMap(statusMapper.failure.lift)
                 .getOrElse(StatusMapper.Result(StatusCode.ERROR, None))
 
             for {
-              _          <- if (result.statusCode == StatusCode.ERROR)
-                              ZIO.succeed(span.setStatus(result.statusCode, cause.prettyPrint))
-                            else
-                              ZIO.succeed(span.setStatus(result.statusCode))
-              spanResult <- result.error.fold(ZIO.succeed(span))(error => ZIO.succeed(span.recordException(error)))
-            } yield spanResult
+              _ <- if (result.statusCode == StatusCode.ERROR)
+                     span.setStatus(result.statusCode, cause.prettyPrint)
+                   else
+                     span.setStatus(result.statusCode)
+              _ <- result.error.fold(ZIO.unit)(span.recordException)
+            } yield ()
           }
 
           /**
@@ -450,8 +452,8 @@ private[opentelemetry] object Tracer {
           )(implicit trace: Trace): ZIO[R, E, A] =
             ctxStorage
               .locally(ctx)(zio)
-              .tapErrorCause(setFailureStatus(JSpan.fromContext(ctx), _, statusMapper))
-              .tap(setSuccessStatus(JSpan.fromContext(ctx), _, statusMapper))
+              .tapErrorCause(setFailureStatus(Span.fromContext(ctx), _, statusMapper))
+              .tap(setSuccessStatus(Span.fromContext(ctx), _, statusMapper))
 
           private def currentNanos(implicit trace: Trace): UIO[Long] =
             Clock.currentTime(TimeUnit.NANOSECONDS)
@@ -461,7 +463,7 @@ private[opentelemetry] object Tracer {
             spanKind: SpanKind,
             attributes: Attributes,
             links: Seq[SpanContext]
-          )(implicit trace: Trace): UIO[(UIO[Unit], Context)] =
+          )(implicit trace: Trace): UIO[(Span, Context)] =
             for {
               nanos         <- currentNanos
               allAttributes <- withLogAnnotations(attributes)
@@ -475,7 +477,7 @@ private[opentelemetry] object Tracer {
                                    .addLinks(links)
                                    .startSpan()
                                )
-            } yield (endSpan(span), Context.root().`with`(span))
+            } yield (Span.make(span), Context.root().`with`(span))
 
           private def startChild(
             parentCtx: Context,
@@ -483,7 +485,7 @@ private[opentelemetry] object Tracer {
             spanKind: SpanKind,
             attributes: Attributes,
             links: Seq[SpanContext]
-          )(implicit trace: Trace): UIO[(UIO[Unit], Context)] =
+          )(implicit trace: Trace): UIO[(Span, Context)] =
             for {
               nanos         <- currentNanos
               allAttributes <- withLogAnnotations(attributes)
@@ -497,15 +499,18 @@ private[opentelemetry] object Tracer {
                                    .addLinks(links)
                                    .startSpan()
                                )
-            } yield (endSpan(span), parentCtx.`with`(span))
+            } yield (Span.make(span), parentCtx.`with`(span))
 
           private implicit class SpanBuilderOps(spanBuilder: SpanBuilder) {
             def addLinks(links: Seq[SpanContext]): SpanBuilder =
               links.foldLeft(spanBuilder) { case (builder, link) => builder.addLink(link) }
           }
 
-          private def endSpan(span: JSpan)(implicit trace: Trace): UIO[Unit] =
-            currentNanos.flatMap(nanos => ZIO.succeed(span.end(nanos, TimeUnit.NANOSECONDS)))
+          private def endSpan(span: Span)(implicit trace: Trace): UIO[Unit] =
+            for {
+              timestamp <- currentNanos
+              _         <- span.end(timestamp, TimeUnit.NANOSECONDS)
+            } yield ()
 
           private def withLogAnnotations(attributes: Attributes): UIO[Attributes] =
             if (logAnnotated) {

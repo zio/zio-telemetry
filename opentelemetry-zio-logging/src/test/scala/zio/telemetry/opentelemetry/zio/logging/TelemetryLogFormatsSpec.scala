@@ -64,7 +64,7 @@ object TelemetryLogFormatsSpec extends ZIOSpecDefault {
         }
       }
     }.provide(
-      OpenTelemetry.noop,
+      OpenTelemetry.noop(),
       removeDefaultLoggers,
       tracerMockLayer(),
       zio.telemetry.opentelemetry.zio.logging.ZioLogging.logFormats

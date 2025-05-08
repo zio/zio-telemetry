@@ -147,9 +147,10 @@ object LoggerTest extends ZIOSpecDefault {
         }.provide(ctxStorageLayer),
         test("tracer context (fiberRef)") {
           ZIO.serviceWithZIO[Tracer] { tracer =>
-            tracer.root("ROOT")(
+            tracer.root("ROOT") { span =>
+              val spanCtx = span.getContext
+
               for {
-                spanCtx    <- tracer.getCurrentSpanContextUnsafe
                 _          <- ZIO.logInfo("test")
                 logRecords <- getFinishedLogRecords
               } yield {
@@ -171,7 +172,7 @@ object LoggerTest extends ZIOSpecDefault {
                 assert(traceId)(equalTo(spanCtx.getTraceId)) &&
                 assert(spanId)(equalTo(spanCtx.getSpanId))
               }
-            )
+            }
           }
         }.provide(
           loggerMockLayer("tracer context (fiberRef)"),
@@ -180,9 +181,9 @@ object LoggerTest extends ZIOSpecDefault {
         ),
         test("tracer context (openTelemtryContext)") {
           ZIO.serviceWithZIO[Tracer] { tracer =>
-            tracer.root("ROOT")(
+            tracer.root("ROOT") { span =>
+              val spanCtx = span.getContext
               for {
-                spanCtx    <- tracer.getCurrentSpanContextUnsafe
                 _          <- ZIO.logInfo("test")
                 logRecords <- getFinishedLogRecords
               } yield {
@@ -204,7 +205,7 @@ object LoggerTest extends ZIOSpecDefault {
                 assert(traceId)(equalTo(spanCtx.getTraceId)) &&
                 assert(spanId)(equalTo(spanCtx.getSpanId))
               }
-            )
+            }
           }
         }.provide(
           loggerMockLayer("tracer context (openTelemtryContext)"),

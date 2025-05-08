@@ -31,7 +31,7 @@ object BackendApp extends ZIOAppDefault {
       configLayer,
       BackendHttpServer.live,
       BackendHttpApp.live,
-      OpenTelemetry.global,
+      OpenTelemetry.global(),
       OpenTelemetry.tracer(instrumentationScopeName)
     )
 

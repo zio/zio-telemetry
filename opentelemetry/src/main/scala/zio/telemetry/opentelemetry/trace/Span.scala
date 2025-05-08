@@ -1,14 +1,17 @@
 package zio.telemetry.opentelemetry.trace
 
-import zio._
-import io.opentelemetry.api.trace.{Span => JSpan}
-import zio.telemetry.opentelemetry.common.Attribute
 import io.opentelemetry.api.common.{AttributeKey, Attributes}
-import java.util.concurrent.TimeUnit
+import io.opentelemetry.api.trace.{Span => JSpan, SpanContext, StatusCode}
+import io.opentelemetry.context.Context
+import zio._
+import zio.telemetry.opentelemetry.common.Attribute
 
+import java.util.concurrent.TimeUnit
 import scala.jdk.CollectionConverters._
 
 trait Span { self =>
+
+  def getContext: SpanContext
 
   /**
    * Adds an event to the current span.
@@ -154,6 +157,16 @@ trait Span { self =>
     trace: Trace
   ): UIO[Unit]
 
+  def setStatus(statusCode: StatusCode)(implicit trace: Trace): UIO[Unit]
+
+  def setStatus(statusCode: StatusCode, description: String)(implicit trace: Trace): UIO[Unit]
+
+  def recordException(exception: Throwable)(implicit trace: Trace): UIO[Unit]
+
+  def end(implicit trace: Trace): UIO[Unit]
+
+  def end(timestamp: Long, unit: TimeUnit)(implicit trace: Trace): UIO[Unit]
+
   trait UnsafeAPI {
     def asJava: JSpan
   }
@@ -164,8 +177,15 @@ trait Span { self =>
 
 private[opentelemetry] object Span {
 
+  def fromContext(ctx: Context): Span =
+    make(JSpan.fromContext(ctx))
+
   def make(underlying: JSpan): Span =
     new Span {
+
+      override def getContext: SpanContext =
+        underlying.getSpanContext
+
       override def addEvent(name: String)(implicit trace: Trace): UIO[Unit] =
         for {
           nanos <- currentNanos
@@ -227,6 +247,21 @@ private[opentelemetry] object Span {
         val v = values.map(Double.box).asJava
         ZIO.succeed(underlying.setAttribute(AttributeKey.doubleArrayKey(name), v)).unit
       }
+
+      override def setStatus(statusCode: StatusCode)(implicit trace: Trace): UIO[Unit] =
+        ZIO.succeed(underlying.setStatus(statusCode)).unit
+
+      override def setStatus(statusCode: StatusCode, description: String)(implicit trace: Trace): UIO[Unit] =
+        ZIO.succeed(underlying.setStatus(statusCode, description)).unit
+
+      override def recordException(exception: Throwable)(implicit trace: Trace): UIO[Unit] =
+        ZIO.succeed(underlying.recordException(exception)).unit
+
+      override def end(implicit trace: Trace): UIO[Unit] =
+        ZIO.succeed(underlying.end())
+
+      override def end(timestamp: Long, unit: TimeUnit)(implicit trace: Trace): UIO[Unit] =
+        ZIO.succeed(underlying.end(timestamp, unit))
 
       override val unsafe: UnsafeAPI =
         new UnsafeAPI {

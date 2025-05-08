@@ -1,6 +1,8 @@
 package zio.telemetry.opentelemetry
 
 import io.opentelemetry.api.trace.{Tracer => JTracer}
+import io.opentelemetry.api.{OpenTelemetry => JOpenTelemetry}
+import io.opentelemetry.context.Context
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
 import io.opentelemetry.sdk.trace.SdkTracerProvider
@@ -19,20 +21,33 @@ import scala.jdk.CollectionConverters._
 object OpenTelemetryTest extends ZIOSpecDefault {
 
   // TODO: move to testkit module
-  class OpenTelemetryTestKit(val underlying: OpenTelemetrySdk, val ctxStorage: ContextStorage) extends OpenTelemetry {
+  class OpenTelemetryTestKit(
+    val ctxStorage: ContextStorage,
+    underlying: OpenTelemetrySdk,
+    ctxPropagator: ContextPropagator = ContextPropagator.default
+  ) extends OpenTelemetry {
+    override def autoinstrumented[R, E, A](zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+      ctxStorage.locally(Context.current())(zio)
 
-    override def withBaggage(logAnnotated: Boolean): OpenTelemetry =
-      new OpenTelemetryTestKit(underlying, ctxStorage) {
-        override val baggage: Baggage = Baggage.make(ctxStorage, logAnnotated)
+    override def propagate[C](carrier: OutgoingContextCarrier[C])(implicit trace: Trace): UIO[Unit] =
+      ctxStorage.get.map(ctxPropagator.instance.inject(_, carrier.kernel, carrier)).unit
+
+    override def continue[R, E, A, C](
+      carrier: IncomingContextCarrier[C]
+    )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+      ctxStorage.locally(ctxPropagator.instance.extract(Context.root, carrier.kernel, carrier))(zio)
+
+    override val baggage: Baggage =
+      Baggage.make(ctxStorage)
+
+    override val unsafe: UnsafeAPI =
+      new UnsafeAPI {
+        def getCurrentContext(implicit trace: Trace): UIO[Context] =
+          ctxStorage.get
+
+        def asJava: JOpenTelemetry =
+          underlying
       }
-
-    override def withContextPropagator(propagator: ContextPropagator): OpenTelemetry =
-      new OpenTelemetryTestKit(underlying, ctxStorage) {
-        override val ctxPropagator = propagator
-      }
-
-    private[opentelemetry] val ctxPropagator: ContextPropagator
-
   }
 
   object OpenTelemetryTestKit {
@@ -46,7 +61,7 @@ object OpenTelemetryTest extends ZIOSpecDefault {
                             OpenTelemetrySdk.builder().build()
                           )
                         )
-        } yield new OpenTelemetryTestKit(underlying, ctxStorage)
+        } yield new OpenTelemetryTestKit(ctxStorage, underlying)
       )
 
   }
