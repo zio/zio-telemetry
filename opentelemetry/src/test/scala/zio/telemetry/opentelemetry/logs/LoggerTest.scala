@@ -148,8 +148,6 @@ object LoggerTest extends ZIOSpecDefault {
         test("tracer context (fiberRef)") {
           ZIO.serviceWithZIO[Tracer] { tracer =>
             tracer.root("ROOT") { span =>
-              val spanCtx = span.getContext
-
               for {
                 _          <- ZIO.logInfo("test")
                 logRecords <- getFinishedLogRecords
@@ -169,8 +167,8 @@ object LoggerTest extends ZIOSpecDefault {
                 assert(severityText)(equalTo("INFO")) &&
                 assert(instrumentationScopeName)(equalTo("tracer context (fiberRef)")) &&
                 assert(attributes)(equalTo(Map.empty[String, String])) &&
-                assert(traceId)(equalTo(spanCtx.getTraceId)) &&
-                assert(spanId)(equalTo(spanCtx.getSpanId))
+                assert(traceId)(equalTo(span.context.getTraceId)) &&
+                assert(spanId)(equalTo(span.context.getSpanId))
               }
             }
           }
@@ -182,7 +180,6 @@ object LoggerTest extends ZIOSpecDefault {
         test("tracer context (openTelemtryContext)") {
           ZIO.serviceWithZIO[Tracer] { tracer =>
             tracer.root("ROOT") { span =>
-              val spanCtx = span.getContext
               for {
                 _          <- ZIO.logInfo("test")
                 logRecords <- getFinishedLogRecords
@@ -202,8 +199,8 @@ object LoggerTest extends ZIOSpecDefault {
                 assert(severityText)(equalTo("INFO")) &&
                 assert(instrumentationScopeName)(equalTo("tracer context (openTelemtryContext)")) &&
                 assert(attributes)(equalTo(Map.empty[String, String])) &&
-                assert(traceId)(equalTo(spanCtx.getTraceId)) &&
-                assert(spanId)(equalTo(spanCtx.getSpanId))
+                assert(traceId)(equalTo(span.context.getTraceId)) &&
+                assert(spanId)(equalTo(span.context.getSpanId))
               }
             }
           }

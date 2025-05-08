@@ -11,7 +11,7 @@ import scala.jdk.CollectionConverters._
 
 trait Span { self =>
 
-  def getContext: SpanContext
+  def context: SpanContext
 
   /**
    * Adds an event to the current span.
@@ -183,7 +183,7 @@ private[opentelemetry] object Span {
   def make(underlying: JSpan): Span =
     new Span {
 
-      override def getContext: SpanContext =
+      override def context: SpanContext =
         underlying.getSpanContext
 
       override def addEvent(name: String)(implicit trace: Trace): UIO[Unit] =

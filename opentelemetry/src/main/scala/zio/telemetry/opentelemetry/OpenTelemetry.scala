@@ -27,6 +27,7 @@ trait OpenTelemetry { self =>
    */
   val baggage: Baggage
 
+  // TODO: get rid of it, it is a part of implementation needed for developers only
   private[opentelemetry] val ctxStorage: ContextStorage
 
   trait UnsafeAPI {

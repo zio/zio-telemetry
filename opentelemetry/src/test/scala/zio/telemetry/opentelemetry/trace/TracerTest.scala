@@ -131,7 +131,7 @@ object TracerTest extends ZIOSpecDefault {
               hasField[SpanData, String](
                 "parent",
                 _.getParentSpanId,
-                equalTo(span.getContext.getSpanId)
+                equalTo(span.context.getSpanId)
               )
             )
           )

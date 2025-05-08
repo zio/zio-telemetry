@@ -1,17 +1,14 @@
 package zio.telemetry.opentelemetry
 
 import io.opentelemetry.api.trace.{Tracer => JTracer}
-import io.opentelemetry.api.{OpenTelemetry => JOpenTelemetry}
-import io.opentelemetry.context.Context
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.data.SpanData
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import zio._
-import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.context.internal.ContextStorage
-import zio.telemetry.opentelemetry.context.{ContextPropagator, IncomingContextCarrier, OutgoingContextCarrier}
+import zio.telemetry.opentelemetry.context.{IncomingContextCarrier, OutgoingContextCarrier}
 import zio.telemetry.opentelemetry.trace.Tracer
 import zio.test.Assertion._
 import zio.test._
@@ -19,52 +16,6 @@ import zio.test._
 import scala.jdk.CollectionConverters._
 
 object OpenTelemetryTest extends ZIOSpecDefault {
-
-  // TODO: move to testkit module
-  class OpenTelemetryTestKit(
-    val ctxStorage: ContextStorage,
-    underlying: OpenTelemetrySdk,
-    ctxPropagator: ContextPropagator = ContextPropagator.default
-  ) extends OpenTelemetry {
-    override def autoinstrumented[R, E, A](zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
-      ctxStorage.locally(Context.current())(zio)
-
-    override def propagate[C](carrier: OutgoingContextCarrier[C])(implicit trace: Trace): UIO[Unit] =
-      ctxStorage.get.map(ctxPropagator.instance.inject(_, carrier.kernel, carrier)).unit
-
-    override def continue[R, E, A, C](
-      carrier: IncomingContextCarrier[C]
-    )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
-      ctxStorage.locally(ctxPropagator.instance.extract(Context.root, carrier.kernel, carrier))(zio)
-
-    override val baggage: Baggage =
-      Baggage.make(ctxStorage)
-
-    override val unsafe: UnsafeAPI =
-      new UnsafeAPI {
-        def getCurrentContext(implicit trace: Trace): UIO[Context] =
-          ctxStorage.get
-
-        def asJava: JOpenTelemetry =
-          underlying
-      }
-  }
-
-  object OpenTelemetryTestKit {
-
-    val layer: ZLayer[ContextStorage, Nothing, OpenTelemetry] =
-      ZLayer.scoped(
-        for {
-          ctxStorage <- ZIO.service[ContextStorage]
-          underlying <- ZIO.fromAutoCloseable(
-                          ZIO.succeed(
-                            OpenTelemetrySdk.builder().build()
-                          )
-                        )
-        } yield new OpenTelemetryTestKit(ctxStorage, underlying)
-      )
-
-  }
 
   val inMemoryTracer: UIO[(InMemorySpanExporter, JTracer)] = for {
     spanExporter   <- ZIO.succeed(InMemorySpanExporter.create())
@@ -97,6 +48,18 @@ object OpenTelemetryTest extends ZIOSpecDefault {
         tracer     <- Tracer.scoped(jtracer, ctxStorage, logAnnotated)
       } yield tracer
     }
+
+  val otelLayer: ZLayer[ContextStorage, Nothing, OpenTelemetry] =
+    ZLayer.scoped(
+      for {
+        ctxStorage <- ZIO.service[ContextStorage]
+        underlying <- ZIO.fromAutoCloseable(
+                        ZIO.succeed(
+                          OpenTelemetrySdk.builder().build()
+                        )
+                      )
+      } yield new OpenTelemetry.OpenTelemetrySdk(ctxStorage, underlying)
+    )
 
   def getFinishedSpans: ZIO[InMemorySpanExporter, Nothing, List[SpanData]] =
     ZIO.serviceWith[InMemorySpanExporter](_.getFinishedSpanItems.asScala.toList)
@@ -143,7 +106,7 @@ object OpenTelemetryTest extends ZIOSpecDefault {
                   assert(bar.get.getParentSpanId)(equalTo(foo.get.getSpanId)) &&
                   assert(baz.get.getParentSpanId)(equalTo(bar.get.getSpanId))
               }.provide(
-                OpenTelemetryTestKit.layer,
+                otelLayer,
                 ctxStorageLayer,
                 tracerMockLayer()
               )
@@ -165,7 +128,7 @@ object OpenTelemetryTest extends ZIOSpecDefault {
                              openTelemetry.aspects.continue(IncomingContextCarrier.default(kernel))
                 } yield assert(thing)(isSome(equalTo("thing")))
               }.provide(
-                OpenTelemetryTestKit.layer,
+                otelLayer,
                 ctxStorageLayer
               )
             }
