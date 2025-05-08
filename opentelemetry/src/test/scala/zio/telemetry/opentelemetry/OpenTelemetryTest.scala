@@ -31,6 +31,8 @@ object OpenTelemetryTest extends ZIOSpecDefault {
         override val ctxPropagator = propagator
       }
 
+    private[opentelemetry] val ctxPropagator: ContextPropagator
+
   }
 
   object OpenTelemetryTestKit {

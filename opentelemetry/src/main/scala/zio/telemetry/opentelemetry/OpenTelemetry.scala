@@ -1,6 +1,6 @@
 package zio.telemetry.opentelemetry
 
-import io.opentelemetry.api
+import io.opentelemetry.api.{OpenTelemetry => JOpenTelemetry, GlobalOpenTelemetry}
 import io.opentelemetry.context.Context
 import zio._
 import zio.metrics.{MetricClient, MetricListener}
@@ -14,49 +14,28 @@ import zio.telemetry.opentelemetry.trace.Tracer
 
 trait OpenTelemetry { self =>
 
-  def autoinstrumented[R, E, A](zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
-    ctxStorage.locally(Context.current())(zio)
+  def autoinstrumented[R, E, A](zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
-  def propagate[C](carrier: OutgoingContextCarrier[C])(implicit trace: Trace): UIO[Unit] =
-    ctxStorage.get.map(ctxPropagator.instance.inject(_, carrier.kernel, carrier)).unit
+  def propagate[C](carrier: OutgoingContextCarrier[C])(implicit trace: Trace): UIO[Unit]
 
   def continue[R, E, A, C](
     carrier: IncomingContextCarrier[C]
-  )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
-    ctxStorage.locally(ctxPropagator.instance.extract(Context.root, carrier.kernel, carrier))(zio)
+  )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   /**
    * Use when you need to pass contextual information between spans.
    */
-  val baggage: Baggage =
-    Baggage.make(ctxStorage)
+  val baggage: Baggage
 
-  /**
-   * Configure Baggage instance
-   *
-   * @param logAnnotated
-   *   propagate ZIO log annotations as Baggage key/values if it is set to true
-   */
-  def withBaggage(logAnnotated: Boolean): OpenTelemetry
+  private[opentelemetry] val ctxStorage: ContextStorage
 
-  def withContextPropagator(propagator: ContextPropagator): OpenTelemetry
+  trait UnsafeAPI {
+    def getCurrentContext(implicit trace: Trace): UIO[Context]
 
-  private[opentelemetry] def underlying: api.OpenTelemetry
-
-  private[opentelemetry] def ctxStorage: ContextStorage
-
-  private[opentelemetry] val ctxPropagator: ContextPropagator =
-    ContextPropagator.default
-
-  object unsafe {
-
-    def getCurrentContext(implicit trace: Trace): UIO[Context] =
-      self.ctxStorage.get
-
-    def asJava: api.OpenTelemetry =
-      self.underlying
-
+    def asJava: JOpenTelemetry
   }
+
+  val unsafe: UnsafeAPI
 
   object aspects {
 
@@ -81,19 +60,34 @@ trait OpenTelemetry { self =>
  */
 object OpenTelemetry {
 
-  class OpenTelemetrySdk private[opentelemetry] (
-    val underlying: api.OpenTelemetry,
-    val ctxStorage: ContextStorage
+  final class OpenTelemetrySdk private[opentelemetry] (
+    val ctxStorage: ContextStorage,
+    underlying: JOpenTelemetry,
+    ctxPropagator: ContextPropagator = ContextPropagator.default,
+    logAnnotated: Boolean = false
   ) extends OpenTelemetry {
 
-    override def withBaggage(logAnnotated: Boolean): OpenTelemetrySdk =
-      new OpenTelemetrySdk(underlying, ctxStorage) {
-        override val baggage: Baggage = Baggage.make(ctxStorage, logAnnotated)
-      }
+    override def autoinstrumented[R, E, A](zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+      ctxStorage.locally(Context.current())(zio)
 
-    override def withContextPropagator(propagator: ContextPropagator): OpenTelemetrySdk =
-      new OpenTelemetrySdk(underlying, ctxStorage) {
-        override val ctxPropagator = propagator
+    override def propagate[C](carrier: OutgoingContextCarrier[C])(implicit trace: Trace): UIO[Unit] =
+      ctxStorage.get.map(ctxPropagator.instance.inject(_, carrier.kernel, carrier)).unit
+
+    override def continue[R, E, A, C](
+      carrier: IncomingContextCarrier[C]
+    )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+      ctxStorage.locally(ctxPropagator.instance.extract(Context.root, carrier.kernel, carrier))(zio)
+
+    override val baggage: Baggage =
+      Baggage.make(ctxStorage, logAnnotated)
+
+    override val unsafe: UnsafeAPI =
+      new UnsafeAPI {
+        def getCurrentContext(implicit trace: Trace): UIO[Context] =
+          ctxStorage.get
+
+        def asJava: JOpenTelemetry =
+          underlying
       }
 
   }
@@ -107,12 +101,12 @@ object OpenTelemetry {
    *   <a href="https://zio.dev/zio-telemetry/opentelemetry/#usage-with-opentelemetry-automatic-instrumentation">Usage
    *   with OpenTelemetry automatic instrumentation</a>
    */
-  val global: TaskLayer[OpenTelemetry] =
+  def global(logAnnotated: Boolean = false): TaskLayer[OpenTelemetry] =
     ZLayer.scoped {
       for {
-        underlying <- ZIO.attempt(api.GlobalOpenTelemetry.get())
+        underlying <- ZIO.attempt(GlobalOpenTelemetry.get())
         propagator  = ContextPropagator.fromJava(underlying.getPropagators)
-      } yield new OpenTelemetrySdk(underlying, ContextStorage.JavaOtelThreadLocal).withContextPropagator(propagator)
+      } yield new OpenTelemetrySdk(ContextStorage.JavaOtelThreadLocal, underlying, propagator, logAnnotated)
     }
 
   /**
@@ -125,20 +119,25 @@ object OpenTelemetry {
    *   scoped ZIO value that returns a configured instance of [[io.opentelemetry.api.OpenTelemetry]], thus ensuring that
    *   the returned instance will be closed.
    */
-  def custom(zio: => ZIO[Scope, Throwable, api.OpenTelemetry]): TaskLayer[OpenTelemetry] =
+  def custom(
+    ctxPropagator: ContextPropagator = ContextPropagator.default,
+    logAnnotated: Boolean = false
+  )(
+    zio: => ZIO[Scope, Throwable, JOpenTelemetry]
+  ): TaskLayer[OpenTelemetry] =
     ZLayer.scoped {
       for {
         underlying <- zio
         ctxStorage <- ContextStorage.zioFiberRefScoped
-      } yield new OpenTelemetrySdk(underlying, ctxStorage)
+      } yield new OpenTelemetrySdk(ctxStorage, underlying, ctxPropagator, logAnnotated)
     }
 
-  val noop: TaskLayer[OpenTelemetry] =
+  def noop(logAnnotated: Boolean = false): TaskLayer[OpenTelemetry] =
     ZLayer.scoped {
       for {
-        underlying <- ZIO.attempt(api.OpenTelemetry.noop())
+        underlying <- ZIO.attempt(JOpenTelemetry.noop())
         ctxStorage <- ContextStorage.zioFiberRefScoped
-      } yield new OpenTelemetrySdk(underlying, ctxStorage).withContextPropagator(ContextPropagator.noop)
+      } yield new OpenTelemetrySdk(ctxStorage, underlying, ContextPropagator.noop, logAnnotated)
     }
 
   /**
@@ -158,7 +157,7 @@ object OpenTelemetry {
     schemaUrl: Option[String] = None,
     logAnnotated: Boolean = false
   ): URLayer[OpenTelemetry, Tracer] = {
-    def buildTracer(openTelemetry: api.OpenTelemetry) = {
+    def buildTracer(openTelemetry: JOpenTelemetry) = {
       val builder = openTelemetry.tracerBuilder(instrumentationScopeName)
 
       instrumentationVersion.foreach(builder.setInstrumentationVersion)
@@ -194,7 +193,7 @@ object OpenTelemetry {
     schemaUrl: Option[String] = None,
     logAnnotated: Boolean = false
   ): URLayer[OpenTelemetry, Meter] = {
-    def buildMeter(openTelemetry: api.OpenTelemetry) = {
+    def buildMeter(openTelemetry: JOpenTelemetry) = {
       val builder = openTelemetry.meterBuilder(instrumentationScopeName)
 
       instrumentationVersion.foreach(builder.setInstrumentationVersion)
@@ -245,7 +244,7 @@ object OpenTelemetry {
     instrumentationVersion: Option[String] = None,
     schemaUrl: Option[String] = None
   ): URLayer[OpenTelemetry, Unit] = {
-    def buildMeter(openTelemetry: api.OpenTelemetry) = {
+    def buildMeter(openTelemetry: JOpenTelemetry) = {
       val builder = openTelemetry.meterBuilder(instrumentationScopeName)
 
       instrumentationVersion.foreach(builder.setInstrumentationVersion)

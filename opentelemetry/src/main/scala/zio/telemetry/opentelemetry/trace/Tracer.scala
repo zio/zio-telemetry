@@ -1,40 +1,15 @@
 package zio.telemetry.opentelemetry.trace
 
-import io.opentelemetry.api.common.{AttributeKey, Attributes}
+import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.trace.{Span => JSpan, SpanBuilder, SpanContext, SpanKind, StatusCode, Tracer => JTracer}
 import io.opentelemetry.context.Context
 import zio._
-import zio.telemetry.opentelemetry.common.Attribute
 import zio.telemetry.opentelemetry.context.internal.ContextStorage
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
-import scala.jdk.CollectionConverters._
 
 trait Tracer { self =>
-
-  /**
-   * Adds an event to the current span.
-   *
-   * @param name
-   * @param trace
-   * @return
-   */
-  def addEvent(name: String)(implicit trace: Trace): UIO[Unit]
-
-  /**
-   * Adds an event with attributes to the current span.
-   *
-   * @param name
-   * @param attributes
-   *   event attributes
-   * @param trace
-   * @return
-   */
-  def addEventWithAttributes(
-    name: String,
-    attributes: Attributes
-  )(implicit trace: Trace): UIO[Unit]
 
   /**
    * Gets the current SpanContext.
@@ -42,6 +17,7 @@ trait Tracer { self =>
    * @param trace
    * @return
    */
+  // TODO: remove
   def getCurrentSpanContextUnsafe(implicit trace: Trace): UIO[SpanContext]
 
   /**
@@ -50,6 +26,7 @@ trait Tracer { self =>
    * @param trace
    * @return
    */
+  // TODO: remove
   def getCurrentSpanUnsafe(implicit trace: Trace): UIO[JSpan]
 
   /**
@@ -171,127 +148,6 @@ trait Tracer { self =>
    * @return
    */
   def scopedEffectTotal[A](effect: => A)(implicit trace: Trace): UIO[A]
-
-  /**
-   * Sets an attribute of the current span.
-   *
-   * @param name
-   * @param value
-   * @param trace
-   * @return
-   */
-  def setAttribute(name: String, value: Boolean)(implicit trace: Trace): UIO[Unit]
-
-  /**
-   * Sets an attribute of the current span.
-   *
-   * @param name
-   * @param value
-   * @param trace
-   * @return
-   */
-  def setAttribute(name: String, value: Double)(implicit trace: Trace): UIO[Unit]
-
-  /**
-   * Sets an attribute of the current span.
-   *
-   * @param name
-   * @param value
-   * @param trace
-   * @return
-   */
-  def setAttribute(name: String, value: Long)(implicit trace: Trace): UIO[Unit]
-
-  /**
-   * Sets an attribute of the current span.
-   *
-   * @param name
-   * @param value
-   * @param trace
-   * @return
-   */
-  def setAttribute(name: String, value: String)(implicit trace: Trace): UIO[Unit]
-
-  /**
-   * Sets an attribute of the current span.
-   *
-   * @param key
-   * @param value
-   * @param trace
-   * @tparam T
-   * @return
-   */
-  def setAttribute[T](key: AttributeKey[T], value: T)(implicit trace: Trace): UIO[Unit]
-
-  /**
-   * Sets an attribute of the current span.
-   *
-   * @param attribute
-   *   convenient Scala wrapper for Java key/value
-   * @param trace
-   */
-  def setAttribute[T](attribute: Attribute[T])(implicit trace: Trace): UIO[Unit]
-
-  /**
-   * Sets an attribute of the current span.
-   *
-   * @param name
-   * @param values
-   * @param trace
-   * @return
-   */
-  def setAttribute(name: String, values: Seq[String])(implicit trace: Trace): UIO[Unit]
-
-  /**
-   * Sets an attribute of the current span.
-   *
-   * @param name
-   * @param values
-   * @param i1
-   *   dummy implicit value to disambiguate the method calls
-   * @param trace
-   * @return
-   */
-  def setAttribute(name: String, values: Seq[Boolean])(implicit i1: DummyImplicit, trace: Trace): UIO[Unit]
-
-  /**
-   * Sets an attribute of the current span.
-   *
-   * @param name
-   * @param values
-   * @param i1
-   *   dummy implicit value to disambiguate the method calls
-   * @param i2
-   *   dummy implicit value to disambiguate the method calls
-   * @param trace
-   * @return
-   */
-  def setAttribute(name: String, values: Seq[Long])(implicit
-    i1: DummyImplicit,
-    i2: DummyImplicit,
-    trace: Trace
-  ): UIO[Unit]
-
-  /**
-   * Sets an attribute of the current span.
-   *
-   * @param name
-   * @param values
-   * @param i1
-   *   dummy implicit value to disambiguate the method calls
-   * @param i2
-   *   dummy implicit value to disambiguate the method calls
-   * @param i3
-   *   dummy implicit value to disambiguate the method calls
-   * @param trace
-   * @return
-   */
-  def setAttribute(name: String, values: Seq[Double])(implicit
-    i1: DummyImplicit,
-    i2: DummyImplicit,
-    i3: DummyImplicit,
-    trace: Trace
-  ): UIO[Unit]
 
   /**
    * Sets the current span to be the child of the current span with name 'spanName'.
@@ -552,70 +408,6 @@ private[opentelemetry] object Tracer {
               finalizeSpanUsingEffect(zio, ctx, statusMapper)
             }
 
-          override def addEvent(name: String)(implicit trace: Trace): UIO[Unit] =
-            for {
-              nanos <- currentNanos
-              span  <- getCurrentSpanUnsafe
-              _     <- ZIO.succeed(span.addEvent(name, nanos, TimeUnit.NANOSECONDS))
-            } yield ()
-
-          override def addEventWithAttributes(name: String, attributes: Attributes)(implicit trace: Trace): UIO[Unit] =
-            for {
-              nanos <- currentNanos
-              span  <- getCurrentSpanUnsafe
-              _     <- ZIO.succeed(span.addEvent(name, attributes, nanos, TimeUnit.NANOSECONDS))
-            } yield ()
-
-          override def setAttribute(name: String, value: Boolean)(implicit trace: Trace): UIO[Unit] =
-            getCurrentSpanUnsafe.map(_.setAttribute(name, value)).unit
-
-          override def setAttribute(name: String, value: Double)(implicit trace: Trace): UIO[Unit] =
-            getCurrentSpanUnsafe.map(_.setAttribute(name, value)).unit
-
-          override def setAttribute(name: String, value: Long)(implicit trace: Trace): UIO[Unit] =
-            getCurrentSpanUnsafe.map(_.setAttribute(name, value)).unit
-
-          override def setAttribute(name: String, value: String)(implicit trace: Trace): UIO[Unit] =
-            getCurrentSpanUnsafe.map(_.setAttribute(name, value)).unit
-
-          override def setAttribute[T](key: AttributeKey[T], value: T)(implicit trace: Trace): UIO[Unit] =
-            getCurrentSpanUnsafe.map(_.setAttribute(key, value)).unit
-
-          override def setAttribute[T](attribute: Attribute[T])(implicit trace: Trace): UIO[Unit] =
-            getCurrentSpanUnsafe.map(_.setAttribute(attribute.key, attribute.value)).unit
-
-          override def setAttribute(name: String, values: Seq[String])(implicit trace: Trace): UIO[Unit] = {
-            val v = values.asJava
-            getCurrentSpanUnsafe.map(_.setAttribute(AttributeKey.stringArrayKey(name), v)).unit
-          }
-
-          override def setAttribute(name: String, values: Seq[Boolean])(implicit
-            i1: DummyImplicit,
-            trace: Trace
-          ): UIO[Unit] = {
-            val v = values.map(Boolean.box).asJava
-            getCurrentSpanUnsafe.map(_.setAttribute(AttributeKey.booleanArrayKey(name), v)).unit
-          }
-
-          override def setAttribute(name: String, values: Seq[Long])(implicit
-            i1: DummyImplicit,
-            i2: DummyImplicit,
-            trace: Trace
-          ): UIO[Unit] = {
-            val v = values.map(Long.box).asJava
-            getCurrentSpanUnsafe.map(_.setAttribute(AttributeKey.longArrayKey(name), v)).unit
-          }
-
-          override def setAttribute(name: String, values: Seq[Double])(implicit
-            i1: DummyImplicit,
-            i2: DummyImplicit,
-            i3: DummyImplicit,
-            trace: Trace
-          ): UIO[Unit] = {
-            val v = values.map(Double.box).asJava
-            getCurrentSpanUnsafe.map(_.setAttribute(AttributeKey.doubleArrayKey(name), v)).unit
-          }
-
           private def setSuccessStatus[E, A](span: JSpan, a: A, statusMapper: StatusMapper[E, A]): UIO[JSpan] =
             statusMapper.success
               .lift(a)
@@ -730,6 +522,7 @@ private[opentelemetry] object Tracer {
         }
       }
 
+    // TODO: consider removing it
     def release(tracer: Tracer) =
       tracer.getCurrentSpanUnsafe.flatMap(span => ZIO.succeed(span.end()))
 
