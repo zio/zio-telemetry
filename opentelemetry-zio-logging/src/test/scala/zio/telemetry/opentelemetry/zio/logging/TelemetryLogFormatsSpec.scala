@@ -35,7 +35,7 @@ object TelemetryLogFormatsSpec extends ZIOSpecDefault {
       for {
         openTelemetry <- ZIO.service[OpenTelemetry]
         jtracer       <- ZIO.service[JTracer]
-        tracer        <- Tracer.scoped(jtracer, openTelemetry.ctxStorage, logAnnotated)
+        tracer         = Tracer.make(jtracer, openTelemetry.ctxStorage, logAnnotated)
       } yield tracer
     }
 

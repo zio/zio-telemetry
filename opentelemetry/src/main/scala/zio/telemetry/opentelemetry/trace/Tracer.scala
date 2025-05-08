@@ -1,7 +1,7 @@
 package zio.telemetry.opentelemetry.trace
 
 import io.opentelemetry.api.common.Attributes
-import io.opentelemetry.api.trace.{Span => JSpan, SpanBuilder, SpanContext, SpanKind, StatusCode, Tracer => JTracer}
+import io.opentelemetry.api.trace.{SpanBuilder, SpanContext, SpanKind, StatusCode, Tracer => JTracer}
 import io.opentelemetry.context.Context
 import zio._
 import zio.telemetry.opentelemetry.context.internal.ContextStorage
@@ -10,24 +10,6 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
 
 trait Tracer { self =>
-
-  /**
-   * Gets the current SpanContext.
-   *
-   * @param trace
-   * @return
-   */
-  // TODO: remove
-  def getCurrentSpanContextUnsafe(implicit trace: Trace): UIO[SpanContext]
-
-  /**
-   * Gets the current Span.
-   *
-   * @param trace
-   * @return
-   */
-  // TODO: remove
-  def getCurrentSpanUnsafe(implicit trace: Trace): UIO[JSpan]
 
   /**
    * Mark this effect as the child of an externally provided span. Ends the span when the effect finishes.
@@ -267,271 +249,255 @@ trait Tracer { self =>
 
 private[opentelemetry] object Tracer {
 
-  def scoped(tracer: JTracer, ctxStorage: ContextStorage, logAnnotated: Boolean = false): URIO[Scope, Tracer] = {
-    val acquire =
-      ZIO.succeed {
-        new Tracer { self =>
-          override def getCurrentSpanUnsafe(implicit trace: Trace): UIO[JSpan] =
-            ctxStorage.get.map(JSpan.fromContext)
-
-          override def getCurrentSpanContextUnsafe(implicit trace: Trace): UIO[SpanContext] =
-            getCurrentSpanUnsafe.map(_.getSpanContext())
-
-          override def root[R, E, E1 <: E, A, A1 <: A](
-            spanName: String,
-            spanKind: SpanKind = SpanKind.INTERNAL,
-            attributes: Attributes = Attributes.empty(),
-            statusMapper: StatusMapper[E, A] = StatusMapper.default,
-            links: Seq[SpanContext] = Seq.empty
-          )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
-            ZIO.acquireReleaseWith {
-              startRoot(spanName, spanKind, attributes, links)
-            } { case (span, _) =>
-              endSpan(span)
-            } { case (span, ctx) =>
-              finalizeSpanUsingEffect(f(span), ctx, statusMapper)
-            }
-
-          override def span[R, E, E1 <: E, A, A1 <: A](
-            spanName: String,
-            spanKind: SpanKind = SpanKind.INTERNAL,
-            attributes: Attributes = Attributes.empty(),
-            statusMapper: StatusMapper[E, A] = StatusMapper.default,
-            links: Seq[SpanContext] = Seq.empty
-          )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
-            for {
-              parentCtx <- ctxStorage.get
-              result    <- ZIO.acquireReleaseWith {
-                             startChild(parentCtx, spanName, spanKind, attributes, links)
-                           } { case (span, _) =>
-                             endSpan(span)
-                           } { case (span, ctx) =>
-                             finalizeSpanUsingEffect(f(span), ctx, statusMapper)
-                           }
-            } yield result
-
-          override def spanScoped(
-            spanName: String,
-            spanKind: SpanKind,
-            attributes: Attributes,
-            statusMapper: StatusMapper[Any, Unit] = StatusMapper.default,
-            links: Seq[SpanContext]
-          )(implicit trace: Trace): ZIO[Scope, Nothing, Span] =
-            for {
-              parentCtx <- ctxStorage.get
-              childSpan <- ZIO.acquireReleaseExit {
-                             for {
-                               childSpan  <- startChild(parentCtx, spanName, spanKind, attributes, links)
-                               (span, ctx) = childSpan
-                               _          <- ctxStorage.locallyScoped(ctx)
-                             } yield childSpan
-                           } { case ((span, ctx), exit) =>
-                             val setStatus = exit match {
-                               case Exit.Success(_)     => ZIO.unit
-                               case Exit.Failure(cause) => setFailureStatus(Span.fromContext(ctx), cause, statusMapper)
-                             }
-
-                             setStatus *> endSpan(span)
-                           }
-              (span, _)  = childSpan
-            } yield span
-
-          override def spanUnmanaged(
-            spanName: String,
-            spanKind: SpanKind = SpanKind.INTERNAL,
-            attributes: Attributes = Attributes.empty(),
-            statusMapper: StatusMapper[Any, Unit] = StatusMapper.default,
-            links: Seq[SpanContext] = Seq.empty
-          )(implicit trace: Trace): ZIO[Scope, Nothing, Span] =
-            for {
-              parentCtx <- ctxStorage.get
-              childSpan <- ZIO.acquireReleaseExit {
-                             for {
-                               childSpan  <- startChild(parentCtx, spanName, spanKind, attributes, links)
-                               (span, ctx) = childSpan
-                               _          <- ctxStorage.locallyScoped(ctx)
-                             } yield childSpan
-                           } { case ((span, ctx), exit) =>
-                             val setStatus = exit match {
-                               case Exit.Success(_)     => ZIO.unit
-                               case Exit.Failure(cause) => setFailureStatus(Span.fromContext(ctx), cause, statusMapper)
-                             }
-
-                             setStatus *> endSpan(span)
-                           }
-              (span, _)  = childSpan
-            } yield span
-
-          override def scopedEffect[A](effect: => A)(implicit trace: Trace): Task[A] =
-            for {
-              ctx    <- ctxStorage.get
-              effect <- ZIO.attempt {
-                          val scope = ctx.makeCurrent()
-                          try effect
-                          finally scope.close()
-                        }
-            } yield effect
-
-          override def scopedEffectTotal[A](effect: => A)(implicit trace: Trace): UIO[A] =
-            for {
-              ctx    <- ctxStorage.get
-              effect <- ZIO.succeed {
-                          val scope = ctx.makeCurrent()
-                          try effect
-                          finally scope.close()
-                        }
-            } yield effect
-
-          override def scopedEffectFromFuture[A](
-            make: ExecutionContext => scala.concurrent.Future[A]
-          )(implicit trace: Trace): Task[A] =
-            for {
-              ctx    <- ctxStorage.get
-              effect <- ZIO.fromFuture { implicit ec =>
-                          val scope = ctx.makeCurrent()
-                          try make(ec)
-                          finally scope.close()
-                        }
-            } yield effect
-
-          override def inSpan[R, E, E1 <: E, A, A1 <: A](
-            span: Span,
-            spanName: String,
-            spanKind: SpanKind = SpanKind.INTERNAL,
-            attributes: Attributes = Attributes.empty(),
-            statusMapper: StatusMapper[E, A] = StatusMapper.default,
-            links: Seq[SpanContext] = Seq.empty
-          )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
-            ZIO.acquireReleaseWith {
-              startChild(Context.root().`with`(span.unsafe.asJava), spanName, spanKind, attributes, links)
-            } { case (span0, _) =>
-              endSpan(span0)
-            } { case (span0, ctx) =>
-              finalizeSpanUsingEffect(f(span0), ctx, statusMapper)
-            }
-
-          private def setSuccessStatus[E, A](span: Span, a: A, statusMapper: StatusMapper[E, A]): UIO[Unit] =
-            statusMapper.success
-              .lift(a)
-              .fold(ZIO.unit) { case StatusMapper.Result(statusCode, maybeError) =>
-                if (statusCode == StatusCode.ERROR)
-                  maybeError.fold(span.setStatus(statusCode)) { errorMessage =>
-                    span.setStatus(statusCode, errorMessage)
-                  }
-                else
-                  span.setStatus(statusCode)
-              }
-
-          private def setFailureStatus[E, A](
-            span: Span,
-            cause: Cause[E],
-            statusMapper: StatusMapper[E, A]
-          )(implicit trace: Trace): UIO[Unit] = {
-            val result =
-              cause.failureOption
-                .flatMap(statusMapper.failure.lift)
-                .getOrElse(StatusMapper.Result(StatusCode.ERROR, None))
-
-            for {
-              _ <- if (result.statusCode == StatusCode.ERROR)
-                     span.setStatus(result.statusCode, cause.prettyPrint)
-                   else
-                     span.setStatus(result.statusCode)
-              _ <- result.error.fold(ZIO.unit)(span.recordException)
-            } yield ()
-          }
-
-          /**
-           * Sets the `currentContext` to `context` only while `effect` runs, and error status of `span` according to
-           * any potential failure of effect.
-           */
-          private def finalizeSpanUsingEffect[R, E, A](
-            zio: ZIO[R, E, A],
-            ctx: Context,
-            statusMapper: StatusMapper[E, A]
-          )(implicit trace: Trace): ZIO[R, E, A] =
-            ctxStorage
-              .locally(ctx)(zio)
-              .tapErrorCause(setFailureStatus(Span.fromContext(ctx), _, statusMapper))
-              .tap(setSuccessStatus(Span.fromContext(ctx), _, statusMapper))
-
-          private def currentNanos(implicit trace: Trace): UIO[Long] =
-            Clock.currentTime(TimeUnit.NANOSECONDS)
-
-          private def startRoot(
-            spanName: String,
-            spanKind: SpanKind,
-            attributes: Attributes,
-            links: Seq[SpanContext]
-          )(implicit trace: Trace): UIO[(Span, Context)] =
-            for {
-              nanos         <- currentNanos
-              allAttributes <- withLogAnnotations(attributes)
-              span          <- ZIO.succeed(
-                                 tracer
-                                   .spanBuilder(spanName)
-                                   .setNoParent()
-                                   .setAllAttributes(allAttributes)
-                                   .setSpanKind(spanKind)
-                                   .setStartTimestamp(nanos, TimeUnit.NANOSECONDS)
-                                   .addLinks(links)
-                                   .startSpan()
-                               )
-            } yield (Span.make(span), Context.root().`with`(span))
-
-          private def startChild(
-            parentCtx: Context,
-            spanName: String,
-            spanKind: SpanKind,
-            attributes: Attributes,
-            links: Seq[SpanContext]
-          )(implicit trace: Trace): UIO[(Span, Context)] =
-            for {
-              nanos         <- currentNanos
-              allAttributes <- withLogAnnotations(attributes)
-              span          <- ZIO.succeed(
-                                 tracer
-                                   .spanBuilder(spanName)
-                                   .setParent(parentCtx)
-                                   .setAllAttributes(allAttributes)
-                                   .setSpanKind(spanKind)
-                                   .setStartTimestamp(nanos, TimeUnit.NANOSECONDS)
-                                   .addLinks(links)
-                                   .startSpan()
-                               )
-            } yield (Span.make(span), parentCtx.`with`(span))
-
-          private implicit class SpanBuilderOps(spanBuilder: SpanBuilder) {
-            def addLinks(links: Seq[SpanContext]): SpanBuilder =
-              links.foldLeft(spanBuilder) { case (builder, link) => builder.addLink(link) }
-          }
-
-          private def endSpan(span: Span)(implicit trace: Trace): UIO[Unit] =
-            for {
-              timestamp <- currentNanos
-              _         <- span.end(timestamp, TimeUnit.NANOSECONDS)
-            } yield ()
-
-          private def withLogAnnotations(attributes: Attributes): UIO[Attributes] =
-            if (logAnnotated) {
-              ZIO.logAnnotations.map { annotations =>
-                annotations
-                  .foldLeft(Attributes.builder()) { case (builder, (annotationKey, annotationValue)) =>
-                    builder.put(annotationKey, annotationValue)
-                  }
-                  .putAll(attributes)
-                  .build()
-              }
-            } else ZIO.succeed(attributes)
-
+  def make(tracer: JTracer, ctxStorage: ContextStorage, logAnnotated: Boolean = false): Tracer =
+    new Tracer { self =>
+      override def root[R, E, E1 <: E, A, A1 <: A](
+        spanName: String,
+        spanKind: SpanKind = SpanKind.INTERNAL,
+        attributes: Attributes = Attributes.empty(),
+        statusMapper: StatusMapper[E, A] = StatusMapper.default,
+        links: Seq[SpanContext] = Seq.empty
+      )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
+        ZIO.acquireReleaseWith {
+          startRoot(spanName, spanKind, attributes, links)
+        } { case (span, _) =>
+          endSpan(span)
+        } { case (span, ctx) =>
+          finalizeSpanUsingEffect(f(span), ctx, statusMapper)
         }
+
+      override def span[R, E, E1 <: E, A, A1 <: A](
+        spanName: String,
+        spanKind: SpanKind = SpanKind.INTERNAL,
+        attributes: Attributes = Attributes.empty(),
+        statusMapper: StatusMapper[E, A] = StatusMapper.default,
+        links: Seq[SpanContext] = Seq.empty
+      )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
+        for {
+          parentCtx <- ctxStorage.get
+          result    <- ZIO.acquireReleaseWith {
+                         startChild(parentCtx, spanName, spanKind, attributes, links)
+                       } { case (span, _) =>
+                         endSpan(span)
+                       } { case (span, ctx) =>
+                         finalizeSpanUsingEffect(f(span), ctx, statusMapper)
+                       }
+        } yield result
+
+      override def spanScoped(
+        spanName: String,
+        spanKind: SpanKind,
+        attributes: Attributes,
+        statusMapper: StatusMapper[Any, Unit] = StatusMapper.default,
+        links: Seq[SpanContext]
+      )(implicit trace: Trace): ZIO[Scope, Nothing, Span] =
+        for {
+          parentCtx <- ctxStorage.get
+          childSpan <- ZIO.acquireReleaseExit {
+                         for {
+                           childSpan  <- startChild(parentCtx, spanName, spanKind, attributes, links)
+                           (span, ctx) = childSpan
+                           _          <- ctxStorage.locallyScoped(ctx)
+                         } yield childSpan
+                       } { case ((span, ctx), exit) =>
+                         val setStatus = exit match {
+                           case Exit.Success(_)     => ZIO.unit
+                           case Exit.Failure(cause) => setFailureStatus(Span.fromContext(ctx), cause, statusMapper)
+                         }
+
+                         setStatus *> endSpan(span)
+                       }
+          (span, _)  = childSpan
+        } yield span
+
+      override def spanUnmanaged(
+        spanName: String,
+        spanKind: SpanKind = SpanKind.INTERNAL,
+        attributes: Attributes = Attributes.empty(),
+        statusMapper: StatusMapper[Any, Unit] = StatusMapper.default,
+        links: Seq[SpanContext] = Seq.empty
+      )(implicit trace: Trace): ZIO[Scope, Nothing, Span] =
+        for {
+          parentCtx <- ctxStorage.get
+          childSpan <- ZIO.acquireReleaseExit {
+                         for {
+                           childSpan  <- startChild(parentCtx, spanName, spanKind, attributes, links)
+                           (span, ctx) = childSpan
+                           _          <- ctxStorage.locallyScoped(ctx)
+                         } yield childSpan
+                       } { case ((span, ctx), exit) =>
+                         val setStatus = exit match {
+                           case Exit.Success(_)     => ZIO.unit
+                           case Exit.Failure(cause) => setFailureStatus(Span.fromContext(ctx), cause, statusMapper)
+                         }
+
+                         setStatus *> endSpan(span)
+                       }
+          (span, _)  = childSpan
+        } yield span
+
+      override def scopedEffect[A](effect: => A)(implicit trace: Trace): Task[A] =
+        for {
+          ctx    <- ctxStorage.get
+          effect <- ZIO.attempt {
+                      val scope = ctx.makeCurrent()
+                      try effect
+                      finally scope.close()
+                    }
+        } yield effect
+
+      override def scopedEffectTotal[A](effect: => A)(implicit trace: Trace): UIO[A] =
+        for {
+          ctx    <- ctxStorage.get
+          effect <- ZIO.succeed {
+                      val scope = ctx.makeCurrent()
+                      try effect
+                      finally scope.close()
+                    }
+        } yield effect
+
+      override def scopedEffectFromFuture[A](
+        make: ExecutionContext => scala.concurrent.Future[A]
+      )(implicit trace: Trace): Task[A] =
+        for {
+          ctx    <- ctxStorage.get
+          effect <- ZIO.fromFuture { implicit ec =>
+                      val scope = ctx.makeCurrent()
+                      try make(ec)
+                      finally scope.close()
+                    }
+        } yield effect
+
+      override def inSpan[R, E, E1 <: E, A, A1 <: A](
+        span: Span,
+        spanName: String,
+        spanKind: SpanKind = SpanKind.INTERNAL,
+        attributes: Attributes = Attributes.empty(),
+        statusMapper: StatusMapper[E, A] = StatusMapper.default,
+        links: Seq[SpanContext] = Seq.empty
+      )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
+        ZIO.acquireReleaseWith {
+          startChild(Context.root().`with`(span.unsafe.asJava), spanName, spanKind, attributes, links)
+        } { case (span0, _) =>
+          endSpan(span0)
+        } { case (span0, ctx) =>
+          finalizeSpanUsingEffect(f(span0), ctx, statusMapper)
+        }
+
+      private def setSuccessStatus[E, A](span: Span, a: A, statusMapper: StatusMapper[E, A]): UIO[Unit] =
+        statusMapper.success
+          .lift(a)
+          .fold(ZIO.unit) { case StatusMapper.Result(statusCode, maybeError) =>
+            if (statusCode == StatusCode.ERROR)
+              maybeError.fold(span.setStatus(statusCode)) { errorMessage =>
+                span.setStatus(statusCode, errorMessage)
+              }
+            else
+              span.setStatus(statusCode)
+          }
+
+      private def setFailureStatus[E, A](
+        span: Span,
+        cause: Cause[E],
+        statusMapper: StatusMapper[E, A]
+      )(implicit trace: Trace): UIO[Unit] = {
+        val result =
+          cause.failureOption
+            .flatMap(statusMapper.failure.lift)
+            .getOrElse(StatusMapper.Result(StatusCode.ERROR, None))
+
+        for {
+          _ <- if (result.statusCode == StatusCode.ERROR)
+                 span.setStatus(result.statusCode, cause.prettyPrint)
+               else
+                 span.setStatus(result.statusCode)
+          _ <- result.error.fold(ZIO.unit)(span.recordException)
+        } yield ()
       }
 
-    // TODO: consider removing it
-    def release(tracer: Tracer) =
-      tracer.getCurrentSpanUnsafe.flatMap(span => ZIO.succeed(span.end()))
+      /**
+       * Sets the `currentContext` to `context` only while `effect` runs, and error status of `span` according to any
+       * potential failure of effect.
+       */
+      private def finalizeSpanUsingEffect[R, E, A](
+        zio: ZIO[R, E, A],
+        ctx: Context,
+        statusMapper: StatusMapper[E, A]
+      )(implicit trace: Trace): ZIO[R, E, A] =
+        ctxStorage
+          .locally(ctx)(zio)
+          .tapErrorCause(setFailureStatus(Span.fromContext(ctx), _, statusMapper))
+          .tap(setSuccessStatus(Span.fromContext(ctx), _, statusMapper))
 
-    ZIO.acquireRelease(acquire)(release)
-  }
+      private def currentNanos(implicit trace: Trace): UIO[Long] =
+        Clock.currentTime(TimeUnit.NANOSECONDS)
+
+      private def startRoot(
+        spanName: String,
+        spanKind: SpanKind,
+        attributes: Attributes,
+        links: Seq[SpanContext]
+      )(implicit trace: Trace): UIO[(Span, Context)] =
+        for {
+          nanos         <- currentNanos
+          allAttributes <- withLogAnnotations(attributes)
+          span          <- ZIO.succeed(
+                             tracer
+                               .spanBuilder(spanName)
+                               .setNoParent()
+                               .setAllAttributes(allAttributes)
+                               .setSpanKind(spanKind)
+                               .setStartTimestamp(nanos, TimeUnit.NANOSECONDS)
+                               .addLinks(links)
+                               .startSpan()
+                           )
+        } yield (Span.make(span), Context.root().`with`(span))
+
+      private def startChild(
+        parentCtx: Context,
+        spanName: String,
+        spanKind: SpanKind,
+        attributes: Attributes,
+        links: Seq[SpanContext]
+      )(implicit trace: Trace): UIO[(Span, Context)] =
+        for {
+          nanos         <- currentNanos
+          allAttributes <- withLogAnnotations(attributes)
+          span          <- ZIO.succeed(
+                             tracer
+                               .spanBuilder(spanName)
+                               .setParent(parentCtx)
+                               .setAllAttributes(allAttributes)
+                               .setSpanKind(spanKind)
+                               .setStartTimestamp(nanos, TimeUnit.NANOSECONDS)
+                               .addLinks(links)
+                               .startSpan()
+                           )
+        } yield (Span.make(span), parentCtx.`with`(span))
+
+      private implicit class SpanBuilderOps(spanBuilder: SpanBuilder) {
+        def addLinks(links: Seq[SpanContext]): SpanBuilder =
+          links.foldLeft(spanBuilder) { case (builder, link) => builder.addLink(link) }
+      }
+
+      private def endSpan(span: Span)(implicit trace: Trace): UIO[Unit] =
+        for {
+          timestamp <- currentNanos
+          _         <- span.end(timestamp, TimeUnit.NANOSECONDS)
+        } yield ()
+
+      private def withLogAnnotations(attributes: Attributes): UIO[Attributes] =
+        if (logAnnotated) {
+          ZIO.logAnnotations.map { annotations =>
+            annotations
+              .foldLeft(Attributes.builder()) { case (builder, (annotationKey, annotationValue)) =>
+                builder.put(annotationKey, annotationValue)
+              }
+              .putAll(attributes)
+              .build()
+          }
+        } else ZIO.succeed(attributes)
+
+    }
 
 }

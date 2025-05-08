@@ -78,7 +78,7 @@ object MeterTest extends ZIOSpecDefault {
       for {
         ctxStorage <- ZIO.service[ContextStorage]
         jtracer    <- ZIO.service[JTracer]
-        tracer     <- zio.telemetry.opentelemetry.trace.Tracer.scoped(jtracer, ctxStorage, logAnnotated)
+        tracer      = Tracer.make(jtracer, ctxStorage, logAnnotated)
       } yield tracer
     }
 

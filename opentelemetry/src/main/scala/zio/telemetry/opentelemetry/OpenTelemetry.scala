@@ -170,13 +170,12 @@ object OpenTelemetry {
       builder.build
     }
 
-    ZLayer.scoped {
+    ZLayer {
       for {
         openTelemetry <- ZIO.service[OpenTelemetry]
         jtracer        = buildTracer(openTelemetry.unsafe.asJava)
-        tracer        <- Tracer.scoped(jtracer, openTelemetry.ctxStorage, logAnnotated)
+        tracer         = Tracer.make(jtracer, openTelemetry.ctxStorage, logAnnotated)
       } yield tracer
-
     }
   }
 

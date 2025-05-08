@@ -45,7 +45,7 @@ object OpenTelemetryTest extends ZIOSpecDefault {
       for {
         ctxStorage <- ZIO.service[ContextStorage]
         jtracer    <- ZIO.service[JTracer]
-        tracer     <- Tracer.scoped(jtracer, ctxStorage, logAnnotated)
+        tracer      = Tracer.make(jtracer, ctxStorage, logAnnotated)
       } yield tracer
     }
 
