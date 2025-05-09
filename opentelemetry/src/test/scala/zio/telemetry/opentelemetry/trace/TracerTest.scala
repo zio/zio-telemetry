@@ -114,14 +114,14 @@ object TracerTest extends ZIOSpecDefault {
             )
         }
       },
-      test("inSpan") {
+      test("continueSpan") {
         ZIO.serviceWithZIO[Tracer] { tracer =>
           for {
             res         <- inMemoryTracer
             (_, jtracer) = res
             span         = Span.make(jtracer.spanBuilder("external").startSpan())
             scope        = span.unsafe.asJava.makeCurrent()
-            _           <- ZIO.unit @@ tracer.aspects.inSpan(span, "zio-otel-child")
+            _           <- ZIO.unit @@ tracer.aspects.continueSpan(span, "zio-otel-child")
             _           <- span.end
             _            = scope.close()
             spans       <- getFinishedSpans
@@ -356,9 +356,7 @@ object TracerTest extends ZIOSpecDefault {
           val assertion = assertStatusCodeError && assertRecordedExceptionAttributes && assertStatusDescriptionError
 
           val statusMapper =
-            zio.telemetry.opentelemetry.trace.StatusMapper.success[String](_ => StatusCode.ERROR)(r =>
-              Option(s"My error message. Result = $r")
-            )
+            StatusMapper.success[String](_ => StatusCode.ERROR)(r => Option(s"My error message. Result = $r"))
 
           for {
             _     <-
@@ -391,7 +389,7 @@ object TracerTest extends ZIOSpecDefault {
             )
 
           val assertion    = assertStatusCodeError && assertRecordedExceptionAttributes && assertStatusDescriptionError
-          val statusMapper = zio.telemetry.opentelemetry.trace.StatusMapper.failureThrowable(_ => StatusCode.ERROR)
+          val statusMapper = StatusMapper.failureThrowable(_ => StatusCode.ERROR)
 
           val failedEffect: ZIO[Any, Throwable, Unit] =
             ZIO.fail(new RuntimeException("some_error")).when(true).unit
@@ -432,9 +430,7 @@ object TracerTest extends ZIOSpecDefault {
 
           val assertion    = assertStatusCodeError && assertRecordedExceptionAttributes && assertStatusDescriptionError
           val statusMapper =
-            zio.telemetry.opentelemetry.trace.StatusMapper.failure[Error](_ => StatusCode.ERROR)(e =>
-              Option(new RuntimeException(e.msg))
-            )
+            StatusMapper.failure[Error](_ => StatusCode.ERROR)(e => Option(new RuntimeException(e.msg)))
 
           final case class Error(msg: String)
           val failedEffect: ZIO[Any, Error, Unit] =
@@ -471,7 +467,7 @@ object TracerTest extends ZIOSpecDefault {
             )
 
           val assertion    = assertStatusCodeUnset && assertRecordedExceptionAttributes && assertStatusDescriptionEmpty
-          val statusMapper = zio.telemetry.opentelemetry.trace.StatusMapper.failureThrowable(_ => StatusCode.UNSET)
+          val statusMapper = StatusMapper.failureThrowable(_ => StatusCode.UNSET)
 
           val failedEffect: ZIO[Any, Throwable, Unit] =
             ZIO.fail(new RuntimeException("some_error")).when(true).unit
@@ -501,10 +497,9 @@ object TracerTest extends ZIOSpecDefault {
         val failureAssertion = assertErrorStatusCodeUnset && assertStatusDescriptionEmpty
         val successAssertion = assertSuccessStatusCodeOk && assertStatusDescriptionEmpty
 
-        val failureMapper = zio.telemetry.opentelemetry.trace.StatusMapper.failureThrowable(_ => StatusCode.UNSET)
-        val successMapper =
-          zio.telemetry.opentelemetry.trace.StatusMapper.successNoDescription[Unit](_ => StatusCode.OK)
-        val statusMapper  = zio.telemetry.opentelemetry.trace.StatusMapper.both(failureMapper, successMapper)
+        val failureMapper = StatusMapper.failureThrowable(_ => StatusCode.UNSET)
+        val successMapper = StatusMapper.successNoDescription[Unit](_ => StatusCode.OK)
+        val statusMapper  = StatusMapper.both(successMapper, failureMapper)
 
         ZIO.serviceWithZIO[Tracer] { tracer =>
           import tracer.aspects._
@@ -591,9 +586,7 @@ object TracerTest extends ZIOSpecDefault {
             )
 
           val assertion    = assertStatusCodeError && assertRecordedExceptionAttributes && assertStatusDescriptionError
-          val statusMapper = zio.telemetry.opentelemetry.trace.StatusMapper.failure[Any](_ => StatusCode.ERROR)(e =>
-            Option(e.asInstanceOf[Throwable])
-          )
+          val statusMapper = StatusMapper.failure[Any](_ => StatusCode.ERROR)(e => Option(e.asInstanceOf[Throwable]))
 
           val failedEffect: ZIO[Any, Throwable, Unit] =
             ZIO.fail(new RuntimeException("some_error")).unit

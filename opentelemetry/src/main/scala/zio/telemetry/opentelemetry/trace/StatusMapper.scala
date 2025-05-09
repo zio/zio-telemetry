@@ -1,7 +1,7 @@
 package zio.telemetry.opentelemetry.trace
 
 import io.opentelemetry.api.trace.StatusCode
-import zio.telemetry.opentelemetry.trace.StatusMapper.Result
+import zio._
 
 /**
  * Maps the result of a wrapped ZIO effect to the status of the [[io.opentelemetry.api.trace.Span]].
@@ -36,45 +36,115 @@ import zio.telemetry.opentelemetry.trace.StatusMapper.Result
  * @tparam E
  * @tparam A
  */
-sealed abstract class StatusMapper[-E, -A](
-  val failure: PartialFunction[E, Result[Throwable]],
-  val success: PartialFunction[A, Result[String]]
-)
+sealed trait StatusMapper[-E, -A] {
+
+  private[opentelemetry] def handle(span: Span, exit: Exit[E, A])(implicit trace: Trace): UIO[Unit] =
+    exit match {
+      case Exit.Success(value) =>
+        handleSuccess(span, value)
+      case Exit.Failure(cause) =>
+        handleFailure(span, cause)
+    }
+
+  private[opentelemetry] def handleSuccess(span: Span, a: A)(implicit trace: Trace): UIO[Unit]
+
+  private[opentelemetry] def handleFailure(span: Span, cause: Cause[E])(implicit trace: Trace): UIO[Unit]
+
+}
 
 object StatusMapper {
 
-  final case class Failure[-E](pf: PartialFunction[E, Result[Throwable]])
-      extends StatusMapper[E, Any](pf, PartialFunction.empty)
-  final case class Success[-A](pf: PartialFunction[A, Result[String]])
-      extends StatusMapper[Any, A](PartialFunction.empty, pf)
+  final class Empty[-E, -A] extends StatusMapper[E, A] {
+    override def handleSuccess(span: Span, a: A)(implicit trace: Trace): UIO[Unit] =
+      ZIO.unit
 
-  final case class Result[+T](statusCode: StatusCode, error: Option[T] = None)
+    override def handleFailure(span: Span, cause: Cause[E])(implicit trace: Trace): UIO[Unit] =
+      ZIO.unit
+  }
 
-  private[opentelemetry] def apply[E, A](
-    failure: PartialFunction[E, Result[Throwable]],
-    success: PartialFunction[A, Result[String]]
-  ): StatusMapper[E, A] =
-    new StatusMapper[E, A](failure, success) {}
+  final case class Success[-A](pf: PartialFunction[A, Result.Success]) extends StatusMapper[Any, A] {
 
-  def both[E, A](failure: Failure[E], success: Success[A]): StatusMapper[E, A] =
-    StatusMapper[E, A](failure.pf, success.pf)
+    override def handleSuccess(span: Span, a: A)(implicit trace: Trace): UIO[Unit] =
+      pf
+        .lift(a)
+        .fold(ZIO.unit) { case Result.Success(statusCode, maybeDescription) =>
+          if (statusCode == StatusCode.ERROR)
+            maybeDescription.fold(span.setStatus(statusCode)) { description =>
+              span.setStatus(statusCode, description)
+            }
+          else
+            span.setStatus(statusCode)
+        }
 
-  val default: StatusMapper[Any, Any] =
-    StatusMapper(PartialFunction.empty, PartialFunction.empty)
+    private[opentelemetry] def handleFailure(span: Span, cause: Cause[Any])(implicit trace: Trace): UIO[Unit] =
+      ZIO.unit
+
+  }
+
+  final case class Failure[-E](pf: PartialFunction[E, Result.Failure]) extends StatusMapper[E, Any] {
+
+    private[opentelemetry] def handleFailure(span: Span, cause: Cause[E])(implicit trace: Trace): UIO[Unit] = {
+      val result =
+        cause.failureOption
+          .flatMap(pf.lift)
+          .getOrElse(StatusMapper.Result.Failure(StatusCode.ERROR))
+
+      for {
+        _ <- if (result.statusCode == StatusCode.ERROR)
+               span.setStatus(result.statusCode, cause.prettyPrint)
+             else
+               span.setStatus(result.statusCode)
+        _ <- result.exception.fold(ZIO.unit)(span.recordException)
+      } yield ()
+    }
+
+    override def handleSuccess(span: Span, a: Any)(implicit trace: Trace): UIO[Unit] =
+      ZIO.unit
+
+  }
+
+  final case class Both[-E, -A](
+    val success: Success[A],
+    val failure: Failure[E]
+  ) extends StatusMapper[E, A] {
+
+    override def handleSuccess(span: Span, a: A)(implicit trace: Trace): UIO[Unit] =
+      success.handleSuccess(span, a)
+
+    override def handleFailure(span: Span, cause: Cause[E])(implicit trace: Trace): UIO[Unit] =
+      failure.handleFailure(span, cause)
+
+  }
+
+  sealed trait Result
+
+  object Result {
+    final case class Success(statusCode: StatusCode, description: Option[String] = None)  extends Result
+    final case class Failure(statusCode: StatusCode, exception: Option[Throwable] = None) extends Result
+  }
+
+  val default: Both[Any, Any] =
+    both(Success(PartialFunction.empty), Failure(PartialFunction.empty))
+
+  val empty: Empty[Any, Any] =
+    new Empty
+
+  def both[E, A](success: Success[A], failure: Failure[E]): Both[E, A] =
+    Both(success, failure)
 
   def failure[E](toStatusCode: E => StatusCode)(toError: E => Option[Throwable]): Failure[E] =
-    Failure { case e => Result(toStatusCode(e), toError(e)) }
+    Failure { case e => Result.Failure(toStatusCode(e), toError(e)) }
 
   def failureNoException[E](toStatusCode: E => StatusCode): Failure[E] =
-    Failure { case e => Result(toStatusCode(e)) }
+    Failure { case e => Result.Failure(toStatusCode(e)) }
 
   def failureThrowable(toStatusCode: Throwable => StatusCode): Failure[Throwable] =
-    Failure { case e => Result(toStatusCode(e), Option(e)) }
+    Failure { case e => Result.Failure(toStatusCode(e), Option(e)) }
 
   def success[A](toStatusCode: A => StatusCode)(toError: A => Option[String]): Success[A] =
-    Success { case a => Result(toStatusCode(a), toError(a)) }
+    Success { case a => Result.Success(toStatusCode(a), toError(a)) }
 
   def successNoDescription[A](toStatusCode: A => StatusCode): Success[A] =
-    Success { case a => Result(toStatusCode(a)) }
+    Success { case a => Result.Success(toStatusCode(a)) }
 
 }
