@@ -27,6 +27,7 @@ import zio._
  *     StatusMapper.successNoDescription[Any](_ => StatusCode.OK)
  *   )
  * }}}
+ *
  * @param failure
  *   partial function to map the ZIO failure to [[io.opentelemetry.api.trace.StatusCode]] and [[java.lang.Throwable]].
  *   The latter is used to record the exception, see:

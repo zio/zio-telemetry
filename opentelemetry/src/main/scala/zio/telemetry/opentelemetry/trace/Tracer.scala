@@ -12,52 +12,6 @@ import scala.concurrent.ExecutionContext
 trait Tracer { self =>
 
   /**
-   * Mark this effect as the child of an externally provided span. Ends the span when the effect finishes.
-   * zio-opentelemetry will mark the span as being the child of the external one.
-   *
-   * This is designed for use-cases where you are incrementally introducing zio & zio-telemetry in a project that
-   * already makes use of instrumentation, and you need to interoperate with futures-based code.
-   *
-   * The caller is solely responsible for managing the external span, including calling Span.end
-   *
-   * It also could be useful in combination with `extractSpanUnsafe` or `spanUnsafe`:
-   * {{{
-   *   for {
-   *     (span, finalize) <- tracer.spanUnmanaged("unsafe-span")
-   *     // run some logic that would be wrapped in the span
-   *     // modify the span
-   *     _                <- zio @@ tracer.continueSpan(span, "child-of-unsafe-span")
-   *   } yield ()
-   * }}}
-   *
-   * @param span
-   *   externally provided span
-   * @param spanName
-   *   name of the child span
-   * @param spanKind
-   *   kind of the child span
-   * @param statusMapper
-   *   status mapper
-   * @param links
-   *   spanContexts of the linked Spans.
-   * @param zio
-   *   body of the child span
-   * @param trace
-   * @tparam R
-   * @tparam E
-   * @tparam A
-   * @return
-   */
-  def continueSpan[R, E, E1 <: E, A, A1 <: A](
-    span: Span,
-    spanName: String,
-    spanKind: SpanKind = SpanKind.INTERNAL,
-    attributes: Attributes = Attributes.empty(),
-    statusMapper: StatusMapper[E, A] = StatusMapper.default,
-    links: Seq[SpanContext] = Seq.empty
-  )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1]
-
-  /**
    * Sets the new span to be the new root span with name 'spanName'.
    *
    * Ends the span when the effect finishes.
@@ -85,51 +39,6 @@ trait Tracer { self =>
     statusMapper: StatusMapper[E, A] = StatusMapper.default,
     links: Seq[SpanContext] = Seq.empty
   )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1]
-
-  /**
-   * Introduces a thread-local scope during the execution allowing for non-zio context propagation.
-   *
-   * Closes the scope when the effect finishes.
-   *
-   * @param effect
-   *   piece of code to execute in the current context
-   * @param trace
-   * @tparam A
-   * @return
-   */
-  def unmanagedScope[A](effect: => A)(implicit trace: Trace): Task[A]
-
-  /**
-   * Introduces a thread-local scope from the currently active zio span allowing for non-zio context propagation. This
-   * scope will only be active during Future creation, so another mechanism must be used to ensure that the scope is
-   * passed into the Future callbacks.
-   *
-   * The java auto instrumentation package provides such a mechanism out of the box, so one is not provided as a part of
-   * this method.
-   *
-   * CLoses the scope when the effect finishes.
-   *
-   * @param make
-   *   function for providing a [[scala.concurrent.Future]] by a given [[scala.concurrent.ExecutionContext]] to execute
-   *   in the current context
-   * @param trace
-   * @tparam A
-   * @return
-   */
-  def unmanagedScopeFuture[A](make: ExecutionContext => scala.concurrent.Future[A])(implicit trace: Trace): Task[A]
-
-  /**
-   * Introduces a thread-local scope during the execution allowing for non-zio context propagation.
-   *
-   * Closes the scope when the effect finishes.
-   *
-   * @param effect
-   *   piece of code to execute in the current context
-   * @param trace
-   * @tparam A
-   * @return
-   */
-  def unmanagedScopeTotal[A](effect: => A)(implicit trace: Trace): UIO[A]
 
   /**
    * Sets the new span to be the child of the current span with name 'spanName'.
@@ -204,20 +113,98 @@ trait Tracer { self =>
     links: Seq[SpanContext] = Seq.empty
   )(implicit trace: Trace): ZIO[Any, Nothing, Span]
 
-  object aspects {
+  /**
+   * Mark this effect as the child of an externally provided span. Ends the span when the effect finishes.
+   * zio-opentelemetry will mark the span as being the child of the external one.
+   *
+   * This is designed for use-cases where you are incrementally introducing zio & zio-telemetry in a project that
+   * already makes use of instrumentation, and you need to interoperate with futures-based code.
+   *
+   * The caller is solely responsible for managing the external span, including calling Span.end
+   *
+   * It also could be useful in combination with `extractSpanUnsafe` or `spanUnsafe`:
+   * {{{
+   *   for {
+   *     (span, finalize) <- tracer.spanUnmanaged("unsafe-span")
+   *     // run some logic that would be wrapped in the span
+   *     // modify the span
+   *     _                <- zio @@ tracer.continueSpan(span, "child-of-unsafe-span")
+   *   } yield ()
+   * }}}
+   *
+   * @param span
+   *   externally provided span
+   * @param spanName
+   *   name of the child span
+   * @param spanKind
+   *   kind of the child span
+   * @param statusMapper
+   *   status mapper
+   * @param links
+   *   spanContexts of the linked Spans.
+   * @param zio
+   *   body of the child span
+   * @param trace
+   * @tparam R
+   * @tparam E
+   * @tparam A
+   * @return
+   */
+  def continueSpan[R, E, E1 <: E, A, A1 <: A](
+    span: Span,
+    spanName: String,
+    spanKind: SpanKind = SpanKind.INTERNAL,
+    attributes: Attributes = Attributes.empty(),
+    statusMapper: StatusMapper[E, A] = StatusMapper.default,
+    links: Seq[SpanContext] = Seq.empty
+  )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1]
 
-    def continueSpan[E1, A1](
-      span: Span,
-      spanName: String,
-      spanKind: SpanKind = SpanKind.INTERNAL,
-      attributes: Attributes = Attributes.empty(),
-      statusMapper: StatusMapper[E1, A1] = StatusMapper.default,
-      links: Seq[SpanContext] = Seq.empty
-    ): ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] =
-      new ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] {
-        override def apply[R, E <: E1, A <: A1](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
-          self.continueSpan(span, spanName, spanKind, attributes, statusMapper, links)(_ => zio)
-      }
+  /**
+   * Introduces a thread-local scope during the execution allowing for non-zio context propagation.
+   *
+   * Closes the scope when the effect finishes.
+   *
+   * @param effect
+   *   piece of code to execute in the current context
+   * @param trace
+   * @tparam A
+   * @return
+   */
+  def unmanagedScope[A](effect: => A)(implicit trace: Trace): Task[A]
+
+  /**
+   * Introduces a thread-local scope from the currently active zio span allowing for non-zio context propagation. This
+   * scope will only be active during Future creation, so another mechanism must be used to ensure that the scope is
+   * passed into the Future callbacks.
+   *
+   * The java auto instrumentation package provides such a mechanism out of the box, so one is not provided as a part of
+   * this method.
+   *
+   * CLoses the scope when the effect finishes.
+   *
+   * @param make
+   *   function for providing a [[scala.concurrent.Future]] by a given [[scala.concurrent.ExecutionContext]] to execute
+   *   in the current context
+   * @param trace
+   * @tparam A
+   * @return
+   */
+  def unmanagedScopeFuture[A](make: ExecutionContext => scala.concurrent.Future[A])(implicit trace: Trace): Task[A]
+
+  /**
+   * Introduces a thread-local scope during the execution allowing for non-zio context propagation.
+   *
+   * Closes the scope when the effect finishes.
+   *
+   * @param effect
+   *   piece of code to execute in the current context
+   * @param trace
+   * @tparam A
+   * @return
+   */
+  def unmanagedScopeTotal[A](effect: => A)(implicit trace: Trace): UIO[A]
+
+  object aspects {
 
     def root[E1, A1](
       spanName: String,
@@ -241,6 +228,19 @@ trait Tracer { self =>
       new ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] {
         override def apply[R, E <: E1, A <: A1](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
           self.span(spanName, spanKind, attributes, statusMapper, links)(_ => zio)
+      }
+
+    def continueSpan[E1, A1](
+      span: Span,
+      spanName: String,
+      spanKind: SpanKind = SpanKind.INTERNAL,
+      attributes: Attributes = Attributes.empty(),
+      statusMapper: StatusMapper[E1, A1] = StatusMapper.default,
+      links: Seq[SpanContext] = Seq.empty
+    ): ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] =
+      new ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] {
+        override def apply[R, E <: E1, A <: A1](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.continueSpan(span, spanName, spanKind, attributes, statusMapper, links)(_ => zio)
       }
 
   }
@@ -322,6 +322,22 @@ private[opentelemetry] object Tracer {
                         )
         } yield span
 
+      override def continueSpan[R, E, E1 <: E, A, A1 <: A](
+        span: Span,
+        spanName: String,
+        spanKind: SpanKind = SpanKind.INTERNAL,
+        attributes: Attributes = Attributes.empty(),
+        statusMapper: StatusMapper[E, A] = StatusMapper.default,
+        links: Seq[SpanContext] = Seq.empty
+      )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
+        ZIO.acquireReleaseWith {
+          startChild(Context.root().`with`(span.unsafe.asJava), spanName, spanKind, attributes, links)
+        } { case (childSpan, _) =>
+          endSpan(childSpan)
+        } { case (childSpan, ctx) =>
+          contextScope(ctx, statusMapper)(f(childSpan))
+        }
+
       override def unmanagedScope[A](effect: => A)(implicit trace: Trace): Task[A] =
         for {
           ctx    <- ctxStorage.get
@@ -353,22 +369,6 @@ private[opentelemetry] object Tracer {
                       finally scope.close()
                     }
         } yield effect
-
-      override def continueSpan[R, E, E1 <: E, A, A1 <: A](
-        span: Span,
-        spanName: String,
-        spanKind: SpanKind = SpanKind.INTERNAL,
-        attributes: Attributes = Attributes.empty(),
-        statusMapper: StatusMapper[E, A] = StatusMapper.default,
-        links: Seq[SpanContext] = Seq.empty
-      )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
-        ZIO.acquireReleaseWith {
-          startChild(Context.root().`with`(span.unsafe.asJava), spanName, spanKind, attributes, links)
-        } { case (childSpan, _) =>
-          endSpan(childSpan)
-        } { case (childSpan, ctx) =>
-          contextScope(ctx, statusMapper)(f(childSpan))
-        }
 
       private def contextScope[R, E, E1 <: E, A, A1 <: A](
         ctx: Context,

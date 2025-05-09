@@ -10,14 +10,15 @@ import zio.telemetry.opentelemetry.trace.{StatusMapper, Tracer}
 
 case class ProxyHttpApp(openTelemetry: OpenTelemetry, client: BackendClient, tracer: Tracer) {
 
-  private val statusMapper: StatusMapper[Throwable, Any] =
-    StatusMapper.failureThrowable(_ => StatusCode.UNSET)
-
   val routes: Routes[Any, Nothing] =
     Routes(
       Method.GET / "statuses" ->
         handler {
-          tracer.root("/statuses", SpanKind.SERVER, statusMapper = statusMapper) { span =>
+          tracer.root(
+            "/statuses",
+            SpanKind.SERVER,
+            statusMapper = StatusMapper.failureThrowable(_ => StatusCode.UNSET)
+          ) { span =>
             val carrier = OutgoingContextCarrier.default()
 
             openTelemetry.baggage.set("proxy-baggage", "value from proxy")(

@@ -81,7 +81,7 @@ object LoggerTest extends ZIOSpecDefault {
 
   override def spec: Spec[TestEnvironment with Scope, Any] =
     suite("zio opentelemetry")(
-      suite("Logging")(
+      suite("Logger")(
         test("without tracer context") {
           for {
             _          <- ZIO.logAnnotate("zio", "logger")(ZIO.logInfo("test"))
