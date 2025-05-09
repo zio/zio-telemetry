@@ -7,7 +7,7 @@ import zio.telemetry.opentelemetry.trace.Tracer
 
 case class BackendHttpApp(openTelemetry: OpenTelemetry, tracer: Tracer) {
 
-  val routes: Routes[Any,Nothing] =
+  val routes: Routes[Any, Nothing] =
     Routes(
       Method.GET / "example-endpoint" ->
         handler {

@@ -13,7 +13,7 @@ case class ProxyHttpApp(openTelemetry: OpenTelemetry, client: BackendClient, tra
   private val statusMapper: StatusMapper[Throwable, Any] =
     StatusMapper.failureThrowable(_ => StatusCode.UNSET)
 
-  val routes: Routes[Any,Nothing] =
+  val routes: Routes[Any, Nothing] =
     Routes(
       Method.GET / "statuses" ->
         handler {

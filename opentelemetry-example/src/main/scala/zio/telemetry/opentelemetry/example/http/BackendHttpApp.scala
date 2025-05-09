@@ -24,7 +24,7 @@ case class BackendHttpApp(openTelemetry: OpenTelemetry, tracer: Tracer, statusRe
 
     }
 
-  val routes: Routes[Any,Nothing] =
+  val routes: Routes[Any, Nothing] =
     Routes(
       Method.GET / "status" ->
         handler { request: Request =>
