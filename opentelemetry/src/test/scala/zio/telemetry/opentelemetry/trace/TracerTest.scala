@@ -137,12 +137,12 @@ object TracerTest extends ZIOSpecDefault {
           )
         }
       },
-      test("scopedEffect") {
+      test("unmanagedScope") {
         ZIO.serviceWithZIO[Tracer] { tracer =>
           import tracer.aspects._
 
           for {
-            _     <- tracer.scopedEffect {
+            _     <- tracer.unmanagedScope {
                        val span = JSpan.current()
                        span.addEvent("In legacy code")
                        if (Context.current() == Context.root()) throw new RuntimeException("Current context is root!")
@@ -165,12 +165,12 @@ object TracerTest extends ZIOSpecDefault {
             assert(tags)(equalTo(List("In legacy code", "Finishing legacy code")))
         }
       },
-      test("scopedEffectTotal") {
+      test("unmanagedScopeTotal") {
         ZIO.serviceWithZIO[Tracer] { tracer =>
           import tracer.aspects._
 
           for {
-            _     <- tracer.scopedEffectTotal {
+            _     <- tracer.unmanagedScopeTotal {
                        val span = JSpan.current()
                        span.addEvent("In legacy code")
                        if (Context.current() == Context.root()) throw new RuntimeException("Current context is root!")
@@ -195,12 +195,12 @@ object TracerTest extends ZIOSpecDefault {
             assert(tags)(equalTo(List("In legacy code", "Finishing legacy code")))
         }
       },
-      test("scopedEffectFromFuture") {
+      test("unmanagedScopeFuture") {
         ZIO.serviceWithZIO[Tracer] { tracer =>
           import tracer.aspects._
 
           for {
-            result <- tracer.scopedEffectFromFuture { _ =>
+            result <- tracer.unmanagedScopeFuture { _ =>
                         Future.successful {
                           val span = JSpan.current()
                           span.addEvent("In legacy code")

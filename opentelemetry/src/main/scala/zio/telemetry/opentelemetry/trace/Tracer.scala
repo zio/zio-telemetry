@@ -48,7 +48,7 @@ trait Tracer { self =>
    * @tparam A
    * @return
    */
-  def inSpan[R, E, E1 <: E, A, A1 <: A](
+  def continueSpan[R, E, E1 <: E, A, A1 <: A](
     span: Span,
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
@@ -58,7 +58,7 @@ trait Tracer { self =>
   )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1]
 
   /**
-   * Sets the current span to be the new root span with name 'spanName'.
+   * Sets the new span to be the new root span with name 'spanName'.
    *
    * Ends the span when the effect finishes.
    *
@@ -97,7 +97,7 @@ trait Tracer { self =>
    * @tparam A
    * @return
    */
-  def scopedEffect[A](effect: => A)(implicit trace: Trace): Task[A]
+  def unmanagedScope[A](effect: => A)(implicit trace: Trace): Task[A]
 
   /**
    * Introduces a thread-local scope from the currently active zio span allowing for non-zio context propagation. This
@@ -116,7 +116,7 @@ trait Tracer { self =>
    * @tparam A
    * @return
    */
-  def scopedEffectFromFuture[A](make: ExecutionContext => scala.concurrent.Future[A])(implicit trace: Trace): Task[A]
+  def unmanagedScopeFuture[A](make: ExecutionContext => scala.concurrent.Future[A])(implicit trace: Trace): Task[A]
 
   /**
    * Introduces a thread-local scope during the execution allowing for non-zio context propagation.
@@ -129,10 +129,10 @@ trait Tracer { self =>
    * @tparam A
    * @return
    */
-  def scopedEffectTotal[A](effect: => A)(implicit trace: Trace): UIO[A]
+  def unmanagedScopeTotal[A](effect: => A)(implicit trace: Trace): UIO[A]
 
   /**
-   * Sets the current span to be the child of the current span with name 'spanName'.
+   * Sets the new span to be the child of the current span with name 'spanName'.
    *
    * Ends the span when the effect finishes.
    *
@@ -161,7 +161,7 @@ trait Tracer { self =>
   )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1]
 
   /**
-   * Sets the current span to be the child of the current span with name 'spanName'.
+   * Sets the new span to be the child of the current span with name 'spanName'.
    *
    * Ends the span when the scope closes.
    *
@@ -183,7 +183,7 @@ trait Tracer { self =>
   )(implicit trace: Trace): ZIO[Scope, Nothing, Span]
 
   /**
-   * Unsafely sets the current span to be the child of the current span with name 'spanName'.
+   * Unsafely sets the new span to be the child of the current span with name 'spanName'.
    *
    * You need to manually call the finalizer to end the span.
    *
@@ -216,7 +216,7 @@ trait Tracer { self =>
     ): ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] =
       new ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] {
         override def apply[R, E <: E1, A <: A1](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
-          self.inSpan(span, spanName, spanKind, attributes, statusMapper, links)(_ => zio)
+          self.continueSpan(span, spanName, spanKind, attributes, statusMapper, links)(_ => zio)
       }
 
     def root[E1, A1](
@@ -334,7 +334,7 @@ private[opentelemetry] object Tracer {
                         )
         } yield span
 
-      override def scopedEffect[A](effect: => A)(implicit trace: Trace): Task[A] =
+      override def unmanagedScope[A](effect: => A)(implicit trace: Trace): Task[A] =
         for {
           ctx    <- ctxStorage.get
           effect <- ZIO.attempt {
@@ -344,7 +344,7 @@ private[opentelemetry] object Tracer {
                     }
         } yield effect
 
-      override def scopedEffectTotal[A](effect: => A)(implicit trace: Trace): UIO[A] =
+      override def unmanagedScopeTotal[A](effect: => A)(implicit trace: Trace): UIO[A] =
         for {
           ctx    <- ctxStorage.get
           effect <- ZIO.succeed {
@@ -354,7 +354,7 @@ private[opentelemetry] object Tracer {
                     }
         } yield effect
 
-      override def scopedEffectFromFuture[A](
+      override def unmanagedScopeFuture[A](
         make: ExecutionContext => scala.concurrent.Future[A]
       )(implicit trace: Trace): Task[A] =
         for {
@@ -366,7 +366,7 @@ private[opentelemetry] object Tracer {
                     }
         } yield effect
 
-      override def inSpan[R, E, E1 <: E, A, A1 <: A](
+      override def continueSpan[R, E, E1 <: E, A, A1 <: A](
         span: Span,
         spanName: String,
         spanKind: SpanKind = SpanKind.INTERNAL,
@@ -376,10 +376,10 @@ private[opentelemetry] object Tracer {
       )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
         ZIO.acquireReleaseWith {
           startChild(Context.root().`with`(span.unsafe.asJava), spanName, spanKind, attributes, links)
-        } { case (span0, _) =>
-          endSpan(span0)
-        } { case (span0, ctx) =>
-          finalizeSpanUsingEffect(f(span0), ctx, statusMapper)
+        } { case (childSpan, _) =>
+          endSpan(childSpan)
+        } { case (childSpan, ctx) =>
+          finalizeSpanUsingEffect(f(childSpan), ctx, statusMapper)
         }
 
       // TODO: move to StatusMapper
