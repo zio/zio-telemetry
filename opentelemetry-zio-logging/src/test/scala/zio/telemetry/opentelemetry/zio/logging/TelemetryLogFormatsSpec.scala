@@ -56,7 +56,7 @@ object TelemetryLogFormatsSpec extends ZIOSpecDefault {
             logFormats <- ZIO.service[LogFormats]
             format      = logFormats.spanIdLabel |-| logFormats.traceIdLabel
             zLogger     = format.toLogger.map(logs.append(_))
-            _          <- zio.ZIO.logInfo("TEST").withLogger(zLogger) @@ span("Span") @@ root("Root")
+            _          <- ZIO.logInfo("TEST").withLogger(zLogger) @@ span("Span") @@ root("Root")
             spans      <- getFinishedSpans
             child       = spans.find(_.getName == "Span").get
             log         = logs.head
@@ -67,7 +67,7 @@ object TelemetryLogFormatsSpec extends ZIOSpecDefault {
       OpenTelemetry.noop(),
       removeDefaultLoggers,
       tracerMockLayer(),
-      zio.telemetry.opentelemetry.zio.logging.ZioLogging.logFormats
+      ZioLogging.logFormats
     )
 
 }
