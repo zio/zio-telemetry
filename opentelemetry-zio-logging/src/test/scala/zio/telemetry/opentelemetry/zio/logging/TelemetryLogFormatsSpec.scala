@@ -35,7 +35,7 @@ object TelemetryLogFormatsSpec extends ZIOSpecDefault {
       for {
         openTelemetry <- ZIO.service[OpenTelemetry]
         jtracer       <- ZIO.service[JTracer]
-        tracer        <- Tracer.scoped(jtracer, openTelemetry.ctxStorage, logAnnotated)
+        tracer         = Tracer.make(jtracer, openTelemetry.ctxStorage, logAnnotated)
       } yield tracer
     }
 
@@ -56,7 +56,7 @@ object TelemetryLogFormatsSpec extends ZIOSpecDefault {
             logFormats <- ZIO.service[LogFormats]
             format      = logFormats.spanIdLabel |-| logFormats.traceIdLabel
             zLogger     = format.toLogger.map(logs.append(_))
-            _          <- zio.ZIO.logInfo("TEST").withLogger(zLogger) @@ span("Span") @@ root("Root")
+            _          <- ZIO.logInfo("TEST").withLogger(zLogger) @@ span("Span") @@ root("Root")
             spans      <- getFinishedSpans
             child       = spans.find(_.getName == "Span").get
             log         = logs.head
@@ -64,10 +64,10 @@ object TelemetryLogFormatsSpec extends ZIOSpecDefault {
         }
       }
     }.provide(
-      OpenTelemetry.noop,
+      OpenTelemetry.noop(),
       removeDefaultLoggers,
       tracerMockLayer(),
-      zio.telemetry.opentelemetry.zio.logging.ZioLogging.logFormats
+      ZioLogging.logFormats
     )
 
 }

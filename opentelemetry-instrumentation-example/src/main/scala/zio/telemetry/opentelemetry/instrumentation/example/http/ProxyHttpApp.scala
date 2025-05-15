@@ -19,11 +19,11 @@ case class ProxyHttpApp(openTelemetry: OpenTelemetry, client: BackendClient, tra
 
   private def proxy: UIO[Response] =
     for {
-      backendResponse <- client.exampleEndpoint
-                           .map(text => Response.text(text))
-                           .catchAll(_ => ZIO.succeed(Response.badRequest))
-      _               <- ZIO.logInfo("proxy processing finished on proxy")
-    } yield backendResponse
+      response <- client.exampleEndpoint
+                    .map(text => Response.text(text))
+                    .catchAll(_ => ZIO.succeed(Response.badRequest))
+      _        <- ZIO.logInfo("proxy processing finished on proxy")
+    } yield response
 
 }
 

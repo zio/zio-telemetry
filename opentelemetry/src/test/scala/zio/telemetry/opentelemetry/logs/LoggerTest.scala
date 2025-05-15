@@ -55,7 +55,7 @@ object LoggerTest extends ZIOSpecDefault {
       for {
         ctxStorage <- ZIO.service[ContextStorage]
         jtracer    <- ZIO.service[JTracer]
-        tracer     <- zio.telemetry.opentelemetry.trace.Tracer.scoped(jtracer, ctxStorage, logAnnotated)
+        tracer      = Tracer.make(jtracer, ctxStorage, logAnnotated)
       } yield tracer
     }
 
@@ -81,7 +81,7 @@ object LoggerTest extends ZIOSpecDefault {
 
   override def spec: Spec[TestEnvironment with Scope, Any] =
     suite("zio opentelemetry")(
-      suite("Logging")(
+      suite("Logger")(
         test("without tracer context") {
           for {
             _          <- ZIO.logAnnotate("zio", "logger")(ZIO.logInfo("test"))
@@ -147,9 +147,8 @@ object LoggerTest extends ZIOSpecDefault {
         }.provide(ctxStorageLayer),
         test("tracer context (fiberRef)") {
           ZIO.serviceWithZIO[Tracer] { tracer =>
-            tracer.root("ROOT")(
+            tracer.root("ROOT") { span =>
               for {
-                spanCtx    <- tracer.getCurrentSpanContextUnsafe
                 _          <- ZIO.logInfo("test")
                 logRecords <- getFinishedLogRecords
               } yield {
@@ -168,10 +167,10 @@ object LoggerTest extends ZIOSpecDefault {
                 assert(severityText)(equalTo("INFO")) &&
                 assert(instrumentationScopeName)(equalTo("tracer context (fiberRef)")) &&
                 assert(attributes)(equalTo(Map.empty[String, String])) &&
-                assert(traceId)(equalTo(spanCtx.getTraceId)) &&
-                assert(spanId)(equalTo(spanCtx.getSpanId))
+                assert(traceId)(equalTo(span.context.getTraceId)) &&
+                assert(spanId)(equalTo(span.context.getSpanId))
               }
-            )
+            }
           }
         }.provide(
           loggerMockLayer("tracer context (fiberRef)"),
@@ -180,9 +179,8 @@ object LoggerTest extends ZIOSpecDefault {
         ),
         test("tracer context (openTelemtryContext)") {
           ZIO.serviceWithZIO[Tracer] { tracer =>
-            tracer.root("ROOT")(
+            tracer.root("ROOT") { span =>
               for {
-                spanCtx    <- tracer.getCurrentSpanContextUnsafe
                 _          <- ZIO.logInfo("test")
                 logRecords <- getFinishedLogRecords
               } yield {
@@ -201,10 +199,10 @@ object LoggerTest extends ZIOSpecDefault {
                 assert(severityText)(equalTo("INFO")) &&
                 assert(instrumentationScopeName)(equalTo("tracer context (openTelemtryContext)")) &&
                 assert(attributes)(equalTo(Map.empty[String, String])) &&
-                assert(traceId)(equalTo(spanCtx.getTraceId)) &&
-                assert(spanId)(equalTo(spanCtx.getSpanId))
+                assert(traceId)(equalTo(span.context.getTraceId)) &&
+                assert(spanId)(equalTo(span.context.getSpanId))
               }
-            )
+            }
           }
         }.provide(
           loggerMockLayer("tracer context (openTelemtryContext)"),
