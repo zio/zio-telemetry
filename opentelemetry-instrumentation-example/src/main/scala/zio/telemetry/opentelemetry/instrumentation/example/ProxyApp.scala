@@ -24,7 +24,7 @@ object ProxyApp extends ZIOAppDefault {
     (for {
       server        <- ZIO.service[ProxyHttpServer]
       openTelemetry <- ZIO.service[OpenTelemetry]
-      _             <- ZIO.attempt(OpenTelemetryAppender.install(openTelemetry.asJava))
+      _             <- ZIO.attempt(OpenTelemetryAppender.install(openTelemetry.unsafe.asJava))
       exitCode      <- server.start
     } yield exitCode).provide(
       configLayer,
@@ -32,7 +32,7 @@ object ProxyApp extends ZIOAppDefault {
       BackendClient.live,
       ProxyHttpServer.live,
       ProxyHttpApp.live,
-      OpenTelemetry.global,
+      OpenTelemetry.global(),
       OpenTelemetry.tracer(instrumentationScopeName)
     )
 

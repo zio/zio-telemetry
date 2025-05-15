@@ -1,7 +1,6 @@
 package zio.telemetry.opentelemetry.baggage
 
 import io.opentelemetry.api.baggage.{Baggage => JBaggage, BaggageBuilder, BaggageEntry, BaggageEntryMetadata}
-import io.opentelemetry.context.Context
 import zio._
 import zio.telemetry.opentelemetry.context.internal.ContextStorage
 
@@ -35,14 +34,6 @@ trait Baggage { self =>
    * @return
    */
   def getAllWithMetadata(implicit trace: Trace): UIO[Map[String, (String, String)]]
-
-  /**
-   * Gets the baggage from current context.
-   *
-   * @param trace
-   * @return
-   */
-  def getCurrentBaggageUnsafe(implicit trace: Trace): UIO[JBaggage]
 
   /**
    * Removes the name/value by a given name.
@@ -84,6 +75,12 @@ trait Baggage { self =>
     trace: Trace
   ): ZIO[R, E, A]
 
+  trait UnsafeAPI {
+    def asJava(implicit trace: Trace): UIO[JBaggage]
+  }
+
+  val unsafe: UnsafeAPI
+
   object aspects {
 
     def remove(name: String): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
@@ -116,21 +113,14 @@ private[opentelemetry] object Baggage {
 
   def make(ctxStorage: ContextStorage, logAnnotated: Boolean = false): Baggage =
     new Baggage { self =>
-      override def getCurrentBaggageUnsafe(implicit trace: Trace): UIO[JBaggage] =
-        for {
-          ctx       <- getCurrentContextUnsafe
-          baggage    = JBaggage.fromContext(ctx)
-          annotated <- withLogAnnotations(baggage)
-        } yield annotated
-
       override def get(name: String)(implicit trace: Trace): UIO[Option[String]] =
-        getCurrentBaggageUnsafe.map(baggage => Option(baggage.getEntryValue(name)))
+        unsafe.asJava.map(baggage => Option(baggage.getEntryValue(name)))
 
       override def getAll(implicit trace: Trace): UIO[Map[String, String]] =
-        getCurrentBaggageUnsafe.map(asScalaMap(_).map { case (k, v) => k -> v.getValue })
+        unsafe.asJava.map(asScalaMap(_).map { case (k, v) => k -> v.getValue })
 
       override def getAllWithMetadata(implicit trace: Trace): UIO[Map[String, (String, String)]] =
-        getCurrentBaggageUnsafe.map(
+        unsafe.asJava.map(
           asScalaMap(_).map { case (k, v) => (k, (v.getValue, v.getMetadata.getValue)) }
         )
 
@@ -152,15 +142,12 @@ private[opentelemetry] object Baggage {
       override def remove[R, E, A](name: String)(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
         modifyBuilder(_.remove(name))(zio)
 
-      private def getCurrentContextUnsafe(implicit trace: Trace): UIO[Context] =
-        ctxStorage.get
-
       private def modifyBuilder[R, E, A](
         f: BaggageBuilder => BaggageBuilder
       )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
         for {
-          ctx       <- getCurrentContextUnsafe
-          baggage   <- getCurrentBaggageUnsafe
+          ctx       <- ctxStorage.get
+          baggage   <- unsafe.asJava
           updatedCtx = f(baggage.toBuilder)
                          .build()
                          .storeInContext(ctx)
@@ -182,8 +169,18 @@ private[opentelemetry] object Baggage {
           }
         } else ZIO.succeed(baggage)
 
+      override val unsafe: UnsafeAPI =
+        new UnsafeAPI {
+          override def asJava(implicit trace: Trace): UIO[JBaggage] =
+            for {
+              ctx       <- ctxStorage.get
+              baggage    = JBaggage.fromContext(ctx)
+              annotated <- withLogAnnotations(baggage)
+            } yield annotated
+        }
+
       private def asScalaMap(baggage: JBaggage): Map[String, BaggageEntry] =
-        baggage.asMap().asScala.toMap.map { case (k, v) => k -> v }
+        baggage.asMap().asScala.toMap
 
     }
 

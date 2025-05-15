@@ -59,20 +59,19 @@ object TracingApp extends ZIOAppDefault {
   override def run =
     ZIO
       .serviceWithZIO[Tracer] { tracer =>
-        val logic = for {
-          // Set an attribute to the current span
-          _       <- tracer.setAttribute("attr1", "value1")
-          // Add an event to the current span
-          _       <- tracer.addEvent("Waiting for the user input")
-          // Read user input
-          message <- Console.readLine
-          // Add another event to the current span
-          _       <- tracer.addEvent(s"User typed: $message")
-        } yield message
-
         // Create a root span with a lifetime equal to the runtime of the given ZIO effect.
-        // We use ZIO Aspect's @@ syntax here just for the sake of example.
-        logic @@ tracer.aspects.root("root_span", SpanKind.INTERNAL)
+        tracer.root("root_span", SpanKind.INTERNAL) { span =>
+          for {
+            // Set an attribute to the current span
+            _       <- span.setAttribute("attr1", "value1")
+            // Add an event to the current span
+            _       <- span.addEvent("Waiting for the user input")
+            // Read user input
+            message <- Console.readLine
+            // Add another event to the current span
+            _       <- span.addEvent(s"User typed: $message")
+          } yield message
+        }
       }
       .provide(
         otelSdkLayer,

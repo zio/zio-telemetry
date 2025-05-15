@@ -64,7 +64,7 @@ object PropagatingApp extends ZIOAppDefault {
     val upstreamService =
       for {
         openTelemetry <- ZIO.service[OpenTelemetry]
-        tracer       <- ZIO.service[Tracer]
+        tracer        <- ZIO.service[Tracer]
         message       <- Console.readLine
         carrier        = OutgoingContextCarrier.default()
         // Run the logic, wrapping it into a root span
@@ -84,19 +84,21 @@ object PropagatingApp extends ZIOAppDefault {
     def downstreamService(kernel: Map[String, String]) =
       for {
         openTelemetry <- ZIO.service[OpenTelemetry]
-        tracer       <- ZIO.service[Tracer]
+        tracer        <- ZIO.service[Tracer]
         carrier        = IncomingContextCarrier.default(mutable.Map.from(kernel))
-        // Emulate the logic that computes message length and sets an attribute of the current span
-        logic          = for {
-                           message <- openTelemetry.baggage.get("message").map(_.getOrElse("NO MESSAGE"))
-                           _       <- ZIO.logInfo(s"Message length is ${message.length}")
-                           _       <- tracer.setAttribute("message", message)
-                         } yield ()
+
         // Run the logic, wrapping it into a child span of the upstream root span
-        _             <- logic @@
-                           tracer.aspects.span("downstream_root_span") @@
-                           // Extract the the upstream span and baggage data using incoming carrier
-                           openTelemetry.aspects.continue(carrier)
+        // Extract the the upstream span and baggage data using incoming carrier
+        _ <-
+          tracer.span("downstream_root_span") { span =>
+            // Emulate the logic that computes message length and sets an attribute of the current span
+            for {
+              message <- openTelemetry.baggage.get("message").map(_.getOrElse("NO MESSAGE"))
+              _       <- ZIO.logInfo(s"Message length is ${message.length}")
+              _       <- span.setAttribute("message", message)
+            } yield ()
+          } @@ openTelemetry.aspects.continue(carrier)
+
       } yield ()
 
     // Simulate the interaction between services

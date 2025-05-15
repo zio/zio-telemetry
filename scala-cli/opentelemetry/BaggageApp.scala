@@ -28,7 +28,7 @@ object BaggageApp extends ZIOAppDefault {
 
       }
       .provide(
-        OpenTelemetry.noop
+        OpenTelemetry.noop()
       )
 
 }

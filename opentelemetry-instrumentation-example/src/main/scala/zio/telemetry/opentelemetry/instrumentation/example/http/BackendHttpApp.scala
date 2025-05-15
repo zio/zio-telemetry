@@ -7,22 +7,19 @@ import zio.telemetry.opentelemetry.trace.Tracer
 
 case class BackendHttpApp(openTelemetry: OpenTelemetry, tracer: Tracer) {
 
-  val routes =
+  val routes: Routes[Any, Nothing] =
     Routes(
       Method.GET / "example-endpoint" ->
         handler {
-          exampleEndpoint @@
-            tracer.aspects.span("example-endpoint") @@
-            openTelemetry.aspects.autoinstrumented
+          tracer.span("example-endpoint") { span =>
+            for {
+              _ <- span.addEvent("executing endpoint logic")
+              _ <- span.setAttribute("zio", "telemetry")
+              _ <- ZIO.logInfo("example endpoint processing finished on the server")
+            } yield Response.text("welcome")
+          } @@ openTelemetry.aspects.autoinstrumented
         }
     )
-
-  private def exampleEndpoint: UIO[Response] =
-    for {
-      _ <- tracer.addEvent("executing endpoint logic")
-      _ <- tracer.setAttribute("zio", "telemetry")
-      _ <- ZIO.logInfo("example endpoint processing finished on the server")
-    } yield Response.text("welcome")
 
 }
 

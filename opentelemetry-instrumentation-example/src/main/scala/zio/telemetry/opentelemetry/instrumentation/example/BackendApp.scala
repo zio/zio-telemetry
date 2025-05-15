@@ -25,13 +25,13 @@ object BackendApp extends ZIOAppDefault {
     (for {
       server        <- ZIO.service[BackendHttpServer]
       openTelemetry <- ZIO.service[OpenTelemetry]
-      _             <- ZIO.attempt(OpenTelemetryAppender.install(openTelemetry.asJava))
+      _             <- ZIO.attempt(OpenTelemetryAppender.install(openTelemetry.unsafe.asJava))
       exitCode      <- server.start
     } yield exitCode).provide(
       configLayer,
       BackendHttpServer.live,
       BackendHttpApp.live,
-      OpenTelemetry.global,
+      OpenTelemetry.global(),
       OpenTelemetry.tracer(instrumentationScopeName)
     )
 
