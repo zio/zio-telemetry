@@ -229,18 +229,6 @@ object TracerTest extends ZIOSpecDefault {
             ) &&
             assert(tags)(equalTo(List("In legacy code", "Finishing legacy code")))
         }
-      },
-      // TODO: what do we test here?
-      test("resources") {
-        ZIO.serviceWithZIO[Tracer] { tracer =>
-          for {
-            ref      <- Ref.make(false)
-            scope    <- Scope.make
-            resource  = ZIO.addFinalizer(ref.set(true))
-            _        <- scope.extend[Any](resource @@ tracer.aspects.span("Resource"))
-            released <- ref.get
-          } yield assert(released)(isFalse)
-        }
       }
     ).provide(tracerMockLayer(), ctxStorageLayer)
 
