@@ -203,6 +203,12 @@ trait Tracer { self =>
    */
   def unmanagedScopeTotal[A](effect: => A)(implicit trace: Trace): UIO[A]
 
+  trait UnsafeAPI {
+    def asJava: JTracer
+  }
+
+  val unsafe: UnsafeAPI
+
   object aspects {
 
     def root[E1, A1](
@@ -361,6 +367,12 @@ private[opentelemetry] object Tracer {
                       finally scope.close()
                     }
         } yield effect
+
+      override val unsafe: UnsafeAPI =
+        new UnsafeAPI {
+          override def asJava: JTracer =
+            tracer
+        }
 
       private def contextScope[R, E, E1 <: E, A, A1 <: A](
         ctx: Context,
