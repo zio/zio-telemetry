@@ -1,6 +1,6 @@
 //> using scala "3.7.1"
 //> using dep dev.zio::zio:2.1.19
-//> using dep dev.zio::zio-opentelemetry:4.0.0-RC1
+//> using dep dev.zio::zio-opentelemetry:4.0.0-RC3
 
 import zio.*
 import zio.telemetry.opentelemetry.baggage.Baggage
@@ -28,7 +28,7 @@ object BaggageApp extends ZIOAppDefault {
 
       }
       .provide(
-        OpenTelemetry.noop
+        OpenTelemetry.noop()
       )
 
 }

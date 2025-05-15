@@ -7,9 +7,8 @@ import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.data.SpanData
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import zio._
-import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.context.internal.ContextStorage
-import zio.telemetry.opentelemetry.context.{ContextPropagator, IncomingContextCarrier, OutgoingContextCarrier}
+import zio.telemetry.opentelemetry.context.{IncomingContextCarrier, OutgoingContextCarrier}
 import zio.telemetry.opentelemetry.trace.Tracer
 import zio.test.Assertion._
 import zio.test._
@@ -17,37 +16,6 @@ import zio.test._
 import scala.jdk.CollectionConverters._
 
 object OpenTelemetryTest extends ZIOSpecDefault {
-
-  // TODO: move to testkit module
-  class OpenTelemetryTestKit(val underlying: OpenTelemetrySdk, val ctxStorage: ContextStorage) extends OpenTelemetry {
-
-    override def withBaggage(logAnnotated: Boolean): OpenTelemetry =
-      new OpenTelemetryTestKit(underlying, ctxStorage) {
-        override val baggage: Baggage = Baggage.make(ctxStorage, logAnnotated)
-      }
-
-    override def withContextPropagator(propagator: ContextPropagator): OpenTelemetry =
-      new OpenTelemetryTestKit(underlying, ctxStorage) {
-        override val ctxPropagator = propagator
-      }
-
-  }
-
-  object OpenTelemetryTestKit {
-
-    val layer: ZLayer[ContextStorage, Nothing, OpenTelemetry] =
-      ZLayer.scoped(
-        for {
-          ctxStorage <- ZIO.service[ContextStorage]
-          underlying <- ZIO.fromAutoCloseable(
-                          ZIO.succeed(
-                            OpenTelemetrySdk.builder().build()
-                          )
-                        )
-        } yield new OpenTelemetryTestKit(underlying, ctxStorage)
-      )
-
-  }
 
   val inMemoryTracer: UIO[(InMemorySpanExporter, JTracer)] = for {
     spanExporter   <- ZIO.succeed(InMemorySpanExporter.create())
@@ -77,9 +45,21 @@ object OpenTelemetryTest extends ZIOSpecDefault {
       for {
         ctxStorage <- ZIO.service[ContextStorage]
         jtracer    <- ZIO.service[JTracer]
-        tracer     <- Tracer.scoped(jtracer, ctxStorage, logAnnotated)
+        tracer      = Tracer.make(jtracer, ctxStorage, logAnnotated)
       } yield tracer
     }
+
+  val otelLayer: ZLayer[ContextStorage, Nothing, OpenTelemetry] =
+    ZLayer.scoped(
+      for {
+        ctxStorage <- ZIO.service[ContextStorage]
+        underlying <- ZIO.fromAutoCloseable(
+                        ZIO.succeed(
+                          OpenTelemetrySdk.builder().build()
+                        )
+                      )
+      } yield new OpenTelemetry.OpenTelemetrySdk(ctxStorage, underlying)
+    )
 
   def getFinishedSpans: ZIO[InMemorySpanExporter, Nothing, List[SpanData]] =
     ZIO.serviceWith[InMemorySpanExporter](_.getFinishedSpanItems.asScala.toList)
@@ -126,7 +106,7 @@ object OpenTelemetryTest extends ZIOSpecDefault {
                   assert(bar.get.getParentSpanId)(equalTo(foo.get.getSpanId)) &&
                   assert(baz.get.getParentSpanId)(equalTo(bar.get.getSpanId))
               }.provide(
-                OpenTelemetryTestKit.layer,
+                otelLayer,
                 ctxStorageLayer,
                 tracerMockLayer()
               )
@@ -148,7 +128,7 @@ object OpenTelemetryTest extends ZIOSpecDefault {
                              openTelemetry.aspects.continue(IncomingContextCarrier.default(kernel))
                 } yield assert(thing)(isSome(equalTo("thing")))
               }.provide(
-                OpenTelemetryTestKit.layer,
+                otelLayer,
                 ctxStorageLayer
               )
             }
