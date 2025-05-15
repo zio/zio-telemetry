@@ -49,7 +49,7 @@ object StatusMapper {
    * @param success
    * @param failure
    */
-  sealed abstract class Default[-E, -A](
+  sealed class Default[-E, -A](
     success: PartialFunction[A, Result.Success] = PartialFunction.empty,
     failure: PartialFunction[E, Result.Failure] = PartialFunction.empty
   ) extends StatusMapper[E, A] {
@@ -137,7 +137,7 @@ object StatusMapper {
    * [[https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/api.md#set-status Set status]]
    */
   val default: Default[Any, Any] =
-    new Default() {}
+    new Default()
 
   /**
    * Overrides both success and failure cases of the default status mapper.

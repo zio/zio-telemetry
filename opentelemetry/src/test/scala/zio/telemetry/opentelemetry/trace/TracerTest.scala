@@ -230,6 +230,7 @@ object TracerTest extends ZIOSpecDefault {
             assert(tags)(equalTo(List("In legacy code", "Finishing legacy code")))
         }
       },
+      // TODO: what do we test here?
       test("resources") {
         ZIO.serviceWithZIO[Tracer] { tracer =>
           for {
@@ -443,189 +444,360 @@ object TracerTest extends ZIOSpecDefault {
 
   private val statusMapperSpec =
     suite("status mapper")(
-      test("status mapper for successful span") {
+      test("empty") {
         ZIO.serviceWithZIO[Tracer] { tracer =>
-          import tracer.aspects._
-
-          val assertStatusCodeError =
-            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.ERROR))
-
-          val assertStatusDescriptionError =
+          val assertEmptyOkStatusCode  =
+            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.UNSET))
+          val assertEmptyOkDescription =
             hasField[SpanData, String](
               "statusDescription",
               _.getStatus.getDescription,
-              equalTo("My error message. Result = success")
+              equalTo("")
             )
 
-          val assertRecordedExceptionAttributes =
+          val assertEmptyFailedStatusCode  =
+            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.UNSET))
+          val assertEmptyFailedDescription =
+            hasField[SpanData, String](
+              "statusDescription",
+              _.getStatus.getDescription,
+              equalTo("")
+            )
+
+          val assertManuallySetOkStatusCode  =
+            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.OK))
+          val assertManuallySetOkDescription =
+            hasField[SpanData, String](
+              "statusDescription",
+              _.getStatus.getDescription,
+              equalTo("")
+            )
+
+          val assertManuallySetErrorStatusCode  =
+            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.ERROR))
+          val assertManuallySetErrorDescription =
+            hasField[SpanData, String](
+              "statusDescription",
+              _.getStatus.getDescription,
+              equalTo("Error")
+            )
+
+          val assertEmptyOk          =
+            assertEmptyOkStatusCode && assertEmptyOkDescription
+          val assertEmptyFailed      =
+            assertEmptyFailedStatusCode && assertEmptyFailedDescription
+          val assertManuallySetOk    =
+            assertManuallySetOkStatusCode && assertManuallySetOkDescription
+          val assertManuallySetError =
+            assertManuallySetErrorStatusCode && assertManuallySetErrorDescription
+
+          for {
+            _               <- ZIO.unit @@ tracer.aspects.span("empty-ok", statusMapper = StatusMapper.empty)
+            _               <- (
+                                 ZIO.fail(new RuntimeException("Error"))
+                                   @@ tracer.aspects.span("empty-failed", statusMapper = StatusMapper.empty)
+                               ).either
+            _               <- tracer.span("manually-set-ok", statusMapper = StatusMapper.empty) { span =>
+                                 span.setStatus(StatusCode.OK, "OK")
+                               }
+            _               <- tracer.span("manually-set-error", statusMapper = StatusMapper.empty) { span =>
+                                 span.setStatus(StatusCode.ERROR, "Error")
+                               }
+            spans           <- getFinishedSpans
+            emptyOk          = spans.find(_.getName == "empty-ok")
+            emptyFailed      = spans.find(_.getName == "empty-failed")
+            manuallySetOk    = spans.find(_.getName == "manually-set-ok")
+            manuallySetError = spans.find(_.getName == "manually-set-error")
+          } yield assert(emptyOk)(isSome(assertEmptyOk)) &&
+            assert(emptyFailed)(isSome(assertEmptyFailed)) &&
+            assert(manuallySetOk)(isSome(assertManuallySetOk)) &&
+            assert(manuallySetError)(isSome(assertManuallySetError))
+        }
+      },
+      test("default") {
+        ZIO.serviceWithZIO[Tracer] { tracer =>
+          val assertOkStatusCode  =
+            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.UNSET))
+          val assertOkDescription =
+            hasField[SpanData, String](
+              "statusDescription",
+              _.getStatus.getDescription,
+              equalTo("")
+            )
+
+          val assertFailedStatusCode  =
+            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.ERROR))
+          // TODO: needs to be reworked in https://github.com/zio/zio-telemetry/issues/967
+          val assertFailedDescription =
+            hasField[SpanData, String](
+              "statusDescription",
+              _.getStatus.getDescription,
+              isNonEmptyString
+            )
+
+          val assertDefaultOk     =
+            assertOkStatusCode && assertOkDescription
+          val assertDefaultFailed =
+            assertFailedStatusCode && assertFailedDescription
+
+          for {
+            _            <- ZIO.unit @@ tracer.aspects.span("default-ok", statusMapper = StatusMapper.default)
+            _            <- (
+                              ZIO.fail(new RuntimeException("Error")) @@
+                                tracer.aspects.span("default-failed", statusMapper = StatusMapper.default)
+                            ).either
+            spans        <- getFinishedSpans
+            defaultOk     = spans.find(_.getName == "default-ok")
+            defaultFailed = spans.find(_.getName == "default-failed")
+          } yield assert(defaultOk)(isSome(assertDefaultOk)) && assert(defaultFailed)(isSome(assertDefaultFailed))
+        }
+      },
+      test("both") {
+        ZIO.serviceWithZIO[Tracer] { tracer =>
+          val assertDefaultOkStatusCode  =
+            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.UNSET))
+          val assertDefaultOkDescription =
+            hasField[SpanData, String](
+              "statusDescription",
+              _.getStatus.getDescription,
+              equalTo("")
+            )
+
+          val assertDefaultFailedStatusCode  =
+            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.ERROR))
+          // TODO: needs to be reworked in https://github.com/zio/zio-telemetry/issues/967
+          val assertDefaultFailedDescription =
+            hasField[SpanData, String](
+              "statusDescription",
+              _.getStatus.getDescription,
+              isNonEmptyString
+            )
+
+          val assertionNotDefaultOk     =
+            (assertDefaultOkStatusCode && assertDefaultOkDescription).negate
+          val assertionNotDefaultFailed =
+            (assertDefaultFailedStatusCode && assertDefaultFailedDescription).negate
+
+          val statusMapper =
+            StatusMapper.both(
+              StatusMapper.success[Unit](_ => StatusCode.OK)(_ => Some("OK")),
+              StatusMapper.failureThrowable(_ => StatusCode.OK)
+            )
+
+          for {
+            _            <- ZIO.unit @@ tracer.aspects.span("default-ok", statusMapper = statusMapper)
+            _            <- (
+                              ZIO.fail(new RuntimeException("Error")) @@
+                                tracer.aspects.span("default-failed", statusMapper = statusMapper)
+                            ).either
+            spans        <- getFinishedSpans
+            defaultOk     = spans.find(_.getName == "default-ok")
+            defaultFailed = spans.find(_.getName == "default-failed")
+          } yield assert(defaultOk)(isSome(assertionNotDefaultOk)) &&
+            assert(defaultFailed)(isSome(assertionNotDefaultFailed))
+        }
+      },
+      test("success & successNoDescription") {
+        ZIO.serviceWithZIO[Tracer] { tracer =>
+          val assertOkStatusCode  =
+            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.OK))
+          val assertOkDescription =
+            hasField[SpanData, String](
+              "statusDescription",
+              _.getStatus.getDescription,
+              equalTo("")
+            )
+
+          val assertErrorStatusCode  =
+            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.ERROR))
+          val assertErrorDescription =
+            hasField[SpanData, String](
+              "statusDescription",
+              _.getStatus.getDescription,
+              equalTo("Error")
+            )
+
+          val assertOk              =
+            assertOkStatusCode && assertOkDescription
+          val assertOkNoDescription =
+            assertOkStatusCode && assertOkDescription
+          val assertError           =
+            assertErrorStatusCode && assertErrorDescription
+
+          for {
+            _              <-
+              ZIO.unit @@
+                tracer.aspects
+                  .span("ok", statusMapper = StatusMapper.success[Unit](_ => StatusCode.OK)(_ => Some("OK")))
+            _              <-
+              ZIO.unit @@
+                tracer.aspects
+                  .span("ok-no-description", statusMapper = StatusMapper.successNoDescription[Unit](_ => StatusCode.OK))
+            _              <-
+              ZIO.unit @@
+                tracer.aspects
+                  .span("error", statusMapper = StatusMapper.success[Unit](_ => StatusCode.ERROR)(_ => Some("Error")))
+            spans          <- getFinishedSpans
+            ok              = spans.find(_.getName == "ok")
+            okNoDescription = spans.find(_.getName == "ok-no-description")
+            error           = spans.find(_.getName == "error")
+          } yield assert(ok)(isSome(assertOk)) &&
+            assert(okNoDescription)(isSome(assertOkNoDescription)) &&
+            assert(error)(isSome(assertError))
+        }
+      },
+      test("failure && failureNoException") {
+        ZIO.serviceWithZIO[Tracer] { tracer =>
+          val assertOkStatusCode     =
+            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.OK))
+          val assertOkDescription    =
+            hasField[SpanData, String](
+              "statusDescription",
+              _.getStatus.getDescription,
+              equalTo("")
+            )
+          val assertOkExceptionEmpty =
             hasField[SpanData, List[(String, String)]](
               "exceptionAttributes",
               _.getEvents.asScala.toList
                 .flatMap(_.getAttributes.asMap().asScala.toList.map(x => x._1.getKey -> x._2.toString)),
               isEmpty
             )
-
-          val assertion = assertStatusCodeError && assertRecordedExceptionAttributes && assertStatusDescriptionError
-
-          val statusMapper =
-            StatusMapper.success[String](_ => StatusCode.ERROR)(r => Option(s"My error message. Result = $r"))
-
-          for {
-            _     <-
-              ZIO.succeed("success") @@ span("Child", statusMapper = statusMapper) @@ span("Root")
-            spans <- getFinishedSpans
-            child  = spans.find(_.getName == "Child")
-          } yield assert(child)(isSome(assertion))
-        }
-      },
-      test("status mapper for failed span") {
-        ZIO.serviceWithZIO[Tracer] { tracer =>
-          import tracer.aspects._
-
-          val assertStatusCodeError =
-            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.ERROR))
-
-          val assertStatusDescriptionError =
-            hasField[SpanData, String](
-              "statusDescription",
-              _.getStatus.getDescription,
-              containsString("java.lang.RuntimeException: some_error")
-            )
-
-          val assertRecordedExceptionAttributes =
+          val assertOkExceptionIsSet =
             hasField[SpanData, List[(String, String)]](
               "exceptionAttributes",
               _.getEvents.asScala.toList
                 .flatMap(_.getAttributes.asMap().asScala.toList.map(x => x._1.getKey -> x._2.toString)),
-              hasSubset(List("exception.message" -> "some_error", "exception.type" -> "java.lang.RuntimeException"))
+              hasSubset(List("exception.message" -> "OK", "exception.type" -> "java.lang.RuntimeException"))
             )
 
-          val assertion    = assertStatusCodeError && assertRecordedExceptionAttributes && assertStatusDescriptionError
-          val statusMapper = StatusMapper.failureThrowable(_ => StatusCode.ERROR)
-
-          val failedEffect: ZIO[Any, Throwable, Unit] =
-            ZIO.fail(new RuntimeException("some_error")).when(true).unit
-
-          for {
-            _     <- (
-                       failedEffect @@
-                         span("Child", statusMapper = statusMapper) @@
-                         span("Root", statusMapper = statusMapper)
-                     ).ignore
-            spans <- getFinishedSpans
-            root   = spans.find(_.getName == "Root")
-            child  = spans.find(_.getName == "Child")
-          } yield assert(root)(isSome(assertion)) && assert(child)(isSome(assertion))
-        }
-      },
-      test("status mapper for failed span when error type is not Throwable") {
-        ZIO.serviceWithZIO[Tracer] { tracer =>
-          import tracer.aspects._
-
-          val assertStatusCodeError =
+          val assertErrorStatusCode  =
             hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.ERROR))
-
-          val assertStatusDescriptionError =
+          // TODO: needs to be reworked in https://github.com/zio/zio-telemetry/issues/967
+          val assertErrorDescription =
             hasField[SpanData, String](
               "statusDescription",
               _.getStatus.getDescription,
-              containsString("Error(some_error)")
+              isNonEmptyString
             )
-
-          val assertRecordedExceptionAttributes =
+          val assertErrorException   =
             hasField[SpanData, List[(String, String)]](
               "exceptionAttributes",
               _.getEvents.asScala.toList
                 .flatMap(_.getAttributes.asMap().asScala.toList.map(x => x._1.getKey -> x._2.toString)),
-              hasSubset(List("exception.message" -> "some_error", "exception.type" -> "java.lang.RuntimeException"))
+              hasSubset(List("exception.message" -> "Error", "exception.type" -> "java.lang.RuntimeException"))
             )
 
-          val assertion    = assertStatusCodeError && assertRecordedExceptionAttributes && assertStatusDescriptionError
-          val statusMapper =
-            StatusMapper.failure[Error](_ => StatusCode.ERROR)(e => Option(new RuntimeException(e.msg)))
+          val assertOkNoException   =
+            assertOkStatusCode && assertOkDescription && assertOkExceptionEmpty
+          val assertOkWithException =
+            assertOkStatusCode && assertOkDescription && assertOkExceptionIsSet
+          val assertError           =
+            assertErrorStatusCode && assertErrorException && assertErrorDescription
 
           final case class Error(msg: String)
-          val failedEffect: ZIO[Any, Error, Unit] =
-            ZIO.fail(Error("some_error")).when(true).unit
 
           for {
-            _     <- (
-                       failedEffect @@
-                         span("Child", statusMapper = statusMapper) @@
-                         span("Root", statusMapper = statusMapper)
-                     ).ignore
-            spans <- getFinishedSpans
-            root   = spans.find(_.getName == "Root")
-            child  = spans.find(_.getName == "Child")
-          } yield assert(root)(isSome(assertion)) && assert(child)(isSome(assertion))
+            _ <-
+              (ZIO.fail(Error("OK")) @@
+                tracer.aspects
+                  .span(
+                    "ok-no-exception",
+                    statusMapper = StatusMapper.failure[Error](_ => StatusCode.OK)(_ => None)
+                  )).either
+            _ <-
+              (ZIO.fail(Error("OK")) @@
+                tracer.aspects
+                  .span(
+                    "ok-no-exception-1",
+                    statusMapper = StatusMapper.failureNoException[Error](_ => StatusCode.OK)
+                  )).either
+            _ <-
+              (ZIO.fail(Error("OK")) @@
+                tracer.aspects.span(
+                  "ok-with-exception",
+                  statusMapper =
+                    StatusMapper.failure[Error](_ => StatusCode.OK)(error => Some(new RuntimeException(error.msg)))
+                )).either
+            _ <-
+              (ZIO.fail(Error("Error")) @@
+                tracer.aspects.span(
+                  "error",
+                  statusMapper =
+                    StatusMapper.failure[Error](_ => StatusCode.ERROR)(error => Some(new RuntimeException(error.msg)))
+                )).either
+
+            spans          <- getFinishedSpans
+            okNoException   = spans.find(_.getName == "ok-no-exception")
+            okNoException1  = spans.find(_.getName == "ok-no-exception-1")
+            okWithException = spans.find(_.getName == "ok-with-exception")
+            error           = spans.find(_.getName == "error")
+          } yield assert(okNoException)(isSome(assertOkNoException)) &&
+            assert(okNoException1)(isSome(assertOkNoException)) &&
+            assert(okWithException)(isSome(assertOkWithException)) &&
+            assert(error)(isSome(assertError))
         }
       },
-      test("status mapper without description for failed span") {
+      test("failureThrowable") {
         ZIO.serviceWithZIO[Tracer] { tracer =>
-          import tracer.aspects._
-
-          val assertStatusCodeUnset =
-            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.UNSET))
-
-          val assertStatusDescriptionEmpty =
-            hasField[SpanData, String]("statusDescription", _.getStatus.getDescription, isEmptyString)
-
-          val assertRecordedExceptionAttributes =
+          val assertOkStatusCode  =
+            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.OK))
+          val assertOkDescription =
+            hasField[SpanData, String](
+              "statusDescription",
+              _.getStatus.getDescription,
+              equalTo("")
+            )
+          val assertOkException   =
             hasField[SpanData, List[(String, String)]](
               "exceptionAttributes",
               _.getEvents.asScala.toList
                 .flatMap(_.getAttributes.asMap().asScala.toList.map(x => x._1.getKey -> x._2.toString)),
-              hasSubset(List("exception.message" -> "some_error", "exception.type" -> "java.lang.RuntimeException"))
+              hasSubset(List("exception.message" -> "OK", "exception.type" -> "java.lang.RuntimeException"))
             )
 
-          val assertion    = assertStatusCodeUnset && assertRecordedExceptionAttributes && assertStatusDescriptionEmpty
-          val statusMapper = StatusMapper.failureThrowable(_ => StatusCode.UNSET)
+          val assertErrorStatusCode  =
+            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.ERROR))
+          // TODO: needs to be reworked in https://github.com/zio/zio-telemetry/issues/967
+          val assertErrorDescription =
+            hasField[SpanData, String](
+              "statusDescription",
+              _.getStatus.getDescription,
+              isNonEmptyString
+            )
+          val assertErrorException   =
+            hasField[SpanData, List[(String, String)]](
+              "exceptionAttributes",
+              _.getEvents.asScala.toList
+                .flatMap(_.getAttributes.asMap().asScala.toList.map(x => x._1.getKey -> x._2.toString)),
+              hasSubset(List("exception.message" -> "Error", "exception.type" -> "java.lang.RuntimeException"))
+            )
 
-          val failedEffect: ZIO[Any, Throwable, Unit] =
-            ZIO.fail(new RuntimeException("some_error")).when(true).unit
-
-          for {
-            _     <- (
-                       failedEffect @@
-                         span("Child", statusMapper = statusMapper) @@
-                         span("Root", statusMapper = statusMapper)
-                     ).ignore
-            spans <- getFinishedSpans
-            root   = spans.find(_.getName == "Root")
-            child  = spans.find(_.getName == "Child")
-          } yield assert(root)(isSome(assertion)) && assert(child)(isSome(assertion))
-        }
-      },
-      test("combine status mappers") {
-        val assertErrorStatusCodeUnset =
-          hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.UNSET))
-
-        val assertSuccessStatusCodeOk =
-          hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.OK))
-
-        val assertStatusDescriptionEmpty =
-          hasField[SpanData, String]("statusDescription", _.getStatus.getDescription, isEmptyString)
-
-        val failureAssertion = assertErrorStatusCodeUnset && assertStatusDescriptionEmpty
-        val successAssertion = assertSuccessStatusCodeOk && assertStatusDescriptionEmpty
-
-        val failureMapper = StatusMapper.failureThrowable(_ => StatusCode.UNSET)
-        val successMapper = StatusMapper.successNoDescription[Unit](_ => StatusCode.OK)
-        val statusMapper  = StatusMapper.both(successMapper, failureMapper)
-
-        ZIO.serviceWithZIO[Tracer] { tracer =>
-          import tracer.aspects._
+          val assertOk    =
+            assertOkStatusCode && assertOkDescription && assertOkException
+          val assertError =
+            assertErrorStatusCode && assertErrorException && assertErrorDescription
 
           for {
-            _     <- (
-                       ZIO.fail[Throwable](new RuntimeException("error")).unit @@
-                         span("KO", statusMapper = statusMapper)
-                     ).ignore
-            _     <- ZIO.succeed(()) @@ span("OK", statusMapper = statusMapper)
+            _ <-
+              (ZIO.fail(new RuntimeException("OK")) @@
+                tracer.aspects
+                  .span(
+                    "ok",
+                    statusMapper = StatusMapper.failureThrowable(_ => StatusCode.OK)
+                  )).either
+            _ <-
+              (ZIO.fail(new RuntimeException("Error")) @@
+                tracer.aspects.span(
+                  "error",
+                  statusMapper = StatusMapper.failureThrowable(_ => StatusCode.ERROR)
+                )).either
+
             spans <- getFinishedSpans
-            ko     = spans.find(_.getName == "KO")
-            ok     = spans.find(_.getName == "OK")
-          } yield assert(ko)(isSome(failureAssertion)) && assert(ok)(isSome(successAssertion))
+            ok     = spans.find(_.getName == "ok")
+            error  = spans.find(_.getName == "error")
+          } yield assert(ok)(isSome(assertOk)) &&
+            assert(error)(isSome(assertError))
         }
       }
     ).provide(tracerMockLayer(), ctxStorageLayer)

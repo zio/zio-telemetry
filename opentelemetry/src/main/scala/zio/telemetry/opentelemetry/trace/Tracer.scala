@@ -109,7 +109,6 @@ trait Tracer { self =>
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     attributes: Attributes = Attributes.empty(),
-    statusMapper: StatusMapper[Any, Any] = StatusMapper.default,
     links: Seq[SpanContext] = Seq.empty
   )(implicit trace: Trace): ZIO[Any, Nothing, Span]
 
@@ -306,20 +305,13 @@ private[opentelemetry] object Tracer {
         spanName: String,
         spanKind: SpanKind = SpanKind.INTERNAL,
         attributes: Attributes = Attributes.empty(),
-        statusMapper: StatusMapper[Any, Any] = StatusMapper.default,
         links: Seq[SpanContext] = Seq.empty
       )(implicit trace: Trace): ZIO[Any, Nothing, Span] =
         for {
           parentCtx  <- ctxStorage.get
           childSpan  <- startChild(parentCtx, spanName, spanKind, attributes, links)
           (span, ctx) = childSpan
-          _          <- ZIO.scoped[Any](
-                          for {
-                            _     <- ctxStorage.locallyScoped(ctx)
-                            scope <- ZIO.scope
-                            _     <- scope.addFinalizerExit(statusMapper.handle(Span.fromContext(ctx), _))
-                          } yield ()
-                        )
+          _          <- ZIO.scoped[Any](ctxStorage.locallyScoped(ctx))
         } yield span
 
       override def continueSpan[R, E, E1 <: E, A, A1 <: A](
