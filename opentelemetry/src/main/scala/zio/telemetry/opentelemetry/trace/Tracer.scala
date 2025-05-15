@@ -34,7 +34,7 @@ trait Tracer { self =>
    */
   def root[R, E, E1 <: E, A, A1 <: A](
     spanName: String,
-    spanKind: SpanKind = SpanKind.INTERNAL,
+    spanKind: SpanKind = SpanKind.SERVER,
     attributes: Attributes = Attributes.empty(),
     statusMapper: StatusMapper[E, A] = StatusMapper.default,
     links: Seq[SpanContext] = Seq.empty
@@ -213,7 +213,7 @@ trait Tracer { self =>
 
     def root[E1, A1](
       spanName: String,
-      spanKind: SpanKind = SpanKind.INTERNAL,
+      spanKind: SpanKind = SpanKind.SERVER,
       attributes: Attributes = Attributes.empty(),
       statusMapper: StatusMapper[E1, A1] = StatusMapper.default,
       links: Seq[SpanContext] = Seq.empty
@@ -258,7 +258,7 @@ private[opentelemetry] object Tracer {
     new Tracer { self =>
       override def root[R, E, E1 <: E, A, A1 <: A](
         spanName: String,
-        spanKind: SpanKind = SpanKind.INTERNAL,
+        spanKind: SpanKind = SpanKind.SERVER,
         attributes: Attributes = Attributes.empty(),
         statusMapper: StatusMapper[E, A] = StatusMapper.default,
         links: Seq[SpanContext] = Seq.empty
@@ -291,7 +291,7 @@ private[opentelemetry] object Tracer {
 
       override def spanScoped(
         spanName: String,
-        spanKind: SpanKind,
+        spanKind: SpanKind = SpanKind.INTERNAL,
         attributes: Attributes,
         statusMapper: StatusMapper[Any, Any] = StatusMapper.default,
         links: Seq[SpanContext]

@@ -1,6 +1,6 @@
 package zio.telemetry.opentelemetry.example.http
 
-import io.opentelemetry.api.trace.{SpanKind, StatusCode}
+import io.opentelemetry.api.trace.StatusCode
 import zio._
 import zio.http._
 import zio.json.EncoderOps
@@ -16,7 +16,6 @@ case class ProxyHttpApp(openTelemetry: OpenTelemetry, client: BackendClient, tra
         handler {
           tracer.root(
             "/statuses",
-            SpanKind.SERVER,
             statusMapper = StatusMapper.failureThrowable(_ => StatusCode.UNSET)
           ) { span =>
             val carrier = OutgoingContextCarrier.default()
