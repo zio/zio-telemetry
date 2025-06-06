@@ -1,4 +1,4 @@
-//> using scala "3.7.0"
+//> using scala "3.7.1"
 //> using dep dev.zio::zio:2.1.17
 //> using dep dev.zio::zio-opentelemetry:3.1.5
 //> using dep dev.zio::zio-opentelemetry-zio-logging:3.1.5
