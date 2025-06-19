@@ -132,10 +132,10 @@ object MeterTest extends ZIOSpecDefault {
             attributes       = Attributes(Attribute.long("attr_counter", 3L))
             _               <- counter.add(12, attributes)
             _               <- counter.inc(attributes)
-            metric           = reader.collectAllMetrics().asScala.toList.head
-            metricPoint      = metric.getLongSumData().getPoints().asScala.toList.head
-            metricValue      = metricPoint.getValue()
-            metricAttributes = metricPoint.getAttributes()
+            metric           = reader.collectAllMetrics.asScala.toList.head
+            metricPoint      = metric.getLongSumData.getPoints.asScala.toList.head
+            metricValue      = metricPoint.getValue
+            metricAttributes = metricPoint.getAttributes
           } yield assertTrue(
             metricValue == 13L,
             metricAttributes == attributes
@@ -152,10 +152,10 @@ object MeterTest extends ZIOSpecDefault {
             _               <- counter.inc(attributes)
             _               <- counter.dec(attributes)
             _               <- counter.dec(attributes)
-            metric           = reader.collectAllMetrics().asScala.toList.head
-            metricPoint      = metric.getLongSumData().getPoints().asScala.toList.head
-            metricValue      = metricPoint.getValue()
-            metricAttributes = metricPoint.getAttributes()
+            metric           = reader.collectAllMetrics.asScala.toList.head
+            metricPoint      = metric.getLongSumData.getPoints.asScala.toList.head
+            metricValue      = metricPoint.getValue
+            metricAttributes = metricPoint.getAttributes
           } yield assertTrue(
             metricValue == 4L,
             metricAttributes == attributes
@@ -171,10 +171,10 @@ object MeterTest extends ZIOSpecDefault {
             _               <- gauge.set(10.0, attributes)
             _               <- gauge.set(20.0, attributes)
             _               <- gauge.set(-5.6, attributes)
-            metric           = reader.collectAllMetrics().asScala.toList.head
-            metricPoint      = metric.getDoubleGaugeData().getPoints().asScala.toList.head
-            metricValue      = metricPoint.getValue()
-            metricAttributes = metricPoint.getAttributes()
+            metric           = reader.collectAllMetrics.asScala.toList.head
+            metricPoint      = metric.getDoubleGaugeData.getPoints.asScala.toList.head
+            metricValue      = metricPoint.getValue
+            metricAttributes = metricPoint.getAttributes
           } yield assertTrue(
             metricValue == -5.6,
             metricAttributes == attributes
@@ -189,13 +189,13 @@ object MeterTest extends ZIOSpecDefault {
             attributes       = Attributes(Attribute.double("attr_historgram", 12.3))
             _               <- histogram.record(2.1, attributes)
             _               <- histogram.record(3.3, attributes)
-            metric           = reader.collectAllMetrics().asScala.toList.head
-            metricPoint      = metric.getHistogramData().getPoints().asScala.toList.head
-            metricSum        = metricPoint.getSum()
-            metricMin        = metricPoint.getMin()
-            metricMax        = metricPoint.getMax()
-            metricCount      = metricPoint.getCount()
-            metricAttributes = metricPoint.getAttributes()
+            metric           = reader.collectAllMetrics.asScala.toList.head
+            metricPoint      = metric.getHistogramData.getPoints.asScala.toList.head
+            metricSum        = metricPoint.getSum
+            metricMin        = metricPoint.getMin
+            metricMax        = metricPoint.getMax
+            metricCount      = metricPoint.getCount
+            metricAttributes = metricPoint.getAttributes
           } yield assertTrue(
             metricSum == 5.4,
             metricMin == 2.1,
@@ -218,9 +218,9 @@ object MeterTest extends ZIOSpecDefault {
                               } yield ()
                             }
               _          <- TestClock.adjust(13.seconds)
-              metric      = reader.collectAllMetrics().asScala.toList.head
-              metricPoint = metric.getLongSumData().getPoints().asScala.toList.head
-              metricValue = metricPoint.getValue()
+              metric      = reader.collectAllMetrics.asScala.toList.head
+              metricPoint = metric.getLongSumData.getPoints.asScala.toList.head
+              metricValue = metricPoint.getValue
             } yield assertTrue(metricValue == 14L)
           }
         )
@@ -233,10 +233,10 @@ object MeterTest extends ZIOSpecDefault {
             _               <- ZIO.logAnnotate("zio", "annotation") {
                                  counter.inc()
                                }
-            metric           = reader.collectAllMetrics().asScala.toList.head
+            metric           = reader.collectAllMetrics.asScala.toList.head
             metricPoint      = metric.getLongSumData.getPoints.asScala.toList.head
             metricValue      = metricPoint.getValue
-            metricAttributes = metricPoint.getAttributes()
+            metricAttributes = metricPoint.getAttributes
           } yield assertTrue(
             metricValue == 1L,
             metricAttributes == Attributes.empty
@@ -255,11 +255,11 @@ object MeterTest extends ZIOSpecDefault {
             counter       <- meter.counter("test_counter")
             _             <- counter.inc() @@ tracer.aspects.span("counter_span")
             span          <- getFinishedSpans.map(_.head)
-            metric         = reader.collectAllMetrics().asScala.toList.head
-            metricPoint    = metric.getLongSumData().getPoints().asScala.head
-            metricExemplar = metricPoint.getExemplars().asScala.toList.head
-            metricSpanId   = metricExemplar.getSpanContext().getSpanId()
-            metricTraceId  = metricExemplar.getSpanContext().getTraceId()
+            metric         = reader.collectAllMetrics.asScala.toList.head
+            metricPoint    = metric.getLongSumData.getPoints.asScala.head
+            metricExemplar = metricPoint.getExemplars.asScala.toList.head
+            metricSpanId   = metricExemplar.getSpanContext.getSpanId
+            metricTraceId  = metricExemplar.getSpanContext.getTraceId
           } yield assertTrue(
             metricSpanId == span.getSpanId(),
             metricTraceId == span.getTraceId()
@@ -278,10 +278,10 @@ object MeterTest extends ZIOSpecDefault {
             _               <- ZIO.logAnnotate("zio", "annotation") {
                                  counter.inc()
                                }
-            metric           = reader.collectAllMetrics().asScala.toList.head
+            metric           = reader.collectAllMetrics.asScala.toList.head
             metricPoint      = metric.getLongSumData.getPoints.asScala.toList.head
             metricValue      = metricPoint.getValue
-            metricAttributes = metricPoint.getAttributes()
+            metricAttributes = metricPoint.getAttributes
           } yield assertTrue(
             metricValue == 1L,
             metricAttributes == Attributes(Attribute.string("zio", "annotation"))
