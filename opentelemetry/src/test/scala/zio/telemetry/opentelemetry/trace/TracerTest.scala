@@ -11,7 +11,7 @@ import zio._
 import zio.telemetry.opentelemetry.common.{Attribute, Attributes}
 import zio.telemetry.opentelemetry.context.internal.ContextStorage
 import zio.test.Assertion._
-import zio.test.{Spec, TestClock, ZIOSpecDefault, assert}
+import zio.test.{Assertion, Spec, TestClock, ZIOSpecDefault, assert}
 
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
@@ -50,6 +50,27 @@ object TracerTest extends ZIOSpecDefault {
   def getFinishedSpans: ZIO[InMemorySpanExporter, Nothing, List[SpanData]] =
     ZIO.serviceWith[InMemorySpanExporter](_.getFinishedSpanItems.asScala.toList)
 
+  def assertSpanStatusCode(assertion: Assertion[StatusCode]): Assertion[SpanData] =
+    hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, assertion)
+
+  def assertSpanDescription(assertion: Assertion[String]): Assertion[SpanData] =
+    hasField[SpanData, String]("statusDescription", _.getStatus.getDescription, assertion)
+
+  def assertSpanException(assertion: Assertion[List[(String, String)]]): Assertion[SpanData] =
+    hasField[SpanData, List[(String, String)]](
+      "exceptionAttributes",
+      _.getEvents.asScala.toList
+        .flatMap(_.getAttributes.asMap().asScala.toList.map(x => x._1.getKey -> x._2.toString)),
+      assertion
+    )
+
+  def assertSpanParentId(assertion: Assertion[String]): Assertion[SpanData] =
+    hasField[SpanData, String](
+      "parentSpanId",
+      _.getParentSpanId,
+      assertion
+    )
+
   def spec: Spec[Any, Throwable] =
     suite("zio opentelemetry")(
       suite("Tracer")(
@@ -78,21 +99,14 @@ object TracerTest extends ZIOSpecDefault {
         ZIO.serviceWithZIO[Tracer] { tracer =>
           import tracer.aspects._
 
+          val assertParentId = assertSpanParentId(equalTo(SpanId.getInvalid))
+
           for {
             _     <- ZIO.unit @@ root("ROOT2") @@ root("ROOT")
             spans <- getFinishedSpans
             root   = spans.find(_.getName == "ROOT")
             child  = spans.find(_.getName == "ROOT2")
-          } yield assert(root)(isSome(anything)) &&
-            assert(child)(
-              isSome(
-                hasField[SpanData, String](
-                  "parent",
-                  _.getParentSpanId,
-                  equalTo(SpanId.getInvalid)
-                )
-              )
-            )
+          } yield assert(root)(isSome(anything)) && assert(child)(isSome(assertParentId))
         }
       },
       test("span") {
@@ -105,15 +119,7 @@ object TracerTest extends ZIOSpecDefault {
             root   = spans.find(_.getName == "Root")
             child  = spans.find(_.getName == "Child")
           } yield assert(root)(isSome(anything)) &&
-            assert(child)(
-              isSome(
-                hasField[SpanData, String](
-                  "parentSpanId",
-                  _.getParentSpanId,
-                  equalTo(root.get.getSpanId)
-                )
-              )
-            )
+            assert(child)(isSome(assertSpanParentId(equalTo(root.get.getSpanId))))
         }
       },
       test("continueSpan") {
@@ -128,15 +134,7 @@ object TracerTest extends ZIOSpecDefault {
             _            = scope.close()
             spans       <- getFinishedSpans
             child        = spans.find(_.getName == "zio-otel-child")
-          } yield assert(child)(
-            isSome(
-              hasField[SpanData, String](
-                "parent",
-                _.getParentSpanId,
-                equalTo(span.context.getSpanId)
-              )
-            )
-          )
+          } yield assert(child)(isSome(assertSpanParentId(equalTo(span.context.getSpanId))))
         }
       },
       test("unmanagedScope") {
@@ -155,15 +153,7 @@ object TracerTest extends ZIOSpecDefault {
             scoped = spans.find(_.getName == "Scoped")
             tags   = scoped.get.getEvents.asScala.toList.map(_.getName)
           } yield assert(root)(isSome(anything)) &&
-            assert(scoped)(
-              isSome(
-                hasField[SpanData, String](
-                  "parentSpanId",
-                  _.getParentSpanId,
-                  equalTo(root.get.getSpanId)
-                )
-              )
-            ) &&
+            assert(scoped)(isSome(assertSpanParentId(equalTo(root.get.getSpanId)))) &&
             assert(tags)(equalTo(List("In legacy code", "Finishing legacy code")))
         }
       },
@@ -185,15 +175,7 @@ object TracerTest extends ZIOSpecDefault {
             scoped = spans.find(_.getName == "Scoped")
             tags   = scoped.get.getEvents.asScala.toList.map(_.getName)
           } yield assert(root)(isSome(anything)) &&
-            assert(scoped)(
-              isSome(
-                hasField[SpanData, String](
-                  "parentSpanId",
-                  _.getParentSpanId,
-                  equalTo(root.get.getSpanId)
-                )
-              )
-            ) &&
+            assert(scoped)(isSome(assertSpanParentId(equalTo(root.get.getSpanId)))) &&
             assert(tags)(equalTo(List("In legacy code", "Finishing legacy code")))
         }
       },
@@ -218,15 +200,7 @@ object TracerTest extends ZIOSpecDefault {
             tags    = scoped.get.getEvents.asScala.toList.map(_.getName)
           } yield assert(result)(equalTo(1)) &&
             assert(root)(isSome(anything)) &&
-            assert(scoped)(
-              isSome(
-                hasField[SpanData, String](
-                  "parentSpanId",
-                  _.getParentSpanId,
-                  equalTo(root.get.getSpanId)
-                )
-              )
-            ) &&
+            assert(scoped)(isSome(assertSpanParentId(equalTo(root.get.getSpanId)))) &&
             assert(tags)(equalTo(List("In legacy code", "Finishing legacy code")))
         }
       }
@@ -244,15 +218,7 @@ object TracerTest extends ZIOSpecDefault {
             root   = spans.find(_.getName == "Root")
             child  = spans.find(_.getName == "Child")
           } yield assert(root)(isSome(anything)) &&
-            assert(child)(
-              isSome(
-                hasField[SpanData, String](
-                  "parentSpanId",
-                  _.getParentSpanId,
-                  equalTo(root.get.getSpanId)
-                )
-              )
-            )
+            assert(child)(isSome(assertSpanParentId(equalTo(root.get.getSpanId))))
         }
       },
       test("span single scope") {
@@ -268,40 +234,21 @@ object TracerTest extends ZIOSpecDefault {
             root   = spans.find(_.getName == "Root")
             child  = spans.find(_.getName == "Child")
           } yield assert(root)(isSome(anything)) &&
-            assert(child)(
-              isSome(
-                hasField[SpanData, String](
-                  "parentSpanId",
-                  _.getParentSpanId,
-                  equalTo(root.get.getSpanId)
-                )
-              )
-            )
+            assert(child)(isSome(assertSpanParentId(equalTo(root.get.getSpanId))))
         }
       },
       test("status mapper for failed span") {
         ZIO.serviceWithZIO[Tracer] { tracer =>
-          val assertStatusCodeError =
-            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.ERROR))
+          val assertStatusCode  = assertSpanStatusCode(equalTo(StatusCode.ERROR))
+          val assertDescription = assertSpanDescription(equalTo(""))
+          val assertException   = assertSpanException(
+            hasSubset(List("exception.message" -> "some_error", "exception.type" -> "java.lang.RuntimeException"))
+          )
 
-          val assertStatusDescriptionError =
-            hasField[SpanData, String](
-              "statusDescription",
-              _.getStatus.getDescription,
-              equalTo("")
-            )
-
-          val assertRecordedExceptionAttributes =
-            hasField[SpanData, List[(String, String)]](
-              "exceptionAttributes",
-              _.getEvents.asScala.toList
-                .flatMap(_.getAttributes.asMap().asScala.toList.map(x => x._1.getKey -> x._2.toString)),
-              hasSubset(List("exception.message" -> "some_error", "exception.type" -> "java.lang.RuntimeException"))
-            )
-
-          val assertion    = assertStatusCodeError && assertRecordedExceptionAttributes && assertStatusDescriptionError
+          val assertError  =
+            assertStatusCode && assertException && assertDescription
           val statusMapper =
-            StatusMapper.failureNoDescription[Any](_ => StatusCode.ERROR)(e => Option(e.asInstanceOf[Throwable]))
+            StatusMapper.failureThrowable(_ => StatusCode.ERROR)
 
           val failedEffect: ZIO[Any, Throwable, Unit] =
             ZIO.fail(new RuntimeException("some_error")).unit
@@ -318,7 +265,7 @@ object TracerTest extends ZIOSpecDefault {
             spans <- getFinishedSpans
             root   = spans.find(_.getName == "Root")
             child  = spans.find(_.getName == "Child")
-          } yield assert(root)(isSome(assertion)) && assert(child)(isSome(assertion))
+          } yield assert(root)(isSome(assertError)) && assert(child)(isSome(assertError))
         }
       },
       test("setAttribute") {
@@ -408,22 +355,17 @@ object TracerTest extends ZIOSpecDefault {
             externallyProvidedRootSpan1 = tracer.spanBuilder("external1").startSpan()
             externallyProvidedRootSpan2 = tracer.spanBuilder("external2").startSpan()
             externallyProvidedRootSpan3 = tracer.spanBuilder("external3").startSpan()
-            links                       = List(externallyProvidedRootSpan1, externallyProvidedRootSpan2, externallyProvidedRootSpan3)
-                                            .map(_.getSpanContext)
+            links                       = List(
+                                            externallyProvidedRootSpan1,
+                                            externallyProvidedRootSpan2,
+                                            externallyProvidedRootSpan3
+                                          ).map(_.getSpanContext)
             _                          <- ZIO.unit @@ span("Child", links = links) @@ span("Root")
             spans                      <- getFinishedSpans
             root                        = spans.find(_.getName == "Root")
             child                       = spans.find(_.getName == "Child")
           } yield assert(root)(isSome(anything)) &&
-            assert(child)(
-              isSome(
-                hasField[SpanData, String](
-                  "parentSpanId",
-                  _.getParentSpanId,
-                  equalTo(root.get.getSpanId)
-                )
-              )
-            ) &&
+            assert(child)(isSome(assertSpanParentId(equalTo(root.get.getSpanId)))) &&
             assert(child.toList.flatMap(_.getLinks.asScala.toList.map(_.getSpanContext.getSpanId)))(
               hasSameElements(links.map(_.getSpanId))
             )
@@ -435,41 +377,17 @@ object TracerTest extends ZIOSpecDefault {
     suite("status mapper")(
       test("empty") {
         ZIO.serviceWithZIO[Tracer] { tracer =>
-          val assertEmptyOkStatusCode  =
-            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.UNSET))
-          val assertEmptyOkDescription =
-            hasField[SpanData, String](
-              "statusDescription",
-              _.getStatus.getDescription,
-              equalTo("")
-            )
+          val assertEmptyOkStatusCode  = assertSpanStatusCode(equalTo(StatusCode.UNSET))
+          val assertEmptyOkDescription = assertSpanDescription(equalTo(""))
 
-          val assertEmptyFailedStatusCode  =
-            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.UNSET))
-          val assertEmptyFailedDescription =
-            hasField[SpanData, String](
-              "statusDescription",
-              _.getStatus.getDescription,
-              equalTo("")
-            )
+          val assertEmptyFailedStatusCode  = assertSpanStatusCode(equalTo(StatusCode.UNSET))
+          val assertEmptyFailedDescription = assertSpanDescription(equalTo(""))
 
-          val assertManuallySetOkStatusCode  =
-            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.OK))
-          val assertManuallySetOkDescription =
-            hasField[SpanData, String](
-              "statusDescription",
-              _.getStatus.getDescription,
-              equalTo("")
-            )
+          val assertManuallySetOkStatusCode  = assertSpanStatusCode(equalTo(StatusCode.OK))
+          val assertManuallySetOkDescription = assertSpanDescription(equalTo(""))
 
-          val assertManuallySetErrorStatusCode  =
-            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.ERROR))
-          val assertManuallySetErrorDescription =
-            hasField[SpanData, String](
-              "statusDescription",
-              _.getStatus.getDescription,
-              equalTo("Error")
-            )
+          val assertManuallySetErrorStatusCode  = assertSpanStatusCode(equalTo(StatusCode.ERROR))
+          val assertManuallySetErrorDescription = assertSpanDescription(equalTo("Error"))
 
           val assertEmptyOk          =
             assertEmptyOkStatusCode && assertEmptyOkDescription
@@ -505,23 +423,11 @@ object TracerTest extends ZIOSpecDefault {
       },
       test("default") {
         ZIO.serviceWithZIO[Tracer] { tracer =>
-          val assertOkStatusCode  =
-            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.UNSET))
-          val assertOkDescription =
-            hasField[SpanData, String](
-              "statusDescription",
-              _.getStatus.getDescription,
-              equalTo("")
-            )
+          val assertOkStatusCode  = assertSpanStatusCode(equalTo(StatusCode.UNSET))
+          val assertOkDescription = assertSpanDescription(equalTo(""))
 
-          val assertFailedStatusCode  =
-            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.ERROR))
-          val assertFailedDescription =
-            hasField[SpanData, String](
-              "statusDescription",
-              _.getStatus.getDescription,
-              equalTo("")
-            )
+          val assertFailedStatusCode  = assertSpanStatusCode(equalTo(StatusCode.ERROR))
+          val assertFailedDescription = assertSpanDescription(equalTo(""))
 
           val assertDefaultOk     =
             assertOkStatusCode && assertOkDescription
@@ -542,23 +448,11 @@ object TracerTest extends ZIOSpecDefault {
       },
       test("both") {
         ZIO.serviceWithZIO[Tracer] { tracer =>
-          val assertDefaultOkStatusCode  =
-            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.UNSET))
-          val assertDefaultOkDescription =
-            hasField[SpanData, String](
-              "statusDescription",
-              _.getStatus.getDescription,
-              equalTo("")
-            )
+          val assertDefaultOkStatusCode  = assertSpanStatusCode(equalTo(StatusCode.UNSET))
+          val assertDefaultOkDescription = assertSpanDescription(equalTo(""))
 
-          val assertDefaultFailedStatusCode  =
-            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.ERROR))
-          val assertDefaultFailedDescription =
-            hasField[SpanData, String](
-              "statusDescription",
-              _.getStatus.getDescription,
-              equalTo("")
-            )
+          val assertDefaultFailedStatusCode  = assertSpanStatusCode(equalTo(StatusCode.ERROR))
+          val assertDefaultFailedDescription = assertSpanDescription(equalTo(""))
 
           val assertionNotDefaultOk     =
             (assertDefaultOkStatusCode && assertDefaultOkDescription).negate
@@ -586,23 +480,11 @@ object TracerTest extends ZIOSpecDefault {
       },
       test("success & successNoDescription") {
         ZIO.serviceWithZIO[Tracer] { tracer =>
-          val assertOkStatusCode  =
-            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.OK))
-          val assertOkDescription =
-            hasField[SpanData, String](
-              "statusDescription",
-              _.getStatus.getDescription,
-              equalTo("")
-            )
+          val assertOkStatusCode  = assertSpanStatusCode(equalTo(StatusCode.OK))
+          val assertOkDescription = assertSpanDescription(equalTo(""))
 
-          val assertErrorStatusCode  =
-            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.ERROR))
-          val assertErrorDescription =
-            hasField[SpanData, String](
-              "statusDescription",
-              _.getStatus.getDescription,
-              equalTo("Error")
-            )
+          val assertErrorStatusCode  = assertSpanStatusCode(equalTo(StatusCode.ERROR))
+          val assertErrorDescription = assertSpanDescription(equalTo("Error"))
 
           val assertOk              =
             assertOkStatusCode && assertOkDescription
@@ -635,57 +517,20 @@ object TracerTest extends ZIOSpecDefault {
       },
       test("failure && failureNoException && failureNoDescription") {
         ZIO.serviceWithZIO[Tracer] { tracer =>
-          val assertOkStatusCode     =
-            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.OK))
-          val assertOkDescription    =
-            hasField[SpanData, String](
-              "statusDescription",
-              _.getStatus.getDescription,
-              equalTo("")
-            )
-          val assertOkExceptionEmpty =
-            hasField[SpanData, List[(String, String)]](
-              "exceptionAttributes",
-              _.getEvents.asScala.toList
-                .flatMap(_.getAttributes.asMap().asScala.toList.map(x => x._1.getKey -> x._2.toString)),
-              isEmpty
-            )
-          val assertOkExceptionIsSet =
-            hasField[SpanData, List[(String, String)]](
-              "exceptionAttributes",
-              _.getEvents.asScala.toList
-                .flatMap(_.getAttributes.asMap().asScala.toList.map(x => x._1.getKey -> x._2.toString)),
-              hasSubset(List("exception.message" -> "OK", "exception.type" -> "java.lang.RuntimeException"))
-            )
+          val assertOkStatusCode     = assertSpanStatusCode(equalTo(StatusCode.OK))
+          val assertOkDescription    = assertSpanDescription(equalTo(""))
+          val assertOkExceptionEmpty = assertSpanException(isEmpty)
+          val assertOkExceptionIsSet = assertSpanException(
+            hasSubset(List("exception.message" -> "OK", "exception.type" -> "java.lang.RuntimeException"))
+          )
 
-          val assertErrorStatusCode       =
-            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.ERROR))
-          val assertErrorDescriptionEmpty =
-            hasField[SpanData, String](
-              "statusDescription",
-              _.getStatus.getDescription,
-              equalTo("")
-            )
-          val assertErrorDescription      =
-            hasField[SpanData, String](
-              "statusDescription",
-              _.getStatus.getDescription,
-              equalTo("Error")
-            )
-          val assertErrorExceptionEmpty   =
-            hasField[SpanData, List[(String, String)]](
-              "exceptionAttributes",
-              _.getEvents.asScala.toList
-                .flatMap(_.getAttributes.asMap().asScala.toList.map(x => x._1.getKey -> x._2.toString)),
-              isEmpty
-            )
-          val assertErrorException        =
-            hasField[SpanData, List[(String, String)]](
-              "exceptionAttributes",
-              _.getEvents.asScala.toList
-                .flatMap(_.getAttributes.asMap().asScala.toList.map(x => x._1.getKey -> x._2.toString)),
-              hasSubset(List("exception.message" -> "Error", "exception.type" -> "java.lang.RuntimeException"))
-            )
+          val assertErrorStatusCode       = assertSpanStatusCode(equalTo(StatusCode.ERROR))
+          val assertErrorDescriptionEmpty = assertSpanDescription(equalTo(""))
+          val assertErrorDescription      = assertSpanDescription(equalTo("Error"))
+          val assertErrorExceptionEmpty   = assertSpanException(isEmpty)
+          val assertErrorException        = assertSpanException(
+            hasSubset(List("exception.message" -> "Error", "exception.type" -> "java.lang.RuntimeException"))
+          )
 
           val assertOkNoException               =
             assertOkStatusCode && assertOkDescription && assertOkExceptionEmpty
@@ -773,37 +618,17 @@ object TracerTest extends ZIOSpecDefault {
       },
       test("failureThrowable") {
         ZIO.serviceWithZIO[Tracer] { tracer =>
-          val assertOkStatusCode  =
-            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.OK))
-          val assertOkDescription =
-            hasField[SpanData, String](
-              "statusDescription",
-              _.getStatus.getDescription,
-              equalTo("")
-            )
-          val assertOkException   =
-            hasField[SpanData, List[(String, String)]](
-              "exceptionAttributes",
-              _.getEvents.asScala.toList
-                .flatMap(_.getAttributes.asMap().asScala.toList.map(x => x._1.getKey -> x._2.toString)),
-              hasSubset(List("exception.message" -> "OK", "exception.type" -> "java.lang.RuntimeException"))
-            )
+          val assertOkStatusCode  = assertSpanStatusCode(equalTo(StatusCode.OK))
+          val assertOkDescription = assertSpanDescription(equalTo(""))
+          val assertOkException   = assertSpanException(
+            hasSubset(List("exception.message" -> "OK", "exception.type" -> "java.lang.RuntimeException"))
+          )
 
-          val assertErrorStatusCode  =
-            hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, equalTo(StatusCode.ERROR))
-          val assertErrorDescription =
-            hasField[SpanData, String](
-              "statusDescription",
-              _.getStatus.getDescription,
-              equalTo("")
-            )
-          val assertErrorException   =
-            hasField[SpanData, List[(String, String)]](
-              "exceptionAttributes",
-              _.getEvents.asScala.toList
-                .flatMap(_.getAttributes.asMap().asScala.toList.map(x => x._1.getKey -> x._2.toString)),
-              hasSubset(List("exception.message" -> "Error", "exception.type" -> "java.lang.RuntimeException"))
-            )
+          val assertErrorStatusCode  = assertSpanStatusCode(equalTo(StatusCode.ERROR))
+          val assertErrorDescription = assertSpanDescription(equalTo(""))
+          val assertErrorException   = assertSpanException(
+            hasSubset(List("exception.message" -> "Error", "exception.type" -> "java.lang.RuntimeException"))
+          )
 
           val assertOk    =
             assertOkStatusCode && assertOkDescription && assertOkException
