@@ -73,11 +73,14 @@ object StatusMapper {
           .getOrElse(StatusMapper.Result.Failure(StatusCode.ERROR))
 
       for {
-        _ <- if (result.statusCode == StatusCode.ERROR)
-               span.setStatus(result.statusCode, cause.prettyPrint)
-             else
-               span.setStatus(result.statusCode)
-        _ <- result.exception.fold(ZIO.unit)(span.recordException)
+        _ <-
+          result.description match {
+            case Some(description) if result.statusCode == StatusCode.ERROR =>
+              span.setStatus(result.statusCode, description)
+            case _                                                          =>
+              span.setStatus(result.statusCode)
+          }
+        _ <- ZIO.foreach(result.exception)(span.recordException)
       } yield ()
     }
 
@@ -122,8 +125,13 @@ object StatusMapper {
   sealed trait Result
 
   object Result {
-    final case class Success(statusCode: StatusCode, description: Option[String] = None)  extends Result
-    final case class Failure(statusCode: StatusCode, exception: Option[Throwable] = None) extends Result
+    final case class Success(statusCode: StatusCode, description: Option[String] = None) extends Result
+
+    final case class Failure(
+      statusCode: StatusCode,
+      description: Option[String] = None,
+      exception: Option[Throwable] = None
+    ) extends Result
   }
 
   /**
@@ -158,33 +166,51 @@ object StatusMapper {
     Both(success, failure)
 
   /**
+   * Overrides the status code, description, and exception for a failure case.
+   *
+   * Usage example:
+   * {{{
+   *   StatusMapper.failure[MyError](_ => StatusCode.ERROR)(e => Some(e.message))(e => Some(new RuntimeException(e.message)))
+   * }}}
+   *
+   * @param toStatusCode
+   * @param toDescription
+   * @param toException
+   * @return
+   */
+  def failure[E](toStatusCode: E => StatusCode)(toDescription: E => Option[String])(
+    toException: E => Option[Throwable]
+  ): Failure[E] =
+    Failure { case e => Result.Failure(toStatusCode(e), toDescription(e), toException(e)) }
+
+  /**
    * Overrides the status code and exception for a failure case.
    *
    * Usage example:
    * {{{
-   *   StatusMapper.failure[MyError](_ => StatusCode.ERROR)(e => Some(new RuntimeException(e.message)))
+   *   StatusMapper.failureNoDescription[MyError](_ => StatusCode.ERROR)(e => Some(new RuntimeException(e.message)))
    * }}}
    *
    * @param toStatusCode
    * @param toException
    * @return
    */
-  def failure[E](toStatusCode: E => StatusCode)(toException: E => Option[Throwable]): Failure[E] =
-    Failure { case e => Result.Failure(toStatusCode(e), toException(e)) }
+  def failureNoDescription[E](toStatusCode: E => StatusCode)(toException: E => Option[Throwable]): Failure[E] =
+    Failure { case e => Result.Failure(toStatusCode(e), exception = toException(e)) }
 
   /**
-   * Overrides the status code and skips exception for a failure case.
+   * Overrides the status code and description, but skips exception for a failure case.
    *
    * Usage example:
    * {{{
-   *   StatusMapper.failureNoException(_ => StatusCode.ERROR)
+   *   StatusMapper.failureNoException[MyError](_ => StatusCode.ERROR)(e => Some(e.message))
    * }}}
    *
    * @param toStatusCode
    * @return
    */
-  def failureNoException[E](toStatusCode: E => StatusCode): Failure[E] =
-    Failure { case e => Result.Failure(toStatusCode(e)) }
+  def failureNoException[E](toStatusCode: E => StatusCode)(toDescription: E => Option[String]): Failure[E] =
+    Failure { case e => Result.Failure(toStatusCode(e), description = toDescription(e)) }
 
   /**
    * Overrides the status code and adds an exception for a failure case.
@@ -198,7 +224,7 @@ object StatusMapper {
    * @return
    */
   def failureThrowable(toStatusCode: Throwable => StatusCode): Failure[Throwable] =
-    Failure { case e => Result.Failure(toStatusCode(e), Option(e)) }
+    Failure { case e => Result.Failure(toStatusCode(e), None, Option(e)) }
 
   /**
    * Overrides the status code and description for a success case.
