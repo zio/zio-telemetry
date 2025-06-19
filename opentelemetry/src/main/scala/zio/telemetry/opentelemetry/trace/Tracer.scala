@@ -83,11 +83,11 @@ trait Tracer { self =>
    * @param links
    *   spanContexts of the linked Spans.
    */
-  def spanScoped(
+  def spanScoped[E, A](
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     attributes: Attributes = Attributes.empty(),
-    statusMapper: StatusMapper[Any, Any] = StatusMapper.default,
+    statusMapper: StatusMapper[E, A] = StatusMapper.default,
     links: Seq[SpanContext] = Seq.empty
   )(implicit trace: Trace): ZIO[Scope, Nothing, Span]
 
@@ -289,11 +289,11 @@ private[opentelemetry] object Tracer {
                        }
         } yield result
 
-      override def spanScoped(
+      override def spanScoped[E, A](
         spanName: String,
         spanKind: SpanKind = SpanKind.INTERNAL,
         attributes: Attributes,
-        statusMapper: StatusMapper[Any, Any] = StatusMapper.default,
+        statusMapper: StatusMapper[E, A] = StatusMapper.default,
         links: Seq[SpanContext]
       )(implicit trace: Trace): ZIO[Scope, Nothing, Span] =
         for {
@@ -303,7 +303,7 @@ private[opentelemetry] object Tracer {
           _          <- ctxStorage.locallyScoped(ctx)
           scope      <- ZIO.scope
           _          <- scope.addFinalizerExit { exit =>
-                          statusMapper.handle(Span.fromContext(ctx), exit) *> endSpan(span)
+                          statusMapper.handle(Span.fromContext(ctx), exit.asInstanceOf[Exit[E, A]]) *> endSpan(span)
                         }
         } yield span
 
