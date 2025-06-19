@@ -50,6 +50,24 @@ trait Meter {
   )(implicit trace: Trace): UIO[UpDownCounter[Long]]
 
   /**
+   * Constructs a Gauge instrument.
+   *
+   * @param name
+   *   the name of the Gauge. Instrument names must consist of 255 or fewer characters including alphanumeric, _, ., -,
+   *   /, and start with a letter
+   * @param unit
+   *   The unit. Instrument units must be 63 or fewer ASCII characters
+   * @param description
+   *   description is an optional free-form text provided by the author of the instrument. The API MUST treat it as an
+   *   opaque string
+   */
+  def gauge(
+    name: String,
+    unit: Option[String] = None,
+    description: Option[String] = None
+  )(implicit trace: Trace): UIO[Gauge[Double]]
+
+  /**
    * Constructs a Historgram instrument.
    *
    * @param name
@@ -153,6 +171,13 @@ object Meter {
         description: Option[String] = None
       )(implicit trace: Trace): UIO[UpDownCounter[Long]] =
         ZIO.succeed(builder.upDownCounter(name, unit, description))
+
+      override def gauge(
+        name: String,
+        unit: Option[String],
+        description: Option[String]
+      )(implicit trace: Trace): UIO[Gauge[Double]] =
+        ZIO.succeed(builder.gauge(name, unit, description))
 
       override def histogram(
         name: String,

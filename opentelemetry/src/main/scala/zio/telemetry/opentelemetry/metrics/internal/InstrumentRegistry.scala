@@ -1,7 +1,7 @@
 package zio.telemetry.opentelemetry.metrics.internal
 
 import zio.metrics.{MetricKey, MetricKeyType}
-import zio.telemetry.opentelemetry.metrics.{Counter, Histogram}
+import zio.telemetry.opentelemetry.metrics.{Counter, Gauge, Histogram}
 
 import java.util.concurrent.ConcurrentHashMap
 
@@ -9,9 +9,11 @@ trait InstrumentRegistry {
 
   def getCounter(key: MetricKey.Counter): Counter[Long]
 
+  def getGauge(key: MetricKey.Gauge): Gauge[Double]
+
   def getHistogram(key: MetricKey.Histogram): Histogram[Double]
 
-  def getGauge(key: MetricKey.Gauge): AtomicDouble
+  def getObservableGauge(key: MetricKey.Gauge): AtomicDouble
 
 }
 
@@ -29,12 +31,15 @@ private[opentelemetry] object InstrumentRegistry {
       def getCounter(key: MetricKey.Counter): Counter[Long] =
         getOrCreateInstrument[Counter, Long](key)(builder.counter(key.name, description = key.description))
 
+      def getGauge(key: MetricKey.Gauge): Gauge[Double] =
+        getOrCreateInstrument[Gauge, Double](key)(builder.gauge(key.name, description = key.description))
+
       def getHistogram(key: MetricKey.Histogram): Histogram[Double] =
         getOrCreateInstrument[Histogram, Double](key)(
           builder.histogram(key.name, description = key.description, boundaries = Some(key.keyType.boundaries.values))
         )
 
-      def getGauge(key: MetricKey.Gauge): AtomicDouble =
+      def getObservableGauge(key: MetricKey.Gauge): AtomicDouble =
         gauges.computeIfAbsent(
           key,
           { gaugeKey =>
