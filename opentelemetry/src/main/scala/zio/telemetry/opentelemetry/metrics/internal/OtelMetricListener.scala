@@ -11,10 +11,10 @@ private[opentelemetry] object OtelMetricListener {
     new MetricListener {
 
       override def modifyGauge(key: MetricKey[MetricKeyType.Gauge], value: Double)(implicit unsafe: Unsafe): Unit =
-        registry.getGauge(key).incrementBy(value)
+        registry.getObservableGauge(key).incrementBy(value)
 
       override def updateGauge(key: MetricKey[MetricKeyType.Gauge], value: Double)(implicit unsafe: Unsafe): Unit =
-        registry.getGauge(key).set(value)
+        registry.getGauge(key).record0(value, attributes(key.tags))
 
       override def updateHistogram(key: MetricKey[MetricKeyType.Histogram], value: Double)(implicit
         unsafe: Unsafe

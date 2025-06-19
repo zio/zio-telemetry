@@ -4,7 +4,7 @@ import io.opentelemetry.api
 import io.opentelemetry.context.Context
 import zio._
 import zio.telemetry.opentelemetry.context.internal.ContextStorage
-import zio.telemetry.opentelemetry.metrics.{Counter, Histogram, ObservableMeasurement, UpDownCounter}
+import zio.telemetry.opentelemetry.metrics.{Counter, Gauge, Histogram, ObservableMeasurement, UpDownCounter}
 
 import scala.jdk.CollectionConverters._
 
@@ -29,6 +29,8 @@ object Instrument {
       unit: Option[String] = None,
       description: Option[String] = None
     ): UpDownCounter[Long]
+
+    def gauge(name: String, unit: Option[String] = None, description: Option[String] = None): Gauge[Double]
 
     def histogram(
       name: String,
@@ -86,6 +88,15 @@ object Instrument {
           description.foreach(builder.setDescription)
 
           UpDownCounter.long(builder.build(), ctxStorage, logAnnotated)
+        }
+
+        override def gauge(name: String, unit: Option[String], description: Option[String]): Gauge[Double] = {
+          val builder = meter.gaugeBuilder(name)
+
+          unit.foreach(builder.setUnit)
+          description.foreach(builder.setDescription)
+
+          Gauge.double(builder.build(), ctxStorage, logAnnotated)
         }
 
         override def histogram(
