@@ -4,12 +4,12 @@ object Dependencies {
 
   object Versions {
     val opentracing           = "0.33.0"
-    val opentelemetry         = "1.50.0"
+    val opentelemetry         = "1.51.0"
     val opencensus            = "0.31.1"
     val scalaCollectionCompat = "2.13.0"
-    val zio                   = "2.1.17"
+    val zio                   = "2.1.19"
     val zioLogging            = "2.5.0"
-    val izumiReflect          = "3.0.2"
+    val izumiReflect          = "3.0.3"
   }
 
   object Orgs {
@@ -97,7 +97,7 @@ object Dependencies {
     Orgs.opentelemetry        % "opentelemetry-exporter-otlp"         % Versions.opentelemetry,
     Orgs.opentelemetry        % "opentelemetry-exporter-logging-otlp" % Versions.opentelemetry,
     Orgs.opentelemetry        % "opentelemetry-sdk"                   % Versions.opentelemetry,
-    Orgs.opentelemetrySemconv % "opentelemetry-semconv"               % "1.32.0",
+    Orgs.opentelemetrySemconv % "opentelemetry-semconv"               % "1.34.0",
     Orgs.grpc                 % "grpc-netty-shaded"                   % ExampleVersions.grpcNetty,
     Orgs.zio                 %% "zio-http"                            % ExampleVersions.zioHttp
   )
@@ -105,7 +105,7 @@ object Dependencies {
   lazy val opentelemetryInstrumentationExample = example ++ Seq(
     Orgs.opentelemetry                % "opentelemetry-exporter-otlp"        % Versions.opentelemetry,
     Orgs.opentelemetry                % "opentelemetry-sdk"                  % Versions.opentelemetry,
-    Orgs.opentelemetrySemconv         % "opentelemetry-semconv"              % "1.32.0",
+    Orgs.opentelemetrySemconv         % "opentelemetry-semconv"              % "1.34.0",
     Orgs.grpc                         % "grpc-netty-shaded"                  % ExampleVersions.grpcNetty,
     Orgs.opentelemetryInstrumentation % "opentelemetry-logback-appender-1.0" % "1.31.0-alpha",
     Orgs.zio                         %% "zio-http"                           % ExampleVersions.zioHttp,
