@@ -237,6 +237,22 @@ object OpenTelemetry {
     }
 
   /**
+   * Returns an instance of `ZIO.ZLogger` that is configured to propagate log records as OTEL Log signals.
+   *
+   * It may be useful when you need to execute an effect with the specified logger. See `ZIO.withLogger`.
+   */
+  def zioLogger(
+    instrumentationScopeName: String
+  ): URLayer[OpenTelemetry, ZLogger[String, Unit]] =
+    ZLayer.scoped {
+      for {
+        openTelemetry <- ZIO.service[OpenTelemetry]
+        loggerProvider = openTelemetry.unsafe.asJava.getLogsBridge
+        logger         = Logger.zioLogger(instrumentationScopeName)(openTelemetry.ctxStorage, loggerProvider)
+      } yield logger
+    }
+
+  /**
    * Use when you want to allow a seamless integration with ZIO runtime and JVM metrics.
    *
    * By default this layer enables the propagation of ZIO runtime metrics only. For JVM metrics you need to provide
