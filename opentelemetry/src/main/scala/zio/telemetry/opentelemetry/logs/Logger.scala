@@ -22,7 +22,7 @@ private[opentelemetry] object Logger {
       _      <- ZIO.withLoggerScoped(logger)
     } yield ()
 
-  private def zioLogger(instrumentationScopeName: String)(
+  private[opentelemetry] def zioLogger(instrumentationScopeName: String)(
     ctxStorage: ContextStorage,
     loggerProvider: LoggerProvider
   ): ZLogger[String, Unit] =
