@@ -3,7 +3,7 @@
 //> using dep dev.zio::zio-opentelemetry:3.1.5
 //> using dep dev.zio::zio-opentelemetry-zio-logging:3.1.6
 //> using dep io.opentelemetry:opentelemetry-sdk:1.51.0
-//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.51.0
+//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.52.0
 //> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.51.0
 //> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.34.0
 
