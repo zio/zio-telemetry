@@ -102,7 +102,7 @@ object OpenTelemetry {
    *   <a href="https://zio.dev/zio-telemetry/opentelemetry/#usage-with-opentelemetry-automatic-instrumentation">Usage
    *   with OpenTelemetry automatic instrumentation</a>
    */
-  def global(logAnnotated: Boolean = false): TaskLayer[OpenTelemetry] =
+  def global(logAnnotated: Boolean = false)(implicit trace: Trace): TaskLayer[OpenTelemetry] =
     ZLayer.scoped {
       for {
         underlying <- ZIO.attempt(GlobalOpenTelemetry.get())
@@ -125,7 +125,7 @@ object OpenTelemetry {
     logAnnotated: Boolean = false
   )(
     zio: => ZIO[Scope, Throwable, JOpenTelemetry]
-  ): TaskLayer[OpenTelemetry] =
+  )(implicit trace: Trace): TaskLayer[OpenTelemetry] =
     ZLayer.scoped {
       for {
         underlying <- zio
@@ -133,10 +133,10 @@ object OpenTelemetry {
       } yield new OpenTelemetrySdk(ctxStorage, underlying, ctxPropagator, logAnnotated)
     }
 
-  def custom(zio: => ZIO[Scope, Throwable, JOpenTelemetry]): TaskLayer[OpenTelemetry] =
+  def custom(zio: => ZIO[Scope, Throwable, JOpenTelemetry])(implicit trace: Trace): TaskLayer[OpenTelemetry] =
     custom()(zio)
 
-  def noop(logAnnotated: Boolean = false): TaskLayer[OpenTelemetry] =
+  def noop(logAnnotated: Boolean = false)(implicit trace: Trace): TaskLayer[OpenTelemetry] =
     ZLayer.scoped {
       for {
         underlying <- ZIO.attempt(JOpenTelemetry.noop())
@@ -160,7 +160,7 @@ object OpenTelemetry {
     instrumentationVersion: Option[String] = None,
     schemaUrl: Option[String] = None,
     logAnnotated: Boolean = false
-  ): URLayer[OpenTelemetry, Tracer] = {
+  )(implicit trace: Trace): URLayer[OpenTelemetry, Tracer] = {
     def buildTracer(openTelemetry: JOpenTelemetry) = {
       val builder = openTelemetry.tracerBuilder(instrumentationScopeName)
 
@@ -195,7 +195,7 @@ object OpenTelemetry {
     instrumentationVersion: Option[String] = None,
     schemaUrl: Option[String] = None,
     logAnnotated: Boolean = false
-  ): URLayer[OpenTelemetry, Meter] = {
+  )(implicit trace: Trace): URLayer[OpenTelemetry, Meter] = {
     def buildMeter(openTelemetry: JOpenTelemetry) = {
       val builder = openTelemetry.meterBuilder(instrumentationScopeName)
 
@@ -227,7 +227,7 @@ object OpenTelemetry {
   def logger(
     instrumentationScopeName: String,
     logLevel: LogLevel = LogLevel.Info
-  ): URLayer[OpenTelemetry, Unit] =
+  )(implicit trace: Trace): URLayer[OpenTelemetry, Unit] =
     ZLayer.scoped {
       for {
         openTelemetry <- ZIO.service[OpenTelemetry]
@@ -243,7 +243,7 @@ object OpenTelemetry {
    */
   def zioLogger(
     instrumentationScopeName: String
-  ): URLayer[OpenTelemetry, ZLogger[String, Unit]] =
+  )(implicit trace: Trace): URLayer[OpenTelemetry, ZLogger[String, Unit]] =
     ZLayer.scoped {
       for {
         openTelemetry <- ZIO.service[OpenTelemetry]
@@ -262,7 +262,7 @@ object OpenTelemetry {
     instrumentationScopeName: String,
     instrumentationVersion: Option[String] = None,
     schemaUrl: Option[String] = None
-  ): URLayer[OpenTelemetry, Unit] = {
+  )(implicit trace: Trace): URLayer[OpenTelemetry, Unit] = {
     def buildMeter(openTelemetry: JOpenTelemetry) = {
       val builder = openTelemetry.meterBuilder(instrumentationScopeName)
 
