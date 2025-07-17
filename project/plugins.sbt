@@ -4,7 +4,7 @@ addSbtPlugin("com.thoughtworks.sbt-api-mappings" % "sbt-api-mappings"          %
 addSbtPlugin("com.github.sbt"                    % "sbt-unidoc"                % "0.5.0")
 addSbtPlugin("ch.epfl.scala"                     % "sbt-bloop"                 % "2.0.10")
 addSbtPlugin("org.typelevel"                     % "sbt-tpolecat"              % "0.5.2")
-addSbtPlugin("org.scalameta"                     % "sbt-scalafmt"              % "2.5.4")
+addSbtPlugin("org.scalameta"                     % "sbt-scalafmt"              % "2.5.5")
 addSbtPlugin("org.scalameta"                     % "sbt-mdoc"                  % "2.7.1")
 addSbtPlugin("org.scoverage"                     % "sbt-scoverage"             % "2.3.1")
 addSbtPlugin("dev.zio"                           % "zio-sbt-ci"                % zioSbtVersion)
