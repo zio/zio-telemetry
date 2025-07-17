@@ -14,10 +14,97 @@ import zio.telemetry.opentelemetry.trace.Tracer
 
 trait OpenTelemetry { self =>
 
+  /**
+   * Use it exclusively together with
+   * [[https://github.com/open-telemetry/opentelemetry-java-instrumentation OTEL Java Auto Instrumentation]]
+   *
+   * When your application is instrumented with the OTEL Java Agent, it automatically performs end-to-end context
+   * propagation for any supported libraries you use. Manual instrumentation is also supported. Must be used only once
+   * per entry point of your application.
+   *
+   * See for example:
+   * [[https://github.com/zio/zio-telemetry/blob/v4.0.0-rc/opentelemetry-instrumentation-example/src/main/scala/zio/telemetry/opentelemetry/instrumentation/example/http/BackendHttpApp.scala]]
+   *
+   * {{{
+   *  openTelemetry.autoinstrumented(
+   *    zio @ tracer.aspects.span("internal")
+   *  )
+   * }}}
+   *
+   * @param zio
+   * @param trace
+   * @return
+   */
   def autoinstrumented[R, E, A](zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
+  /**
+   * Use when you need to propagate the context manually from a downstream service to an upstream service.
+   *
+   * See for example:
+   * [[https://github.com/zio/zio-telemetry/blob/v4.0.0-rc/opentelemetry-example/src/main/scala/zio/telemetry/opentelemetry/example/http/ProxyHttpApp.scala]]
+   *
+   * {{{
+   *   val carrier = OutgoingContextCarrier.default()
+   *
+   *   tracer.root("upstream-endpoint") { span =>
+   *     for {
+   *        // Set some context data
+   *        _ <- span.setAttribute("key", "value")
+   *        _ <- openTelemetry.baggage.set("key1", "value1")
+   *
+   *        // Mutate the carrier's kernel with the context data available at this point
+   *        _ <- openTelemetry.propagate(carrier)
+   *
+   *        // Call the upstream service using the modified carrier's kernel
+   *        _ <- upstream.call(carrier.kernel.toMap)
+   *     } yield ()
+   *   }
+   * }}}
+   *
+   * @param carrier
+   * @param trace
+   * @return
+   */
   def propagate[C](carrier: OutgoingContextCarrier[C])(implicit trace: Trace): UIO[Unit]
 
+  /**
+   * Use when you need to receive the context manually passed in by an upstream service.
+   *
+   * See for example:
+   * [[https://github.com/zio/zio-telemetry/blob/v4.0.0-rc/opentelemetry-example/src/main/scala/zio/telemetry/opentelemetry/example/http/BackendHttpApp.scala]]
+   *
+   * {{{
+   *   def headersCarrier(initial: Headers): IncomingContextCarrier[Headers] =
+   *    new IncomingContextCarrier[Headers] {
+   *      override val kernel: Headers = initial
+   *
+   *      override def getAllKeys(carrier: Headers): Iterable[String] =
+   *        carrier.headers.map(_.headerName)
+   *
+   *      override def getByKey(carrier: Headers, key: String): Option[String] =
+   *        carrier.headers.get(key)
+   *
+   *    }
+   *
+   *  // Create a carrier from the incoming request headers
+   *  val carrier = headersCarrier(request.headers)
+   *
+   *  // Use the carrier to restore the context data
+   *  openTelemetry.continue(carrier) {
+   *    tracer.span("downstream-endpoint") { span =>
+   *      for {
+   *       // Get the baggage data from the incoming context carrier
+   *       value1 <- openTelemetry.baggage.get("key1")
+   *      } yield ()
+   *    }
+   *  }
+   * }}}
+   *
+   * @param carrier
+   * @param zio
+   * @param trace
+   * @return
+   */
   def continue[R, E, A, C](
     carrier: IncomingContextCarrier[C]
   )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
@@ -96,11 +183,12 @@ object OpenTelemetry {
   /**
    * A global singleton for the entrypoint to telemetry functionality for tracer, metrics, logger and baggage. Should be
    * used with <a href="https://opentelemetry.io/docs/instrumentation/java/automatic/agent-config/">SDK
-   * Autoconfiguration</a> module and/or <a href="">Automatic instrumentation</a> Java agent.
+   * Autoconfiguration</a> module and/or <a
+   * href="https://github.com/open-telemetry/opentelemetry-java-instrumentation">Automatic instrumentation</a> Java
+   * agent.
    *
    * @see
-   *   <a href="https://zio.dev/zio-telemetry/opentelemetry/#usage-with-opentelemetry-automatic-instrumentation">Usage
-   *   with OpenTelemetry automatic instrumentation</a>
+   *   `autoinstrumented` in [[zio.telemetry.opentelemetry.OpenTelemetry]]
    */
   def global(logAnnotated: Boolean = false)(implicit trace: Trace): TaskLayer[OpenTelemetry] =
     ZLayer.scoped {
