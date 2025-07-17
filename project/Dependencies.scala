@@ -4,12 +4,12 @@ object Dependencies {
 
   object Versions {
     val opentracing           = "0.33.0"
-    val opentelemetry         = "1.51.0"
+    val opentelemetry         = "1.52.0"
     val opencensus            = "0.31.1"
     val scalaCollectionCompat = "2.13.0"
     val zio                   = "2.1.19"
-    val zioLogging            = "2.5.0"
-    val izumiReflect          = "3.0.3"
+    val zioLogging            = "2.5.1"
+    val izumiReflect          = "3.0.5"
   }
 
   object Orgs {
