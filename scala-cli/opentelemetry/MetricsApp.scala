@@ -1,9 +1,9 @@
 //> using scala "3.7.2"
 //> using dep dev.zio::zio:2.1.19
 //> using dep dev.zio::zio-opentelemetry:3.1.7
-//> using dep io.opentelemetry:opentelemetry-sdk:1.52.0
-//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.52.0
-//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.52.0
+//> using dep io.opentelemetry:opentelemetry-sdk:1.53.0
+//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.53.0
+//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.53.0
 //> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.34.0
 
 import io.opentelemetry.sdk.trace.SdkTracerProvider
