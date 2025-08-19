@@ -21,19 +21,23 @@ object ServerApp extends ZIOAppDefault {
   private val configLayer: Layer[ReadError[String], AppConfig] =
     TypesafeConfig.fromResourcePath(descriptor[AppConfig])
 
-  override def run: Task[ExitCode] =
-    (for {
-      server        <- ZIO.service[HttpServer]
+  private val installOtel: ZIO[api.OpenTelemetry, Throwable, Unit] =
+    for {
       openTelemetry <- ZIO.service[api.OpenTelemetry]
       _             <- ZIO.attempt(OpenTelemetryAppender.install(openTelemetry))
-      exitCode      <- server.start.exitCode
-    } yield exitCode).provide(
-      configLayer,
-      HttpServer.live,
-      HttpServerApp.live,
-      OpenTelemetry.global,
-      OpenTelemetry.tracing(instrumentationScopeName),
-      OpenTelemetry.contextJVM
-    )
+    } yield ()
+
+  private val startServer: ZIO[HttpServer, Throwable, Nothing] = ZIO.serviceWithZIO[HttpServer](_.start)
+
+  override def run: ZIO[Environment with ZIOAppArgs with Scope, Any, Any] =
+    (installOtel *> startServer)
+      .provide(
+        configLayer,
+        HttpServer.live,
+        HttpServerApp.live,
+        OpenTelemetry.global,
+        OpenTelemetry.tracing(instrumentationScopeName),
+        OpenTelemetry.contextJVM
+      )
 
 }

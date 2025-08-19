@@ -16,9 +16,9 @@ object ProxyApp extends ZIOAppDefault {
   private val instrumentationScopeName = "zio.telemetry.opentelemetry.example.ProxyApp"
   private val resourceName             = "opentelemetry-example-proxy"
 
-  override def run: Task[ExitCode] =
+  override def run: ZIO[Environment with ZIOAppArgs with Scope, Any, Any] =
     ZIO
-      .serviceWithZIO[ProxyHttpServer](_.start.exitCode)
+      .serviceWithZIO[ProxyHttpServer](_.start)
       .provide(
         configLayer,
         Client.default,

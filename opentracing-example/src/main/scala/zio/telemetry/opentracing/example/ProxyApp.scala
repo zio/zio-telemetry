@@ -12,9 +12,9 @@ object ProxyApp extends ZIOAppDefault {
 
   private val configLayer = TypesafeConfig.fromResourcePath(descriptor[AppConfig])
 
-  override def run: Task[ExitCode] =
+  override def run: ZIO[Environment with ZIOAppArgs with Scope, Any, Any] =
     ZIO
-      .serviceWithZIO[ProxyHttpServer](_.start.exitCode)
+      .serviceWithZIO[ProxyHttpServer](_.start)
       .provide(
         configLayer,
         Client.default,
