@@ -16,6 +16,7 @@ object Dependencies {
     val zio                          = "dev.zio"
     val opentracing                  = "io.opentracing"
     val opentelemetry                = "io.opentelemetry"
+    val opentelemetryContrib         = "io.opentelemetry.contrib"
     val opentelemetrySemconv         = "io.opentelemetry.semconv"
     val opentelemetryInstrumentation = "io.opentelemetry.instrumentation"
     val opencensus                   = "io.opencensus"
@@ -47,13 +48,6 @@ object Dependencies {
     Orgs.zio %% "zio-stacktracer" % Versions.zio
   )
 
-  lazy val opentracing = zio ++ Seq(
-    Orgs.opentracing       % "opentracing-api"         % Versions.opentracing,
-    Orgs.opentracing       % "opentracing-noop"        % Versions.opentracing,
-    Orgs.scalaLangModules %% "scala-collection-compat" % Versions.scalaCollectionCompat,
-    Orgs.opentracing       % "opentracing-mock"        % Versions.opentracing % Test
-  )
-
   lazy val opentelemetry = zio ++ Seq(
     Orgs.opentelemetry     % "opentelemetry-api"         % Versions.opentelemetry,
     Orgs.opentelemetry     % "opentelemetry-context"     % Versions.opentelemetry,
@@ -61,17 +55,30 @@ object Dependencies {
     Orgs.opentelemetry     % "opentelemetry-sdk-testing" % Versions.opentelemetry % Test
   )
 
-  lazy val opencensus = zio ++ Seq(
-    Orgs.opencensus        % "opencensus-api"          % Versions.opencensus,
-    Orgs.opencensus        % "opencensus-impl"         % Versions.opencensus,
-    Orgs.scalaLangModules %% "scala-collection-compat" % Versions.scalaCollectionCompat % Test
-  )
-
-  lazy val opentelemetryZioLogging = Seq(
+  lazy val opentelemetryZioLogging = zio ++ Seq(
     Orgs.opentelemetry % "opentelemetry-api"         % Versions.opentelemetry,
     Orgs.opentelemetry % "opentelemetry-context"     % Versions.opentelemetry,
     Orgs.opentelemetry % "opentelemetry-sdk-testing" % Versions.opentelemetry % Test,
     Orgs.zio          %% "zio-logging"               % Versions.zioLogging
+  )
+
+  lazy val opentelemetryAwsXrayPropagator = Seq(
+    Orgs.opentelemetry        % "opentelemetry-context"             % Versions.opentelemetry,
+    Orgs.opentelemetryContrib % "opentelemetry-aws-xray-propagator" % Versions.opentelemetryContrib,
+    Orgs.opentelemetry        % "opentelemetry-sdk-testing"         % Versions.opentelemetry % Test
+  )
+
+  lazy val opentracing = zio ++ Seq(
+    Orgs.opentracing       % "opentracing-api"         % Versions.opentracing,
+    Orgs.opentracing       % "opentracing-noop"        % Versions.opentracing,
+    Orgs.scalaLangModules %% "scala-collection-compat" % Versions.scalaCollectionCompat,
+    Orgs.opentracing       % "opentracing-mock"        % Versions.opentracing % Test
+  )
+
+  lazy val opencensus = zio ++ Seq(
+    Orgs.opencensus        % "opencensus-api"          % Versions.opencensus,
+    Orgs.opencensus        % "opencensus-impl"         % Versions.opencensus,
+    Orgs.scalaLangModules %% "scala-collection-compat" % Versions.scalaCollectionCompat % Test
   )
 
   lazy val example = zio ++ Seq(
