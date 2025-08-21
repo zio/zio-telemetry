@@ -13,9 +13,9 @@ object ClientApp extends ZIOAppDefault {
   private val configLayer: Layer[ReadError[String], AppConfig] =
     TypesafeConfig.fromResourcePath(descriptor[AppConfig])
 
-  override def run: Task[ExitCode] =
+  override def run: ZIO[Environment with ZIOAppArgs with Scope, Any, Any] =
     ZIO
-      .serviceWithZIO[HttpClient](_.health.exitCode)
+      .serviceWithZIO[HttpClient](_.health)
       .provide(
         configLayer,
         Client.default,
