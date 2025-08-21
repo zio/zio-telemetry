@@ -119,7 +119,15 @@ lazy val root =
   project
     .in(file("."))
     .settings(publish / skip := true)
-    .aggregate(opentelemetry, opentelemetryZioLogging, opentelemetryAwsXrayPropagator, opentracing, opencensus, docs)
+    .aggregate(
+      opentelemetry,
+      opentelemetryZioLogging,
+      opentelemetryAwsXrayPropagator,
+      opentelemetryExtensionTracePropagators,
+      opentracing,
+      opencensus,
+      docs
+    )
 
 lazy val opentelemetry =
   project
@@ -158,6 +166,18 @@ lazy val opentelemetryAwsXrayPropagator = project
     )
   )
   .settings(libraryDependencies ++= Dependencies.opentelemetryAwsXrayPropagator)
+  .settings(mimaSettings(failOnProblem = true))
+  .dependsOn(opentelemetry)
+
+lazy val opentelemetryExtensionTracePropagators = project
+  .in(file("opentelemetry-extension-trace-propagators"))
+  .settings(
+    stdModuleSettings(
+      name = Some("zio-opentelemetry-extension-trace-propagators"),
+      packageName = Some("zio.telemetry.opentelemetry.extension.trace.propagation")
+    )
+  )
+  .settings(libraryDependencies ++= Dependencies.opentelemetryExtensionTracePropagators)
   .settings(mimaSettings(failOnProblem = true))
   .dependsOn(opentelemetry)
 
