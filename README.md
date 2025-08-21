@@ -26,6 +26,8 @@ ZIO Telemetry is a purely functional client which helps up propagate context bet
 
 ## Installation
 
+### OpenTelemetry
+
 In order to use this library, we need to add the following line in our `build.sbt` file if we want to use [OpenTelemetry](https://opentelemetry.io/) client:
 
 ```scala
@@ -38,11 +40,22 @@ If you're using [ZIO Logging](https://github.com/zio/zio-logging) you can combin
 libraryDependencies += "dev.zio" %% "zio-opentelemetry-zio-logging" % "<version>"
 ```
 
+The support for legacy or non-standard propagation protocols is available via the following modules:
+
+```scala
+libraryDependencies += "dev.zio" %% "zio-opentelemetry-aws-xray-propagator" % "<version>"
+```
+
+
+### OpenTracing
+
 For using [OpenTracing](https://opentracing.io/) client we should add the following line in our `build.sbt` file:
 
 ```scala
 libraryDependencies += "dev.zio" %% "zio-opentracing" % "<version>"
 ```
+
+### OpenCensus
 
 And for using [OpenCensus](https://opencensus.io/) client we should add the following line in our `build.sbt` file:
 
