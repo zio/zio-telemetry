@@ -42,7 +42,7 @@ object BackendApp extends ZIOAppDefault {
       } yield ()
     )
 
-  override def run: ZIO[Environment with ZIOAppArgs with Scope, Any, Any] =
+  override def run: Task[Nothing] =
     ZIO
       .serviceWithZIO[BackendHttpServer](_.start)
       .provide(

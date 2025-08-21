@@ -6,7 +6,7 @@ import zio.telemetry.opentelemetry.instrumentation.example.config.AppConfig
 
 case class BackendHttpServer(config: AppConfig, httpServerApp: BackendHttpApp) {
 
-  def start: ZIO[Any, Throwable, Nothing] =
+  def start: Task[Nothing] =
     ZIO.logInfo(s"Starting HttpServer on port ${config.backend.port}") *>
       Server.serve(httpServerApp.routes).provide(Server.defaultWithPort(config.backend.port))
 

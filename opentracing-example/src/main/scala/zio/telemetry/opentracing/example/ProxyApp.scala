@@ -12,7 +12,7 @@ object ProxyApp extends ZIOAppDefault {
 
   private val configLayer = TypesafeConfig.fromResourcePath(descriptor[AppConfig])
 
-  override def run: ZIO[Environment with ZIOAppArgs with Scope, Any, Any] =
+  override def run: Task[Nothing] =
     ZIO
       .serviceWithZIO[ProxyHttpServer](_.start)
       .provide(

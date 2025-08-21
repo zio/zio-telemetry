@@ -20,7 +20,7 @@ object ProxyApp extends ZIOAppDefault {
 
   private val instrumentationScopeName = "zio.telemetry.opentelemetry.example.ProxyApp"
 
-  override def run: Task[ExitCode] =
+  override def run: Task[Nothing] =
     (for {
       server        <- ZIO.service[ProxyHttpServer]
       openTelemetry <- ZIO.service[OpenTelemetry]
