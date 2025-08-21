@@ -13,16 +13,16 @@ import scala.jdk.CollectionConverters._
 
 trait TracerTestkit {
 
-  def getFinishedSpans: UIO[List[SpanData]]
+  def getFinishedSpans(implicit trace: Trace): UIO[List[SpanData]]
 
-  def resetFinishedSpans: Task[Unit]
+  def resetFinishedSpans(implicit trace: Trace): Task[Unit]
 
   def getTracer(
     instrumentationScopeName: String,
-    instrumentationVersion: Option[String],
-    schemaUrl: Option[String],
+    instrumentationVersion: Option[String] = None,
+    schemaUrl: Option[String] = None,
     logAnnotated: Boolean = false
-  ): Task[Tracer]
+  )(implicit trace: Trace): Task[Tracer]
 
   trait UnsafeAPI {
 
@@ -30,7 +30,14 @@ trait TracerTestkit {
       instrumentationScopeName: String,
       instrumentationVersion: Option[String] = None,
       schemaUrl: Option[String] = None
-    ): Task[JTracer]
+    )(implicit trace: Trace): Task[JTracer]
+
+    def getTracers(
+      instrumentationScopeName: String,
+      instrumentationVersion: Option[String] = None,
+      schemaUrl: Option[String] = None,
+      logAnnotated: Boolean = false
+    )(implicit trace: Trace): Task[(JTracer, Tracer)]
 
   }
 
@@ -40,13 +47,13 @@ trait TracerTestkit {
 
 object TracerTestkit {
 
-  def inMemory: RLayer[ContextStorage, TracerTestkit] =
-    ZLayer {
+  def inMemory(implicit trace: Trace): TaskLayer[TracerTestkit] =
+    ZLayer.scoped {
       for {
         spanExporter   <- ZIO.attempt(InMemorySpanExporter.create())
         spanProcessor  <- ZIO.attempt(SimpleSpanProcessor.create(spanExporter))
         tracerProvider <- ZIO.attempt(SdkTracerProvider.builder().addSpanProcessor(spanProcessor).build())
-        ctxStorage     <- ZIO.service[ContextStorage]
+        ctxStorage     <- ContextStorage.zioFiberRefScoped
       } yield new TracerTestkit {
 
         override def unsafe: UnsafeAPI =
@@ -54,9 +61,9 @@ object TracerTestkit {
 
             override def getTracer(
               instrumentationScopeName: String,
-              instrumentationVersion: Option[String],
-              schemaUrl: Option[String]
-            ): Task[JTracer] = ZIO.attempt {
+              instrumentationVersion: Option[String] = None,
+              schemaUrl: Option[String] = None
+            )(implicit trace: Trace): Task[JTracer] = ZIO.attempt {
               val builder = tracerProvider.tracerBuilder(instrumentationScopeName)
 
               instrumentationVersion.foreach(builder.setInstrumentationVersion)
@@ -65,25 +72,38 @@ object TracerTestkit {
               builder.build
             }
 
+            override def getTracers(
+              instrumentationScopeName: String,
+              instrumentationVersion: Option[String],
+              schemaUrl: Option[String],
+              logAnnotated: Boolean
+            )(implicit trace: Trace): Task[(JTracer, Tracer)] = ZIO.scoped(
+              for {
+                jtracer <- unsafe.getTracer(instrumentationScopeName, instrumentationVersion, schemaUrl)
+                tracer   = Tracer.make(jtracer, ctxStorage, logAnnotated)
+              } yield (jtracer, tracer)
+            )
+
           }
 
-        override def getFinishedSpans: UIO[List[SpanData]] =
-          ZIO.succeed(spanExporter.getFinishedSpanItems.asScala.toList)
+        override def getFinishedSpans(implicit trace: Trace): UIO[List[SpanData]] =
+          for {
+            _         <- ZIO.succeed(spanProcessor.forceFlush())
+            spanItems <- ZIO.succeed(spanExporter.getFinishedSpanItems.asScala.toList)
+          } yield spanItems
 
-        override def resetFinishedSpans: Task[Unit] =
+        override def resetFinishedSpans(implicit trace: Trace): Task[Unit] =
           ZIO.attempt(spanExporter.reset())
 
         override def getTracer(
           instrumentationScopeName: String,
-          instrumentationVersion: Option[String],
-          schemaUrl: Option[String],
-          logAnnotated: Boolean
-        ): Task[Tracer] = ZIO.scoped(
-          for {
-            jtracer <- unsafe.getTracer(instrumentationScopeName, instrumentationVersion, schemaUrl)
-            tracer   = Tracer.make(jtracer, ctxStorage, logAnnotated)
-          } yield tracer
-        )
+          instrumentationVersion: Option[String] = None,
+          schemaUrl: Option[String] = None,
+          logAnnotated: Boolean = false
+        )(implicit trace: Trace): Task[Tracer] =
+          unsafe.getTracers(instrumentationScopeName, instrumentationVersion, schemaUrl, logAnnotated).map {
+            case (_, tracer) => tracer
+          }
 
       }
     }
