@@ -68,6 +68,11 @@ object Dependencies {
     Orgs.opentelemetry        % "opentelemetry-sdk-testing"         % Versions.opentelemetry % Test
   )
 
+  lazy val opentelemetryExtensionTracePropagators = Seq(
+    Orgs.opentelemetry % "opentelemetry-context"                     % Versions.opentelemetry,
+    Orgs.opentelemetry % "opentelemetry-extension-trace-propagators" % Versions.opentelemetry
+  )
+
   lazy val opentracing = zio ++ Seq(
     Orgs.opentracing       % "opentracing-api"         % Versions.opentracing,
     Orgs.opentracing       % "opentracing-noop"        % Versions.opentracing,
