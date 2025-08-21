@@ -40,10 +40,11 @@ If you're using [ZIO Logging](https://github.com/zio/zio-logging) you can combin
 libraryDependencies += "dev.zio" %% "zio-opentelemetry-zio-logging" % "<version>"
 ```
 
-The support for legacy or non-standard propagation protocols is available via the following modules:
+The support for third-party propagation protocols is available via the following modules:
 
 ```scala
-libraryDependencies += "dev.zio" %% "zio-opentelemetry-aws-xray-propagator" % "<version>"
+libraryDependencies += "dev.zio" %% "zio-opentelemetry-aws-xray-propagator"         % "<version>"
+libraryDependencies += "dev.zio" %% "zio-opentelemetry-extension-trace-propagators" % "<version>"
 ```
 
 
