@@ -119,21 +119,7 @@ lazy val root =
   project
     .in(file("."))
     .settings(publish / skip := true)
-    .aggregate(opentracing, opentelemetry, opencensus, opentelemetryZioLogging, docs)
-
-lazy val opentracing =
-  project
-    .in(file("opentracing"))
-    .settings(enableZIO())
-    .settings(
-      stdModuleSettings(
-        name = Some("zio-opentracing"),
-        packageName = Some("zio.telemetry.opentracing")
-      )
-    )
-    .settings(libraryDependencies ++= Dependencies.opentracing)
-    .settings(mimaSettings(failOnProblem = true))
-    .settings(unusedCompileDependenciesFilter -= moduleFilter("org.scala-lang.modules", "scala-collection-compat"))
+    .aggregate(opentelemetry, opentelemetryZioLogging, opentelemetryAwsXrayPropagator, opentracing, opencensus, docs)
 
 lazy val opentelemetry =
   project
@@ -149,19 +135,6 @@ lazy val opentelemetry =
     .settings(mimaSettings(failOnProblem = true))
     .settings(unusedCompileDependenciesFilter -= moduleFilter("org.scala-lang.modules", "scala-collection-compat"))
 
-lazy val opencensus = project
-  .in(file("opencensus"))
-  .settings(enableZIO())
-  .settings(
-    stdModuleSettings(
-      name = Some("zio-opencensus"),
-      packageName = Some("zio.telemetry.opencensus")
-    )
-  )
-  .settings(libraryDependencies ++= Dependencies.opencensus)
-  .settings(mimaSettings(failOnProblem = true))
-  .settings(unusedCompileDependenciesFilter -= moduleFilter("io.opencensus", "opencensus-impl"))
-
 lazy val opentelemetryZioLogging = project
   .in(file("opentelemetry-zio-logging"))
   .settings(enableZIO())
@@ -175,6 +148,46 @@ lazy val opentelemetryZioLogging = project
   .settings(mimaSettings(failOnProblem = true))
   .settings(missinglinkIgnoreDestinationPackages += IgnoredPackage("scala.reflect"))
   .dependsOn(opentelemetry)
+
+lazy val opentelemetryAwsXrayPropagator = project
+  .in(file("opentelemetry-aws-xray-propagator"))
+  // .settings(enableZIO())
+  .settings(
+    stdModuleSettings(
+      name = Some("zio-opentelemetry-aws-xray-propagator"),
+      packageName = Some("zio.telemetry.opentelemetry.aws.xray.propagator")
+    )
+  )
+  .settings(libraryDependencies ++= Dependencies.opentelemetryAwsXrayPropagator)
+  .settings(mimaSettings(failOnProblem = true))
+  .dependsOn(opentelemetry)
+
+lazy val opentracing =
+  project
+    .in(file("opentracing"))
+    .settings(enableZIO())
+    .settings(
+      stdModuleSettings(
+        name = Some("zio-opentracing"),
+        packageName = Some("zio.telemetry.opentracing")
+      )
+    )
+    .settings(libraryDependencies ++= Dependencies.opentracing)
+    .settings(mimaSettings(failOnProblem = true))
+    .settings(unusedCompileDependenciesFilter -= moduleFilter("org.scala-lang.modules", "scala-collection-compat"))
+
+lazy val opencensus = project
+  .in(file("opencensus"))
+  .settings(enableZIO())
+  .settings(
+    stdModuleSettings(
+      name = Some("zio-opencensus"),
+      packageName = Some("zio.telemetry.opencensus")
+    )
+  )
+  .settings(libraryDependencies ++= Dependencies.opencensus)
+  .settings(mimaSettings(failOnProblem = true))
+  .settings(unusedCompileDependenciesFilter -= moduleFilter("io.opencensus", "opencensus-impl"))
 
 lazy val opentracingExample =
   project
