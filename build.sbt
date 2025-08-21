@@ -151,7 +151,6 @@ lazy val opentelemetryZioLogging = project
 
 lazy val opentelemetryAwsXrayPropagator = project
   .in(file("opentelemetry-aws-xray-propagator"))
-  // .settings(enableZIO())
   .settings(
     stdModuleSettings(
       name = Some("zio-opentelemetry-aws-xray-propagator"),

@@ -20,14 +20,14 @@ object ContextPropagator {
    * {{{
    *   ContextPropagator.combine(
    *     ContextPropagator.default,
-   *     zio.telemetry.opentelemetry.aws.xray.propagator.ContextPropagator.awsXrayContext
+   *     zio.telemetry.opentelemetry.aws.xray.propagator.ContextPropagator.awsXray
    *   )
    * }}}
    *
    * @see
    *   [[https://docs.aws.amazon.com/xray/latest/devguide/xray-concepts.html#xray-concepts-tracingheader]]
    */
-  val awsXrayContext: context.ContextPropagator =
+  val awsXray: context.ContextPropagator =
     new context.ContextPropagator {
       override val instance: TextMapPropagator =
         AwsXrayPropagator.getInstance()
@@ -41,11 +41,11 @@ object ContextPropagator {
    * {{{
    *   ContextPropagator.combine(
    *     ContextPropagator.default,
-   *     zio.telemetry.opentelemetry.aws.xray.propagator.ContextPropagator.awsXrayLambdaContext
+   *     zio.telemetry.opentelemetry.aws.xray.propagator.ContextPropagator.awsXrayLambda
    *   )
    * }}}
    */
-  val awsXrayLambdaContext: context.ContextPropagator =
+  val awsXrayLambda: context.ContextPropagator =
     new context.ContextPropagator {
       override val instance: TextMapPropagator =
         AwsXrayLambdaPropagator.getInstance()
