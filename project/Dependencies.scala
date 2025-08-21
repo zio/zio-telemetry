@@ -10,7 +10,7 @@ object Dependencies {
     val scalaCollectionCompat = "2.13.0"
     val zio                   = "2.1.19"
     val zioLogging            = "2.5.1"
-    val izumiReflect          = "3.0.5"
+    val izumiReflect          = "3.0.1"
   }
 
   object Orgs {
@@ -44,7 +44,6 @@ object Dependencies {
   }
 
   lazy val zio = Seq(
-    Orgs.zio %% "zio"             % Versions.zio,
     Orgs.zio %% "izumi-reflect"   % Versions.izumiReflect,
     Orgs.zio %% "zio-stacktracer" % Versions.zio
   )
@@ -56,11 +55,16 @@ object Dependencies {
     Orgs.opentelemetry     % "opentelemetry-sdk-testing" % Versions.opentelemetry % Test
   )
 
+  lazy val opentelemetryCore = zio ++ Seq(
+    Orgs.opentelemetry     % "opentelemetry-api"       % Versions.opentelemetry,
+    Orgs.opentelemetry     % "opentelemetry-context"   % Versions.opentelemetry,
+    Orgs.scalaLangModules %% "scala-collection-compat" % Versions.scalaCollectionCompat
+  )
+
   lazy val opentelemetryTestkit = zio ++ Seq(
-    Orgs.opentelemetry     % "opentelemetry-api"         % Versions.opentelemetry,
-    Orgs.opentelemetry     % "opentelemetry-context"     % Versions.opentelemetry,
-    Orgs.scalaLangModules %% "scala-collection-compat"   % Versions.scalaCollectionCompat,
-    Orgs.opentelemetry     % "opentelemetry-sdk-testing" % Versions.opentelemetry
+    Orgs.opentelemetry % "opentelemetry-api"         % Versions.opentelemetry,
+    Orgs.opentelemetry % "opentelemetry-sdk-trace"   % Versions.opentelemetry,
+    Orgs.opentelemetry % "opentelemetry-sdk-testing" % Versions.opentelemetry
   )
 
   lazy val opentelemetryZioLogging = zio ++ Seq(

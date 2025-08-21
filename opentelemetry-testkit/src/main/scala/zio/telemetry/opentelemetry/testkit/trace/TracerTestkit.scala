@@ -1,15 +1,15 @@
 package zio.telemetry.opentelemetry.testkit.trace
 
-import zio._
-import io.opentelemetry.sdk.trace.data.SpanData
+import io.opentelemetry.api.trace.{Tracer => JTracer}
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
-import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor
+import io.opentelemetry.sdk.trace.SdkTracerProvider
+import io.opentelemetry.sdk.trace.data.SpanData
+import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
+import zio._
+import zio.telemetry.opentelemetry.context.internal.ContextStorage
+import zio.telemetry.opentelemetry.trace.Tracer
 
 import scala.jdk.CollectionConverters._
-import io.opentelemetry.api.trace.{Tracer => JTracer}
-import io.opentelemetry.sdk.trace.SdkTracerProvider
-import zio.telemetry.opentelemetry.trace.Tracer
-import zio.telemetry.opentelemetry.context.internal.ContextStorage
 
 trait TracerTestkit {
 

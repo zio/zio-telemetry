@@ -121,6 +121,7 @@ lazy val root =
     .settings(publish / skip := true)
     .aggregate(
       opentelemetry,
+      opentelemetryCore,
       opentelemetryTestkit,
       opentelemetryZioLogging,
       opentelemetryAwsXrayPropagator,
@@ -129,6 +130,34 @@ lazy val root =
       opencensus,
       docs
     )
+
+lazy val opentelemetryCore =
+  project
+    .in(file("opentelemetry-core"))
+    .settings(enableZIO())
+    .settings(
+      stdModuleSettings(
+        name = Some("zio-opentelemetry-core"),
+        packageName = Some("zio.telemetry.opentelemetry")
+      )
+    )
+    .settings(libraryDependencies ++= Dependencies.opentelemetryCore)
+    .settings(mimaSettings(failOnProblem = true))
+    .settings(unusedCompileDependenciesFilter -= moduleFilter("org.scala-lang.modules", "scala-collection-compat"))
+
+lazy val opentelemetryTestkit =
+  project
+    .in(file("opentelemetry-testkit"))
+    .settings(enableZIO())
+    .settings(
+      stdModuleSettings(
+        name = Some("zio-opentelemetry-testkit"),
+        packageName = Some("zio.telemetry.opentelemetry.testkit")
+      )
+    )
+    .settings(libraryDependencies ++= Dependencies.opentelemetryTestkit)
+    .settings(mimaSettings(failOnProblem = true))
+    .dependsOn(opentelemetryCore)
 
 lazy val opentelemetry: Project =
   project
@@ -143,23 +172,7 @@ lazy val opentelemetry: Project =
     .settings(libraryDependencies ++= Dependencies.opentelemetry)
     .settings(mimaSettings(failOnProblem = true))
     .settings(unusedCompileDependenciesFilter -= moduleFilter("org.scala-lang.modules", "scala-collection-compat"))
-    .dependsOn(opentelemetryTestkit % "test->compile")
-
-
-lazy val opentelemetryTestkit =
-  project
-    .in(file("opentelemetry-testkit"))
-    .settings(enableZIO())
-    .settings(
-      stdModuleSettings(
-        name = Some("zio-opentelemetry-testkit"),
-        packageName = Some("zio.telemetry.opentelemetry.testkit")
-      )
-    )
-    .settings(libraryDependencies ++= Dependencies.opentelemetryTestkit)
-    .settings(mimaSettings(failOnProblem = true))
-    .dependsOn(opentelemetry)
-
+    .dependsOn(opentelemetryCore, opentelemetryTestkit % Test)
 
 lazy val opentelemetryZioLogging =
   project
