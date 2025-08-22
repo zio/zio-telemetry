@@ -7,7 +7,7 @@ import zio.telemetry.opentracing.example.config.AppConfig
 
 case class ProxyHttpServer(config: AppConfig, httpApp: ProxyHttpApp) {
 
-  def start: ZIO[Any, Throwable, Nothing] =
+  def start: Task[Nothing] =
     printLine(s"Starting ProxyHttpServer on port ${config.proxy.port}") *>
       Server.serve(httpApp.routes).provide(Server.defaultWithPort(config.proxy.port))
 

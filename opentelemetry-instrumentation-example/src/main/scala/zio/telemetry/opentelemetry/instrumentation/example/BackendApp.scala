@@ -21,12 +21,12 @@ object BackendApp extends ZIOAppDefault {
   private val configLayer: Layer[ReadError[String], AppConfig] =
     TypesafeConfig.fromResourcePath(descriptor[AppConfig])
 
-  override def run: Task[ExitCode] =
+  override def run: Task[Nothing] =
     (for {
       server        <- ZIO.service[BackendHttpServer]
       openTelemetry <- ZIO.service[OpenTelemetry]
       _             <- ZIO.attempt(OpenTelemetryAppender.install(openTelemetry.unsafe.asJava))
-      exitCode      <- server.start.exitCode
+      exitCode      <- server.start
     } yield exitCode).provide(
       configLayer,
       BackendHttpServer.live,

@@ -42,9 +42,9 @@ object BackendApp extends ZIOAppDefault {
       } yield ()
     )
 
-  override def run: ZIO[Scope, Any, ExitCode] =
+  override def run: Task[Nothing] =
     ZIO
-      .serviceWithZIO[BackendHttpServer](_.start.exitCode)
+      .serviceWithZIO[BackendHttpServer](_.start)
       .provide(
         configLayer,
         BackendHttpServer.live,
