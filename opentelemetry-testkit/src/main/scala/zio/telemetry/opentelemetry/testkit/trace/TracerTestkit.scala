@@ -32,12 +32,7 @@ trait TracerTestkit {
       schemaUrl: Option[String] = None
     )(implicit trace: Trace): Task[JTracer]
 
-    def getTracers(
-      instrumentationScopeName: String,
-      instrumentationVersion: Option[String] = None,
-      schemaUrl: Option[String] = None,
-      logAnnotated: Boolean = false
-    )(implicit trace: Trace): Task[(JTracer, Tracer)]
+    def getTracerFromJava(jtracer: JTracer, logAnnotated: Boolean = false): Task[Tracer]
 
   }
 
@@ -72,17 +67,8 @@ object TracerTestkit {
               builder.build
             }
 
-            override def getTracers(
-              instrumentationScopeName: String,
-              instrumentationVersion: Option[String],
-              schemaUrl: Option[String],
-              logAnnotated: Boolean
-            )(implicit trace: Trace): Task[(JTracer, Tracer)] = ZIO.scoped(
-              for {
-                jtracer <- unsafe.getTracer(instrumentationScopeName, instrumentationVersion, schemaUrl)
-                tracer   = Tracer.make(jtracer, ctxStorage, logAnnotated)
-              } yield (jtracer, tracer)
-            )
+            override def getTracerFromJava(jtracer: JTracer, logAnnotated: Boolean = false): Task[Tracer] =
+              ZIO.succeed(Tracer.make(jtracer, ctxStorage, logAnnotated))
 
           }
 
@@ -101,9 +87,10 @@ object TracerTestkit {
           schemaUrl: Option[String] = None,
           logAnnotated: Boolean = false
         )(implicit trace: Trace): Task[Tracer] =
-          unsafe.getTracers(instrumentationScopeName, instrumentationVersion, schemaUrl, logAnnotated).map {
-            case (_, tracer) => tracer
-          }
+          for {
+            jtracer <- unsafe.getTracer(instrumentationScopeName, instrumentationVersion, schemaUrl)
+            tracer  <- unsafe.getTracerFromJava(jtracer, logAnnotated)
+          } yield tracer
 
       }
     }

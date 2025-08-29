@@ -75,16 +75,16 @@ object TracerTest extends ZIOSpecDefault {
       },
       test("continueSpan") {
         for {
-          tracerTestkit    <- ZIO.service[TracerTestkit]
-          tracers          <- tracerTestkit.unsafe.getTracers(instrumentationScopeName)
-          (jtracer, tracer) = tracers
-          span              = Span.make(jtracer.spanBuilder("external").startSpan())
-          scope             = span.unsafe.asJava.makeCurrent()
-          _                <- ZIO.unit @@ tracer.aspects.continueSpan(span, "zio-otel-child")
-          _                <- span.end
-          _                 = scope.close()
-          spans            <- tracerTestkit.getFinishedSpans
-          child             = spans.find(_.getName == "zio-otel-child")
+          tracerTestkit <- ZIO.service[TracerTestkit]
+          jtracer       <- tracerTestkit.unsafe.getTracer(instrumentationScopeName)
+          tracer        <- tracerTestkit.unsafe.getTracerFromJava(jtracer)
+          span           = Span.make(jtracer.spanBuilder("external").startSpan())
+          scope          = span.unsafe.asJava.makeCurrent()
+          _             <- ZIO.unit @@ tracer.aspects.continueSpan(span, "zio-otel-child")
+          _             <- span.end
+          _              = scope.close()
+          spans         <- tracerTestkit.getFinishedSpans
+          child          = spans.find(_.getName == "zio-otel-child")
         } yield assert(child)(isSome(assertSpanParentId(equalTo(span.context.getSpanId))))
       },
       test("unmanagedScope") {
@@ -292,8 +292,8 @@ object TracerTest extends ZIOSpecDefault {
       test("addLinks") {
         for {
           tracerTestkit              <- ZIO.service[TracerTestkit]
-          tracers                    <- tracerTestkit.unsafe.getTracers(instrumentationScopeName)
-          (jtracer, tracer)           = tracers
+          jtracer                    <- tracerTestkit.unsafe.getTracer(instrumentationScopeName)
+          tracer                     <- tracerTestkit.unsafe.getTracerFromJava(jtracer)
           externallyProvidedRootSpan1 = jtracer.spanBuilder("external1").startSpan()
           externallyProvidedRootSpan2 = jtracer.spanBuilder("external2").startSpan()
           externallyProvidedRootSpan3 = jtracer.spanBuilder("external3").startSpan()
