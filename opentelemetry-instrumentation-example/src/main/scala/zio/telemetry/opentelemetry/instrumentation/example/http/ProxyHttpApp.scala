@@ -7,7 +7,7 @@ import zio.telemetry.opentelemetry.trace.Tracer
 
 case class ProxyHttpApp(openTelemetry: OpenTelemetry, client: BackendClient, tracer: Tracer) {
 
-  val routes =
+  val routes: Routes[Any, Nothing] =
     Routes(
       Method.GET / "proxy" ->
         handler {

@@ -12,9 +12,9 @@ object BackendApp extends ZIOAppDefault {
   private val configLayer =
     TypesafeConfig.fromResourcePath(descriptor[AppConfig])
 
-  override def run: Task[ExitCode] =
+  override def run: Task[Nothing] =
     ZIO
-      .serviceWithZIO[BackendHttpServer](_.start.exitCode)
+      .serviceWithZIO[BackendHttpServer](_.start)
       .provide(
         configLayer,
         BackendHttpServer.live,
