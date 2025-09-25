@@ -58,7 +58,7 @@ object OpenTelemetryTest extends ZIOSpecDefault {
                           OpenTelemetrySdk.builder().build()
                         )
                       )
-      } yield new OpenTelemetry.OpenTelemetrySdk(ctxStorage, underlying)
+      } yield new OpenTelemetry.Sdk(ctxStorage, underlying)
     )
 
   def getFinishedSpans: ZIO[InMemorySpanExporter, Nothing, List[SpanData]] =

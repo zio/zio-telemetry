@@ -34,6 +34,8 @@ trait TracerTestkit {
 
     def getTracerFromJava(jtracer: JTracer, logAnnotated: Boolean = false): Task[Tracer]
 
+    def getTracerProvider: SdkTracerProvider
+
   }
 
   def unsafe: UnsafeAPI
@@ -42,13 +44,13 @@ trait TracerTestkit {
 
 object TracerTestkit {
 
-  def inMemory(implicit trace: Trace): TaskLayer[TracerTestkit] =
-    ZLayer.scoped {
+  def inMemory(implicit trace: Trace): RLayer[ContextStorage, TracerTestkit] =
+    ZLayer {
       for {
         spanExporter   <- ZIO.attempt(InMemorySpanExporter.create())
         spanProcessor  <- ZIO.attempt(SimpleSpanProcessor.create(spanExporter))
         tracerProvider <- ZIO.attempt(SdkTracerProvider.builder().addSpanProcessor(spanProcessor).build())
-        ctxStorage     <- ContextStorage.zioFiberRefScoped
+        ctxStorage     <- ZIO.service[ContextStorage]
       } yield new TracerTestkit {
 
         override def unsafe: UnsafeAPI =
@@ -69,6 +71,9 @@ object TracerTestkit {
 
             override def getTracerFromJava(jtracer: JTracer, logAnnotated: Boolean = false): Task[Tracer] =
               ZIO.succeed(Tracer.make(jtracer, ctxStorage, logAnnotated))
+
+            override def getTracerProvider: SdkTracerProvider =
+              tracerProvider
 
           }
 

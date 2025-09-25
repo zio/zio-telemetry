@@ -12,6 +12,7 @@ import zio.test.{Assertion, Spec, TestClock, ZIOSpecDefault, assert}
 
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters._
+import zio.telemetry.opentelemetry.testkit.OpenTelemetryTestkit
 
 object TracerTest extends ZIOSpecDefault {
 
@@ -148,7 +149,7 @@ object TracerTest extends ZIOSpecDefault {
           assert(scoped)(isSome(assertSpanParentId(equalTo(root.get.getSpanId)))) &&
           assert(tags)(equalTo(List("In legacy code", "Finishing legacy code")))
       }
-    ).provide(TracerTestkit.inMemory)
+    ).provide(TracerTestkit.inMemory, OpenTelemetryTestkit.ctxStorageZioFiberRef)
 
   private val spanScopedSpec =
     suite("scoped spans")(
@@ -224,7 +225,7 @@ object TracerTest extends ZIOSpecDefault {
           tags           = spans.head.getAttributes
         } yield assert(tags.get(AttributeKey.stringKey("string")))(equalTo("bar"))
       }
-    ).provide(TracerTestkit.inMemory)
+    ).provide(TracerTestkit.inMemory, OpenTelemetryTestkit.ctxStorageZioFiberRef)
 
   private val spanOperationsSpec =
     suite("span operations")(
@@ -312,7 +313,7 @@ object TracerTest extends ZIOSpecDefault {
             hasSameElements(links.map(_.getSpanId))
           )
       }
-    ).provide(TracerTestkit.inMemory)
+    ).provide(TracerTestkit.inMemory, OpenTelemetryTestkit.ctxStorageZioFiberRef)
 
   private val statusMapperSpec =
     suite("status mapper")(
@@ -598,7 +599,7 @@ object TracerTest extends ZIOSpecDefault {
         } yield assert(ok)(isSome(assertOk)) &&
           assert(error)(isSome(assertError))
       }
-    ).provide(TracerTestkit.inMemory)
+    ).provide(TracerTestkit.inMemory, OpenTelemetryTestkit.ctxStorageZioFiberRef)
 
   private val spanWithLogAnnotationsSpec =
     suite("spans with log annotations")(
@@ -616,7 +617,7 @@ object TracerTest extends ZIOSpecDefault {
           tags           = spans.head.getAttributes
         } yield assert(tags.get(AttributeKey.stringKey("root-attribute")))(equalTo("bar")) &&
           assert(tags.get(AttributeKey.stringKey("log-attribute")))(equalTo("foo"))
-      }.provide(TracerTestkit.inMemory),
+      }.provide(TracerTestkit.inMemory, OpenTelemetryTestkit.ctxStorageZioFiberRef),
       test("span attributes override log annotated") {
         for {
           tracerTestkit <- ZIO.service[TracerTestkit]
@@ -630,7 +631,7 @@ object TracerTest extends ZIOSpecDefault {
           spans         <- tracerTestkit.getFinishedSpans
           tags           = spans.head.getAttributes
         } yield assert(tags.get(AttributeKey.stringKey("some-attribute")))(equalTo("bar"))
-      }.provide(TracerTestkit.inMemory),
+      }.provide(TracerTestkit.inMemory, OpenTelemetryTestkit.ctxStorageZioFiberRef),
       test("without log annotations") {
         for {
           tracerTestkit <- ZIO.service[TracerTestkit]
@@ -645,6 +646,6 @@ object TracerTest extends ZIOSpecDefault {
           tags           = spans.head.getAttributes
         } yield assert(tags.get(AttributeKey.stringKey("root-attribute")))(equalTo("bar")) &&
           assert(Option(tags.get(AttributeKey.stringKey("log-attribute"))))(isNone)
-      }.provide(TracerTestkit.inMemory)
+      }.provide(TracerTestkit.inMemory, OpenTelemetryTestkit.ctxStorageZioFiberRef)
     )
 }
