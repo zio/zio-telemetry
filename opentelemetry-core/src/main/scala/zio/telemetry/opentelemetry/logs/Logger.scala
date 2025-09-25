@@ -8,7 +8,7 @@ import zio.telemetry.opentelemetry.context.internal.ContextStorage
 
 private[opentelemetry] object Logger {
 
-  def make(
+  def install(
     loggerProvider: LoggerProvider,
     ctxStorage: ContextStorage,
     instrumentationScopeName: String,

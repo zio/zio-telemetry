@@ -27,7 +27,7 @@ object ProxyApp extends ZIOAppDefault {
         ProxyHttpApp.live,
         OtelSdk.custom(resourceName),
         Otel.tracer(instrumentationScopeName),
-        Otel.logger(instrumentationScopeName)
+        Otel.installLogger(instrumentationScopeName)
       )
 
 }

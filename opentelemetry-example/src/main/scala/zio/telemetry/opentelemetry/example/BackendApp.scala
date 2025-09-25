@@ -52,7 +52,7 @@ object BackendApp extends ZIOAppDefault {
         OtelSdk.custom(resourceName),
         Otel.tracer(instrumentationScopeName),
         Otel.metrics(instrumentationScopeName),
-        Otel.logger(instrumentationScopeName),
+        Otel.installLogger(instrumentationScopeName),
         Otel.zioMetrics(instrumentationScopeName),
         DefaultJvmMetrics.liveV2.unit,
         globalTickCounterLayer,

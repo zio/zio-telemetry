@@ -147,7 +147,7 @@ object Otel {
    * @param logLevel
    *   configures the logger to propagate the log records only when the log level is more than specified
    */
-  def logger(
+  def installLogger(
     instrumentationScopeName: String,
     logLevel: LogLevel = LogLevel.Info
   )(implicit trace: Trace): URLayer[OpenTelemetry, Unit] =
@@ -155,7 +155,7 @@ object Otel {
       for {
         openTelemetry <- ZIO.service[OpenTelemetry]
         loggerProvider = openTelemetry.unsafe.asJava.getLogsBridge
-        _             <- Logger.make(loggerProvider, openTelemetry.ctxStorage, instrumentationScopeName, logLevel)
+        _             <- Logger.install(loggerProvider, openTelemetry.ctxStorage, instrumentationScopeName, logLevel)
       } yield ()
     }
 
