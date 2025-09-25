@@ -9,12 +9,6 @@ import zio.telemetry.opentelemetry.OpenTelemetry
 
 object OpenTelemetryTestkit {
 
-  def ctxStorageZioFiberRef: ULayer[ContextStorage] =
-    ZLayer.scoped(ContextStorage.zioFiberRefScoped)
-
-  def ctxStorageJavaOtelThreadLocal: ULayer[ContextStorage] =
-    ZLayer.succeed(ContextStorage.JavaOtelThreadLocal)
-
   def sdk(
     tracerProvider: Option[SdkTracerProvider] = None,
     meterProvider: Option[SdkMeterProvider] = None
@@ -31,5 +25,11 @@ object OpenTelemetryTestkit {
       } yield new OpenTelemetry.Sdk(ctxStorage, underlying)
     }
   }
+
+  def ctxStorageZioFiberRef: ULayer[ContextStorage] =
+    ZLayer.scoped(ContextStorage.zioFiberRefScoped)
+
+  def ctxStorageJavaOtelThreadLocal: ULayer[ContextStorage] =
+    ZLayer.succeed(ContextStorage.JavaOtelThreadLocal)
 
 }
