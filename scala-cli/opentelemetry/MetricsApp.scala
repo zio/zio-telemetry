@@ -1,5 +1,5 @@
 //> using scala "3.7.3"
-//> using dep dev.zio::zio:2.1.21
+//> using dep dev.zio::zio:2.1.22
 //> using dep dev.zio::zio-opentelemetry:3.1.10
 //> using dep io.opentelemetry:opentelemetry-sdk:1.55.0
 //> using dep io.opentelemetry:opentelemetry-sdk-trace:1.55.0
