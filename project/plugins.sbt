@@ -13,7 +13,7 @@ addSbtPlugin("com.typesafe"                      % "sbt-mima-plugin"           %
 addSbtPlugin("com.github.cb372"                  % "sbt-explicit-dependencies" % "0.3.1")
 addSbtPlugin("ch.epfl.scala"                     % "sbt-missinglink"           % "0.3.6")
 
-libraryDependencies += "org.snakeyaml" % "snakeyaml-engine" % "2.10"
+libraryDependencies += "org.snakeyaml" % "snakeyaml-engine" % "3.0"
 libraryDependencies += "com.spotify"   % "missinglink-core" % "0.2.11"
 
 resolvers += Resolver.sonatypeCentralSnapshots
