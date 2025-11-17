@@ -9,7 +9,7 @@ object Dependencies {
     val scalaCollectionCompat = "2.14.0"
     val zio                   = "2.1.22"
     val zioLogging            = "2.5.1"
-    val izumiReflect          = "3.0.6"
+    val izumiReflect          = "3.0.7"
   }
 
   object Orgs {
