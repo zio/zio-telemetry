@@ -3,7 +3,6 @@ package zio.telemetry.opentelemetry.testkit.trace
 import io.opentelemetry.api.trace.{Tracer => JTracer}
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
 import io.opentelemetry.sdk.trace.SdkTracerProvider
-import io.opentelemetry.sdk.trace.data.SpanData
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import zio._
 import zio.telemetry.opentelemetry.context.internal.ContextStorage
@@ -79,11 +78,10 @@ object TracerTestkit {
 
         override def getFinishedSpans(implicit trace: Trace): UIO[List[SpanData]] =
           for {
-            _         <- ZIO.succeed(spanProcessor.forceFlush())
-            spanItems <- ZIO.succeed(spanExporter.getFinishedSpanItems.asScala.toList)
-          } yield spanItems
-
-        override def resetFinishedSpans(implicit trace: Trace): Task[Unit] =
+            _     <- ZIO.succeed(spanProcessor.forceFlush())
+            spans <- ZIO.succeed(spanExporter.getFinishedSpanItems.asScala.toList.map(SpanData(_)))
+          } yield spans
+        override def resetFinishedSpans(implicit trace: Trace): Task[Unit]        =
           ZIO.attempt(spanExporter.reset())
 
         override def getTracer(

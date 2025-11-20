@@ -44,17 +44,17 @@ object OpenTelemetryTest extends ZIOSpecDefault {
                          openTelemetry.aspects.continue(IncomingContextCarrier.default(carrier))
 
                   spans <- tracerTestkit.getFinishedSpans
-                  root   = spans.find(_.getName == "ROOT")
-                  foo    = spans.find(_.getName == "foo")
-                  bar    = spans.find(_.getName == "bar")
-                  baz    = spans.find(_.getName == "baz")
+                  root   = spans.find(_.name == "ROOT")
+                  foo    = spans.find(_.name == "foo")
+                  bar    = spans.find(_.name == "bar")
+                  baz    = spans.find(_.name == "baz")
                 } yield assert(root)(isSome(anything)) &&
                   assert(foo)(isSome(anything)) &&
                   assert(bar)(isSome(anything)) &&
                   assert(baz)(isSome(anything)) &&
-                  assert(foo.get.getParentSpanId)(equalTo(root.get.getSpanId)) &&
-                  assert(bar.get.getParentSpanId)(equalTo(foo.get.getSpanId)) &&
-                  assert(baz.get.getParentSpanId)(equalTo(bar.get.getSpanId))
+                  assert(foo.get.parentSpanId)(equalTo(root.get.spanId)) &&
+                  assert(bar.get.parentSpanId)(equalTo(foo.get.spanId)) &&
+                  assert(baz.get.parentSpanId)(equalTo(bar.get.spanId))
               }.provide(
                 OpenTelemetryTestkit.sdk(),
                 TracerTestkit.inMemory,

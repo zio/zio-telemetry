@@ -1,9 +1,7 @@
 package zio.telemetry.opentelemetry.trace
 
-import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.trace.{Span => JSpan, SpanId, StatusCode}
 import io.opentelemetry.context.Context
-import io.opentelemetry.sdk.trace.data.SpanData
 import zio._
 import zio.telemetry.opentelemetry.common.{Attribute, Attributes}
 import zio.telemetry.opentelemetry.testkit.trace.TracerTestkit
@@ -11,31 +9,31 @@ import zio.test.Assertion._
 import zio.test.{Assertion, Spec, TestClock, ZIOSpecDefault, assert}
 
 import scala.concurrent.Future
-import scala.jdk.CollectionConverters._
 import zio.telemetry.opentelemetry.testkit.OpenTelemetryTestkit
+import zio.telemetry.opentelemetry.testkit.trace.SpanData
+import zio.telemetry.opentelemetry.testkit
 
 object TracerTest extends ZIOSpecDefault {
 
   val instrumentationScopeName = "TracerTest"
 
   def assertSpanStatusCode(assertion: Assertion[StatusCode]): Assertion[SpanData] =
-    hasField[SpanData, StatusCode]("statusCode", _.getStatus.getStatusCode, assertion)
+    hasField[SpanData, StatusCode]("statusCode", _.status.statusCode, assertion)
 
   def assertSpanDescription(assertion: Assertion[String]): Assertion[SpanData] =
-    hasField[SpanData, String]("statusDescription", _.getStatus.getDescription, assertion)
+    hasField[SpanData, String]("statusDescription", _.status.description, assertion)
 
   def assertSpanException(assertion: Assertion[List[(String, String)]]): Assertion[SpanData] =
     hasField[SpanData, List[(String, String)]](
       "exceptionAttributes",
-      _.getEvents.asScala.toList
-        .flatMap(_.getAttributes.asMap().asScala.toList.map(x => x._1.getKey -> x._2.toString)),
+      _.events.flatMap(_.attributes.asMap.toList),
       assertion
     )
 
   def assertSpanParentId(assertion: Assertion[String]): Assertion[SpanData] =
     hasField[SpanData, String](
       "parentSpanId",
-      _.getParentSpanId,
+      _.parentSpanId,
       assertion
     )
 
@@ -59,8 +57,8 @@ object TracerTest extends ZIOSpecDefault {
           assertParentId = assertSpanParentId(equalTo(SpanId.getInvalid))
           _             <- ZIO.unit @@ tracer.aspects.root("ROOT2") @@ tracer.aspects.root("ROOT")
           spans         <- tracerTestkit.getFinishedSpans
-          root           = spans.find(_.getName == "ROOT")
-          child          = spans.find(_.getName == "ROOT2")
+          root           = spans.find(_.name == "ROOT")
+          child          = spans.find(_.name == "ROOT2")
         } yield assert(root)(isSome(anything)) && assert(child)(isSome(assertParentId))
       },
       test("span") {
@@ -69,10 +67,10 @@ object TracerTest extends ZIOSpecDefault {
           tracer        <- tracerTestkit.getTracer(instrumentationScopeName)
           _             <- ZIO.unit @@ tracer.aspects.span("Child") @@ tracer.aspects.span("Root")
           spans         <- tracerTestkit.getFinishedSpans
-          root           = spans.find(_.getName == "Root")
-          child          = spans.find(_.getName == "Child")
+          root           = spans.find(_.name == "Root")
+          child          = spans.find(_.name == "Child")
         } yield assert(root)(isSome(anything)) &&
-          assert(child)(isSome(assertSpanParentId(equalTo(root.get.getSpanId))))
+          assert(child)(isSome(assertSpanParentId(equalTo(root.get.spanId))))
       },
       test("continueSpan") {
         for {
@@ -85,7 +83,7 @@ object TracerTest extends ZIOSpecDefault {
           _             <- span.end
           _              = scope.close()
           spans         <- tracerTestkit.getFinishedSpans
-          child          = spans.find(_.getName == "zio-otel-child")
+          child          = spans.find(_.name == "zio-otel-child")
         } yield assert(child)(isSome(assertSpanParentId(equalTo(span.context.getSpanId))))
       },
       test("unmanagedScope") {
@@ -99,12 +97,12 @@ object TracerTest extends ZIOSpecDefault {
                              span.addEvent("Finishing legacy code")
                            }.unit @@ tracer.aspects.span("Scoped") @@ tracer.aspects.span("Root")
           spans         <- tracerTestkit.getFinishedSpans
-          root           = spans.find(_.getName == "Root")
-          scoped         = spans.find(_.getName == "Scoped")
-          tags           = scoped.get.getEvents.asScala.toList.map(_.getName)
+          root           = spans.find(_.name == "Root")
+          scoped         = spans.find(_.name == "Scoped")
+          eventNames     = scoped.get.events.map(_.name)
         } yield assert(root)(isSome(anything)) &&
-          assert(scoped)(isSome(assertSpanParentId(equalTo(root.get.getSpanId)))) &&
-          assert(tags)(equalTo(List("In legacy code", "Finishing legacy code")))
+          assert(scoped)(isSome(assertSpanParentId(equalTo(root.get.spanId)))) &&
+          assert(eventNames)(equalTo(List("In legacy code", "Finishing legacy code")))
       },
       test("unmanagedScopeTotal") {
         for {
@@ -119,12 +117,12 @@ object TracerTest extends ZIOSpecDefault {
                              span.addEvent("Finishing legacy code")
                            }.unit @@ tracer.aspects.span("Scoped") @@ tracer.aspects.span("Root")
           spans         <- tracerTestkit.getFinishedSpans
-          root           = spans.find(_.getName == "Root")
-          scoped         = spans.find(_.getName == "Scoped")
-          tags           = scoped.get.getEvents.asScala.toList.map(_.getName)
+          root           = spans.find(_.name == "Root")
+          scoped         = spans.find(_.name == "Scoped")
+          eventNames     = scoped.get.events.map(_.name)
         } yield assert(root)(isSome(anything)) &&
-          assert(scoped)(isSome(assertSpanParentId(equalTo(root.get.getSpanId)))) &&
-          assert(tags)(equalTo(List("In legacy code", "Finishing legacy code")))
+          assert(scoped)(isSome(assertSpanParentId(equalTo(root.get.spanId)))) &&
+          assert(eventNames)(equalTo(List("In legacy code", "Finishing legacy code")))
       },
       test("unmanagedScopeFuture") {
         for {
@@ -141,13 +139,13 @@ object TracerTest extends ZIOSpecDefault {
                              }
                            } @@ tracer.aspects.span("Scoped") @@ tracer.aspects.span("Root")
           spans         <- tracerTestkit.getFinishedSpans
-          root           = spans.find(_.getName == "Root")
-          scoped         = spans.find(_.getName == "Scoped")
-          tags           = scoped.get.getEvents.asScala.toList.map(_.getName)
+          root           = spans.find(_.name == "Root")
+          scoped         = spans.find(_.name == "Scoped")
+          eventNames     = scoped.get.events.map(_.name)
         } yield assert(result)(equalTo(1)) &&
           assert(root)(isSome(anything)) &&
-          assert(scoped)(isSome(assertSpanParentId(equalTo(root.get.getSpanId)))) &&
-          assert(tags)(equalTo(List("In legacy code", "Finishing legacy code")))
+          assert(scoped)(isSome(assertSpanParentId(equalTo(root.get.spanId)))) &&
+          assert(eventNames)(equalTo(List("In legacy code", "Finishing legacy code")))
       }
     ).provide(TracerTestkit.inMemory, OpenTelemetryTestkit.ctxStorageZioFiberRef)
 
@@ -161,10 +159,10 @@ object TracerTest extends ZIOSpecDefault {
                              tracer.spanScoped("Root") *> ZIO.scoped[Any](tracer.spanScoped("Child"))
                            )
           spans         <- tracerTestkit.getFinishedSpans
-          root           = spans.find(_.getName == "Root")
-          child          = spans.find(_.getName == "Child")
+          root           = spans.find(_.name == "Root")
+          child          = spans.find(_.name == "Child")
         } yield assert(root)(isSome(anything)) &&
-          assert(child)(isSome(assertSpanParentId(equalTo(root.get.getSpanId))))
+          assert(child)(isSome(assertSpanParentId(equalTo(root.get.spanId))))
       },
       test("span single scope") {
         for {
@@ -177,10 +175,10 @@ object TracerTest extends ZIOSpecDefault {
                              } yield ()
                            )
           spans         <- tracerTestkit.getFinishedSpans
-          root           = spans.find(_.getName == "Root")
-          child          = spans.find(_.getName == "Child")
+          root           = spans.find(_.name == "Root")
+          child          = spans.find(_.name == "Child")
         } yield assert(root)(isSome(anything)) &&
-          assert(child)(isSome(assertSpanParentId(equalTo(root.get.getSpanId))))
+          assert(child)(isSome(assertSpanParentId(equalTo(root.get.spanId))))
       },
       test("status mapper for failed span") {
         val assertStatusCode  = assertSpanStatusCode(equalTo(StatusCode.ERROR))
@@ -209,8 +207,8 @@ object TracerTest extends ZIOSpecDefault {
                              )
                              .ignore
           spans         <- tracerTestkit.getFinishedSpans
-          root           = spans.find(_.getName == "Root")
-          child          = spans.find(_.getName == "Child")
+          root           = spans.find(_.name == "Root")
+          child          = spans.find(_.name == "Child")
         } yield assert(root)(isSome(assertError)) && assert(child)(isSome(assertError))
       },
       test("setAttribute") {
@@ -222,8 +220,8 @@ object TracerTest extends ZIOSpecDefault {
                              _    <- span.setAttribute("string", "bar")
                            } yield ())
           spans         <- tracerTestkit.getFinishedSpans
-          tags           = spans.head.getAttributes
-        } yield assert(tags.get(AttributeKey.stringKey("string")))(equalTo("bar"))
+          tags           = spans.head.attributes
+        } yield assert(tags.get[String]("string"))(isSome(equalTo("bar")))
       }
     ).provide(TracerTestkit.inMemory, OpenTelemetryTestkit.ctxStorageZioFiberRef)
 
@@ -244,17 +242,17 @@ object TracerTest extends ZIOSpecDefault {
                              } yield ()
                            }
           spans         <- tracerTestkit.getFinishedSpans
-          tags           = spans.head.getAttributes
-        } yield assert(tags.get(AttributeKey.booleanKey("boolean")))(equalTo(Boolean.box(true))) &&
-          assert(tags.get(AttributeKey.longKey("int")))(equalTo(Long.box(1))) &&
-          assert(tags.get(AttributeKey.stringKey("string")))(equalTo("foo")) &&
-          assert(tags.get(AttributeKey.booleanArrayKey("booleans")))(
-            equalTo(Seq(Boolean.box(true), Boolean.box(false)).asJava)
+          tags           = spans.head.attributes
+        } yield assert(tags.get[Boolean]("boolean"))(isSome(equalTo(true))) &&
+          assert(tags.get[Long]("int"))(isSome(equalTo(1L))) &&
+          assert(tags.get[String]("string"))(isSome(equalTo("foo"))) &&
+          assert(tags.get[List[Boolean]]("booleans"))(
+            isSome(equalTo(List(true, false)))
           ) &&
-          assert(tags.get(AttributeKey.longArrayKey("longs")))(
-            equalTo(Seq(Long.box(1L), Long.box(2L)).asJava)
+          assert(tags.get[List[Long]]("longs"))(
+            isSome(equalTo(List(1L, 2L)))
           ) &&
-          assert(tags.get(AttributeKey.stringArrayKey("strings")))(equalTo(Seq("foo", "bar").asJava))
+          assert(tags.get[List[String]]("strings"))(isSome(equalTo(List("foo", "bar"))))
       },
       test("addEvent & addEventWithAttributes") {
         val duration = 1000.micros
@@ -275,16 +273,22 @@ object TracerTest extends ZIOSpecDefault {
           _             <- ZIO.unit @@ tracer.aspects.span("Child") @@ tracer.aspects.span("Root")
           spans         <- tracerTestkit.getFinishedSpans
           tags           = spans.collect {
-                             case span if span.getName == "foo" =>
-                               span.getEvents.asScala.toList.map(le => (le.getEpochNanos, le.getName, le.getAttributes))
+                             case span if span.name == "foo" =>
+                               span.events
                            }.flatten
         } yield {
           val expected = List(
-            (0L, "message", Attributes.empty),
-            (
-              1000000L,
+            SpanData.EventData(
+              "message",
+              testkit.common.Attributes(Attributes.empty),
+              0L
+            ),
+            SpanData.EventData(
               "message2",
-              Attributes(Attribute.string("msg", "message"), Attribute.long("size", 1L))
+              testkit.common.Attributes(
+                Attributes(Attribute.string("msg", "message"), Attribute.long("size", 1L))
+              ),
+              1000000L
             )
           )
           assert(tags)(equalTo(expected))
@@ -305,11 +309,11 @@ object TracerTest extends ZIOSpecDefault {
                                         ).map(_.getSpanContext)
           _                          <- ZIO.unit @@ tracer.aspects.span("Child", links = links) @@ tracer.aspects.span("Root")
           spans                      <- tracerTestkit.getFinishedSpans
-          root                        = spans.find(_.getName == "Root")
-          child                       = spans.find(_.getName == "Child")
+          root                        = spans.find(_.name == "Root")
+          child                       = spans.find(_.name == "Child")
         } yield assert(root)(isSome(anything)) &&
-          assert(child)(isSome(assertSpanParentId(equalTo(root.get.getSpanId)))) &&
-          assert(child.toList.flatMap(_.getLinks.asScala.toList.map(_.getSpanContext.getSpanId)))(
+          assert(child)(isSome(assertSpanParentId(equalTo(root.get.spanId)))) &&
+          assert(child.toList.flatMap(_.links.map(_.spanId)))(
             hasSameElements(links.map(_.getSpanId))
           )
       }
@@ -354,10 +358,10 @@ object TracerTest extends ZIOSpecDefault {
                                span.setStatus(StatusCode.ERROR, "Error")
                              }
           spans           <- tracerTestkit.getFinishedSpans
-          emptyOk          = spans.find(_.getName == "empty-ok")
-          emptyFailed      = spans.find(_.getName == "empty-failed")
-          manuallySetOk    = spans.find(_.getName == "manually-set-ok")
-          manuallySetError = spans.find(_.getName == "manually-set-error")
+          emptyOk          = spans.find(_.name == "empty-ok")
+          emptyFailed      = spans.find(_.name == "empty-failed")
+          manuallySetOk    = spans.find(_.name == "manually-set-ok")
+          manuallySetError = spans.find(_.name == "manually-set-error")
         } yield assert(emptyOk)(isSome(assertEmptyOk)) &&
           assert(emptyFailed)(isSome(assertEmptyFailed)) &&
           assert(manuallySetOk)(isSome(assertManuallySetOk)) &&
@@ -384,8 +388,8 @@ object TracerTest extends ZIOSpecDefault {
                                tracer.aspects.span("default-failed", statusMapper = StatusMapper.default)
                            ).either
           spans         <- tracerTestkit.getFinishedSpans
-          defaultOk      = spans.find(_.getName == "default-ok")
-          defaultFailed  = spans.find(_.getName == "default-failed")
+          defaultOk      = spans.find(_.name == "default-ok")
+          defaultFailed  = spans.find(_.name == "default-failed")
         } yield assert(defaultOk)(isSome(assertDefaultOk)) && assert(defaultFailed)(isSome(assertDefaultFailed))
       },
       test("both") {
@@ -415,8 +419,8 @@ object TracerTest extends ZIOSpecDefault {
                                tracer.aspects.span("default-failed", statusMapper = statusMapper)
                            ).either
           spans         <- tracerTestkit.getFinishedSpans
-          defaultOk      = spans.find(_.getName == "default-ok")
-          defaultFailed  = spans.find(_.getName == "default-failed")
+          defaultOk      = spans.find(_.name == "default-ok")
+          defaultFailed  = spans.find(_.name == "default-failed")
         } yield assert(defaultOk)(isSome(assertionNotDefaultOk)) &&
           assert(defaultFailed)(isSome(assertionNotDefaultFailed))
       },
@@ -450,9 +454,9 @@ object TracerTest extends ZIOSpecDefault {
               tracer.aspects
                 .span("error", statusMapper = StatusMapper.success[Unit](_ => StatusCode.ERROR)(_ => Some("Error")))
           spans          <- tracerTestkit.getFinishedSpans
-          ok              = spans.find(_.getName == "ok")
-          okNoDescription = spans.find(_.getName == "ok-no-description")
-          error           = spans.find(_.getName == "error")
+          ok              = spans.find(_.name == "ok")
+          okNoDescription = spans.find(_.name == "ok-no-description")
+          error           = spans.find(_.name == "error")
         } yield assert(ok)(isSome(assertOk)) &&
           assert(okNoDescription)(isSome(assertOkNoDescription)) &&
           assert(error)(isSome(assertError))
@@ -543,13 +547,13 @@ object TracerTest extends ZIOSpecDefault {
               )).either
 
           spans                      <- tracerTestkit.getFinishedSpans
-          okNoException               = spans.find(_.getName == "ok-no-exception")
-          okNoException1              = spans.find(_.getName == "ok-no-exception-1")
-          okNoExceptionAndDescription = spans.find(_.getName == "ok-no-exception-and-description")
-          okWithException             = spans.find(_.getName == "ok-with-exception")
-          errorNoException            = spans.find(_.getName == "error-no-exception")
-          errorNoDescription          = spans.find(_.getName == "error-no-description")
-          errorNoDescription1         = spans.find(_.getName == "error-no-description-1")
+          okNoException               = spans.find(_.name == "ok-no-exception")
+          okNoException1              = spans.find(_.name == "ok-no-exception-1")
+          okNoExceptionAndDescription = spans.find(_.name == "ok-no-exception-and-description")
+          okWithException             = spans.find(_.name == "ok-with-exception")
+          errorNoException            = spans.find(_.name == "error-no-exception")
+          errorNoDescription          = spans.find(_.name == "error-no-description")
+          errorNoDescription1         = spans.find(_.name == "error-no-description-1")
         } yield assert(okNoException)(isSome(assertOkNoException)) &&
           assert(okNoException1)(isSome(assertOkNoException)) &&
           assert(okNoExceptionAndDescription)(isSome(assertOkNoExceptionAndDescription)) &&
@@ -594,8 +598,8 @@ object TracerTest extends ZIOSpecDefault {
               )).either
 
           spans <- tracerTestkit.getFinishedSpans
-          ok     = spans.find(_.getName == "ok")
-          error  = spans.find(_.getName == "error")
+          ok     = spans.find(_.name == "ok")
+          error  = spans.find(_.name == "error")
         } yield assert(ok)(isSome(assertOk)) &&
           assert(error)(isSome(assertError))
       }
@@ -614,9 +618,9 @@ object TracerTest extends ZIOSpecDefault {
                              )
                            }
           spans         <- tracerTestkit.getFinishedSpans
-          tags           = spans.head.getAttributes
-        } yield assert(tags.get(AttributeKey.stringKey("root-attribute")))(equalTo("bar")) &&
-          assert(tags.get(AttributeKey.stringKey("log-attribute")))(equalTo("foo"))
+          tags           = spans.head.attributes
+        } yield assert(tags.get[String]("root-attribute"))(isSome(equalTo("bar"))) &&
+          assert(tags.get[String]("log-attribute"))(isSome(equalTo("foo")))
       }.provide(TracerTestkit.inMemory, OpenTelemetryTestkit.ctxStorageZioFiberRef),
       test("span attributes override log annotated") {
         for {
@@ -629,8 +633,8 @@ object TracerTest extends ZIOSpecDefault {
                              )
                            }
           spans         <- tracerTestkit.getFinishedSpans
-          tags           = spans.head.getAttributes
-        } yield assert(tags.get(AttributeKey.stringKey("some-attribute")))(equalTo("bar"))
+          tags           = spans.head.attributes
+        } yield assert(tags.get[String]("some-attribute"))(isSome(equalTo("bar")))
       }.provide(TracerTestkit.inMemory, OpenTelemetryTestkit.ctxStorageZioFiberRef),
       test("without log annotations") {
         for {
@@ -643,9 +647,9 @@ object TracerTest extends ZIOSpecDefault {
                              )
                            }
           spans         <- tracerTestkit.getFinishedSpans
-          tags           = spans.head.getAttributes
-        } yield assert(tags.get(AttributeKey.stringKey("root-attribute")))(equalTo("bar")) &&
-          assert(Option(tags.get(AttributeKey.stringKey("log-attribute"))))(isNone)
+          tags           = spans.head.attributes
+        } yield assert(tags.get[String]("root-attribute"))(isSome(equalTo("bar"))) &&
+          assert(tags.get[String]("log-attribute"))(isNone)
       }.provide(TracerTestkit.inMemory, OpenTelemetryTestkit.ctxStorageZioFiberRef)
     )
 }

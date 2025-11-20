@@ -187,8 +187,8 @@ object MeterTest extends ZIOSpecDefault {
           metricSpanId   = metricExemplar.getSpanContext.getSpanId
           metricTraceId  = metricExemplar.getSpanContext.getTraceId
         } yield assertTrue(
-          metricSpanId == span.getSpanId(),
-          metricTraceId == span.getTraceId()
+          metricSpanId == span.spanId,
+          metricTraceId == span.traceId
         )
 
       }
