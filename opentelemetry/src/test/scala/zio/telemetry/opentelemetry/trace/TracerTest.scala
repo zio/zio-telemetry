@@ -4,14 +4,13 @@ import io.opentelemetry.api.trace.{Span => JSpan, SpanId, StatusCode}
 import io.opentelemetry.context.Context
 import zio._
 import zio.telemetry.opentelemetry.common.{Attribute, Attributes}
-import zio.telemetry.opentelemetry.testkit.trace.TracerTestkit
+import zio.telemetry.opentelemetry.testkit
+import zio.telemetry.opentelemetry.testkit.OpenTelemetryTestkit
+import zio.telemetry.opentelemetry.testkit.trace.{SpanData, TracerTestkit}
 import zio.test.Assertion._
 import zio.test.{Assertion, Spec, TestClock, ZIOSpecDefault, assert}
 
 import scala.concurrent.Future
-import zio.telemetry.opentelemetry.testkit.OpenTelemetryTestkit
-import zio.telemetry.opentelemetry.testkit.trace.SpanData
-import zio.telemetry.opentelemetry.testkit
 
 object TracerTest extends ZIOSpecDefault {
 

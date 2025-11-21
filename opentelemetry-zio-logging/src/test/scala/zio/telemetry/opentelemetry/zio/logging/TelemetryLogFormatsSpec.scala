@@ -6,14 +6,13 @@ import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.data.SpanData
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import zio.Runtime.removeDefaultLoggers
-import zio.telemetry.opentelemetry.Otel
 import zio.telemetry.opentelemetry.trace.Tracer
+import zio.telemetry.opentelemetry.{OpenTelemetry, Otel}
 import zio.test.{Spec, TestEnvironment, ZIOSpecDefault, assertTrue}
 import zio.{Scope, UIO, ULayer, URLayer, ZEnvironment, ZIO, ZLayer}
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
-import zio.telemetry.opentelemetry.OpenTelemetry
 
 object TelemetryLogFormatsSpec extends ZIOSpecDefault {
 

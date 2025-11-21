@@ -6,14 +6,13 @@ import zio.metrics.Metric
 import zio.metrics.MetricKeyType.Histogram.Boundaries
 import zio.telemetry.opentelemetry.common.{Attribute, Attributes}
 import zio.telemetry.opentelemetry.context.internal.ContextStorage
-import zio.test.{TestEnvironment, ZIOSpecDefault, _}
-import java.time.temporal.ChronoUnit
 import zio.telemetry.opentelemetry.testkit.OpenTelemetryTestkit
 import zio.telemetry.opentelemetry.testkit.metrics.MeterTestkit
 import zio.telemetry.opentelemetry.testkit.trace.TracerTestkit
-import zio.telemetry.opentelemetry.testkit
-import zio.telemetry.opentelemetry.OpenTelemetry
-import zio.telemetry.opentelemetry.Otel
+import zio.telemetry.opentelemetry.{OpenTelemetry, Otel, testkit}
+import zio.test.{TestEnvironment, ZIOSpecDefault, _}
+
+import java.time.temporal.ChronoUnit
 
 object MeterTest extends ZIOSpecDefault {
 

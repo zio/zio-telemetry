@@ -1,11 +1,11 @@
 package zio.telemetry.opentelemetry.testkit
 
-import zio._
-import zio.telemetry.opentelemetry.context.internal.ContextStorage
 import io.opentelemetry.sdk.OpenTelemetrySdk
-import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.metrics.SdkMeterProvider
+import io.opentelemetry.sdk.trace.SdkTracerProvider
+import zio._
 import zio.telemetry.opentelemetry.OpenTelemetry
+import zio.telemetry.opentelemetry.context.internal.ContextStorage
 
 object OpenTelemetryTestkit {
 

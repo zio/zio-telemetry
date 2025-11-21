@@ -1,7 +1,7 @@
 package zio.telemetry.opentelemetry.testkit.common
 
-import io.opentelemetry.api.common.AttributeKey
-import io.opentelemetry.api.common.{Attributes => JAttributes}
+import io.opentelemetry.api.common.{AttributeKey, Attributes => JAttributes}
+
 import scala.jdk.CollectionConverters._
 
 final case class Attributes(

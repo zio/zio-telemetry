@@ -1,13 +1,12 @@
 package zio.telemetry.opentelemetry.logs
 
+import io.opentelemetry.api.logs.Severity
 import zio._
-import zio.test.Assertion._
-import zio.test._
-
 import zio.telemetry.opentelemetry.testkit.OpenTelemetryTestkit
 import zio.telemetry.opentelemetry.testkit.logs.LoggerTestkit
 import zio.telemetry.opentelemetry.testkit.trace.TracerTestkit
-import io.opentelemetry.api.logs.Severity
+import zio.test.Assertion._
+import zio.test._
 
 object LoggerTest extends ZIOSpecDefault {
 

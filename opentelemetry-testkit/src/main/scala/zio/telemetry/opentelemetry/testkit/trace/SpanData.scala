@@ -1,17 +1,16 @@
 package zio.telemetry.opentelemetry.testkit.trace
 
-import io.opentelemetry.api.trace.SpanKind
-import io.opentelemetry.api.trace.StatusCode
-import io.opentelemetry.sdk.trace.data.{SpanData => JSpanData}
-import io.opentelemetry.sdk.trace.data.{StatusData => JStatusData}
-import io.opentelemetry.sdk.trace.data.{EventData => JEventData}
-import io.opentelemetry.sdk.trace.data.{LinkData => JLinkData}
-import zio.telemetry.opentelemetry.testkit.trace.SpanData.StatusData
-import zio.telemetry.opentelemetry.testkit.common.Attributes
-import zio.telemetry.opentelemetry.testkit.trace.SpanData.EventData
+import io.opentelemetry.api.trace.{SpanKind, StatusCode}
+import io.opentelemetry.sdk.trace.data.{
+  EventData => JEventData,
+  LinkData => JLinkData,
+  SpanData => JSpanData,
+  StatusData => JStatusData
+}
+import zio.telemetry.opentelemetry.testkit.common.{Attributes, SpanContext}
+import zio.telemetry.opentelemetry.testkit.trace.SpanData.{EventData, LinkData, StatusData}
+
 import scala.jdk.CollectionConverters._
-import zio.telemetry.opentelemetry.testkit.trace.SpanData.LinkData
-import zio.telemetry.opentelemetry.testkit.common.SpanContext
 
 final case class SpanData(
   name: String,

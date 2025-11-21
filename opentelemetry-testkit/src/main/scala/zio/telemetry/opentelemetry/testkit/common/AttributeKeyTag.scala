@@ -1,6 +1,7 @@
 package zio.telemetry.opentelemetry.testkit.common
 
 import io.opentelemetry.api.common.AttributeKey
+
 import scala.jdk.CollectionConverters._
 
 sealed trait AttributeKeyTag[T]

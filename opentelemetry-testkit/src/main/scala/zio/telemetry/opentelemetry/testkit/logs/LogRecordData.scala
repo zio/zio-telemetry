@@ -1,10 +1,8 @@
 package zio.telemetry.opentelemetry.testkit.logs
 
-import io.opentelemetry.sdk.logs.data.{LogRecordData => JLogRecordData}
-import zio.telemetry.opentelemetry.testkit.common.InstrumentationScopeInfo
-import zio.telemetry.opentelemetry.testkit.common.SpanContext
 import io.opentelemetry.api.logs.Severity
-import zio.telemetry.opentelemetry.testkit.common.Attributes
+import io.opentelemetry.sdk.logs.data.{LogRecordData => JLogRecordData}
+import zio.telemetry.opentelemetry.testkit.common.{Attributes, InstrumentationScopeInfo, SpanContext}
 
 final case class LogRecordData(
   instrumentationScopeInfo: InstrumentationScopeInfo,

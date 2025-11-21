@@ -3,8 +3,8 @@ package zio.telemetry.opentelemetry
 import io.opentelemetry.api.{GlobalOpenTelemetry, OpenTelemetry => JOpenTelemetry}
 import zio._
 import zio.metrics.{MetricClient, MetricListener}
-import zio.telemetry.opentelemetry.context.internal.ContextStorage
 import zio.telemetry.opentelemetry.context.ContextPropagator
+import zio.telemetry.opentelemetry.context.internal.ContextStorage
 import zio.telemetry.opentelemetry.logs.Logger
 import zio.telemetry.opentelemetry.metrics.Meter
 import zio.telemetry.opentelemetry.metrics.internal.{Instrument, InstrumentRegistry, OtelMetricListener}

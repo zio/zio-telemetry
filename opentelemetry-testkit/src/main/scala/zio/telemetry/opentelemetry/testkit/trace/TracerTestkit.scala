@@ -81,7 +81,8 @@ object TracerTestkit {
             _     <- ZIO.succeed(spanProcessor.forceFlush())
             spans <- ZIO.succeed(spanExporter.getFinishedSpanItems.asScala.toList.map(SpanData(_)))
           } yield spans
-        override def resetFinishedSpans(implicit trace: Trace): Task[Unit]        =
+
+        override def resetFinishedSpans(implicit trace: Trace): Task[Unit] =
           ZIO.attempt(spanExporter.reset())
 
         override def getTracer(

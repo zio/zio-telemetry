@@ -3,14 +3,15 @@ import sbt.*
 object Dependencies {
 
   object Versions {
-    val opentracing           = "0.33.0"
-    val opentelemetry         = "1.53.0"
-    val opentelemetryContrib  = "1.48.0-alpha"
-    val opencensus            = "0.31.1"
-    val scalaCollectionCompat = "2.13.0"
-    val zio                   = "2.1.20"
-    val zioLogging            = "2.5.1"
-    val izumiReflect          = "3.0.6"
+    val opentracing            = "0.33.0"
+    val opentelemetry          = "1.53.0"
+    val opentelemetryContrib   = "1.48.0-alpha"
+    val opentelemetryIncubator = "1.53.0-alpha"
+    val opencensus             = "0.31.1"
+    val scalaCollectionCompat  = "2.13.0"
+    val zio                    = "2.1.20"
+    val zioLogging             = "2.5.1"
+    val izumiReflect           = "3.0.6"
   }
 
   object Orgs {
@@ -62,9 +63,14 @@ object Dependencies {
   )
 
   lazy val opentelemetryTestkit = zio ++ Seq(
-    Orgs.opentelemetry % "opentelemetry-api"         % Versions.opentelemetry,
-    Orgs.opentelemetry % "opentelemetry-sdk-trace"   % Versions.opentelemetry,
-    Orgs.opentelemetry % "opentelemetry-sdk-testing" % Versions.opentelemetry
+    Orgs.opentelemetry % "opentelemetry-api"           % Versions.opentelemetry,
+    Orgs.opentelemetry % "opentelemetry-api-incubator" % Versions.opentelemetryIncubator,
+    Orgs.opentelemetry % "opentelemetry-sdk"           % Versions.opentelemetry,
+    Orgs.opentelemetry % "opentelemetry-sdk-common"    % Versions.opentelemetry,
+    Orgs.opentelemetry % "opentelemetry-sdk-logs"      % Versions.opentelemetry,
+    Orgs.opentelemetry % "opentelemetry-sdk-metrics"   % Versions.opentelemetry,
+    Orgs.opentelemetry % "opentelemetry-sdk-trace"     % Versions.opentelemetry,
+    Orgs.opentelemetry % "opentelemetry-sdk-testing"   % Versions.opentelemetry
   )
 
   lazy val opentelemetryZioLogging = zio ++ Seq(

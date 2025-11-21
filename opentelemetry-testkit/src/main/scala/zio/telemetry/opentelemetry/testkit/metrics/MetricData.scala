@@ -1,17 +1,18 @@
 package zio.telemetry.opentelemetry.testkit.metrics
 
-import zio.telemetry.opentelemetry.testkit.common.Attributes
-import io.opentelemetry.sdk.metrics.data.{MetricDataType => JMetricDataType}
-import io.opentelemetry.sdk.metrics.data.{MetricData => JMetricData}
-import io.opentelemetry.sdk.metrics.data.DoubleExemplarData
-import io.opentelemetry.sdk.metrics.data.LongExemplarData
-import io.opentelemetry.sdk.metrics.data.DoublePointData
-import scala.jdk.CollectionConverters._
-import io.opentelemetry.sdk.metrics.data.LongPointData
-import io.opentelemetry.sdk.metrics.data.HistogramPointData
+import io.opentelemetry.sdk.metrics.data.{
+  DoubleExemplarData,
+  DoublePointData,
+  HistogramPointData,
+  LongExemplarData,
+  LongPointData,
+  MetricData => JMetricData,
+  MetricDataType => JMetricDataType
+}
+import zio.telemetry.opentelemetry.testkit.common.{Attributes, InstrumentationScopeInfo, SpanContext}
 import zio.telemetry.opentelemetry.testkit.metrics.MetricData.PointData
-import zio.telemetry.opentelemetry.testkit.common.SpanContext
-import zio.telemetry.opentelemetry.testkit.common.InstrumentationScopeInfo
+
+import scala.jdk.CollectionConverters._
 
 trait MetricData[T <: PointData] {
   val instrumentationScopeInfo: InstrumentationScopeInfo
@@ -208,7 +209,5 @@ object MetricData {
     }
 
   }
-
-  
 
 }

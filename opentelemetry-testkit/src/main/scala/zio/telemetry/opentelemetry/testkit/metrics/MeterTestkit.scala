@@ -1,14 +1,15 @@
 package zio.telemetry.opentelemetry.testkit.metrics
 
-import zio._
-import zio.telemetry.opentelemetry.metrics.Meter
 import io.opentelemetry.api.metrics.{Meter => JMeter}
-import io.opentelemetry.sdk.testing.exporter.InMemoryMetricReader
 import io.opentelemetry.sdk.metrics.SdkMeterProvider
-import zio.telemetry.opentelemetry.context.internal.ContextStorage
-import scala.jdk.CollectionConverters._
-import zio.telemetry.opentelemetry.metrics.internal.Instrument
 import io.opentelemetry.sdk.metrics.data.MetricDataType
+import io.opentelemetry.sdk.testing.exporter.InMemoryMetricReader
+import zio._
+import zio.telemetry.opentelemetry.context.internal.ContextStorage
+import zio.telemetry.opentelemetry.metrics.Meter
+import zio.telemetry.opentelemetry.metrics.internal.Instrument
+
+import scala.jdk.CollectionConverters._
 
 trait MeterTestkit {
 

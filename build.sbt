@@ -157,6 +157,7 @@ lazy val opentelemetryTestkit =
     )
     .settings(libraryDependencies ++= Dependencies.opentelemetryTestkit)
     .settings(mimaSettings(failOnProblem = true))
+    .settings(unusedCompileDependenciesFilter -= moduleFilter("io.opentelemetry", "opentelemetry-api-incubator"))
     .dependsOn(opentelemetryCore)
 
 lazy val opentelemetry: Project =

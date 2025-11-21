@@ -5,8 +5,7 @@ import io.opentelemetry.context.Context
 import zio._
 import zio.telemetry.opentelemetry.baggage.Baggage
 import zio.telemetry.opentelemetry.context.internal.ContextStorage
-import zio.telemetry.opentelemetry.context.{IncomingContextCarrier, OutgoingContextCarrier}
-import zio.telemetry.opentelemetry.context.ContextPropagator
+import zio.telemetry.opentelemetry.context.{ContextPropagator, IncomingContextCarrier, OutgoingContextCarrier}
 
 trait OpenTelemetry { self =>
 

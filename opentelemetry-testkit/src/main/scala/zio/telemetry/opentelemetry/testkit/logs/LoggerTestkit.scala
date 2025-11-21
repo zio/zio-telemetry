@@ -1,12 +1,13 @@
 package zio.telemetry.opentelemetry.testkit.logs
 
+import io.opentelemetry.sdk.logs.SdkLoggerProvider
+import io.opentelemetry.sdk.logs.`export`.SimpleLogRecordProcessor
+import io.opentelemetry.sdk.testing.exporter.InMemoryLogRecordExporter
 import zio._
 import zio.telemetry.opentelemetry.context.internal.ContextStorage
-import io.opentelemetry.sdk.testing.exporter.InMemoryLogRecordExporter
-import io.opentelemetry.sdk.logs.export.SimpleLogRecordProcessor
-import io.opentelemetry.sdk.logs.SdkLoggerProvider
-import scala.jdk.CollectionConverters._
 import zio.telemetry.opentelemetry.logs.Logger
+
+import scala.jdk.CollectionConverters._
 
 trait LoggerTestkit {
 
