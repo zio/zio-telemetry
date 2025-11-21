@@ -1,8 +1,6 @@
 package zio.telemetry.opentelemetry.testkit.metrics
 
 import zio.telemetry.opentelemetry.testkit.common.Attributes
-import zio.telemetry.opentelemetry.testkit.metrics.MetricData.InstrumentationScopeInfo
-import io.opentelemetry.sdk.common.{InstrumentationScopeInfo => JInstrumentationScopeInfo}
 import io.opentelemetry.sdk.metrics.data.{MetricDataType => JMetricDataType}
 import io.opentelemetry.sdk.metrics.data.{MetricData => JMetricData}
 import io.opentelemetry.sdk.metrics.data.DoubleExemplarData
@@ -13,6 +11,7 @@ import io.opentelemetry.sdk.metrics.data.LongPointData
 import io.opentelemetry.sdk.metrics.data.HistogramPointData
 import zio.telemetry.opentelemetry.testkit.metrics.MetricData.PointData
 import zio.telemetry.opentelemetry.testkit.common.SpanContext
+import zio.telemetry.opentelemetry.testkit.common.InstrumentationScopeInfo
 
 trait MetricData[T <: PointData] {
   val instrumentationScopeInfo: InstrumentationScopeInfo
@@ -210,21 +209,6 @@ object MetricData {
 
   }
 
-  case class InstrumentationScopeInfo(
-    name: String,
-    version: String,
-    schemaUrl: String,
-    attributes: Attributes
-  )
-
-  object InstrumentationScopeInfo {
-    def apply(underlying: JInstrumentationScopeInfo): InstrumentationScopeInfo =
-      InstrumentationScopeInfo(
-        name = underlying.getName,
-        version = underlying.getVersion,
-        schemaUrl = underlying.getSchemaUrl,
-        attributes = Attributes(underlying.getAttributes)
-      )
-  }
+  
 
 }

@@ -16,6 +16,9 @@ final case class Attributes(
   def asMap: Map[String, String] =
     data.map { case (k, v) => k.getKey -> v.toString }
 
+  def isEmpty: Boolean =
+    data.isEmpty
+
 }
 
 object Attributes {

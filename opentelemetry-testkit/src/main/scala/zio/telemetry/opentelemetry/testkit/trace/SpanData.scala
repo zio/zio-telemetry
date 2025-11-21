@@ -11,6 +11,7 @@ import zio.telemetry.opentelemetry.testkit.common.Attributes
 import zio.telemetry.opentelemetry.testkit.trace.SpanData.EventData
 import scala.jdk.CollectionConverters._
 import zio.telemetry.opentelemetry.testkit.trace.SpanData.LinkData
+import zio.telemetry.opentelemetry.testkit.common.SpanContext
 
 final case class SpanData(
   name: String,
@@ -70,21 +71,16 @@ object SpanData {
   }
 
   final case class LinkData(
-    spanId: String,
-    traceId: String,
+    spanContext: SpanContext,
     attributes: Attributes
   )
 
   object LinkData {
-    def apply(underlying: JLinkData): LinkData = {
-      val spanContext = underlying.getSpanContext
-
+    def apply(underlying: JLinkData): LinkData =
       LinkData(
-        spanId = spanContext.getSpanId,
-        traceId = spanContext.getTraceId,
+        spanContext = SpanContext(underlying.getSpanContext),
         attributes = Attributes(underlying.getAttributes)
       )
-    }
 
   }
 

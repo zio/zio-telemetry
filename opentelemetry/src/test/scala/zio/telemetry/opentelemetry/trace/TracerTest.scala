@@ -313,7 +313,7 @@ object TracerTest extends ZIOSpecDefault {
           child                       = spans.find(_.name == "Child")
         } yield assert(root)(isSome(anything)) &&
           assert(child)(isSome(assertSpanParentId(equalTo(root.get.spanId)))) &&
-          assert(child.toList.flatMap(_.links.map(_.spanId)))(
+          assert(child.toList.flatMap(_.links.map(_.spanContext.spanId)))(
             hasSameElements(links.map(_.getSpanId))
           )
       }
