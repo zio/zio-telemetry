@@ -39,7 +39,7 @@ object SpanData {
       links = underlying.getLinks.asScala.toList.map(LinkData(_))
     )
 
-  case class StatusData(
+  final case class StatusData(
     statusCode: StatusCode,
     description: String
   )
@@ -54,7 +54,7 @@ object SpanData {
 
   }
 
-  case class EventData(
+  final case class EventData(
     name: String,
     attributes: Attributes,
     epochNanos: Long
@@ -69,7 +69,7 @@ object SpanData {
       )
   }
 
-  case class LinkData(
+  final case class LinkData(
     spanId: String,
     traceId: String,
     attributes: Attributes

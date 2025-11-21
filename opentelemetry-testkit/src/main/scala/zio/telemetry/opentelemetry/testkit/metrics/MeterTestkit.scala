@@ -1,6 +1,5 @@
 package zio.telemetry.opentelemetry.testkit.metrics
 
-import io.opentelemetry.sdk.metrics.data.MetricData
 import zio._
 import zio.telemetry.opentelemetry.metrics.Meter
 import io.opentelemetry.api.metrics.{Meter => JMeter}
@@ -9,10 +8,15 @@ import io.opentelemetry.sdk.metrics.SdkMeterProvider
 import zio.telemetry.opentelemetry.context.internal.ContextStorage
 import scala.jdk.CollectionConverters._
 import zio.telemetry.opentelemetry.metrics.internal.Instrument
+import io.opentelemetry.sdk.metrics.data.MetricDataType
 
 trait MeterTestkit {
 
-  def collectMetrics(implicit trace: Trace): UIO[List[MetricData]]
+  def collectCounterMetrics(implicit trace: Trace): UIO[List[MetricData.Counter]]
+
+  def collectGaugeMetrics(implicit trace: Trace): UIO[List[MetricData.Gauge]]
+
+  def collectHistogramMetrics(implicit trace: Trace): UIO[List[MetricData.Histogram]]
 
   def getMeter(
     instrumentationScopeName: String,
@@ -47,6 +51,48 @@ object MeterTestkit {
         ctxStorage    <- ZIO.service[ContextStorage]
       } yield new MeterTestkit {
 
+        override def collectCounterMetrics(implicit trace: Trace): UIO[List[MetricData.Counter]] =
+          ZIO.succeed(
+            metricReader
+              .collectAllMetrics()
+              .asScala
+              .toList
+              .filter(_.getType == MetricDataType.LONG_SUM)
+              .map(MetricData.Counter(_))
+          )
+
+        override def collectGaugeMetrics(implicit trace: Trace): UIO[List[MetricData.Gauge]] =
+          ZIO.succeed(
+            metricReader
+              .collectAllMetrics()
+              .asScala
+              .toList
+              .filter(_.getType == MetricDataType.DOUBLE_GAUGE)
+              .map(MetricData.Gauge(_))
+          )
+
+        override def collectHistogramMetrics(implicit trace: Trace): UIO[List[MetricData.Histogram]] =
+          ZIO.succeed(
+            metricReader
+              .collectAllMetrics()
+              .asScala
+              .toList
+              .filter(_.getType == MetricDataType.HISTOGRAM)
+              .map(MetricData.Histogram(_))
+          )
+
+        override def getMeter(
+          instrumentationScopeName: String,
+          instrumentationVersion: Option[String],
+          schemaUrl: Option[String],
+          logAnnotated: Boolean
+        )(implicit trace: Trace): Task[Meter] =
+          for {
+            jmeter <- unsafe.getMeter(instrumentationScopeName, instrumentationVersion, schemaUrl)
+            builder = Instrument.Builder.make(jmeter, ctxStorage, logAnnotated)
+            meter   = Meter.make(builder)
+          } yield meter
+
         override def unsafe: UnsafeAPI =
           new UnsafeAPI {
 
@@ -67,21 +113,6 @@ object MeterTestkit {
               meterProvider
 
           }
-
-        override def collectMetrics(implicit trace: Trace): UIO[List[MetricData]] =
-          ZIO.succeed(metricReader.collectAllMetrics().asScala.toList)
-
-        override def getMeter(
-          instrumentationScopeName: String,
-          instrumentationVersion: Option[String],
-          schemaUrl: Option[String],
-          logAnnotated: Boolean
-        )(implicit trace: Trace): Task[Meter] =
-          for {
-            jmeter <- unsafe.getMeter(instrumentationScopeName, instrumentationVersion, schemaUrl)
-            builder = Instrument.Builder.make(jmeter, ctxStorage, logAnnotated)
-            meter   = Meter.make(builder)
-          } yield meter
 
       }
     }
