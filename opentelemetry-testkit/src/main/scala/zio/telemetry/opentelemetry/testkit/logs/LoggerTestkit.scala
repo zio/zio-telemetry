@@ -5,7 +5,6 @@ import zio.telemetry.opentelemetry.context.internal.ContextStorage
 import io.opentelemetry.sdk.testing.exporter.InMemoryLogRecordExporter
 import io.opentelemetry.sdk.logs.export.SimpleLogRecordProcessor
 import io.opentelemetry.sdk.logs.SdkLoggerProvider
-import io.opentelemetry.sdk.logs.data.LogRecordData
 import scala.jdk.CollectionConverters._
 import zio.telemetry.opentelemetry.logs.Logger
 
@@ -38,7 +37,7 @@ object LoggerTestkit {
         } yield new LoggerTestkit {
 
           override def getFinishedLogRecords: UIO[List[LogRecordData]] =
-            ZIO.succeed(logRecordExporter.getFinishedLogRecordItems().asScala.toList)
+            ZIO.succeed(logRecordExporter.getFinishedLogRecordItems().asScala.toList.map(LogRecordData(_)))
 
         }
       }
