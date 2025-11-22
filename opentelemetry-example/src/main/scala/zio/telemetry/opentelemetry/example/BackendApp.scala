@@ -4,11 +4,11 @@ import zio._
 import zio.config.magnolia._
 import zio.config.typesafe.TypesafeConfig
 import zio.metrics.jvm.DefaultJvmMetrics
-import zio.telemetry.opentelemetry.Otel
+import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.example.config.AppConfig
 import zio.telemetry.opentelemetry.example.http.{BackendHttpApp, BackendHttpServer}
 import zio.telemetry.opentelemetry.example.otel.OtelSdk
-import zio.telemetry.opentelemetry.metrics.Meter
+import zio.telemetry.opentelemetry.core.metrics.Meter
 
 object BackendApp extends ZIOAppDefault {
 

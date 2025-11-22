@@ -5,9 +5,9 @@ import io.opentelemetry.sdk.metrics.SdkMeterProvider
 import io.opentelemetry.sdk.metrics.data.MetricDataType
 import io.opentelemetry.sdk.testing.exporter.InMemoryMetricReader
 import zio._
-import zio.telemetry.opentelemetry.context.internal.ContextStorage
-import zio.telemetry.opentelemetry.metrics.Meter
-import zio.telemetry.opentelemetry.metrics.internal.Instrument
+import zio.telemetry.opentelemetry.core.context.internal.ContextStorage
+import zio.telemetry.opentelemetry.core.metrics.Meter
+import zio.telemetry.opentelemetry.core.metrics.internal.Instrument
 
 import scala.jdk.CollectionConverters._
 

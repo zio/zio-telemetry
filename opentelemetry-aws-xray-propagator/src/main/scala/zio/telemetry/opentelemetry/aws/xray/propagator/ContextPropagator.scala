@@ -2,7 +2,7 @@ package zio.telemetry.opentelemetry.aws.xray.propagator
 
 import io.opentelemetry.context.propagation.TextMapPropagator
 import io.opentelemetry.contrib.awsxray.propagator.{AwsXrayLambdaPropagator, AwsXrayPropagator}
-import zio.telemetry.opentelemetry.context
+import zio.telemetry.opentelemetry.core.context
 
 /**
  * AWS X-Ray Trace Header propagation protocol.

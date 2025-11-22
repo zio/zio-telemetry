@@ -1,7 +1,7 @@
 package zio.telemetry.opentelemetry.zio.logging
 
 import zio._
-import zio.telemetry.opentelemetry.OpenTelemetry
+import zio.telemetry.opentelemetry.core.OpenTelemetry
 
 object ZioLogging {
 

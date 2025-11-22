@@ -3,7 +3,7 @@ package zio.telemetry.opentelemetry.trace
 import io.opentelemetry.api.trace.{Span => JSpan, SpanId, StatusCode}
 import io.opentelemetry.context.Context
 import zio._
-import zio.telemetry.opentelemetry.common.{Attribute, Attributes}
+import zio.telemetry.opentelemetry.core.common.{Attribute, Attributes}
 import zio.telemetry.opentelemetry.testkit
 import zio.telemetry.opentelemetry.testkit.OpenTelemetryTestkit
 import zio.telemetry.opentelemetry.testkit.trace.{SpanData, TracerTestkit}

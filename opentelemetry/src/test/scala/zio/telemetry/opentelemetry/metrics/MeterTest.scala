@@ -4,12 +4,13 @@ import io.opentelemetry.sdk.metrics.SdkMeterProvider
 import zio._
 import zio.metrics.Metric
 import zio.metrics.MetricKeyType.Histogram.Boundaries
-import zio.telemetry.opentelemetry.common.{Attribute, Attributes}
+import zio.telemetry.opentelemetry.core.common.{Attribute, Attributes}
 import zio.telemetry.opentelemetry.context.internal.ContextStorage
 import zio.telemetry.opentelemetry.testkit.OpenTelemetryTestkit
 import zio.telemetry.opentelemetry.testkit.metrics.MeterTestkit
 import zio.telemetry.opentelemetry.testkit.trace.TracerTestkit
-import zio.telemetry.opentelemetry.{OpenTelemetry, Otel, testkit}
+import zio.telemetry.opentelemetry.{OpenTelemetry, testkit}
+import zio.telemetry.opentelemetry.core.OpenTelemetry
 import zio.test.{TestEnvironment, ZIOSpecDefault, _}
 
 import java.time.temporal.ChronoUnit
@@ -277,7 +278,7 @@ object MeterTest extends ZIOSpecDefault {
       MeterTestkit.inMemory,
       OpenTelemetryTestkit.ctxStorageZioFiberRef,
       otelLayer,
-      Otel.zioMetrics("MeterTest")
+      OpenTelemetry.zioMetrics("MeterTest")
     )
 
 }

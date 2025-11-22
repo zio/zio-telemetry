@@ -4,8 +4,8 @@ import io.opentelemetry.api.trace.StatusCode
 import zio._
 import zio.http._
 import zio.json.EncoderOps
-import zio.telemetry.opentelemetry.OpenTelemetry
-import zio.telemetry.opentelemetry.context.OutgoingContextCarrier
+import zio.telemetry.opentelemetry.core.OpenTelemetry
+import zio.telemetry.opentelemetry.core.context.OutgoingContextCarrier
 import zio.telemetry.opentelemetry.trace.{StatusMapper, Tracer}
 
 case class ProxyHttpApp(openTelemetry: OpenTelemetry, client: BackendClient, tracer: Tracer) {

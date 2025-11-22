@@ -4,8 +4,8 @@ import io.opentelemetry.sdk.logs.SdkLoggerProvider
 import io.opentelemetry.sdk.logs.`export`.SimpleLogRecordProcessor
 import io.opentelemetry.sdk.testing.exporter.InMemoryLogRecordExporter
 import zio._
-import zio.telemetry.opentelemetry.context.internal.ContextStorage
-import zio.telemetry.opentelemetry.logs.Logger
+import zio.telemetry.opentelemetry.core.context.internal.ContextStorage
+import zio.telemetry.opentelemetry.core.logs.Logger
 
 import scala.jdk.CollectionConverters._
 

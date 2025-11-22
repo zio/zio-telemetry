@@ -4,8 +4,8 @@ import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.metrics.SdkMeterProvider
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import zio._
-import zio.telemetry.opentelemetry.OpenTelemetry
-import zio.telemetry.opentelemetry.context.internal.ContextStorage
+import zio.telemetry.opentelemetry.core.OpenTelemetry
+import zio.telemetry.opentelemetry.core.context.internal.ContextStorage
 
 object OpenTelemetryTestkit {
 

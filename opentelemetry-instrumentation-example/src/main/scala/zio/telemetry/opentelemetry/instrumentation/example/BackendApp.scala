@@ -6,10 +6,10 @@ import zio.config.ReadError
 import zio.config.magnolia._
 import zio.config.typesafe.TypesafeConfig
 import zio.logging.backend.SLF4J
-import zio.telemetry.opentelemetry.Otel
+import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.instrumentation.example.config.AppConfig
 import zio.telemetry.opentelemetry.instrumentation.example.http.{BackendHttpApp, BackendHttpServer}
-import zio.telemetry.opentelemetry.OpenTelemetry
+import zio.telemetry.opentelemetry.core
 
 object BackendApp extends ZIOAppDefault {
 
@@ -25,15 +25,15 @@ object BackendApp extends ZIOAppDefault {
   override def run: Task[Nothing] =
     (for {
       server        <- ZIO.service[BackendHttpServer]
-      openTelemetry <- ZIO.service[OpenTelemetry]
+      openTelemetry <- ZIO.service[core.OpenTelemetry]
       _             <- ZIO.attempt(OpenTelemetryAppender.install(openTelemetry.unsafe.asJava))
       exitCode      <- server.start
     } yield exitCode).provide(
       configLayer,
       BackendHttpServer.live,
       BackendHttpApp.live,
-      Otel.global(),
-      Otel.tracer(instrumentationScopeName)
+      OpenTelemetry.global(),
+      OpenTelemetry.tracer(instrumentationScopeName)
     )
 
 }

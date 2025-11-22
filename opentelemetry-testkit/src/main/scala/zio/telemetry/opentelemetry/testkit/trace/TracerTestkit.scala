@@ -5,8 +5,8 @@ import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import zio._
-import zio.telemetry.opentelemetry.context.internal.ContextStorage
-import zio.telemetry.opentelemetry.trace.Tracer
+import zio.telemetry.opentelemetry.core.context.internal.ContextStorage
+import zio.telemetry.opentelemetry.core.trace.Tracer
 
 import scala.jdk.CollectionConverters._
 
