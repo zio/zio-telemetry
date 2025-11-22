@@ -1,4 +1,4 @@
-package zio.telemetry.opentelemetry.baggage
+package zio.telemetry.opentelemetry.core.baggage
 
 import zio._
 import zio.telemetry.opentelemetry.core.context.internal.ContextStorage

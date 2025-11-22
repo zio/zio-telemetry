@@ -1,4 +1,4 @@
-package zio.telemetry.opentelemetry
+package zio.telemetry.opentelemetry.core
 
 import zio._
 import zio.telemetry.opentelemetry.core.context.internal.ContextStorage
@@ -7,7 +7,6 @@ import zio.telemetry.opentelemetry.testkit.OpenTelemetryTestkit
 import zio.telemetry.opentelemetry.testkit.trace.TracerTestkit
 import zio.test.Assertion._
 import zio.test._
-import zio.telemetry.opentelemetry.core.OpenTelemetry
 
 object OpenTelemetryTest extends ZIOSpecDefault {
 

@@ -1,4 +1,4 @@
-package zio.telemetry.opentelemetry.logs
+package zio.telemetry.opentelemetry.core.logs
 
 import io.opentelemetry.api.logs.Severity
 import zio._

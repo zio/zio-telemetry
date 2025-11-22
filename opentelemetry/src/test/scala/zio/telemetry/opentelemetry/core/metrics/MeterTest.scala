@@ -1,16 +1,15 @@
-package zio.telemetry.opentelemetry.metrics
+package zio.telemetry.opentelemetry.core.metrics
 
 import io.opentelemetry.sdk.metrics.SdkMeterProvider
 import zio._
 import zio.metrics.Metric
 import zio.metrics.MetricKeyType.Histogram.Boundaries
 import zio.telemetry.opentelemetry.core.common.{Attribute, Attributes}
-import zio.telemetry.opentelemetry.context.internal.ContextStorage
+import zio.telemetry.opentelemetry.core.context.internal.ContextStorage
 import zio.telemetry.opentelemetry.testkit.OpenTelemetryTestkit
 import zio.telemetry.opentelemetry.testkit.metrics.MeterTestkit
 import zio.telemetry.opentelemetry.testkit.trace.TracerTestkit
-import zio.telemetry.opentelemetry.{OpenTelemetry, testkit}
-import zio.telemetry.opentelemetry.core.OpenTelemetry
+import zio.telemetry.opentelemetry.{OpenTelemetry, core, testkit}
 import zio.test.{TestEnvironment, ZIOSpecDefault, _}
 
 import java.time.temporal.ChronoUnit
@@ -19,7 +18,7 @@ object MeterTest extends ZIOSpecDefault {
 
   val instrumentationScopeName = "MeterTest"
 
-  val otelLayer: RLayer[MeterTestkit with ContextStorage, OpenTelemetry] = {
+  val otelLayer: RLayer[MeterTestkit with ContextStorage, core.OpenTelemetry] = {
     val meterProvider = ZLayer {
       for {
         meterTestkit <- ZIO.service[MeterTestkit]

@@ -1,4 +1,4 @@
-package zio.telemetry.opentelemetry.trace
+package zio.telemetry.opentelemetry.core.trace
 
 import io.opentelemetry.api.trace.{Span => JSpan, SpanId, StatusCode}
 import io.opentelemetry.context.Context

@@ -7,8 +7,7 @@ import io.opentelemetry.sdk.trace.data.SpanData
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import zio.Runtime.removeDefaultLoggers
 import zio.telemetry.opentelemetry.core.trace.Tracer
-import zio.telemetry.opentelemetry.{OpenTelemetry}
-import zio.telemetry.opentelemetry.core.OpenTelemetry
+import zio.telemetry.opentelemetry.{OpenTelemetry, core}
 import zio.test.{Spec, TestEnvironment, ZIOSpecDefault, assertTrue}
 import zio.{Scope, UIO, ULayer, URLayer, ZEnvironment, ZIO, ZLayer}
 
@@ -31,10 +30,10 @@ object TelemetryLogFormatsSpec extends ZIOSpecDefault {
 
   def tracerMockLayer(
     logAnnotated: Boolean = false
-  ): URLayer[OpenTelemetry, Tracer with InMemorySpanExporter with JTracer] = {
+  ): URLayer[core.OpenTelemetry, Tracer with InMemorySpanExporter with JTracer] = {
     val tracerLayer = ZLayer.scoped {
       for {
-        openTelemetry <- ZIO.service[OpenTelemetry]
+        openTelemetry <- ZIO.service[core.OpenTelemetry]
         jtracer       <- ZIO.service[JTracer]
         tracer         = Tracer.make(jtracer, openTelemetry.ctxStorage, logAnnotated)
       } yield tracer
