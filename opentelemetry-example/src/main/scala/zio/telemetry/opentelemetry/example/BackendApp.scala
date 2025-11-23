@@ -5,10 +5,10 @@ import zio.config.magnolia._
 import zio.config.typesafe.TypesafeConfig
 import zio.metrics.jvm.DefaultJvmMetrics
 import zio.telemetry.opentelemetry.OpenTelemetry
+import zio.telemetry.opentelemetry.core.metrics.Meter
 import zio.telemetry.opentelemetry.example.config.AppConfig
 import zio.telemetry.opentelemetry.example.http.{BackendHttpApp, BackendHttpServer}
 import zio.telemetry.opentelemetry.example.otel.OtelSdk
-import zio.telemetry.opentelemetry.core.metrics.Meter
 
 object BackendApp extends ZIOAppDefault {
 
@@ -50,10 +50,10 @@ object BackendApp extends ZIOAppDefault {
         BackendHttpServer.live,
         BackendHttpApp.live,
         OtelSdk.custom(resourceName),
-        Otel.tracer(instrumentationScopeName),
-        Otel.metrics(instrumentationScopeName),
-        Otel.installLogger(instrumentationScopeName),
-        Otel.zioMetrics(instrumentationScopeName),
+        OpenTelemetry.tracer(instrumentationScopeName),
+        OpenTelemetry.metrics(instrumentationScopeName),
+        OpenTelemetry.installLogger(instrumentationScopeName),
+        OpenTelemetry.zioMetrics(instrumentationScopeName),
         DefaultJvmMetrics.liveV2.unit,
         globalTickCounterLayer,
         tickRefLayer

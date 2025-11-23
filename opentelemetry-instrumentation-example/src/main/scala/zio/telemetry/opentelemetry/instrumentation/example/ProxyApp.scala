@@ -6,10 +6,9 @@ import zio.config.magnolia.descriptor
 import zio.config.typesafe.TypesafeConfig
 import zio.http._
 import zio.logging.backend.SLF4J
-import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.instrumentation.example.config.AppConfig
 import zio.telemetry.opentelemetry.instrumentation.example.http.{BackendClient, ProxyHttpApp, ProxyHttpServer}
-import zio.telemetry.opentelemetry.core
+import zio.telemetry.opentelemetry.{OpenTelemetry, core}
 
 object ProxyApp extends ZIOAppDefault {
 
