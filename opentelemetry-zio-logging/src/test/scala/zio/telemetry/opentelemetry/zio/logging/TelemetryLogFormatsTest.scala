@@ -31,7 +31,6 @@ object TelemetryLogFormatsTest extends ZIOSpecDefault {
       }
     }.provide(
       removeDefaultLoggers,
-      // tracerMockLayer(),
       ZioLogging.logFormats,
       TracerTestkit.inMemory,
       OpenTelemetryTestkit.sdk(),

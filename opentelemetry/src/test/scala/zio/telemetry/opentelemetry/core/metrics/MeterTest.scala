@@ -277,7 +277,7 @@ object MeterTest extends ZIOSpecDefault {
       MeterTestkit.inMemory,
       OpenTelemetryTestkit.ctxStorageZioFiberRef,
       otelLayer,
-      OpenTelemetry.zioMetrics("MeterTest")
+      OpenTelemetry.enableZioMetrics("MeterTest")
     )
 
 }

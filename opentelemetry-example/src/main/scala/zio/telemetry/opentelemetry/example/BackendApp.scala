@@ -51,9 +51,9 @@ object BackendApp extends ZIOAppDefault {
         BackendHttpApp.live,
         OtelSdk.custom(resourceName),
         OpenTelemetry.tracer(instrumentationScopeName),
-        OpenTelemetry.metrics(instrumentationScopeName),
+        OpenTelemetry.meter(instrumentationScopeName),
         OpenTelemetry.installLogger(instrumentationScopeName),
-        OpenTelemetry.zioMetrics(instrumentationScopeName),
+        OpenTelemetry.enableZioMetrics(instrumentationScopeName),
         DefaultJvmMetrics.liveV2.unit,
         globalTickCounterLayer,
         tickRefLayer

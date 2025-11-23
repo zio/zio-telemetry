@@ -113,7 +113,7 @@ object OpenTelemetry {
    * @param schemaUrl
    *   schema URL
    */
-  def metrics(
+  def meter(
     instrumentationScopeName: String,
     instrumentationVersion: Option[String] = None,
     schemaUrl: Option[String] = None,
@@ -181,7 +181,7 @@ object OpenTelemetry {
    * By default this layer enables the propagation of ZIO runtime metrics only. For JVM metrics you need to provide
    * `DefaultJvmMetrics.live.unit`.
    */
-  def zioMetrics(
+  def enableZioMetrics(
     instrumentationScopeName: String,
     instrumentationVersion: Option[String] = None,
     schemaUrl: Option[String] = None
