@@ -2,7 +2,7 @@ package zio.telemetry.opentelemetry.extension.trace.propagation
 
 import io.opentelemetry.context.propagation.TextMapPropagator
 import io.opentelemetry.extension.trace.propagation.{B3Propagator, JaegerPropagator, OtTracePropagator}
-import zio.telemetry.opentelemetry.context
+import zio.telemetry.opentelemetry.core.context
 
 /**
  * Implementations of [[io.opentelemetry.context.propagation.TextMapPropagator]] for various formats that are commonly

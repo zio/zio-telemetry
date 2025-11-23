@@ -2,11 +2,11 @@ package zio.telemetry.opentelemetry.example.otel
 
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import zio._
-import zio.telemetry.opentelemetry.OpenTelemetry
+import zio.telemetry.opentelemetry.{OpenTelemetry, core}
 
 object OtelSdk {
 
-  def custom(resourceName: String): TaskLayer[OpenTelemetry] =
+  def custom(resourceName: String): TaskLayer[core.OpenTelemetry] =
     OpenTelemetry.custom(
       for {
         tracerProvider <- TracerProvider.stdout(resourceName)

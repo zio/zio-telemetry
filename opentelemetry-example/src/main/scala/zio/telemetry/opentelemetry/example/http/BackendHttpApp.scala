@@ -4,11 +4,11 @@ import io.opentelemetry.api.trace.SpanKind
 import zio._
 import zio.http._
 import zio.json.EncoderOps
-import zio.telemetry.opentelemetry.OpenTelemetry
-import zio.telemetry.opentelemetry.context.IncomingContextCarrier
+import zio.telemetry.opentelemetry.core.OpenTelemetry
+import zio.telemetry.opentelemetry.core.context.IncomingContextCarrier
+import zio.telemetry.opentelemetry.core.metrics.{Counter, Meter}
+import zio.telemetry.opentelemetry.core.trace.Tracer
 import zio.telemetry.opentelemetry.example.http.{BackendStatus => ServiceStatus}
-import zio.telemetry.opentelemetry.metrics.{Counter, Meter}
-import zio.telemetry.opentelemetry.trace.Tracer
 
 case class BackendHttpApp(openTelemetry: OpenTelemetry, tracer: Tracer, statusRequestsCounter: Counter[Long]) {
 

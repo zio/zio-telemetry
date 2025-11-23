@@ -2,8 +2,8 @@ package zio.telemetry.opentelemetry.instrumentation.example.http
 
 import zio._
 import zio.http._
-import zio.telemetry.opentelemetry.OpenTelemetry
-import zio.telemetry.opentelemetry.trace.Tracer
+import zio.telemetry.opentelemetry.core.OpenTelemetry
+import zio.telemetry.opentelemetry.core.trace.Tracer
 
 case class ProxyHttpApp(openTelemetry: OpenTelemetry, client: BackendClient, tracer: Tracer) {
 
