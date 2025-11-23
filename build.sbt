@@ -188,7 +188,7 @@ lazy val opentelemetryZioLogging =
     .settings(libraryDependencies ++= Dependencies.opentelemetryZioLogging)
     .settings(mimaSettings(failOnProblem = true))
     .settings(missinglinkIgnoreDestinationPackages += IgnoredPackage("scala.reflect"))
-    .dependsOn(opentelemetry)
+    .dependsOn(opentelemetryCore, opentelemetryTestkit % Test)
 
 lazy val opentelemetryAwsXrayPropagator =
   project
@@ -201,7 +201,7 @@ lazy val opentelemetryAwsXrayPropagator =
     )
     .settings(libraryDependencies ++= Dependencies.opentelemetryAwsXrayPropagator)
     .settings(mimaSettings(failOnProblem = true))
-    .dependsOn(opentelemetry)
+    .dependsOn(opentelemetryCore)
 
 lazy val opentelemetryExtensionTracePropagators =
   project
@@ -214,7 +214,7 @@ lazy val opentelemetryExtensionTracePropagators =
     )
     .settings(libraryDependencies ++= Dependencies.opentelemetryExtensionTracePropagators)
     .settings(mimaSettings(failOnProblem = true))
-    .dependsOn(opentelemetry)
+    .dependsOn(opentelemetryCore)
 
 lazy val opentracing =
   project
