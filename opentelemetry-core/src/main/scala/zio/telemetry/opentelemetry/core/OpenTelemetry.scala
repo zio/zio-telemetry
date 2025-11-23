@@ -109,11 +109,10 @@ trait OpenTelemetry { self =>
    */
   val baggage: Baggage
 
-  // TODO: get rid of it, it is a part of implementation needed for developers only
-  private[opentelemetry] val ctxStorage: ContextStorage
-
   trait UnsafeAPI {
     def getCurrentContext(implicit trace: Trace): UIO[Context]
+
+    def getCtxStorage: ContextStorage
 
     def asJava: JOpenTelemetry
   }
@@ -138,14 +137,14 @@ trait OpenTelemetry { self =>
 
 }
 
-object OpenTelemetry {
+private[opentelemetry] object OpenTelemetry {
 
-  final class Sdk private[opentelemetry] (
-    val ctxStorage: ContextStorage,
+  def make(
+    ctxStorage: ContextStorage,
     underlying: JOpenTelemetry,
     ctxPropagator: ContextPropagator = ContextPropagator.default,
     logAnnotated: Boolean = false
-  ) extends OpenTelemetry {
+  ): OpenTelemetry = new OpenTelemetry {
 
     override def autoinstrumented[R, E, A](zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
       ctxStorage.locally(Context.current())(zio)
@@ -163,6 +162,10 @@ object OpenTelemetry {
 
     override val unsafe: UnsafeAPI =
       new UnsafeAPI {
+
+        override def getCtxStorage: ContextStorage =
+          ctxStorage
+
         def getCurrentContext(implicit trace: Trace): UIO[Context] =
           ctxStorage.get
 

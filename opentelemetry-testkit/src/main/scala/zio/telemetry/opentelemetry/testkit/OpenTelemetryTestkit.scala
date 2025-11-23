@@ -22,7 +22,7 @@ object OpenTelemetryTestkit {
       for {
         ctxStorage <- ZIO.service[ContextStorage]
         underlying <- ZIO.fromAutoCloseable(ZIO.succeed(builder.build))
-      } yield new OpenTelemetry.Sdk(ctxStorage, underlying)
+      } yield OpenTelemetry.make(ctxStorage, underlying)
     }
   }
 

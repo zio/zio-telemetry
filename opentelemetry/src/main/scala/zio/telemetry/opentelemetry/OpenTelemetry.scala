@@ -30,7 +30,7 @@ object OpenTelemetry {
       for {
         underlying <- ZIO.attempt(GlobalOpenTelemetry.get())
         propagator  = ContextPropagator.fromJava(underlying.getPropagators)
-      } yield new core.OpenTelemetry.Sdk(ContextStorage.JavaOtelThreadLocal, underlying, propagator, logAnnotated)
+      } yield core.OpenTelemetry.make(ContextStorage.JavaOtelThreadLocal, underlying, propagator, logAnnotated)
     }
 
   /**
@@ -53,7 +53,7 @@ object OpenTelemetry {
       for {
         underlying <- zio
         ctxStorage <- ContextStorage.zioFiberRefScoped
-      } yield new core.OpenTelemetry.Sdk(ctxStorage, underlying, ctxPropagator, logAnnotated)
+      } yield core.OpenTelemetry.make(ctxStorage, underlying, ctxPropagator, logAnnotated)
     }
 
   def custom(zio: => ZIO[Scope, Throwable, JOpenTelemetry])(implicit trace: Trace): TaskLayer[core.OpenTelemetry] =
@@ -64,7 +64,7 @@ object OpenTelemetry {
       for {
         underlying <- ZIO.attempt(JOpenTelemetry.noop())
         ctxStorage <- ContextStorage.zioFiberRefScoped
-      } yield new core.OpenTelemetry.Sdk(ctxStorage, underlying, ContextPropagator.noop, logAnnotated)
+      } yield core.OpenTelemetry.make(ctxStorage, underlying, ContextPropagator.noop, logAnnotated)
     }
 
   /**
@@ -97,7 +97,7 @@ object OpenTelemetry {
       for {
         openTelemetry <- ZIO.service[core.OpenTelemetry]
         jtracer        = buildTracer(openTelemetry.unsafe.asJava)
-        tracer         = Tracer.make(jtracer, openTelemetry.ctxStorage, logAnnotated)
+        tracer         = Tracer.make(jtracer, openTelemetry.unsafe.getCtxStorage, logAnnotated)
       } yield tracer
     }
   }
@@ -132,7 +132,7 @@ object OpenTelemetry {
       for {
         openTelemetry <- ZIO.service[core.OpenTelemetry]
         jmeter         = buildMeter(openTelemetry.unsafe.asJava)
-        builder        = Instrument.Builder.make(jmeter, openTelemetry.ctxStorage, logAnnotated)
+        builder        = Instrument.Builder.make(jmeter, openTelemetry.unsafe.getCtxStorage, logAnnotated)
         meter          = Meter.make(builder)
       } yield meter
     }
@@ -155,7 +155,7 @@ object OpenTelemetry {
       for {
         openTelemetry <- ZIO.service[core.OpenTelemetry]
         loggerProvider = openTelemetry.unsafe.asJava.getLogsBridge
-        _             <- Logger.install(loggerProvider, openTelemetry.ctxStorage, instrumentationScopeName, logLevel)
+        _             <- Logger.install(loggerProvider, openTelemetry.unsafe.getCtxStorage, instrumentationScopeName, logLevel)
       } yield ()
     }
 
@@ -171,7 +171,7 @@ object OpenTelemetry {
       for {
         openTelemetry <- ZIO.service[core.OpenTelemetry]
         loggerProvider = openTelemetry.unsafe.asJava.getLogsBridge
-        logger         = Logger.zioLogger(instrumentationScopeName)(openTelemetry.ctxStorage, loggerProvider)
+        logger         = Logger.zioLogger(instrumentationScopeName)(openTelemetry.unsafe.getCtxStorage, loggerProvider)
       } yield logger
     }
 
@@ -210,7 +210,7 @@ object OpenTelemetry {
         for {
           openTelemetry <- ZIO.service[core.OpenTelemetry]
           jmeter         = buildMeter(openTelemetry.unsafe.asJava)
-          builder        = Instrument.Builder.make(jmeter, openTelemetry.ctxStorage)
+          builder        = Instrument.Builder.make(jmeter, openTelemetry.unsafe.getCtxStorage)
           registry       = InstrumentRegistry.concurrent(builder)
         } yield registry
       }

@@ -9,7 +9,7 @@ object ZioLogging {
     ZLayer {
       for {
         openTelemetry <- ZIO.service[OpenTelemetry]
-      } yield LogFormats.make(openTelemetry.ctxStorage)
+      } yield LogFormats.make(openTelemetry.unsafe.getCtxStorage)
     }
 
 }

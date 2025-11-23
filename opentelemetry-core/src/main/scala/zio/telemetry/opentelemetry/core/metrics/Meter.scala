@@ -150,7 +150,7 @@ trait Meter {
 
 }
 
-object Meter {
+private[opentelemetry] object Meter {
 
   def make(builder: Instrument.Builder): Meter =
     new Meter {
