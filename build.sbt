@@ -8,7 +8,7 @@ inThisBuild(
   List(
     name              := "ZIO Telemetry",
     organization      := "dev.zio",
-    zioVersion        := "2.1.20",
+    zioVersion        := "2.1.22",
     homepage          := Some(url("https://zio.dev/zio-telemetry/")),
     licenses          := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
     developers        := List(
@@ -65,9 +65,7 @@ inThisBuild(
     ),
     concurrentRestrictions += Tags.limit(missinglinkConflictsTag, 1),
     // TODO: remove once it is updated in zio-sbt
-    scala212          := "2.12.20",
-    scala213          := "2.13.16",
-    scala3            := "3.3.5"
+    scala213          := "2.13.17"
   )
 )
 

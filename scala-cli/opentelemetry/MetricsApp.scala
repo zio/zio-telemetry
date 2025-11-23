@@ -1,10 +1,10 @@
-//> using scala "3.7.2"
-//> using dep dev.zio::zio:2.1.20
-//> using dep dev.zio::zio-opentelemetry:4.0.0-RC3
-//> using dep io.opentelemetry:opentelemetry-sdk:1.53.0
-//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.53.0
-//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.53.0
-//> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.34.0
+//> using scala "3.7.4"
+//> using dep dev.zio::zio:2.1.22
+//> using dep dev.zio::zio-opentelemetry:4.0.0-RC8
+//> using dep io.opentelemetry:opentelemetry-sdk:1.56.0
+//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.56.0
+//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.56.0
+//> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.37.0
 
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
