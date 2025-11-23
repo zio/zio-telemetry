@@ -1,7 +1,7 @@
 package zio.telemetry.opentelemetry.zio.logging
 
 import zio._
-import zio.telemetry.opentelemetry.OpenTelemetry
+import zio.telemetry.opentelemetry.core.OpenTelemetry
 
 object ZioLogging {
 
@@ -9,7 +9,7 @@ object ZioLogging {
     ZLayer {
       for {
         openTelemetry <- ZIO.service[OpenTelemetry]
-      } yield LogFormats.make(openTelemetry.ctxStorage)
+      } yield LogFormats.make(openTelemetry.unsafe.getCtxStorage)
     }
 
 }

@@ -3,14 +3,15 @@ import sbt.*
 object Dependencies {
 
   object Versions {
-    val opentracing           = "0.33.0"
-    val opentelemetry         = "1.63.0"
-    val opentelemetryContrib  = "1.48.0-alpha"
-    val opencensus            = "0.31.1"
-    val scalaCollectionCompat = "2.14.0"
-    val zio                   = "2.1.26"
-    val zioLogging            = "2.5.3"
-    val izumiReflect          = "3.0.9"
+    val opentracing            = "0.33.0"
+    val opentelemetry          = "1.63.0"
+    val opentelemetryContrib   = "1.48.0-alpha"
+    val opentelemetryIncubator = "1.53.0-alpha"
+    val opencensus             = "0.31.1"
+    val scalaCollectionCompat  = "2.14.0"
+    val zio                    = "2.1.26"
+    val zioLogging             = "2.5.3"
+    val izumiReflect           = "3.0.9"
   }
 
   object Orgs {
@@ -44,7 +45,6 @@ object Dependencies {
   }
 
   lazy val zio = Seq(
-    Orgs.zio %% "zio"             % Versions.zio,
     Orgs.zio %% "izumi-reflect"   % Versions.izumiReflect,
     Orgs.zio %% "zio-stacktracer" % Versions.zio
   )
@@ -56,6 +56,23 @@ object Dependencies {
     Orgs.opentelemetry     % "opentelemetry-sdk-testing" % Versions.opentelemetry % Test
   )
 
+  lazy val opentelemetryCore = zio ++ Seq(
+    Orgs.opentelemetry     % "opentelemetry-api"       % Versions.opentelemetry,
+    Orgs.opentelemetry     % "opentelemetry-context"   % Versions.opentelemetry,
+    Orgs.scalaLangModules %% "scala-collection-compat" % Versions.scalaCollectionCompat
+  )
+
+  lazy val opentelemetryTestkit = zio ++ Seq(
+    Orgs.opentelemetry % "opentelemetry-api"           % Versions.opentelemetry,
+    Orgs.opentelemetry % "opentelemetry-api-incubator" % Versions.opentelemetryIncubator,
+    Orgs.opentelemetry % "opentelemetry-sdk"           % Versions.opentelemetry,
+    Orgs.opentelemetry % "opentelemetry-sdk-common"    % Versions.opentelemetry,
+    Orgs.opentelemetry % "opentelemetry-sdk-logs"      % Versions.opentelemetry,
+    Orgs.opentelemetry % "opentelemetry-sdk-metrics"   % Versions.opentelemetry,
+    Orgs.opentelemetry % "opentelemetry-sdk-trace"     % Versions.opentelemetry,
+    Orgs.opentelemetry % "opentelemetry-sdk-testing"   % Versions.opentelemetry
+  )
+
   lazy val opentelemetryZioLogging = zio ++ Seq(
     Orgs.opentelemetry % "opentelemetry-api"         % Versions.opentelemetry,
     Orgs.opentelemetry % "opentelemetry-context"     % Versions.opentelemetry,
@@ -65,8 +82,7 @@ object Dependencies {
 
   lazy val opentelemetryAwsXrayPropagator = Seq(
     Orgs.opentelemetry        % "opentelemetry-context"             % Versions.opentelemetry,
-    Orgs.opentelemetryContrib % "opentelemetry-aws-xray-propagator" % Versions.opentelemetryContrib,
-    Orgs.opentelemetry        % "opentelemetry-sdk-testing"         % Versions.opentelemetry % Test
+    Orgs.opentelemetryContrib % "opentelemetry-aws-xray-propagator" % Versions.opentelemetryContrib
   )
 
   lazy val opentelemetryExtensionTracePropagators = Seq(
@@ -100,12 +116,6 @@ object Dependencies {
     Orgs.slf4j         % "slf4j-simple"        % ExampleVersions.slf4j % Runtime
   )
 
-  lazy val opentracingExample = example ++ Seq(
-    "io.zipkin.reporter2" % "zipkin-reporter"       % ExampleVersions.zipkin,
-    "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % ExampleVersions.zipkin,
-    Orgs.zio             %% "zio-http"              % ExampleVersions.zioHttp
-  )
-
   lazy val opentelemetryExample = example ++ Seq(
     Orgs.opentelemetry        % "opentelemetry-exporter-otlp"         % Versions.opentelemetry,
     Orgs.opentelemetry        % "opentelemetry-exporter-logging-otlp" % Versions.opentelemetry,
@@ -126,6 +136,12 @@ object Dependencies {
     Orgs.zio                         %% "zio-logging-slf4j2"                 % Versions.zioLogging,
     Orgs.logback                      % "logback-classic"                    % ExampleVersions.logback,
     Orgs.logback                      % "logback-core"                       % ExampleVersions.logback
+  )
+
+  lazy val opentracingExample = example ++ Seq(
+    "io.zipkin.reporter2" % "zipkin-reporter"       % ExampleVersions.zipkin,
+    "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % ExampleVersions.zipkin,
+    Orgs.zio             %% "zio-http"              % ExampleVersions.zioHttp
   )
 
 }
