@@ -1,10 +1,10 @@
 package zio.telemetry.opentelemetry.core.trace
 
-import io.opentelemetry.api.common.{AttributeKey, Attributes}
+import io.opentelemetry.api.common.{AttributeKey, Attributes => JAttributes}
 import io.opentelemetry.api.trace.{Span => JSpan, SpanContext, StatusCode}
 import io.opentelemetry.context.Context
 import zio._
-import zio.telemetry.opentelemetry.core.common.Attribute
+import zio.telemetry.opentelemetry.core.common.{Attribute, Attributes}
 
 import java.util.concurrent.TimeUnit
 import scala.jdk.CollectionConverters._
@@ -33,7 +33,7 @@ trait Span { self =>
    */
   def addEventWithAttributes(
     name: String,
-    attributes: Attributes
+    attributes: JAttributes
   )(implicit trace: Trace): UIO[Unit]
 
   /**
@@ -157,6 +157,11 @@ trait Span { self =>
     trace: Trace
   ): UIO[Unit]
 
+  def setAllAttributes(attributes: JAttributes)(implicit trace: Trace): UIO[Unit]
+
+  def setAllAttributes(attributes: List[Attribute[_]])(implicit trace: Trace): UIO[Unit] =
+    setAllAttributes(Attributes.fromList(attributes))
+
   def setStatus(statusCode: StatusCode)(implicit trace: Trace): UIO[Unit]
 
   def setStatus(statusCode: StatusCode, description: String)(implicit trace: Trace): UIO[Unit]
@@ -192,7 +197,7 @@ private[opentelemetry] object Span {
           _     <- ZIO.succeed(underlying.addEvent(name, nanos, TimeUnit.NANOSECONDS))
         } yield ()
 
-      override def addEventWithAttributes(name: String, attributes: Attributes)(implicit trace: Trace): UIO[Unit] =
+      override def addEventWithAttributes(name: String, attributes: JAttributes)(implicit trace: Trace): UIO[Unit] =
         for {
           nanos <- currentNanos
           _     <- ZIO.succeed(underlying.addEvent(name, attributes, nanos, TimeUnit.NANOSECONDS))
@@ -247,6 +252,9 @@ private[opentelemetry] object Span {
         val v = values.map(Double.box).asJava
         ZIO.succeed(underlying.setAttribute(AttributeKey.doubleArrayKey(name), v)).unit
       }
+
+      override def setAllAttributes(attributes: JAttributes)(implicit trace: Trace): UIO[Unit] =
+        ZIO.succeed(underlying.setAllAttributes(attributes)).unit
 
       override def setStatus(statusCode: StatusCode)(implicit trace: Trace): UIO[Unit] =
         ZIO.succeed(underlying.setStatus(statusCode)).unit
