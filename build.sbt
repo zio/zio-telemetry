@@ -99,7 +99,7 @@ addCommandAlias("ciCheck", "all scalafmtSbtCheck scalafmtCheck test:scalafmtChec
 addCommandAlias("docsCheck", "docs/checkReadme;docs/ciCheckGithubWorkflow")
 addCommandAlias(
   "compileExamples",
-  "opentracingExample/compile;opentelemetryExample/compile;opentelemetryInstrumentationExample/compile"
+  "opentracingManualExample/compile;opentelemetryManualExample/compile;opentelemetryAutoinstrumentationExample/compile"
 )
 addCommandAlias(
   "mimaChecks",
@@ -108,9 +108,9 @@ addCommandAlias(
 addCommandAlias(
   "fmtExamples",
   List(
-    "opentracingExample/scalafmtAll;opentracingExample/scalafixAll",
-    "opentelemetryExample/scalafmtAll;opentelemetryExample/scalafixAll",
-    "opentelemetryInstrumentationExample/scalafmtAll;opentelemetryInstrumentationExample/scalafixAll"
+    "opentracingManualExample/scalafmtAll;opentracingManualExample/scalafixAll",
+    "opentelemetryManualExample/scalafmtAll;opentelemetryManualExample/scalafixAll",
+    "opentelemetryAutoinstrumentationExample/scalafmtAll;opentelemetryAutoinstrumentationExample/scalafixAll"
   ).mkString(";")
 )
 
@@ -152,38 +152,9 @@ lazy val root =
       docs
     )
 
-lazy val opentelemetryCore =
-  project
-    .in(file("opentelemetry-core"))
-    .settings(enableZIO())
-    .settings(
-      stdModuleSettings(
-        name = Some("zio-opentelemetry-core"),
-        packageName = Some("zio.telemetry.opentelemetry")
-      )
-    )
-    .settings(libraryDependencies ++= Dependencies.opentelemetryCore)
-    .settings(mimaSettings(failOnProblem = true))
-    .settings(unusedCompileDependenciesFilter -= moduleFilter("org.scala-lang.modules", "scala-collection-compat"))
-
-lazy val opentelemetryTestkit =
-  project
-    .in(file("opentelemetry-testkit"))
-    .settings(enableZIO())
-    .settings(
-      stdModuleSettings(
-        name = Some("zio-opentelemetry-testkit"),
-        packageName = Some("zio.telemetry.opentelemetry.testkit")
-      )
-    )
-    .settings(libraryDependencies ++= Dependencies.opentelemetryTestkit)
-    .settings(mimaSettings(failOnProblem = true))
-    .settings(unusedCompileDependenciesFilter -= moduleFilter("io.opentelemetry", "opentelemetry-api-incubator"))
-    .dependsOn(opentelemetryCore)
-
 lazy val opentelemetry: Project =
   project
-    .in(file("opentelemetry"))
+    .in(file("modules/opentelemetry/main"))
     .settings(enableZIO())
     .settings(
       stdModuleSettings(
@@ -196,9 +167,38 @@ lazy val opentelemetry: Project =
     .settings(unusedCompileDependenciesFilter -= moduleFilter("org.scala-lang.modules", "scala-collection-compat"))
     .dependsOn(opentelemetryCore, opentelemetryTestkit % Test)
 
+lazy val opentelemetryCore =
+  project
+    .in(file("modules/opentelemetry/core"))
+    .settings(enableZIO())
+    .settings(
+      stdModuleSettings(
+        name = Some("zio-opentelemetry-core"),
+        packageName = Some("zio.telemetry.opentelemetry.core")
+      )
+    )
+    .settings(libraryDependencies ++= Dependencies.opentelemetryCore)
+    .settings(mimaSettings(failOnProblem = true))
+    .settings(unusedCompileDependenciesFilter -= moduleFilter("org.scala-lang.modules", "scala-collection-compat"))
+
+lazy val opentelemetryTestkit =
+  project
+    .in(file("modules/opentelemetry/testkit"))
+    .settings(enableZIO())
+    .settings(
+      stdModuleSettings(
+        name = Some("zio-opentelemetry-testkit"),
+        packageName = Some("zio.telemetry.opentelemetry.testkit")
+      )
+    )
+    .settings(libraryDependencies ++= Dependencies.opentelemetryTestkit)
+    .settings(mimaSettings(failOnProblem = true))
+    .settings(unusedCompileDependenciesFilter -= moduleFilter("io.opentelemetry", "opentelemetry-api-incubator"))
+    .dependsOn(opentelemetryCore)
+
 lazy val opentelemetryZioLogging =
   project
-    .in(file("opentelemetry-zio-logging"))
+    .in(file("modules/opentelemetry/zio-logging"))
     .settings(enableZIO())
     .settings(
       stdModuleSettings(
@@ -213,7 +213,7 @@ lazy val opentelemetryZioLogging =
 
 lazy val opentelemetryAwsXrayPropagator =
   project
-    .in(file("opentelemetry-aws-xray-propagator"))
+    .in(file("modules/opentelemetry/aws-xray-propagator"))
     .settings(
       stdModuleSettings(
         name = Some("zio-opentelemetry-aws-xray-propagator"),
@@ -226,7 +226,7 @@ lazy val opentelemetryAwsXrayPropagator =
 
 lazy val opentelemetryExtensionTracePropagators =
   project
-    .in(file("opentelemetry-extension-trace-propagators"))
+    .in(file("modules/opentelemetry/extension-trace-propagators"))
     .settings(
       stdModuleSettings(
         name = Some("zio-opentelemetry-extension-trace-propagators"),
@@ -239,7 +239,7 @@ lazy val opentelemetryExtensionTracePropagators =
 
 lazy val opentracing =
   project
-    .in(file("opentracing"))
+    .in(file("modules/opentracing/main"))
     .settings(enableZIO())
     .settings(
       stdModuleSettings(
@@ -253,7 +253,7 @@ lazy val opentracing =
 
 lazy val opencensus =
   project
-    .in(file("opencensus"))
+    .in(file("modules/opencensus/main"))
     .settings(enableZIO())
     .settings(
       stdModuleSettings(
@@ -265,43 +265,43 @@ lazy val opencensus =
     .settings(mimaSettings(failOnProblem = true))
     .settings(unusedCompileDependenciesFilter -= moduleFilter("io.opencensus", "opencensus-impl"))
 
-lazy val opentracingExample =
+lazy val opentracingManualExample =
   project
-    .in(file("opentracing-example"))
+    .in(file("modules/examples/opentracing/manual"))
     .settings(enableZIO())
     .settings(
       stdExampleSettings(
-        name = Some("opentracing-example"),
+        name = Some("opentracing-manual-example"),
         packageName = Some("zio.telemetry.opentracing.example")
       )
     )
-    .settings(libraryDependencies ++= Dependencies.opentracingExample)
+    .settings(libraryDependencies ++= Dependencies.opentracingManualExample)
     .dependsOn(opentracing)
 
-lazy val opentelemetryExample =
+lazy val opentelemetryManualExample =
   project
-    .in(file("opentelemetry-example"))
+    .in(file("modules/examples/opentelemetry/manual"))
     .settings(enableZIO())
     .settings(
       stdExampleSettings(
-        name = Some("opentelemetry-example"),
+        name = Some("opentelemetry-manual-example"),
         packageName = Some("zio.telemetry.opentelemetry.example")
       )
     )
-    .settings(libraryDependencies ++= Dependencies.opentelemetryExample)
+    .settings(libraryDependencies ++= Dependencies.opentelemetryManualExample)
     .dependsOn(opentelemetry)
 
-lazy val opentelemetryInstrumentationExample =
+lazy val opentelemetryAutoinstrumentationExample =
   project
-    .in(file("opentelemetry-instrumentation-example"))
+    .in(file("modules/examples/opentelemetry/autoinstrumentation"))
     .settings(enableZIO())
     .settings(
       stdExampleSettings(
-        name = Some("opentelemetry-instrumentation-example"),
+        name = Some("opentelemetry-autoinstrumentation-example"),
         packageName = Some("zio.telemetry.opentelemetry.instrumentation.example")
       )
     )
-    .settings(libraryDependencies ++= Dependencies.opentelemetryInstrumentationExample)
+    .settings(libraryDependencies ++= Dependencies.opentelemetryAutoinstrumentationExample)
     .dependsOn(opentelemetry)
 
 lazy val docs =

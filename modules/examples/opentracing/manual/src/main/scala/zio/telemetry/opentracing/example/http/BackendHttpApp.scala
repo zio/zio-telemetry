@@ -15,7 +15,7 @@ case class BackendHttpApp(tracing: OpenTracing) {
   val routes: Routes[Any, Nothing] =
     Routes(
       Method.GET / "status" ->
-        handler { request: Request =>
+        handler { (request: Request) =>
           val headers = request.headers.map(h => h.headerName -> h.renderedValue).toMap
 
           (ZIO.unit @@ tracing.aspects.spanFrom(HttpHeadersFormat, new TextMapAdapter(headers.asJava), "/status"))
