@@ -58,7 +58,7 @@ object MeterTest extends ZIOSpecDefault {
         for {
           meterTestkit <- ZIO.service[MeterTestkit]
           meter        <- meterTestkit.getMeter(instrumentationScopeName)
-          counter      <- meter.counter("test_counter")
+          counter       = meter.counter("test_counter")
           attributes    = Attributes(Attribute.long("attr_counter", 3L))
           _            <- counter.add(12, attributes)
           _            <- counter.inc(attributes)
@@ -73,7 +73,7 @@ object MeterTest extends ZIOSpecDefault {
         for {
           meterTestkit <- ZIO.service[MeterTestkit]
           meter        <- meterTestkit.getMeter(instrumentationScopeName)
-          counter      <- meter.upDownCounter("test_up_down_counter")
+          counter       = meter.upDownCounter("test_up_down_counter")
           attributes    = Attributes(Attribute.boolean("attr_up_down_counter", value = false))
           _            <- counter.add(5, attributes)
           _            <- counter.inc(attributes)
@@ -90,7 +90,7 @@ object MeterTest extends ZIOSpecDefault {
         for {
           meterTestkit <- ZIO.service[MeterTestkit]
           meter        <- meterTestkit.getMeter(instrumentationScopeName)
-          gauge        <- meter.gauge("test_gauge")
+          gauge         = meter.gauge("test_gauge")
           attributes    = Attributes(Attribute.boolean("attr_gauge", value = false))
           _            <- gauge.set(10.0, attributes)
           _            <- gauge.set(20.0, attributes)
@@ -106,7 +106,7 @@ object MeterTest extends ZIOSpecDefault {
         for {
           meterTestkit <- ZIO.service[MeterTestkit]
           meter        <- meterTestkit.getMeter(instrumentationScopeName)
-          histogram    <- meter.histogram("test_histogram")
+          histogram     = meter.histogram("test_histogram")
           attributes    = Attributes(Attribute.double("attr_historgram", 12.3))
           _            <- histogram.record(2.1, attributes)
           _            <- histogram.record(3.3, attributes)
@@ -142,7 +142,7 @@ object MeterTest extends ZIOSpecDefault {
         for {
           meterTestkit <- ZIO.service[MeterTestkit]
           meter        <- meterTestkit.getMeter(instrumentationScopeName)
-          counter      <- meter.counter("test_counter")
+          counter       = meter.counter("test_counter")
           _            <- ZIO.logAnnotate("zio", "annotation") {
                             counter.inc()
                           }
@@ -163,7 +163,7 @@ object MeterTest extends ZIOSpecDefault {
           tracerTestkit <- ZIO.service[TracerTestkit]
           meter         <- meterTestkit.getMeter(instrumentationScopeName)
           tracer        <- tracerTestkit.getTracer(instrumentationScopeName)
-          counter       <- meter.counter("test_counter")
+          counter        = meter.counter("test_counter")
           _             <- counter.inc() @@ tracer.aspects.span("counter_span")
           span          <- tracerTestkit.getFinishedSpans.map(_.head)
           metric        <- meterTestkit.collectCounterMetrics.map(_.head)
@@ -183,7 +183,7 @@ object MeterTest extends ZIOSpecDefault {
         for {
           meterTestkit <- ZIO.service[MeterTestkit]
           meter        <- meterTestkit.getMeter(instrumentationScopeName, logAnnotated = true)
-          counter      <- meter.counter("test_counter")
+          counter       = meter.counter("test_counter")
           _            <- ZIO.logAnnotate("zio", "annotation") {
                             counter.inc()
                           }
@@ -199,7 +199,7 @@ object MeterTest extends ZIOSpecDefault {
         for {
           meterTestkit <- ZIO.service[MeterTestkit]
           meter        <- meterTestkit.getMeter(instrumentationScopeName, logAnnotated = true)
-          counter      <- meter.counter("test_counter")
+          counter       = meter.counter("test_counter")
           _            <- ZIO.logAnnotate("zio", "annotation") {
                             counter.inc(Attributes(Attribute.string("zio", "annotation2")))
                           }
