@@ -157,6 +157,8 @@ trait Span { self =>
     trace: Trace
   ): UIO[Unit]
 
+  def setAllAttributes(attributes: Attributes)(implicit trace: Trace): UIO[Unit]
+
   def setStatus(statusCode: StatusCode)(implicit trace: Trace): UIO[Unit]
 
   def setStatus(statusCode: StatusCode, description: String)(implicit trace: Trace): UIO[Unit]
@@ -247,6 +249,9 @@ private[opentelemetry] object Span {
         val v = values.map(Double.box).asJava
         ZIO.succeed(underlying.setAttribute(AttributeKey.doubleArrayKey(name), v)).unit
       }
+
+      override def setAllAttributes(attributes: Attributes)(implicit trace: Trace): UIO[Unit] =
+        ZIO.succeed(underlying.setAllAttributes(attributes)).unit
 
       override def setStatus(statusCode: StatusCode)(implicit trace: Trace): UIO[Unit] =
         ZIO.succeed(underlying.setStatus(statusCode)).unit
