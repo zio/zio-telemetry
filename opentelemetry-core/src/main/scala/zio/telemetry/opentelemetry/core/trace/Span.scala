@@ -4,7 +4,7 @@ import io.opentelemetry.api.common.{AttributeKey, Attributes => JAttributes}
 import io.opentelemetry.api.trace.{Span => JSpan, SpanContext, StatusCode}
 import io.opentelemetry.context.Context
 import zio._
-import zio.telemetry.opentelemetry.core.common.{Attribute, Attributes}
+import zio.telemetry.opentelemetry.core.common.Attribute
 
 import java.util.concurrent.TimeUnit
 import scala.jdk.CollectionConverters._
@@ -158,9 +158,6 @@ trait Span { self =>
   ): UIO[Unit]
 
   def setAllAttributes(attributes: JAttributes)(implicit trace: Trace): UIO[Unit]
-
-  def setAllAttributes(attributes: List[Attribute[_]])(implicit trace: Trace): UIO[Unit] =
-    setAllAttributes(Attributes.fromList(attributes))
 
   def setStatus(statusCode: StatusCode)(implicit trace: Trace): UIO[Unit]
 
