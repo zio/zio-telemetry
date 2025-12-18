@@ -1,6 +1,7 @@
 package zio.telemetry.opentelemetry.core.common
 
 import io.opentelemetry.api
+import io.opentelemetry.api.common.AttributesBuilder
 
 /**
  * Scala helpers to build [[io.opentelemetry.api.common.Attributes]]
@@ -10,10 +11,13 @@ object Attributes {
   def empty: api.common.Attributes =
     api.common.Attributes.empty()
 
-  def fromList[T](attributes: List[Attribute[T]]): api.common.Attributes = {
+  private def putAttribute[T](builder: AttributesBuilder, attr: Attribute[T]): AttributesBuilder =
+    builder.put(attr.key, attr.value)
+
+  def fromList(attributes: List[Attribute[_]]): api.common.Attributes = {
     val builder = api.common.Attributes.builder()
 
-    attributes.foreach(attr => builder.put(attr.key, attr.value))
+    attributes.foreach(attr => putAttribute(builder, attr))
     builder.build()
   }
 

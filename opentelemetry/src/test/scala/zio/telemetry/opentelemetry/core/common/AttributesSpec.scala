@@ -12,6 +12,11 @@ object AttributesSpec extends ZIOSpecDefault {
           val _ = Attributes(Attribute.string("foo", "bar"), Attribute.string("dog", "fox"))
 
           assertTrue(true);
+        },
+        test("fromList accepts attributes of varying types") {
+          val _ = Attributes.fromList(List(Attribute.string("foo", "bar"), Attribute.long("dog", 1)))
+
+          assertTrue(true)
         }
       )
     )
