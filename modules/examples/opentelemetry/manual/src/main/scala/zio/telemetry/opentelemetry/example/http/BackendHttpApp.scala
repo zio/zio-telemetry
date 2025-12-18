@@ -50,7 +50,7 @@ case class BackendHttpApp(openTelemetry: OpenTelemetry, tracer: Tracer, statusRe
 object BackendHttpApp {
 
   val live: URLayer[OpenTelemetry with Tracer with Meter, BackendHttpApp] = {
-    val counterLayer = ZLayer(ZIO.serviceWithZIO[Meter](_.counter("status_requests_count")))
+    val counterLayer = ZLayer(ZIO.serviceWith[Meter](_.counter("status_requests_count")))
 
     counterLayer >>> ZLayer.fromFunction(BackendHttpApp.apply _)
   }

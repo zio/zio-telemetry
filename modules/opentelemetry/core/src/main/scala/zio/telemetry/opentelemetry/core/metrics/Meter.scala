@@ -29,7 +29,7 @@ trait Meter {
     name: String,
     unit: Option[String] = None,
     description: Option[String] = None
-  )(implicit trace: Trace): UIO[Counter[Long]]
+  )(implicit trace: Trace): Counter[Long]
 
   /**
    * Constructs a UpDownCounter instrument.
@@ -47,7 +47,7 @@ trait Meter {
     name: String,
     unit: Option[String] = None,
     description: Option[String] = None
-  )(implicit trace: Trace): UIO[UpDownCounter[Long]]
+  )(implicit trace: Trace): UpDownCounter[Long]
 
   /**
    * Constructs a Gauge instrument.
@@ -65,7 +65,7 @@ trait Meter {
     name: String,
     unit: Option[String] = None,
     description: Option[String] = None
-  )(implicit trace: Trace): UIO[Gauge[Double]]
+  )(implicit trace: Trace): Gauge[Double]
 
   /**
    * Constructs a Historgram instrument.
@@ -86,7 +86,7 @@ trait Meter {
     unit: Option[String] = None,
     description: Option[String] = None,
     boundaries: Option[Chunk[Double]] = None
-  )(implicit trace: Trace): UIO[Histogram[Double]]
+  )(implicit trace: Trace): Histogram[Double]
 
   /**
    * Builds an Asynchronous Counter instrument with the given callback.
@@ -162,30 +162,30 @@ private[opentelemetry] object Meter {
         name: String,
         unit: Option[String] = None,
         description: Option[String] = None
-      )(implicit trace: Trace): UIO[Counter[Long]] =
-        ZIO.succeed(builder.counter(name, unit, description))
+      )(implicit trace: Trace): Counter[Long] =
+        builder.counter(name, unit, description)
 
       override def upDownCounter(
         name: String,
         unit: Option[String] = None,
         description: Option[String] = None
-      )(implicit trace: Trace): UIO[UpDownCounter[Long]] =
-        ZIO.succeed(builder.upDownCounter(name, unit, description))
+      )(implicit trace: Trace): UpDownCounter[Long] =
+        builder.upDownCounter(name, unit, description)
 
       override def gauge(
         name: String,
         unit: Option[String],
         description: Option[String]
-      )(implicit trace: Trace): UIO[Gauge[Double]] =
-        ZIO.succeed(builder.gauge(name, unit, description))
+      )(implicit trace: Trace): Gauge[Double] =
+        builder.gauge(name, unit, description)
 
       override def histogram(
         name: String,
         unit: Option[String] = None,
         description: Option[String] = None,
         boundaries: Option[Chunk[Double]] = None
-      )(implicit trace: Trace): UIO[Histogram[Double]] =
-        ZIO.succeed(builder.histogram(name, unit, description, boundaries))
+      )(implicit trace: Trace): Histogram[Double] =
+        builder.histogram(name, unit, description, boundaries)
 
       override def observableCounter(
         name: String,
