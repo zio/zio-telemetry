@@ -116,7 +116,7 @@ object Dependencies {
     Orgs.slf4j         % "slf4j-simple"        % ExampleVersions.slf4j % Runtime
   )
 
-  lazy val opentelemetryExample = example ++ Seq(
+  lazy val opentelemetryManualExample = example ++ Seq(
     Orgs.opentelemetry        % "opentelemetry-exporter-otlp"         % Versions.opentelemetry,
     Orgs.opentelemetry        % "opentelemetry-exporter-logging-otlp" % Versions.opentelemetry,
     Orgs.opentelemetry        % "opentelemetry-sdk"                   % Versions.opentelemetry,
@@ -125,7 +125,7 @@ object Dependencies {
     Orgs.zio                 %% "zio-http"                            % ExampleVersions.zioHttp
   )
 
-  lazy val opentelemetryInstrumentationExample = example ++ Seq(
+  lazy val opentelemetryAutoinstrumentationExample = example ++ Seq(
     Orgs.opentelemetry                % "opentelemetry-exporter-otlp"        % Versions.opentelemetry,
     Orgs.opentelemetry                % "opentelemetry-sdk"                  % Versions.opentelemetry,
     Orgs.opentelemetrySemconv         % "opentelemetry-semconv"              % "1.37.0",
@@ -138,7 +138,7 @@ object Dependencies {
     Orgs.logback                      % "logback-core"                       % ExampleVersions.logback
   )
 
-  lazy val opentracingExample = example ++ Seq(
+  lazy val opentracingManualExample = example ++ Seq(
     "io.zipkin.reporter2" % "zipkin-reporter"       % ExampleVersions.zipkin,
     "io.zipkin.reporter2" % "zipkin-sender-okhttp3" % ExampleVersions.zipkin,
     Orgs.zio             %% "zio-http"              % ExampleVersions.zioHttp
