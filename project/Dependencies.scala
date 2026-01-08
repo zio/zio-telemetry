@@ -7,7 +7,7 @@ object Dependencies {
     val opentelemetry         = "1.57.0"
     val opencensus            = "0.31.1"
     val scalaCollectionCompat = "2.14.0"
-    val zio                   = "2.1.23"
+    val zio                   = "2.1.24"
     val zioLogging            = "2.5.2"
     val izumiReflect          = "3.0.9"
   }
