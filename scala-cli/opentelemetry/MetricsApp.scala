@@ -4,7 +4,7 @@
 //> using dep io.opentelemetry:opentelemetry-sdk:1.58.0
 //> using dep io.opentelemetry:opentelemetry-sdk-trace:1.58.0
 //> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.58.0
-//> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.37.0
+//> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.38.0
 
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
