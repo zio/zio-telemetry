@@ -378,10 +378,12 @@ private[opentelemetry] object Tracer {
         ctx: Context,
         statusMapper: StatusMapper[E, A]
       )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
-        (for {
-          exit <- ctxStorage.locally(ctx)(zio).exit
-          _    <- statusMapper.handle(Span.fromContext(ctx), exit)
-        } yield exit).unexit
+        ZIO.uninterruptibleMask { restore =>
+          (for {
+            exit <- restore(ctxStorage.locally(ctx)(zio)).exit
+            _    <- statusMapper.handle(Span.fromContext(ctx), exit)
+          } yield exit).unexit
+        }
 
       private def currentNanos(implicit trace: Trace): UIO[Long] =
         Clock.currentTime(TimeUnit.NANOSECONDS)
