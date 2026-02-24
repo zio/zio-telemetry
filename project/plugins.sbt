@@ -1,4 +1,4 @@
-val zioSbtVersion = "0.4.10"
+val zioSbtVersion = "0.4.11"
 
 addSbtPlugin("com.thoughtworks.sbt-api-mappings" % "sbt-api-mappings"          % "3.0.2")
 addSbtPlugin("com.github.sbt"                    % "sbt-unidoc"                % "0.6.1")
