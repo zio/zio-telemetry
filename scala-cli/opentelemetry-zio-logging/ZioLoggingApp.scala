@@ -2,9 +2,9 @@
 //> using dep dev.zio::zio:2.1.24
 //> using dep dev.zio::zio-opentelemetry:3.1.14
 //> using dep dev.zio::zio-opentelemetry-zio-logging:3.1.14
-//> using dep io.opentelemetry:opentelemetry-sdk:1.60.0
-//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.60.0
-//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.60.0
+//> using dep io.opentelemetry:opentelemetry-sdk:1.60.1
+//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.60.1
+//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.60.1
 //> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.40.0
 
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter
