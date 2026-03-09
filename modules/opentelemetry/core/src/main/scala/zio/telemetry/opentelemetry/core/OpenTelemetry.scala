@@ -167,8 +167,6 @@ private[opentelemetry] object OpenTelemetry {
     )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
       ctxStorage.locally(ctxPropagator.instance.extract(Context.root, carrier.kernel, carrier))(zio)
 
-    override def logSpan[R, E, A](name: String)(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] = ???
-
     override val baggage: Baggage =
       Baggage.make(ctxStorage, logAnnotated)
 
