@@ -6,6 +6,7 @@ import zio._
 import zio.telemetry.opentelemetry.core.baggage.Baggage
 import zio.telemetry.opentelemetry.core.context.internal.ContextStorage
 import zio.telemetry.opentelemetry.core.context.{ContextPropagator, IncomingContextCarrier, OutgoingContextCarrier}
+import zio.telemetry.opentelemetry.core.trace.LogSpanner
 
 trait OpenTelemetry { self =>
 
@@ -104,6 +105,9 @@ trait OpenTelemetry { self =>
     carrier: IncomingContextCarrier[C]
   )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
+  def logSpan[R, E, A](name: String)(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+    LogSpanner.currentLogSpanner.getWith(_.logSpan(name)(zio))
+
   /**
    * Use when you need to pass contextual information between spans.
    */
@@ -133,6 +137,12 @@ trait OpenTelemetry { self =>
           self.continue(carrier)(zio)
       }
 
+    def logSpan(name: String): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.logSpan(name)(zio)
+      }
+
   }
 
 }
@@ -156,6 +166,8 @@ private[opentelemetry] object OpenTelemetry {
       carrier: IncomingContextCarrier[C]
     )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
       ctxStorage.locally(ctxPropagator.instance.extract(Context.root, carrier.kernel, carrier))(zio)
+
+    override def logSpan[R, E, A](name: String)(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] = ???
 
     override val baggage: Baggage =
       Baggage.make(ctxStorage, logAnnotated)

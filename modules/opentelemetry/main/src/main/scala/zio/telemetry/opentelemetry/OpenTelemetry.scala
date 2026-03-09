@@ -9,6 +9,7 @@ import zio.telemetry.opentelemetry.core.logs.Logger
 import zio.telemetry.opentelemetry.core.metrics.Meter
 import zio.telemetry.opentelemetry.core.metrics.internal.{Instrument, InstrumentRegistry, OtelMetricListener}
 import zio.telemetry.opentelemetry.core.trace.Tracer
+import zio.telemetry.opentelemetry.core.trace.LogSpanner
 
 /**
  * The entrypoint to telemetry functionality for tracer, metrics, logger and baggage.
@@ -157,6 +158,16 @@ object OpenTelemetry {
         loggerProvider = openTelemetry.unsafe.asJava.getLogsBridge
         _             <- Logger.install(loggerProvider, openTelemetry.unsafe.getCtxStorage, instrumentationScopeName, logLevel)
       } yield ()
+    }
+
+  def installOtelLogSpanner(implicit trace: Trace): URLayer[Tracer, Unit] =
+    ZLayer.scoped {
+      ZIO.serviceWithZIO[Tracer](tracer => LogSpanner.installOtel(tracer))
+    }
+
+  def installHybridLogSpanner(implicit trace: Trace): URLayer[Tracer, Unit] =
+    ZLayer.scoped {
+      ZIO.serviceWithZIO[Tracer](tracer => LogSpanner.installHybrid(tracer))
     }
 
   /**

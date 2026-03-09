@@ -31,18 +31,10 @@ trait LogSpanner {
    * @param effect
    *   the effect to wrap
    */
-  def logSpan[R, E, A](name: String, effect: ZIO[R, E, A]): ZIO[R, E, A]
+  def logSpan[R, E, A](name: String)(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 }
 
 object LogSpanner {
-
-  /**
-   * Default implementation that delegates to `ZIO.logSpan`. Zero OTEL overhead — no spans are exported.
-   */
-  val default: LogSpanner = new LogSpanner {
-    override def logSpan[R, E, A](name: String, effect: ZIO[R, E, A]): ZIO[R, E, A] =
-      ZIO.logSpan(name)(effect)
-  }
 
   /**
    * Global FiberRef storing the current LogSpanner.
@@ -56,35 +48,50 @@ object LogSpanner {
     }
 
   /**
-   * Installs a custom `LogSpanner` for the current scope.
-   *
-   * When the scope closes, the previous `LogSpanner` is automatically restored. This is the primary mechanism for
-   * activating OTEL-backed span dispatch.
-   *
-   * @param logSpanner
-   *   the LogSpanner implementation to install
-   * @return
-   *   a scoped effect that reverts the installation on scope close
+   * Default implementation that delegates to `ZIO.logSpan`. Zero OTEL overhead — no spans are exported.
    */
-  def installLogSpanner(logSpanner: LogSpanner): ZIO[Scope, Nothing, Unit] =
-    currentLogSpanner.locallyScoped(logSpanner)
+  private[opentelemetry] val default: LogSpanner = new LogSpanner {
+
+    override def logSpan[R, E, A](name: String)(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+      ZIO.logSpan(name)(zio)
+  }
 
   /**
-   * A `ZIOAspect` that wraps an effect with a named span using the currently installed `LogSpanner`.
+   * Installs a `LogSpanner` that produces real OTEL spans via `Tracer.span`.
    *
-   * Usage:
-   * {{{
-   *   myEffect @@ LogSpanner.span("operationName")
-   * }}}
+   * Does NOT call `ZIO.logSpan` — span information is only visible through OTEL exporters.
    *
-   * @param spanName
-   *   the span name
+   * @param tracer
+   *   the zio-telemetry Tracer to use for span creation
    * @return
-   *   a ZIOAspect that applies the span
+   *   a LogSpanner that creates OTEL spans
    */
-  def span(spanName: String): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
-    new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
-      override def apply[R, E, A](effect: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
-        currentLogSpanner.getWith(_.logSpan(spanName, effect))
+  def installOtel(tracer: Tracer)(implicit trace: Trace): ZIO[Scope, Nothing, Unit] = {
+    val logSpanner = new LogSpanner {
+      override def logSpan[R, E, A](name: String)(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+        tracer.span(name)(_ => zio)
     }
+
+    LogSpanner.currentLogSpanner.locallyScoped(logSpanner)
+  }
+
+  /**
+   * Installs a `LogSpanner` that produces both OTEL spans AND ZIO logSpans.
+   *
+   * This gives dual visibility: OTEL spans for distributed tracing exporters, and ZIO logSpans for ZIO's built-in log
+   * output (e.g., for local development).
+   *
+   * @param tracer
+   *   the zio-telemetry Tracer to use for span creation
+   * @return
+   *   a LogSpanner that creates both OTEL and ZIO spans
+   */
+  def installHybrid(tracer: Tracer)(implicit trace: Trace): ZIO[Scope, Nothing, Unit] = {
+    val logSpanner = new LogSpanner {
+      override def logSpan[R, E, A](name: String)(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+        tracer.span(name)(_ => ZIO.logSpan(name)(zio))
+    }
+
+    LogSpanner.currentLogSpanner.locallyScoped(logSpanner)
+  }
 }
