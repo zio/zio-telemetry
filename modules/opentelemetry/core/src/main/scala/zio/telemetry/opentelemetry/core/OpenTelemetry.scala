@@ -6,6 +6,7 @@ import zio._
 import zio.telemetry.opentelemetry.core.baggage.Baggage
 import zio.telemetry.opentelemetry.core.context.internal.ContextStorage
 import zio.telemetry.opentelemetry.core.context.{ContextPropagator, IncomingContextCarrier, OutgoingContextCarrier}
+import zio.telemetry.opentelemetry.core.trace.LogSpanner
 
 trait OpenTelemetry { self =>
 
@@ -105,6 +106,19 @@ trait OpenTelemetry { self =>
   )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   /**
+   * Wraps an effect with a named span using the currently installed `LogSpanner`.
+   *
+   * By default delegates to `ZIO.logSpan`. When an OTEL backend is installed, creates real OTEL spans.
+   *
+   * @param name
+   *   the span name
+   * @param zio
+   *   the effect to wrap
+   */
+  def logSpan[R, E, A](name: String)(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+    LogSpanner.currentLogSpanner.getWith(_.logSpan(name)(zio))
+
+  /**
    * Use when you need to pass contextual information between spans.
    */
   val baggage: Baggage
@@ -131,6 +145,12 @@ trait OpenTelemetry { self =>
       new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
         override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
           self.continue(carrier)(zio)
+      }
+
+    def logSpan(name: String): ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] =
+      new ZIOAspect[Nothing, Any, Nothing, Any, Nothing, Any] {
+        override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
+          self.logSpan(name)(zio)
       }
 
   }

@@ -8,7 +8,7 @@ import zio.telemetry.opentelemetry.core.context.internal.ContextStorage
 import zio.telemetry.opentelemetry.core.logs.Logger
 import zio.telemetry.opentelemetry.core.metrics.Meter
 import zio.telemetry.opentelemetry.core.metrics.internal.{Instrument, InstrumentRegistry, OtelMetricListener}
-import zio.telemetry.opentelemetry.core.trace.Tracer
+import zio.telemetry.opentelemetry.core.trace.{LogSpanner, Tracer}
 
 /**
  * The entrypoint to telemetry functionality for tracer, metrics, logger and baggage.
@@ -157,6 +157,27 @@ object OpenTelemetry {
         loggerProvider = openTelemetry.unsafe.asJava.getLogsBridge
         _             <- Logger.install(loggerProvider, openTelemetry.unsafe.getCtxStorage, instrumentationScopeName, logLevel)
       } yield ()
+    }
+
+  /**
+   * Installs an OTEL-only `LogSpanner` for the current scope.
+   *
+   * Requires a `Tracer` in the environment. Spans created via `LogSpanner.span` will produce real OTEL spans.
+   */
+  def installOtelLogSpanner(implicit trace: Trace): URLayer[Tracer, Unit] =
+    ZLayer.scoped {
+      ZIO.serviceWithZIO[Tracer](tracer => LogSpanner.installOtel(tracer))
+    }
+
+  /**
+   * Installs a hybrid `LogSpanner` (OTEL + ZIO logSpan) for the current scope.
+   *
+   * Requires a `Tracer` in the environment. Spans created via `LogSpanner.span` will produce both OTEL spans and ZIO
+   * logSpans.
+   */
+  def installHybridLogSpanner(implicit trace: Trace): URLayer[Tracer, Unit] =
+    ZLayer.scoped {
+      ZIO.serviceWithZIO[Tracer](tracer => LogSpanner.installHybrid(tracer))
     }
 
   /**
