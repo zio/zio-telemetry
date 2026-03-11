@@ -43,7 +43,7 @@ object InterruptionTracerTest extends ZIOSpecDefault {
         for {
           tracerTestkit <- ZIO.service[TracerTestkit]
           tracer        <- tracerTestkit.getTracer(instrumentationScopeName)
-          _             <- tracer.span("slow-op")(_ => ZIO.sleep(1.hour)).timeout(10.millis)
+          _             <- (ZIO.sleep(1.hour) @@ tracer.aspects.span("slow-op")).timeout(100.millis)
           spans         <- tracerTestkit.getFinishedSpans
           slowOp         = spans.find(_.name == "slow-op")
           // acquireReleaseWith guarantees endSpan runs, and the uninterruptibleMask
@@ -56,10 +56,10 @@ object InterruptionTracerTest extends ZIOSpecDefault {
         for {
           tracerTestkit <- ZIO.service[TracerTestkit]
           tracer        <- tracerTestkit.getTracer(instrumentationScopeName)
-          _             <- tracer.span("parent") { _ =>
-                             tracer.span("child")(_ => ZIO.sleep(1.hour)).timeout(10.millis) *>
-                               tracer.span("sibling")(_ => ZIO.unit)
-                           }
+          _             <- (
+                             (ZIO.sleep(1.hour) @@ tracer.aspects.span("child")).timeout(100.millis) *>
+                               (ZIO.unit @@ tracer.aspects.span("sibling"))
+                           ) @@ tracer.aspects.span("parent")
           spans         <- tracerTestkit.getFinishedSpans
           parent         = spans.find(_.name == "parent")
           sibling        = spans.find(_.name == "sibling")
@@ -71,10 +71,9 @@ object InterruptionTracerTest extends ZIOSpecDefault {
         for {
           tracerTestkit <- ZIO.service[TracerTestkit]
           tracer        <- tracerTestkit.getTracer(instrumentationScopeName)
-          _             <- tracer
-                             .span("fast")(_ => ZIO.unit)
+          _             <- (ZIO.unit @@ tracer.aspects.span("fast"))
                              .race(
-                               tracer.span("slow")(_ => ZIO.sleep(1.hour))
+                               ZIO.sleep(1.hour) @@ tracer.aspects.span("slow")
                              )
           // Allow the losing fiber's finalizer (span.end) to complete
           _             <- ZIO.sleep(100.millis)
@@ -88,9 +87,9 @@ object InterruptionTracerTest extends ZIOSpecDefault {
         for {
           tracerTestkit <- ZIO.service[TracerTestkit]
           tracer        <- tracerTestkit.getTracer(instrumentationScopeName)
-          _             <- tracer.span("parent") { _ =>
-                             tracer.span("forked")(_ => ZIO.unit).fork.flatMap(_.join)
-                           }
+          _             <- (
+                             (ZIO.unit @@ tracer.aspects.span("forked")).fork.flatMap(_.join)
+                           ) @@ tracer.aspects.span("parent")
           spans         <- tracerTestkit.getFinishedSpans
           parent         = spans.find(_.name == "parent")
           forked         = spans.find(_.name == "forked")
@@ -103,9 +102,9 @@ object InterruptionTracerTest extends ZIOSpecDefault {
           tracerTestkit <- ZIO.service[TracerTestkit]
           tracer        <- tracerTestkit.getTracer(instrumentationScopeName)
           promise       <- Promise.make[Nothing, Unit]
-          _             <- tracer.span("daemon-span") { _ =>
+          _             <- (
                              (ZIO.unit <* promise.succeed(())).forkDaemon.flatMap(_ => promise.await)
-                           }
+                           ) @@ tracer.aspects.span("daemon-span")
           spans         <- tracerTestkit.getFinishedSpans
           daemonSpan     = spans.find(_.name == "daemon-span")
         } yield assert(daemonSpan)(isSome(anything))
@@ -124,7 +123,7 @@ object InterruptionTracerTest extends ZIOSpecDefault {
         for {
           tracerTestkit <- ZIO.service[TracerTestkit]
           tracer        <- tracerTestkit.getTracer(instrumentationScopeName)
-          _             <- tracer.span("slow-op-tl")(_ => ZIO.sleep(1.hour)).timeout(10.millis)
+          _             <- (ZIO.sleep(1.hour) @@ tracer.aspects.span("slow-op-tl")).timeout(100.millis)
           spans         <- tracerTestkit.getFinishedSpans
           slowOp         = spans.find(_.name == "slow-op-tl")
         } yield assert(slowOp)(isSome(anything))
@@ -133,9 +132,9 @@ object InterruptionTracerTest extends ZIOSpecDefault {
         for {
           tracerTestkit <- ZIO.service[TracerTestkit]
           tracer        <- tracerTestkit.getTracer(instrumentationScopeName)
-          _             <- tracer.span("parent-tl") { _ =>
-                             tracer.span("forked-tl")(_ => ZIO.unit).fork.flatMap(_.join)
-                           }
+          _             <- (
+                             (ZIO.unit @@ tracer.aspects.span("forked-tl")).fork.flatMap(_.join)
+                           ) @@ tracer.aspects.span("parent-tl")
           spans         <- tracerTestkit.getFinishedSpans
           parent         = spans.find(_.name == "parent-tl")
           forked         = spans.find(_.name == "forked-tl")
