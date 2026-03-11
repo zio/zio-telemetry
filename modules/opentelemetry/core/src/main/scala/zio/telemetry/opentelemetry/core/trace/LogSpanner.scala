@@ -30,6 +30,23 @@ trait LogSpanner {
    *   the effect to wrap
    */
   def logSpan[R, E, A](name: String)(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
+
+  /**
+   * Sets a string attribute on the current span.
+   *
+   * The semantics depend on the installed backend:
+   *   - Default: no-op (zero cost, no OTEL dependency)
+   *   - OTEL / Hybrid: writes to the current OTEL span via FiberRef-captured Span
+   *
+   * Uses String values only, consistent with ZIO's `LogAnnotation` convention. Callers needing typed OTEL attributes
+   * can use `Span.setAttribute` directly.
+   *
+   * @param key
+   *   the attribute key
+   * @param value
+   *   the attribute value
+   */
+  def setAttribute(key: String, value: String)(implicit trace: Trace): UIO[Unit]
 }
 
 object LogSpanner {
@@ -41,6 +58,9 @@ object LogSpanner {
 
     override def logSpan[R, E, A](name: String)(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
       ZIO.logSpan(name)(zio)
+
+    override def setAttribute(key: String, value: String)(implicit trace: Trace): UIO[Unit] =
+      ZIO.unit
   }
 
   /**
@@ -59,7 +79,8 @@ object LogSpanner {
   /**
    * Installs a `LogSpanner` that produces real OTEL spans via `Tracer.span`.
    *
-   * Does NOT call `ZIO.logSpan` — span information is only visible through OTEL exporters.
+   * Does NOT call `ZIO.logSpan` — span information is only visible through OTEL exporters. Captures the current OTEL
+   * `Span` in a `FiberRef`, enabling `setAttribute` to write attributes directly to the span.
    *
    * @param tracer
    *   the zio-telemetry Tracer to use for span creation
@@ -68,8 +89,18 @@ object LogSpanner {
    */
   def installOtel(tracer: Tracer)(implicit trace: Trace): ZIO[Scope, Nothing, Unit] = {
     val logSpanner = new LogSpanner {
+
+      private val currentSpan: FiberRef[Option[Span]] =
+        Unsafe.unsafe { implicit u => FiberRef.unsafe.make(Option.empty[Span]) }
+
       override def logSpan[R, E, A](name: String)(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
-        tracer.span(name)(_ => zio)
+        tracer.span(name)(span => currentSpan.locally(Some(span))(zio))
+
+      override def setAttribute(key: String, value: String)(implicit trace: Trace): UIO[Unit] =
+        currentSpan.get.flatMap {
+          case Some(span) => span.setAttribute(key, value)
+          case None       => ZIO.unit
+        }
     }
 
     currentLogSpanner.locallyScoped(logSpanner)
@@ -79,7 +110,8 @@ object LogSpanner {
    * Installs a `LogSpanner` that produces both OTEL spans AND ZIO logSpans.
    *
    * This gives dual visibility: OTEL spans for distributed tracing exporters, and ZIO logSpans for ZIO's built-in log
-   * output (e.g., for local development).
+   * output (e.g., for local development). Captures the current OTEL `Span` in a `FiberRef`, enabling `setAttribute` to
+   * write attributes directly to the span.
    *
    * @param tracer
    *   the zio-telemetry Tracer to use for span creation
@@ -88,8 +120,18 @@ object LogSpanner {
    */
   def installHybrid(tracer: Tracer)(implicit trace: Trace): ZIO[Scope, Nothing, Unit] = {
     val logSpanner = new LogSpanner {
+
+      private val currentSpan: FiberRef[Option[Span]] =
+        Unsafe.unsafe { implicit u => FiberRef.unsafe.make(Option.empty[Span]) }
+
       override def logSpan[R, E, A](name: String)(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
-        tracer.span(name)(_ => ZIO.logSpan(name)(zio))
+        tracer.span(name)(span => currentSpan.locally(Some(span))(ZIO.logSpan(name)(zio)))
+
+      override def setAttribute(key: String, value: String)(implicit trace: Trace): UIO[Unit] =
+        currentSpan.get.flatMap {
+          case Some(span) => span.setAttribute(key, value)
+          case None       => ZIO.unit
+        }
     }
 
     currentLogSpanner.locallyScoped(logSpanner)
@@ -115,4 +157,18 @@ object LogSpanner {
       override def apply[R, E, A](zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
         currentLogSpanner.getWith(_.logSpan(spanName)(zio))
     }
+
+  /**
+   * Sets a string attribute on the current span using the installed `LogSpanner`.
+   *
+   * Dispatches via the same `FiberRef` as `span`. Default backend: no-op. OTEL/Hybrid: writes to the current OTEL
+   * span.
+   *
+   * @param key
+   *   the attribute key
+   * @param value
+   *   the attribute value
+   */
+  def setAttribute(key: String, value: String)(implicit trace: Trace): UIO[Unit] =
+    currentLogSpanner.getWith(_.setAttribute(key, value))
 }

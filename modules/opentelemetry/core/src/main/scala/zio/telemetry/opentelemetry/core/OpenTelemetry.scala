@@ -119,6 +119,14 @@ trait OpenTelemetry { self =>
     LogSpanner.currentLogSpanner.getWith(_.logSpan(name)(zio))
 
   /**
+   * Sets a string attribute on the current LogSpanner span.
+   *
+   * Default backend: no-op. OTEL/Hybrid: writes to the current OTEL span.
+   */
+  def logSpanSetAttribute(key: String, value: String)(implicit trace: Trace): UIO[Unit] =
+    LogSpanner.currentLogSpanner.getWith(_.setAttribute(key, value))
+
+  /**
    * Use when you need to pass contextual information between spans.
    */
   val baggage: Baggage

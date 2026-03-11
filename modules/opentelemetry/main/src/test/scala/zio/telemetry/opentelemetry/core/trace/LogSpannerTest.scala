@@ -32,6 +32,7 @@ object LogSpannerTest extends ZIOSpecDefault {
       defaultBackendSuite,
       otelBackendSuite,
       hybridBackendSuite,
+      setAttributeSuite,
       scopingSuite,
       fiberCorrectnessSuite
     )
@@ -147,6 +148,87 @@ object LogSpannerTest extends ZIOSpecDefault {
           hybridSpan     = spans.find(_.name == "hybridSpan")
         } yield assert(hybridSpan)(isSome(anything)) &&
           assert(logLabels)(contains("hybridSpan"))
+      }
+    ).provide(TracerTestkit.inMemory, OpenTelemetryTestkit.ctxStorageZioFiberRef)
+
+  // ---------------------------------------------------------------------------
+  // setAttribute tests (#1140)
+  // ---------------------------------------------------------------------------
+
+  private val setAttributeSuite =
+    suite("setAttribute")(
+      test("default backend — no-op, no error") {
+        for {
+          _ <- (LogSpanner.setAttribute("key", "value") @@ LogSpanner.span("defaultSpan"))
+        } yield assertCompletes
+      },
+      test("OTEL backend — attribute visible on finished span") {
+        for {
+          tracerTestkit <- ZIO.service[TracerTestkit]
+          tracer        <- tracerTestkit.getTracer(instrumentationScopeName)
+          _             <- ZIO.scoped[Any] {
+                             LogSpanner.installOtel(tracer) *>
+                               (LogSpanner.setAttribute("user.id", "42") @@ LogSpanner.span("otelAttrSpan"))
+                           }
+          spans         <- tracerTestkit.getFinishedSpans
+          attrSpan       = spans.find(_.name == "otelAttrSpan")
+        } yield assert(attrSpan)(isSome(anything)) &&
+          assert(attrSpan.get.attributes.get[String]("user.id"))(isSome(equalTo("42")))
+      },
+      test("hybrid backend — attribute visible on finished span") {
+        for {
+          tracerTestkit <- ZIO.service[TracerTestkit]
+          tracer        <- tracerTestkit.getTracer(instrumentationScopeName)
+          _             <- ZIO.scoped[Any] {
+                             LogSpanner.installHybrid(tracer) *>
+                               (LogSpanner.setAttribute("session.id", "99") @@ LogSpanner.span("hybridAttrSpan"))
+                           }
+          spans         <- tracerTestkit.getFinishedSpans
+          attrSpan       = spans.find(_.name == "hybridAttrSpan")
+        } yield assert(attrSpan)(isSome(anything)) &&
+          assert(attrSpan.get.attributes.get[String]("session.id"))(isSome(equalTo("99")))
+      },
+      test("setAttribute outside a span — no-op, no error") {
+        for {
+          tracerTestkit <- ZIO.service[TracerTestkit]
+          tracer        <- tracerTestkit.getTracer(instrumentationScopeName)
+          _             <- ZIO.scoped[Any] {
+                             LogSpanner.installOtel(tracer) *>
+                               LogSpanner.setAttribute("orphan.key", "orphan.value")
+                           }
+        } yield assertCompletes
+      },
+      test("setAttribute mid-operation in for-comprehension") {
+        for {
+          tracerTestkit <- ZIO.service[TracerTestkit]
+          tracer        <- tracerTestkit.getTracer(instrumentationScopeName)
+          _             <- ZIO.scoped[Any] {
+                             LogSpanner.installOtel(tracer) *>
+                               (for {
+                                 _ <- ZIO.unit
+                                 _ <- LogSpanner.setAttribute("session.id", "abc")
+                                 _ <- ZIO.unit
+                               } yield ()) @@ LogSpanner.span("auth:login")
+                           }
+          spans         <- tracerTestkit.getFinishedSpans
+          loginSpan      = spans.find(_.name == "auth:login")
+        } yield assert(loginSpan.get.attributes.get[String]("session.id"))(isSome(equalTo("abc")))
+      },
+      test("setAttribute writes to innermost span") {
+        for {
+          tracerTestkit <- ZIO.service[TracerTestkit]
+          tracer        <- tracerTestkit.getTracer(instrumentationScopeName)
+          _             <- ZIO.scoped[Any] {
+                             LogSpanner.installOtel(tracer) *>
+                               (LogSpanner.setAttribute("level", "child")
+                                 @@ LogSpanner.span("child")
+                                 @@ LogSpanner.span("parent"))
+                           }
+          spans         <- tracerTestkit.getFinishedSpans
+          parent         = spans.find(_.name == "parent")
+          child          = spans.find(_.name == "child")
+        } yield assert(child.get.attributes.get[String]("level"))(isSome(equalTo("child"))) &&
+          assert(parent.get.attributes.get[String]("level"))(isNone)
       }
     ).provide(TracerTestkit.inMemory, OpenTelemetryTestkit.ctxStorageZioFiberRef)
 
