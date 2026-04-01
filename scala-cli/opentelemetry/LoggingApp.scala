@@ -1,4 +1,4 @@
-//> using scala "3.8.2"
+//> using scala "3.8.3"
 //> using dep dev.zio::zio:2.1.24
 //> using dep dev.zio::zio-opentelemetry:3.1.15
 //> using dep io.opentelemetry:opentelemetry-sdk:1.60.1
