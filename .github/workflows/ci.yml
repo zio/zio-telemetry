@@ -57,6 +57,10 @@ jobs:
       run: sbt unusedCompileDependenciesTest
     - name: MissingLink
       run: sbt missinglinkCheck
+    - name: Setup NodeJs
+      uses: actions/setup-node@v6
+      with:
+        node-version: '18'
     - name: Check website build process
       run: sbt docs/clean; sbt docs/buildWebsite
   lint:
