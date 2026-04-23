@@ -212,22 +212,6 @@ lazy val opentelemetryExtensionTracePropagators =
     )
     .settings(libraryDependencies ++= Dependencies.opentelemetryExtensionTracePropagators)
     .settings(mimaSettings(failOnProblem = true))
-    .settings(
-      // JaegerPropagator and OtTracePropagator are deprecated since opentelemetry 1.61.0
-      scalacOptions ++= {
-        CrossVersion.partialVersion(scalaVersion.value) match {
-          case Some((2, n)) if n >= 13 => Seq("-Wconf:cat=deprecation:s")
-          case Some((3, _))            => Seq("-Wconf:cat=deprecation:s")
-          case _                       => Seq.empty
-        }
-      },
-      scalacOptions --= {
-        CrossVersion.partialVersion(scalaVersion.value) match {
-          case Some((2, 12)) => Seq("-Xfatal-warnings")
-          case _             => Seq.empty
-        }
-      }
-    )
     .dependsOn(opentelemetryCore)
 
 lazy val opentracing =
