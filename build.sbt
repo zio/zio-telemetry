@@ -1,6 +1,8 @@
 import MimaSettings.mimaSettings
 import ch.epfl.scala.sbtmissinglink.MissingLinkPlugin.missinglinkConflictsTag
 import zio.sbt.githubactions.Step.SingleStep
+import zio.sbt.githubactions.ActionRef
+import zio.json.ast.Json
 
 enablePlugins(ZioSbtEcosystemPlugin, ZioSbtCiPlugin)
 
@@ -70,6 +72,19 @@ inThisBuild(
 )
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
+
+// Docusaurus 2.x requires Node 18; Node 20+ breaks webpackbar's ProgressPlugin API
+ThisBuild / ciCheckWebsiteBuildProcess := Seq(
+  SingleStep(
+    name = "Setup NodeJs",
+    uses = Some(ActionRef("actions/setup-node@v6")),
+    parameters = Map("node-version" -> Json.Str("18"))
+  ),
+  SingleStep(
+    name = "Check website build process",
+    run = Some("sbt docs/clean; sbt docs/buildWebsite")
+  )
+)
 
 addCommandAlias("check", "ciCheck;docsCheck")
 addCommandAlias("ciCheck", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
