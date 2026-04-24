@@ -1,6 +1,8 @@
 import MimaSettings.mimaSettings
 import ch.epfl.scala.sbtmissinglink.MissingLinkPlugin.missinglinkConflictsTag
 import zio.sbt.githubactions.Step.SingleStep
+import zio.sbt.githubactions.ActionRef
+import zio.json.ast.Json
 
 enablePlugins(ZioSbtEcosystemPlugin, ZioSbtCiPlugin)
 
@@ -8,7 +10,7 @@ inThisBuild(
   List(
     name              := "ZIO Telemetry",
     organization      := "dev.zio",
-    zioVersion        := "2.1.23",
+    zioVersion        := "2.1.25",
     homepage          := Some(url("https://zio.dev/zio-telemetry/")),
     licenses          := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
     developers        := List(
@@ -70,6 +72,27 @@ inThisBuild(
 )
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
+
+// Docusaurus 2.x uses webpackbar@5.0.2 which is incompatible with webpack@5.75+
+// (npm now resolves webpack@^5.73.0 to the latest 5.x which breaks ProgressPlugin).
+// Workaround: run installWebsite + mdoc separately, then pin webpack to 5.74.0 via
+// npm overrides before running the final npm build.
+ThisBuild / ciCheckWebsiteBuildProcess := Seq(
+  SingleStep(
+    name = "Setup NodeJs",
+    uses = Some(ActionRef("actions/setup-node@v6")),
+    parameters = Map("node-version" -> Json.Str("20"))
+  ),
+  SingleStep(
+    name = "Check website build process",
+    run = Some(
+      """|sbt docs/clean "docs/installWebsite" "docs/mdoc"
+         |node -e "const fs=require('fs'),p='zio-telemetry-docs/target/website/package.json',pkg=JSON.parse(fs.readFileSync(p,'utf8'));pkg.overrides={webpack:'5.74.0'};fs.writeFileSync(p,JSON.stringify(pkg,null,2));"
+         |npm install --prefix zio-telemetry-docs/target/website
+         |npm --prefix zio-telemetry-docs/target/website run build""".stripMargin
+    )
+  )
+)
 
 addCommandAlias("check", "ciCheck;docsCheck")
 addCommandAlias("ciCheck", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")

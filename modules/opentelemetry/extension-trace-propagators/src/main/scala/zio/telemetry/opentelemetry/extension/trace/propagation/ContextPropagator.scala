@@ -14,9 +14,7 @@ import zio.telemetry.opentelemetry.core.context
  *   ContextPropagator.combine(
  *     ContextPropagator.default,
  *     zio.telemetry.opentelemetry.extension.trace.propagation.ContextPropagator.b3single,
- *     zio.telemetry.opentelemetry.extension.trace.propagation.ContextPropagator.b3multi,
- *     zio.telemetry.opentelemetry.extension.trace.propagation.ContextPropagator.jaeger,
- *     zio.telemetry.opentelemetry.extension.trace.propagation.ContextPropagator.opentracing
+ *     zio.telemetry.opentelemetry.extension.trace.propagation.ContextPropagator.b3multi
  *   )
  * }}}
  */
@@ -51,7 +49,15 @@ object ContextPropagator {
    *
    * @see
    *   [[https://www.jaegertracing.io/docs/client-libraries/#propagation-format]]
+   *
+   * @deprecated
+   *   JaegerPropagator is deprecated per the OpenTelemetry specification. Use
+   *   [[zio.telemetry.opentelemetry.core.context.ContextPropagator.default]] (W3C Trace Context) instead.
    */
+  @deprecated(
+    "JaegerPropagator is deprecated per the OpenTelemetry specification. Use ContextPropagator.default (W3C Trace Context) instead.",
+    since = "4.0.0-RC10"
+  )
   val jaeger: context.ContextPropagator =
     new context.ContextPropagator {
       override val instance: TextMapPropagator =
@@ -63,7 +69,15 @@ object ContextPropagator {
    *
    * @see
    *   [[https://opentracing.io/specification/]]
+   *
+   * @deprecated
+   *   OtTracePropagator is deprecated per the OpenTelemetry specification. Use
+   *   [[zio.telemetry.opentelemetry.core.context.ContextPropagator.default]] (W3C Trace Context) instead.
    */
+  @deprecated(
+    "OtTracePropagator is deprecated per the OpenTelemetry specification. Use ContextPropagator.default (W3C Trace Context) instead.",
+    since = "4.0.0-RC10"
+  )
   val opentracing: context.ContextPropagator =
     new context.ContextPropagator {
       override val instance: TextMapPropagator =

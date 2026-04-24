@@ -43,7 +43,7 @@ jobs:
     - name: Setup SBT
       uses: sbt/setup-sbt@v1
     - name: Cache Dependencies
-      uses: coursier/cache-action@v7
+      uses: coursier/cache-action@v8
     - name: Check all code compiles
       run: sbt +Test/compile
     - name: Check artifacts build process
@@ -58,8 +58,16 @@ jobs:
       run: sbt unusedCompileDependenciesTest
     - name: MissingLink
       run: sbt missinglinkCheck
+    - name: Setup NodeJs
+      uses: actions/setup-node@v6
+      with:
+        node-version: '20'
     - name: Check website build process
-      run: sbt docs/clean; sbt docs/buildWebsite
+      run: |-
+        sbt docs/clean "docs/installWebsite" "docs/mdoc"
+        node -e "const fs=require('fs'),p='zio-telemetry-docs/target/website/package.json',pkg=JSON.parse(fs.readFileSync(p,'utf8'));pkg.overrides={webpack:'5.74.0'};fs.writeFileSync(p,JSON.stringify(pkg,null,2));"
+        npm install --prefix zio-telemetry-docs/target/website
+        npm --prefix zio-telemetry-docs/target/website run build
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -80,7 +88,7 @@ jobs:
     - name: Setup SBT
       uses: sbt/setup-sbt@v1
     - name: Cache Dependencies
-      uses: coursier/cache-action@v7
+      uses: coursier/cache-action@v8
     - name: Check if the site workflow is up to date
       run: sbt ciCheckGithubWorkflow
     - name: Lint
@@ -93,9 +101,9 @@ jobs:
       fail-fast: false
       matrix:
         java:
-        - '11'
         - '17'
         - '21'
+        - '25'
     steps:
     - name: Install libuv
       run: sudo apt-get update && sudo apt-get install -y libuv1-dev
@@ -108,7 +116,7 @@ jobs:
     - name: Setup SBT
       uses: sbt/setup-sbt@v1
     - name: Cache Dependencies
-      uses: coursier/cache-action@v7
+      uses: coursier/cache-action@v8
     - name: Git Checkout
       uses: actions/checkout@v6
       with:
@@ -136,7 +144,7 @@ jobs:
     - name: Setup SBT
       uses: sbt/setup-sbt@v1
     - name: Cache Dependencies
-      uses: coursier/cache-action@v7
+      uses: coursier/cache-action@v8
     - name: Generate Readme
       run: sbt docs/generateReadme
     - name: Commit Changes
@@ -212,7 +220,7 @@ jobs:
     - name: Setup SBT
       uses: sbt/setup-sbt@v1
     - name: Cache Dependencies
-      uses: coursier/cache-action@v7
+      uses: coursier/cache-action@v8
     - name: Release
       run: sbt ci-release
       env:
@@ -243,7 +251,7 @@ jobs:
     - name: Setup SBT
       uses: sbt/setup-sbt@v1
     - name: Cache Dependencies
-      uses: coursier/cache-action@v7
+      uses: coursier/cache-action@v8
     - name: Setup NodeJs
       uses: actions/setup-node@v6
       with:
