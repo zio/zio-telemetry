@@ -3,6 +3,7 @@ import ch.epfl.scala.sbtmissinglink.MissingLinkPlugin.missinglinkConflictsTag
 import zio.sbt.githubactions.Step.SingleStep
 import zio.sbt.githubactions.ActionRef
 import zio.json.ast.Json
+import com.github.sbt.git.SbtGit.GitKeys.useConsoleForROGit
 
 enablePlugins(ZioSbtEcosystemPlugin, ZioSbtCiPlugin)
 
@@ -67,7 +68,9 @@ inThisBuild(
     ),
     concurrentRestrictions += Tags.limit(missinglinkConflictsTag, 1),
     // TODO: remove once it is updated in zio-sbt
-    scala213          := "2.13.18"
+    scala213          := "2.13.18",
+    // Workaround for git worktrees
+    useConsoleForROGit := true
   )
 )
 
