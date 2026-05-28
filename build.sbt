@@ -143,6 +143,7 @@ lazy val root =
     .aggregate(
       opentelemetry,
       opentelemetryCore,
+      opentelemetryAgent,
       opentelemetryTestkit,
       opentelemetryZioLogging,
       opentelemetryAwsXrayPropagator,
@@ -165,7 +166,20 @@ lazy val opentelemetry: Project =
     .settings(libraryDependencies ++= Dependencies.opentelemetry)
     .settings(mimaSettings(failOnProblem = true))
     .settings(unusedCompileDependenciesFilter -= moduleFilter("org.scala-lang.modules", "scala-collection-compat"))
-    .dependsOn(opentelemetryCore, opentelemetryTestkit % Test)
+    .dependsOn(opentelemetryCore, opentelemetryAgent, opentelemetryTestkit % Test)
+
+lazy val opentelemetryAgent =
+  project
+    .in(file("modules/opentelemetry/agent"))
+    .settings(enableZIO())
+    .settings(
+      stdModuleSettings(
+        name = Some("zio-opentelemetry-agent"),
+        packageName = Some("zio.telemetry.opentelemetry.agent")
+      )
+    )
+    .settings(libraryDependencies ++= Dependencies.opentelemetryAgent)
+    .dependsOn(opentelemetryCore)
 
 lazy val opentelemetryCore =
   project

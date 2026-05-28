@@ -44,9 +44,9 @@ private[opentelemetry] object LogFormats {
       }
 
       private def getSpanContext(ctxStorage: ContextStorage, fiberRefs: FiberRefs): Option[SpanContext] = {
-        val maybeOtelContext = ctxStorage match {
-          case cs: ContextStorage.ZIOFiberRef     => fiberRefs.get(cs.ref)
-          case ContextStorage.JavaOtelThreadLocal => Some(Context.current())
+        val maybeOtelContext = ctxStorage.fiberRefOption match {
+          case Some(fiberRef) => fiberRefs.get(fiberRef)
+          case None           => Some(Context.current())
         }
 
         maybeOtelContext

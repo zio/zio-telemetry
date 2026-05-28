@@ -3,13 +3,15 @@ package zio.telemetry.opentelemetry.core.context.internal
 import io.opentelemetry.context.Context
 import zio._
 
-sealed trait ContextStorage {
+trait ContextStorage {
 
   def get(implicit trace: Trace): UIO[Context]
 
   def locally[R, E, A](ctx: Context)(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
   def locallyScoped(ctx: Context)(implicit trace: Trace): ZIO[Scope, Nothing, Unit]
+
+  def fiberRefOption: Option[FiberRef[Context]] = None
 
 }
 
@@ -32,6 +34,9 @@ private[opentelemetry] object ContextStorage {
 
     override def locallyScoped(context: Context)(implicit trace: Trace): ZIO[Scope, Nothing, Unit] =
       ref.locallyScoped(context)
+
+    override def fiberRefOption: Option[FiberRef[Context]] =
+      Some(ref)
 
   }
 

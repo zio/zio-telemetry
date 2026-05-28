@@ -47,10 +47,10 @@ private[opentelemetry] object Logger {
         builder.setSeverity(severityMapping(logLevel))
         annotations.foreach { case (k, v) => builder.setAttribute(AttributeKey.stringKey(k), v) }
 
-        ctxStorage match {
-          case cs: ContextStorage.ZIOFiberRef             =>
-            context.get(cs.ref).foreach(builder.setContext)
-          case _: ContextStorage.JavaOtelThreadLocal.type =>
+        ctxStorage.fiberRefOption match {
+          case Some(fiberRef) =>
+            context.get(fiberRef).foreach(builder.setContext)
+          case None           =>
             builder.setContext(Context.current())
         }
 

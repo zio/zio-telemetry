@@ -80,6 +80,13 @@ object Dependencies {
     Orgs.zio          %% "zio-logging"               % Versions.zioLogging
   )
 
+  lazy val opentelemetryAgent = zio ++ Seq(
+    Orgs.opentelemetry % "opentelemetry-api"         % Versions.opentelemetry,
+    Orgs.opentelemetry % "opentelemetry-context"     % Versions.opentelemetry,
+    Orgs.opentelemetry % "opentelemetry-sdk"         % Versions.opentelemetry % Test,
+    Orgs.opentelemetry % "opentelemetry-sdk-testing" % Versions.opentelemetry % Test
+  )
+
   lazy val opentelemetryAwsXrayPropagator = Seq(
     Orgs.opentelemetry        % "opentelemetry-context"             % Versions.opentelemetry,
     Orgs.opentelemetryContrib % "opentelemetry-aws-xray-propagator" % Versions.opentelemetryContrib

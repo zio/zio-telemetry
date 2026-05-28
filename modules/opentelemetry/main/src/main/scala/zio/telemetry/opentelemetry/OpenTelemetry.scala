@@ -67,6 +67,9 @@ object OpenTelemetry {
       } yield core.OpenTelemetry.make(ctxStorage, underlying, ContextPropagator.noop, logAnnotated)
     }
 
+  def agent(logAnnotated: Boolean = false)(implicit trace: Trace): TaskLayer[core.OpenTelemetry] =
+    zio.telemetry.opentelemetry.agent.OpenTelemetry.global(logAnnotated)
+
   /**
    * Use when you need to instrument spans manually.
    *
