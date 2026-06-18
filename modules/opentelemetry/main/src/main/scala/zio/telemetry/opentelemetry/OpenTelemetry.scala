@@ -1,6 +1,6 @@
 package zio.telemetry.opentelemetry
 
-import io.opentelemetry.api.{GlobalOpenTelemetry, OpenTelemetry => JOpenTelemetry}
+import io.opentelemetry.api.{OpenTelemetry => JOpenTelemetry}
 import zio._
 import zio.metrics.{MetricClient, MetricListener}
 import zio.telemetry.opentelemetry.core.context.ContextPropagator
@@ -26,12 +26,7 @@ object OpenTelemetry {
    *   `autoinstrumented` in [[zio.telemetry.opentelemetry.OpenTelemetry]]
    */
   def global(logAnnotated: Boolean = false)(implicit trace: Trace): TaskLayer[core.OpenTelemetry] =
-    ZLayer.scoped {
-      for {
-        underlying <- ZIO.attempt(GlobalOpenTelemetry.get())
-        propagator  = ContextPropagator.fromJava(underlying.getPropagators)
-      } yield core.OpenTelemetry.make(ContextStorage.JavaOtelThreadLocal, underlying, propagator, logAnnotated)
-    }
+    zio.telemetry.opentelemetry.agent.OpenTelemetry.global(logAnnotated)
 
   /**
    * Use when you need to configure an instance of OpenTelemetry programmatically.

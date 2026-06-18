@@ -20,10 +20,10 @@ object OpenTelemetry {
     ZioAgentContext.getAgentFiberRef() match {
       case Some(fiberRef) =>
         ZIO.logInfo("zio-opentelemetry-agent: agent-provided FiberRef detected") *>
-          ZIO.succeed(new FiberRefContextStorage(fiberRef))
+          ZIO.succeed(new ContextStorage(fiberRef))
       case None           =>
-        ZIO.logWarning("zio-opentelemetry-agent: agent not detected, falling back to JavaOtelThreadLocal") *>
-          ZIO.succeed(ContextStorage.JavaOtelThreadLocal)
+        ZIO.logDebug("zio-opentelemetry-agent: agent not detected, using local FiberRef context storage") *>
+          ContextStorage.zioFiberRefScoped
     }
 
 }

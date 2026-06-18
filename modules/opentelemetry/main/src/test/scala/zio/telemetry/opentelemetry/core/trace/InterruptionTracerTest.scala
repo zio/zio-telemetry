@@ -9,13 +9,6 @@ import zio.test._
 
 /**
  * Tests verifying that OTEL spans are correctly recorded when effects are interrupted.
- *
- * These tests document the behavior described in zio-telemetry #1069. The FiberRef-based ContextStorage path (used by
- * `OpenTelemetry.custom`) is expected to handle interruption correctly because `Tracer.span` uses
- * `ZIO.acquireReleaseWith`, which per Zionomicon Ch.14 guarantees that the release (endSpan) runs even on interruption.
- *
- * The ThreadLocal-based ContextStorage path (`OpenTelemetry.global`) has known issues with interruption, documented in
- * the secondary test suite below.
  */
 object InterruptionTracerTest extends ZIOSpecDefault {
 
@@ -28,16 +21,6 @@ object InterruptionTracerTest extends ZIOSpecDefault {
     hasField[SpanData, String]("parentSpanId", _.parentSpanId, assertion)
 
   override def spec: Spec[Any, Throwable] =
-    suite("Interrupted span recording")(
-      fiberRefSuite,
-      threadLocalSuite
-    )
-
-  /**
-   * FiberRef ContextStorage tests — these should all PASS on RC10, confirming that #1069 is a ThreadLocal-only issue
-   * for the `acquireReleaseWith` span lifecycle path.
-   */
-  private val fiberRefSuite =
     suite("FiberRef ContextStorage")(
       test("timeout: span is recorded with ERROR status when effect times out") {
         for {
@@ -110,37 +93,4 @@ object InterruptionTracerTest extends ZIOSpecDefault {
         } yield assert(daemonSpan)(isSome(anything))
       }
     ).provide(TracerTestkit.inMemory, OpenTelemetryTestkit.ctxStorageZioFiberRef) @@ TestAspect.withLiveClock
-
-  /**
-   * ThreadLocal ContextStorage tests — these document known #1069 failures. The ThreadLocal-based storage does not
-   * properly propagate context across fiber boundaries, so interruption can lose span context.
-   *
-   * These tests serve as regression tests for a future fix (FiberRef.asThreadLocal bridge).
-   */
-  private val threadLocalSuite =
-    suite("ThreadLocal ContextStorage (known #1069 issues)")(
-      test("timeout: span is recorded when effect times out") {
-        for {
-          tracerTestkit <- ZIO.service[TracerTestkit]
-          tracer        <- tracerTestkit.getTracer(instrumentationScopeName)
-          _             <- (ZIO.sleep(1.hour) @@ tracer.aspects.span("slow-op-tl")).timeout(100.millis)
-          spans         <- tracerTestkit.getFinishedSpans
-          slowOp         = spans.find(_.name == "slow-op-tl")
-        } yield assert(slowOp)(isSome(anything))
-      },
-      test("fork: child fiber span inherits parent context") {
-        for {
-          tracerTestkit <- ZIO.service[TracerTestkit]
-          tracer        <- tracerTestkit.getTracer(instrumentationScopeName)
-          _             <- (
-                             (ZIO.unit @@ tracer.aspects.span("forked-tl")).fork.flatMap(_.join)
-                           ) @@ tracer.aspects.span("parent-tl")
-          spans         <- tracerTestkit.getFinishedSpans
-          parent         = spans.find(_.name == "parent-tl")
-          forked         = spans.find(_.name == "forked-tl")
-        } yield assert(parent)(isSome(anything)) &&
-          assert(forked)(isSome(anything))
-      }
-    ).provide(TracerTestkit.inMemory, OpenTelemetryTestkit.ctxStorageJavaOtelThreadLocal) @@ TestAspect.withLiveClock @@
-      TestAspect.flaky(3) // ThreadLocal path may fail — that's the documented #1069 behavior
 }
