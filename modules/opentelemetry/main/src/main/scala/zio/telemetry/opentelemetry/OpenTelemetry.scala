@@ -16,19 +16,6 @@ import zio.telemetry.opentelemetry.core.trace.Tracer
 object OpenTelemetry {
 
   /**
-   * A global singleton for the entrypoint to telemetry functionality for tracer, metrics, logger and baggage. Should be
-   * used with <a href="https://opentelemetry.io/docs/instrumentation/java/automatic/agent-config/">SDK
-   * Autoconfiguration</a> module and/or <a
-   * href="https://github.com/open-telemetry/opentelemetry-java-instrumentation">Automatic instrumentation</a> Java
-   * agent.
-   *
-   * @see
-   *   `autoinstrumented` in [[zio.telemetry.opentelemetry.OpenTelemetry]]
-   */
-  def global(logAnnotated: Boolean = false)(implicit trace: Trace): TaskLayer[core.OpenTelemetry] =
-    zio.telemetry.opentelemetry.agent.OpenTelemetry.global(logAnnotated)
-
-  /**
    * Use when you need to configure an instance of OpenTelemetry programmatically.
    *
    * Example:
@@ -47,7 +34,7 @@ object OpenTelemetry {
     ZLayer.scoped {
       for {
         underlying <- zio
-        ctxStorage <- ContextStorage.zioFiberRefScoped
+        ctxStorage <- ContextStorage.root
       } yield core.OpenTelemetry.make(ctxStorage, underlying, ctxPropagator, logAnnotated)
     }
 
@@ -58,12 +45,9 @@ object OpenTelemetry {
     ZLayer.scoped {
       for {
         underlying <- ZIO.attempt(JOpenTelemetry.noop())
-        ctxStorage <- ContextStorage.zioFiberRefScoped
+        ctxStorage <- ContextStorage.root
       } yield core.OpenTelemetry.make(ctxStorage, underlying, ContextPropagator.noop, logAnnotated)
     }
-
-  def agent(logAnnotated: Boolean = false)(implicit trace: Trace): TaskLayer[core.OpenTelemetry] =
-    zio.telemetry.opentelemetry.agent.OpenTelemetry.global(logAnnotated)
 
   /**
    * Use when you need to instrument spans manually.

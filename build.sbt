@@ -169,7 +169,7 @@ lazy val opentelemetry: Project =
     .settings(libraryDependencies ++= Dependencies.opentelemetry)
     .settings(mimaSettings(failOnProblem = true))
     .settings(unusedCompileDependenciesFilter -= moduleFilter("org.scala-lang.modules", "scala-collection-compat"))
-    .dependsOn(opentelemetryCore, opentelemetryAgent, opentelemetryTestkit % Test)
+    .dependsOn(opentelemetryCore, opentelemetryTestkit % Test)
 
 lazy val opentelemetryAgent =
   project
@@ -319,7 +319,7 @@ lazy val opentelemetryAutoinstrumentationExample =
       )
     )
     .settings(libraryDependencies ++= Dependencies.opentelemetryAutoinstrumentationExample)
-    .dependsOn(opentelemetry)
+    .dependsOn(opentelemetry, opentelemetryAgent)
 
 lazy val docs =
   project

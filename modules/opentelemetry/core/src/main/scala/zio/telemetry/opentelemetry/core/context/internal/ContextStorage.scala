@@ -20,7 +20,10 @@ private[opentelemetry] final class ContextStorage(
 
 private[opentelemetry] object ContextStorage {
 
-  def zioFiberRefScoped: URIO[Scope, ContextStorage] =
+  def fromFiberRef(ref: FiberRef[Context]): UIO[ContextStorage] =
+    ZIO.succeed(new ContextStorage(ref))
+
+  def root: URIO[Scope, ContextStorage] =
     FiberRef.make[Context](Context.root()).map(new ContextStorage(_))
 
 }

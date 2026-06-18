@@ -20,10 +20,10 @@ object OpenTelemetry {
     ZioAgentContext.getAgentFiberRef() match {
       case Some(fiberRef) =>
         ZIO.logInfo("zio-opentelemetry-agent: agent-provided FiberRef detected") *>
-          ZIO.succeed(new ContextStorage(fiberRef))
+          ContextStorage.fromFiberRef(fiberRef)
       case None           =>
         ZIO.logDebug("zio-opentelemetry-agent: agent not detected, using local FiberRef context storage") *>
-          ContextStorage.zioFiberRefScoped
+          ContextStorage.root
     }
 
 }
