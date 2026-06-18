@@ -1,6 +1,6 @@
 package zio.telemetry.opentelemetry
 
-import io.opentelemetry.api.{GlobalOpenTelemetry, OpenTelemetry => JOpenTelemetry}
+import io.opentelemetry.api.{OpenTelemetry => JOpenTelemetry}
 import zio._
 import zio.metrics.{MetricClient, MetricListener}
 import zio.telemetry.opentelemetry.core.context.ContextPropagator
@@ -14,24 +14,6 @@ import zio.telemetry.opentelemetry.core.trace.Tracer
  * The entrypoint to telemetry functionality for tracer, metrics, logger and baggage.
  */
 object OpenTelemetry {
-
-  /**
-   * A global singleton for the entrypoint to telemetry functionality for tracer, metrics, logger and baggage. Should be
-   * used with <a href="https://opentelemetry.io/docs/instrumentation/java/automatic/agent-config/">SDK
-   * Autoconfiguration</a> module and/or <a
-   * href="https://github.com/open-telemetry/opentelemetry-java-instrumentation">Automatic instrumentation</a> Java
-   * agent.
-   *
-   * @see
-   *   `autoinstrumented` in [[zio.telemetry.opentelemetry.OpenTelemetry]]
-   */
-  def global(logAnnotated: Boolean = false)(implicit trace: Trace): TaskLayer[core.OpenTelemetry] =
-    ZLayer.scoped {
-      for {
-        underlying <- ZIO.attempt(GlobalOpenTelemetry.get())
-        propagator  = ContextPropagator.fromJava(underlying.getPropagators)
-      } yield core.OpenTelemetry.make(ContextStorage.JavaOtelThreadLocal, underlying, propagator, logAnnotated)
-    }
 
   /**
    * Use when you need to configure an instance of OpenTelemetry programmatically.
@@ -52,7 +34,7 @@ object OpenTelemetry {
     ZLayer.scoped {
       for {
         underlying <- zio
-        ctxStorage <- ContextStorage.zioFiberRefScoped
+        ctxStorage <- ContextStorage.root
       } yield core.OpenTelemetry.make(ctxStorage, underlying, ctxPropagator, logAnnotated)
     }
 
@@ -63,7 +45,7 @@ object OpenTelemetry {
     ZLayer.scoped {
       for {
         underlying <- ZIO.attempt(JOpenTelemetry.noop())
-        ctxStorage <- ContextStorage.zioFiberRefScoped
+        ctxStorage <- ContextStorage.root
       } yield core.OpenTelemetry.make(ctxStorage, underlying, ContextPropagator.noop, logAnnotated)
     }
 

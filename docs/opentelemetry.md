@@ -78,8 +78,9 @@ For more details, please have a look at the source code of the [example applicat
 OpenTelemetry provides a [JVM agent for automatic instrumentation](https://opentelemetry.io/docs/instrumentation/java/automatic/) which supports many [popular Java libraries](https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/supported-libraries.md).
 Since [version 1.25.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.25.0) OpenTelemetry JVM agent supports ZIO.
 
-To enable interoperability between automatic instrumentation and `zio-opentelemetry`, `Tracing` has to be created
-using `ContextStorage` backed by OpenTelemetry's native `Context` and `Tracer` provided by globally registered `TracerProvider`. It means that instead of `OpenTelemetry.contextZIO` and `OpenTelemetry.custom` you have to provide `OpenTelemetry.contextJVM` and `OpenTelemetry.global` layers.
+To enable interoperability between automatic instrumentation and `zio-opentelemetry`, create the `OpenTelemetry` service
+with `zio.telemetry.opentelemetry.agent.OpenTelemetry.global`, which uses the globally registered Java OpenTelemetry
+instance and the agent-aware context storage.
 
 ### Tracing
 

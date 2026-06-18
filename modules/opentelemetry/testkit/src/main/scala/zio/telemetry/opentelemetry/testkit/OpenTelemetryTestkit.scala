@@ -27,9 +27,6 @@ object OpenTelemetryTestkit {
   }
 
   def ctxStorageZioFiberRef: ULayer[ContextStorage] =
-    ZLayer.scoped(ContextStorage.zioFiberRefScoped)
-
-  def ctxStorageJavaOtelThreadLocal: ULayer[ContextStorage] =
-    ZLayer.succeed(ContextStorage.JavaOtelThreadLocal)
+    ZLayer.scoped(ContextStorage.root)
 
 }

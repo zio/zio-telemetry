@@ -8,10 +8,10 @@ import zio.test._
 object BaggageTest extends ZIOSpecDefault {
 
   def baggageLayer: ULayer[Baggage] =
-    ZLayer.scoped(ContextStorage.zioFiberRefScoped.map(Baggage.make(_)))
+    ZLayer.scoped(ContextStorage.root.map(Baggage.make(_)))
 
   def logAnnotatedBaggageLayer: ULayer[Baggage] =
-    ZLayer.scoped(ContextStorage.zioFiberRefScoped.map(Baggage.make(_, logAnnotated = true)))
+    ZLayer.scoped(ContextStorage.root.map(Baggage.make(_, logAnnotated = true)))
 
   def spec: Spec[Environment with TestEnvironment with Scope, Any] =
     suite("zio opentelemetry")(

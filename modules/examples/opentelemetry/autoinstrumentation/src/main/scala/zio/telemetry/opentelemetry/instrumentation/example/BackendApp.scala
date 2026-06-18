@@ -6,6 +6,7 @@ import zio.config.ReadError
 import zio.config.magnolia._
 import zio.config.typesafe.TypesafeConfig
 import zio.logging.backend.SLF4J
+import zio.telemetry.opentelemetry.agent.{OpenTelemetry => AgentOpenTelemetry}
 import zio.telemetry.opentelemetry.instrumentation.example.config.AppConfig
 import zio.telemetry.opentelemetry.instrumentation.example.http.{BackendHttpApp, BackendHttpServer}
 import zio.telemetry.opentelemetry.{OpenTelemetry, core}
@@ -31,7 +32,7 @@ object BackendApp extends ZIOAppDefault {
       configLayer,
       BackendHttpServer.live,
       BackendHttpApp.live,
-      OpenTelemetry.global(),
+      AgentOpenTelemetry.global(),
       OpenTelemetry.tracer(instrumentationScopeName)
     )
 

@@ -3,6 +3,7 @@ import ch.epfl.scala.sbtmissinglink.MissingLinkPlugin.missinglinkConflictsTag
 import zio.sbt.githubactions.Step.SingleStep
 import zio.sbt.githubactions.ActionRef
 import zio.json.ast.Json
+import com.github.sbt.git.SbtGit.GitKeys.useConsoleForROGit
 
 enablePlugins(ZioSbtEcosystemPlugin, ZioSbtCiPlugin)
 
@@ -67,7 +68,9 @@ inThisBuild(
     ),
     concurrentRestrictions += Tags.limit(missinglinkConflictsTag, 1),
     // TODO: remove once it is updated in zio-sbt
-    scala213          := "2.13.18"
+    scala213          := "2.13.18",
+    // Workaround for git worktrees
+    useConsoleForROGit := true
   )
 )
 
@@ -143,6 +146,7 @@ lazy val root =
     .aggregate(
       opentelemetry,
       opentelemetryCore,
+      opentelemetryAgent,
       opentelemetryTestkit,
       opentelemetryZioLogging,
       opentelemetryAwsXrayPropagator,
@@ -166,6 +170,19 @@ lazy val opentelemetry: Project =
     .settings(mimaSettings(failOnProblem = true))
     .settings(unusedCompileDependenciesFilter -= moduleFilter("org.scala-lang.modules", "scala-collection-compat"))
     .dependsOn(opentelemetryCore, opentelemetryTestkit % Test)
+
+lazy val opentelemetryAgent =
+  project
+    .in(file("modules/opentelemetry/agent"))
+    .settings(enableZIO())
+    .settings(
+      stdModuleSettings(
+        name = Some("zio-opentelemetry-agent"),
+        packageName = Some("zio.telemetry.opentelemetry.agent")
+      )
+    )
+    .settings(libraryDependencies ++= Dependencies.opentelemetryAgent)
+    .dependsOn(opentelemetryCore)
 
 lazy val opentelemetryCore =
   project
@@ -302,7 +319,7 @@ lazy val opentelemetryAutoinstrumentationExample =
       )
     )
     .settings(libraryDependencies ++= Dependencies.opentelemetryAutoinstrumentationExample)
-    .dependsOn(opentelemetry)
+    .dependsOn(opentelemetry, opentelemetryAgent)
 
 lazy val docs =
   project

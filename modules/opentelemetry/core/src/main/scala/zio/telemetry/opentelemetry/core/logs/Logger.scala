@@ -2,7 +2,6 @@ package zio.telemetry.opentelemetry.core.logs
 
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.logs.{Logger => JLogger, LoggerProvider, Severity}
-import io.opentelemetry.context.Context
 import zio._
 import zio.telemetry.opentelemetry.core.context.internal.ContextStorage
 
@@ -47,12 +46,7 @@ private[opentelemetry] object Logger {
         builder.setSeverity(severityMapping(logLevel))
         annotations.foreach { case (k, v) => builder.setAttribute(AttributeKey.stringKey(k), v) }
 
-        ctxStorage match {
-          case cs: ContextStorage.ZIOFiberRef             =>
-            context.get(cs.ref).foreach(builder.setContext)
-          case _: ContextStorage.JavaOtelThreadLocal.type =>
-            builder.setContext(Context.current())
-        }
+        context.get(ctxStorage.ref).foreach(builder.setContext)
 
         builder.emit()
       }
