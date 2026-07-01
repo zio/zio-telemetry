@@ -11,7 +11,7 @@ addSbtPlugin("dev.zio"                           % "zio-sbt-ecosystem"         %
 addSbtPlugin("dev.zio"                           % "zio-sbt-website"           % zioSbtVersion)
 addSbtPlugin("com.typesafe"                      % "sbt-mima-plugin"           % "1.1.6")
 addSbtPlugin("com.github.cb372"                  % "sbt-explicit-dependencies" % "0.3.1")
-addSbtPlugin("ch.epfl.scala"                     % "sbt-missinglink"           % "0.3.6")
+addSbtPlugin("ch.epfl.scala"                     % "sbt-missinglink"           % "0.3.7")
 
 libraryDependencies += "org.snakeyaml" % "snakeyaml-engine" % "3.0.1"
 libraryDependencies += "com.spotify"   % "missinglink-core" % "0.2.11"
