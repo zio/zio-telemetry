@@ -2,9 +2,14 @@ package zio.telemetry.opentelemetry.zio.logging
 
 import io.opentelemetry.api.trace.Tracer
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
-import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.data.SpanData
+// format: off
+// scalafix:off OrganizeImports
+// `export` is a Scala 3 keyword, so this package reference must remain escaped.
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
+// scalafix:on OrganizeImports
+// format: on
+import io.opentelemetry.sdk.trace.SdkTracerProvider
 import zio.Runtime.removeDefaultLoggers
 import zio.telemetry.opentelemetry.context.ContextStorage
 import zio.telemetry.opentelemetry.tracing.Tracing

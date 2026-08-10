@@ -31,9 +31,9 @@ const siteConfig = {
 
   // For no header links in the top nav bar -> headerLinks: [],
   headerLinks: [
-    {doc: 'overview/overview_index', label: 'Overview'},
-    {doc: 'usecases/usecases_index', label: 'Use Cases'},
-    {doc: 'about/about_index', label: 'About'}
+    {doc: 'index', label: 'Overview'},
+    {doc: 'opentelemetry', label: 'OpenTelemetry'},
+    {doc: 'opentracing', label: 'OpenTracing'}
   ],
 
   // by default Docusaurus combines CSS files in a way that doesn't play nicely with Scaladoc
@@ -102,7 +102,7 @@ const siteConfig = {
     cornerOffset: 100,
   },
 
-  customDocsPath: 'zio-telemetry-docs/target/mdoc',
+  customDocsPath: 'docs',
 
   algolia: {
     apiKey: 'b7978c4d7d28a5a9181d2eea975b0e99',

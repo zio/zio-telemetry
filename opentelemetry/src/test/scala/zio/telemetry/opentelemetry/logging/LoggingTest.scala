@@ -1,9 +1,14 @@
 package zio.telemetry.opentelemetry.logging
 
 import io.opentelemetry.api.logs.{LoggerProvider, Severity}
-import io.opentelemetry.sdk.logs.SdkLoggerProvider
 import io.opentelemetry.sdk.logs.data.LogRecordData
+// format: off
+// scalafix:off OrganizeImports
+// `export` is a Scala 3 keyword, so this package reference must remain escaped.
 import io.opentelemetry.sdk.logs.`export`.SimpleLogRecordProcessor
+// scalafix:on OrganizeImports
+// format: on
+import io.opentelemetry.sdk.logs.SdkLoggerProvider
 import io.opentelemetry.sdk.testing.exporter.InMemoryLogRecordExporter
 import zio._
 import zio.telemetry.opentelemetry.context.ContextStorage

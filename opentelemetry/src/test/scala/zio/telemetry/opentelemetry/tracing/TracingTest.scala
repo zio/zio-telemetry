@@ -4,9 +4,14 @@ import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.trace.{Span, SpanId, StatusCode, Tracer}
 import io.opentelemetry.context.Context
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
-import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.data.SpanData
+// format: off
+// scalafix:off OrganizeImports
+// `export` is a Scala 3 keyword, so this package reference must remain escaped.
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
+// scalafix:on OrganizeImports
+// format: on
+import io.opentelemetry.sdk.trace.SdkTracerProvider
 import zio._
 import zio.telemetry.opentelemetry.common.{Attribute, Attributes}
 import zio.telemetry.opentelemetry.context.{ContextStorage, IncomingContextCarrier, OutgoingContextCarrier}

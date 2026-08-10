@@ -1,7 +1,12 @@
 package zio.telemetry.opencensus
 
-import io.opencensus.trace.`export`.SpanData
 import io.opencensus.trace.samplers.Samplers
+// format: off
+// scalafix:off OrganizeImports
+// `export` is a Scala 3 keyword, so this package reference must remain escaped.
+import io.opencensus.trace.`export`.SpanData
+// scalafix:on OrganizeImports
+// format: on
 import io.opencensus.trace.{SpanId, Tracer, Tracing => OTracing}
 import zio._
 import zio.test.Assertion._

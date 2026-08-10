@@ -1,7 +1,12 @@
 package zio.telemetry.opencensus
 
+// format: off
+// scalafix:off OrganizeImports
+// `export` is a Scala 3 keyword, so these package references must remain escaped.
 import io.opencensus.trace.`export`.SpanData
 import io.opencensus.trace.`export`.SpanExporter.Handler
+// scalafix:on OrganizeImports
+// format: on
 import io.opencensus.trace.{Tracing => OTracing}
 import zio.{Ref, Runtime, Unsafe, ZIO}
 
