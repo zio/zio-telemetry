@@ -43,7 +43,7 @@ object StatusMapper {
   }
 
   /**
-   * Default case allows overriding the default behavior from the official specfication:
+   * Default case allows overriding the default behavior from the official specification:
    * [[https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/api.md#set-status Set status]]
    *
    * @param success
@@ -51,7 +51,7 @@ object StatusMapper {
    */
   sealed class Default[-E, -A](
     success: PartialFunction[A, Result.Success] = PartialFunction.empty,
-    failure: PartialFunction[E, Result.Failure] = PartialFunction.empty
+    failure: PartialFunction[Cause[E], Result.Failure] = PartialFunction.empty
   ) extends StatusMapper[E, A] {
 
     override def handleSuccess(span: Span, a: A)(implicit trace: Trace): UIO[Unit] =
@@ -68,8 +68,8 @@ object StatusMapper {
 
     override def handleFailure(span: Span, cause: Cause[E])(implicit trace: Trace): UIO[Unit] = {
       val result =
-        cause.failureOption
-          .flatMap(failure.lift)
+        failure
+          .lift(cause)
           .getOrElse(StatusMapper.Result.Failure(StatusCode.ERROR))
 
       for {
@@ -101,10 +101,10 @@ object StatusMapper {
    * @param pf
    *   partial function to map the ZIO failure to [[io.opentelemetry.api.trace.StatusCode]] and [[java.lang.Throwable]].
    *   The latter is used to record the exception, see:
-   *   [[https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/exceptions.md#recording-an-exception]]u
+   *   [[https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/exceptions.md#recording-an-exception]]
    * @tparam E
    */
-  final case class Failure[-E](pf: PartialFunction[E, Result.Failure]) extends Default[E, Any](failure = pf)
+  final case class Failure[-E](pf: PartialFunction[Cause[E], Result.Failure]) extends Default[E, Any](failure = pf)
 
   /**
    * The equivalent of bi-map for StatusMapper.
@@ -165,8 +165,12 @@ object StatusMapper {
   def both[E, A](success: Success[A], failure: Failure[E]): Both[E, A] =
     Both(success, failure)
 
+  private def failureFromZIOFailure[E](e: E => Result.Failure): Failure[E] =
+    Failure(Function.unlift(cause => cause.failureOption.map(e)))
+
   /**
-   * Overrides the status code, description, and exception for a failure case.
+   * Overrides the status code, description, and exception for a failure case stemming from an (expected) effect
+   * failure.
    *
    * Usage example:
    * {{{
@@ -181,10 +185,28 @@ object StatusMapper {
   def failure[E](toStatusCode: E => StatusCode)(toDescription: E => Option[String])(
     toException: E => Option[Throwable]
   ): Failure[E] =
+    failureFromZIOFailure(e => Result.Failure(toStatusCode(e), toDescription(e), toException(e)))
+
+  /**
+   * Overrides the status code, description, and exception for a failure case stemming from any effect error.
+   *
+   * Usage example:
+   * {{{
+   *   StatusMapper.failure[MyError](_ => StatusCode.ERROR)(e => e.failureOption.map(e.message))(e => e.failureOption.map(e => new RuntimeException(e.message)))
+   * }}}
+   *
+   * @param toStatusCode
+   * @param toDescription
+   * @param toException
+   * @return
+   */
+  def failureCause[E](toStatusCode: Cause[E] => StatusCode)(toDescription: Cause[E] => Option[String])(
+    toException: Cause[E] => Option[Throwable]
+  ): Failure[E] =
     Failure { case e => Result.Failure(toStatusCode(e), toDescription(e), toException(e)) }
 
   /**
-   * Overrides the status code and exception for a failure case.
+   * Overrides the status code and exception for a failure case stemming from an (expected) effect failure.
    *
    * Usage example:
    * {{{
@@ -196,10 +218,28 @@ object StatusMapper {
    * @return
    */
   def failureNoDescription[E](toStatusCode: E => StatusCode)(toException: E => Option[Throwable]): Failure[E] =
+    failureFromZIOFailure(e => Result.Failure(toStatusCode(e), exception = toException(e)))
+
+  /**
+   * Overrides the status code and exception for a failure case stemming from any effect error.
+   *
+   * Usage example:
+   * {{{
+   *   StatusMapper.failureNoDescription[MyError](_ => StatusCode.ERROR)(e => e.failureOption.map(e => new RuntimeException(e.message))))
+   * }}}
+   *
+   * @param toStatusCode
+   * @param toException
+   * @return
+   */
+  def failureCauseNoDescription[E](toStatusCode: Cause[E] => StatusCode)(
+    toException: Cause[E] => Option[Throwable]
+  ): Failure[E] =
     Failure { case e => Result.Failure(toStatusCode(e), exception = toException(e)) }
 
   /**
-   * Overrides the status code and description, but skips exception for a failure case.
+   * Overrides the status code and description, but skips exception for a failure case stemming from an (expected)
+   * effect failure.
    *
    * Usage example:
    * {{{
@@ -210,10 +250,26 @@ object StatusMapper {
    * @return
    */
   def failureNoException[E](toStatusCode: E => StatusCode)(toDescription: E => Option[String]): Failure[E] =
+    failureFromZIOFailure(e => Result.Failure(toStatusCode(e), description = toDescription(e)))
+
+  /**
+   * Overrides the status code and description, but skips exception for any effect error.
+   *
+   * Usage example:
+   * {{{
+   *   StatusMapper.failureNoException[MyError](_ => StatusCode.ERROR)(e => e.failureOption(e => e.message)))
+   * }}}
+   *
+   * @param toStatusCode
+   * @return
+   */
+  def failureCauseNoException[E](toStatusCode: Cause[E] => StatusCode)(
+    toDescription: Cause[E] => Option[String]
+  ): Failure[E] =
     Failure { case e => Result.Failure(toStatusCode(e), description = toDescription(e)) }
 
   /**
-   * Overrides the status code and adds an exception for a failure case.
+   * Overrides the status code and adds an exception for a failure case stemming from an (expected) effect failure.
    *
    * Usage example:
    * {{{
@@ -224,7 +280,7 @@ object StatusMapper {
    * @return
    */
   def failureThrowable(toStatusCode: Throwable => StatusCode): Failure[Throwable] =
-    Failure { case e => Result.Failure(toStatusCode(e), None, Option(e)) }
+    failureFromZIOFailure(e => Result.Failure(toStatusCode(e), None, Option(e)))
 
   /**
    * Overrides the status code and description for a success case.

@@ -460,7 +460,9 @@ object TracerTest extends ZIOSpecDefault {
           assert(okNoDescription)(isSome(assertOkNoDescription)) &&
           assert(error)(isSome(assertError))
       },
-      test("failure && failureNoException && failureNoDescription") {
+      test(
+        "failure && failureNoException && failureNoDescription && failureCause && failureCauseNoException && failureCauseNoDescription"
+      ) {
         val assertOkStatusCode     = assertSpanStatusCode(equalTo(StatusCode.OK))
         val assertOkDescription    = assertSpanDescription(equalTo(""))
         val assertOkExceptionEmpty = assertSpanException(isEmpty)
@@ -475,17 +477,33 @@ object TracerTest extends ZIOSpecDefault {
         val assertErrorException        = assertSpanException(
           hasSubset(List("exception.message" -> "Error", "exception.type" -> "java.lang.RuntimeException"))
         )
+        val assertErrorFiberFailure     = assertSpanException(
+          hasSubset(List("exception.message" -> "Error(Error)", "exception.type" -> "zio.FiberFailure"))
+        )
+        val assertBoomRuntimeException  = assertSpanException(
+          hasSubset(List("exception.message" -> "boom", "exception.type" -> "java.lang.RuntimeException"))
+        )
 
-        val assertOkNoException               =
+        val assertOkNoException                 =
           assertOkStatusCode && assertOkDescription && assertOkExceptionEmpty
-        val assertOkNoExceptionAndDescription =
+        val assertOkNoExceptionAndDescription   =
           assertOkStatusCode && assertOkDescription && assertOkExceptionEmpty
-        val assertOkWithException             =
+        val assertOkWithException               =
           assertOkStatusCode && assertOkDescription && assertOkExceptionIsSet
-        val assertErrorNoException            =
+        val assertErrorNoException              =
           assertErrorStatusCode && assertErrorExceptionEmpty && assertErrorDescription
-        val assertErrorNoDescription          =
+        val assertErrorNoExceptionNoDescription =
+          assertErrorStatusCode && assertErrorExceptionEmpty && assertErrorDescriptionEmpty
+        val assertErrorNoDescription            =
           assertErrorStatusCode && assertErrorException && assertErrorDescriptionEmpty
+        val assertErrorCause                    =
+          assertErrorStatusCode && assertErrorFiberFailure && assertErrorDescription
+        val assertErrorCauseNoException         =
+          assertErrorStatusCode && assertErrorExceptionEmpty && assertErrorDescription
+        val assertErrorCauseNoDescription       =
+          assertErrorStatusCode && assertErrorFiberFailure && assertErrorDescriptionEmpty
+        val assertErrorRuntimeBoom              =
+          assertErrorStatusCode && assertBoomRuntimeException && assertErrorDescription
 
         final case class Error(message: String)
 
@@ -544,6 +562,43 @@ object TracerTest extends ZIOSpecDefault {
                   Some(new RuntimeException(e.message))
                 )
               )).either
+          _ <-
+            (ZIO.fail(Error("Error")) @@
+              tracer.aspects.span(
+                "error-cause",
+                statusMapper = StatusMapper.failureCause[Error](_ => StatusCode.ERROR)(_ => Some("Error"))(e =>
+                  Some(FiberFailure(e))
+                )
+              )).either
+          _ <-
+            (ZIO.fail(Error("Error")) @@
+              tracer.aspects.span(
+                "error-cause-no-exception",
+                statusMapper = StatusMapper.failureCauseNoException[Error](_ => StatusCode.ERROR)(_ => Some("Error"))
+              )).either
+          _ <-
+            (ZIO.fail(Error("Error")) @@
+              tracer.aspects.span(
+                "error-cause-no-description",
+                statusMapper =
+                  StatusMapper.failureCauseNoDescription[Error](_ => StatusCode.ERROR)(e => Some(FiberFailure(e)))
+              )).either
+          _ <-
+            (ZIO.die(new RuntimeException("boom")) @@
+              tracer.aspects.span(
+                "error-die",
+                statusMapper = StatusMapper.failure[Error](_ => StatusCode.ERROR)(_ => Some("Error"))(e =>
+                  Some(new RuntimeException(e.message))
+                )
+              )).sandbox.ignore
+          _ <-
+            (ZIO.die(new RuntimeException("boom")) @@
+              tracer.aspects.span(
+                "error-cause-die",
+                statusMapper = StatusMapper.failureCause[Error](_ => StatusCode.ERROR)(_ => Some("Error"))(e =>
+                  Some(new RuntimeException(FiberFailure(e).getMessage()))
+                )
+              )).sandbox.ignore
 
           spans                      <- tracerTestkit.getFinishedSpans
           okNoException               = spans.find(_.name == "ok-no-exception")
@@ -553,13 +608,24 @@ object TracerTest extends ZIOSpecDefault {
           errorNoException            = spans.find(_.name == "error-no-exception")
           errorNoDescription          = spans.find(_.name == "error-no-description")
           errorNoDescription1         = spans.find(_.name == "error-no-description-1")
+          errorCause                  = spans.find(_.name == "error-cause")
+          errorCauseNoException       = spans.find(_.name == "error-cause-no-exception")
+          errorCauseNoDescription     = spans.find(_.name == "error-cause-no-description")
+          errorDie                    = spans.find(_.name == "error-die")
+          errorCauseDie               = spans.find(_.name == "error-cause-die")
         } yield assert(okNoException)(isSome(assertOkNoException)) &&
           assert(okNoException1)(isSome(assertOkNoException)) &&
           assert(okNoExceptionAndDescription)(isSome(assertOkNoExceptionAndDescription)) &&
           assert(okWithException)(isSome(assertOkWithException)) &&
           assert(errorNoException)(isSome(assertErrorNoException)) &&
           assert(errorNoDescription)(isSome(assertErrorNoDescription)) &&
-          assert(errorNoDescription1)(isSome(assertErrorNoDescription))
+          assert(errorNoDescription1)(isSome(assertErrorNoDescription)) &&
+          assert(errorCause)(isSome(assertErrorCause)) &&
+          assert(errorCauseNoException)(isSome(assertErrorCauseNoException)) &&
+          assert(errorCauseNoDescription)(isSome(assertErrorCauseNoDescription)) &&
+          // the non-cause version doesn't set exception nor description for defects
+          assert(errorDie)(isSome(assertErrorNoExceptionNoDescription)) &&
+          assert(errorCauseDie)(isSome(assertErrorRuntimeBoom))
       },
       test("failureThrowable") {
         val assertOkStatusCode  = assertSpanStatusCode(equalTo(StatusCode.OK))
