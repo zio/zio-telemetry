@@ -3,7 +3,7 @@ package zio.telemetry.opentelemetry.logging
 import io.opentelemetry.api.logs.{LoggerProvider, Severity}
 import io.opentelemetry.sdk.logs.SdkLoggerProvider
 import io.opentelemetry.sdk.logs.data.LogRecordData
-import io.opentelemetry.sdk.logs.`export`.SimpleLogRecordProcessor
+import io.opentelemetry.sdk.logs.export.SimpleLogRecordProcessor
 import io.opentelemetry.sdk.testing.exporter.InMemoryLogRecordExporter
 import zio._
 import zio.telemetry.opentelemetry.context.ContextStorage

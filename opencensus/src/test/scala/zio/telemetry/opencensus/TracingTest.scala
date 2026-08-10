@@ -1,6 +1,6 @@
 package zio.telemetry.opencensus
 
-import io.opencensus.trace.`export`.SpanData
+import io.opencensus.trace.export.SpanData
 import io.opencensus.trace.samplers.Samplers
 import io.opencensus.trace.{SpanId, Tracer, Tracing => OTracing}
 import zio._
