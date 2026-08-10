@@ -1,7 +1,14 @@
 val zioSbtVersion = "0.4.0-alpha.10"
 
+// Avoid legacy git plugins, whose JGit reader cannot read linked worktrees.
+excludeDependencies += "com.geirsson" % "sbt-ci-release"
+excludeDependencies += "com.dwijnand" % "sbt-dynver"
+
 addSbtPlugin("com.thoughtworks.sbt-api-mappings" % "sbt-api-mappings"  % "3.0.2")
 addSbtPlugin("com.github.sbt"                    % "sbt-unidoc"        % "0.5.0")
+addSbtPlugin("com.github.sbt"                    % "sbt-git"           % "2.1.0")
+addSbtPlugin("com.github.sbt"                    % "sbt-ci-release"    % "1.11.2")
+addSbtPlugin("com.github.sbt"                    % "sbt-dynver"        % "5.1.1")
 addSbtPlugin("ch.epfl.scala"                     % "sbt-bloop"         % "1.5.6")
 addSbtPlugin("io.github.davidgregory084"         % "sbt-tpolecat"      % "0.4.2")
 addSbtPlugin("org.scalameta"                     % "sbt-scalafmt"      % "2.4.6")

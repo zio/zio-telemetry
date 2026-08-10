@@ -1,3 +1,5 @@
+import com.github.sbt.git.SbtGit.GitKeys.useConsoleForROGit
+
 enablePlugins(ZioSbtEcosystemPlugin, ZioSbtCiPlugin)
 
 inThisBuild(
@@ -23,6 +25,8 @@ inThisBuild(
     ),
     crossScalaVersions := Seq(scala212.value, scala213.value, "3.3.0"),
     ciEnabledBranches  := Seq("series/2.x"),
+    // Workaround for git worktrees
+    useConsoleForROGit := true,
     pgpPassphrase      := sys.env.get("PGP_PASSWORD").map(_.toArray),
     pgpPublicRing      := file("/tmp/public.asc"),
     pgpSecretRing      := file("/tmp/secret.asc"),
