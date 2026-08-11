@@ -6,7 +6,7 @@ import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import zio._
 import zio.telemetry.opentelemetry.core.context.internal.ContextStorage
-import zio.telemetry.opentelemetry.core.trace.Tracer
+import zio.telemetry.opentelemetry.core.trace.{StatusMapper, Tracer}
 
 import scala.jdk.CollectionConverters._
 
@@ -20,7 +20,8 @@ trait TracerTestkit {
     instrumentationScopeName: String,
     instrumentationVersion: Option[String] = None,
     schemaUrl: Option[String] = None,
-    logAnnotated: Boolean = false
+    logAnnotated: Boolean = false,
+    statusMapper: StatusMapper[Any, Any] = StatusMapper.default
   )(implicit trace: Trace): Task[Tracer]
 
   trait UnsafeAPI {
@@ -31,7 +32,11 @@ trait TracerTestkit {
       schemaUrl: Option[String] = None
     )(implicit trace: Trace): Task[JTracer]
 
-    def getTracerFromJava(jtracer: JTracer, logAnnotated: Boolean = false): Task[Tracer]
+    def getTracerFromJava(
+      jtracer: JTracer,
+      logAnnotated: Boolean = false,
+      statusMapper: StatusMapper[Any, Any] = StatusMapper.default
+    ): Task[Tracer]
 
     def getTracerProvider: SdkTracerProvider
 
@@ -68,8 +73,12 @@ object TracerTestkit {
               builder.build
             }
 
-            override def getTracerFromJava(jtracer: JTracer, logAnnotated: Boolean = false): Task[Tracer] =
-              ZIO.succeed(Tracer.make(jtracer, ctxStorage, logAnnotated))
+            override def getTracerFromJava(
+              jtracer: JTracer,
+              logAnnotated: Boolean = false,
+              statusMapper: StatusMapper[Any, Any] = StatusMapper.default
+            ): Task[Tracer] =
+              ZIO.succeed(Tracer.make(jtracer, ctxStorage, logAnnotated, statusMapper))
 
             override def getTracerProvider: SdkTracerProvider =
               tracerProvider
@@ -89,11 +98,12 @@ object TracerTestkit {
           instrumentationScopeName: String,
           instrumentationVersion: Option[String] = None,
           schemaUrl: Option[String] = None,
-          logAnnotated: Boolean = false
+          logAnnotated: Boolean = false,
+          statusMapper: StatusMapper[Any, Any] = StatusMapper.default
         )(implicit trace: Trace): Task[Tracer] =
           for {
             jtracer <- unsafe.getTracer(instrumentationScopeName, instrumentationVersion, schemaUrl)
-            tracer  <- unsafe.getTracerFromJava(jtracer, logAnnotated)
+            tracer  <- unsafe.getTracerFromJava(jtracer, logAnnotated, statusMapper)
           } yield tracer
 
       }

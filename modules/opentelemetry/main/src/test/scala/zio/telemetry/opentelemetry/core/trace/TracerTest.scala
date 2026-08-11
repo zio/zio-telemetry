@@ -378,18 +378,54 @@ object TracerTest extends ZIOSpecDefault {
         val assertDefaultFailed =
           assertFailedStatusCode && assertFailedDescription
 
+        val assertErrorExceptionEmpty = assertSpanException(isEmpty)
+
         for {
           tracerTestkit <- ZIO.service[TracerTestkit]
-          tracer        <- tracerTestkit.getTracer(instrumentationScopeName)
-          _             <- ZIO.unit @@ tracer.aspects.span("default-ok", statusMapper = StatusMapper.default)
+          tracer        <- tracerTestkit.getTracer(instrumentationScopeName, statusMapper = StatusMapper.default)
+          _             <- ZIO.unit @@ tracer.aspects.span("default-ok")
           _             <- (
                              ZIO.fail(new RuntimeException("Error")) @@
-                               tracer.aspects.span("default-failed", statusMapper = StatusMapper.default)
+                               tracer.aspects.span("default-failed")
                            ).either
           spans         <- tracerTestkit.getFinishedSpans
           defaultOk      = spans.find(_.name == "default-ok")
           defaultFailed  = spans.find(_.name == "default-failed")
-        } yield assert(defaultOk)(isSome(assertDefaultOk)) && assert(defaultFailed)(isSome(assertDefaultFailed))
+        } yield assert(defaultOk)(isSome(assertDefaultOk)) && assert(defaultFailed)(
+          isSome(assertDefaultFailed && assertErrorExceptionEmpty)
+        )
+      },
+      test("defaultRecordingExceptions") {
+        val assertOkStatusCode  = assertSpanStatusCode(equalTo(StatusCode.UNSET))
+        val assertOkDescription = assertSpanDescription(equalTo(""))
+
+        val assertFailedStatusCode  = assertSpanStatusCode(equalTo(StatusCode.ERROR))
+        val assertFailedDescription = assertSpanDescription(equalTo(""))
+
+        val assertDefaultOk     =
+          assertOkStatusCode && assertOkDescription
+        val assertDefaultFailed =
+          assertFailedStatusCode && assertFailedDescription
+
+        val assertErrorRuntimeException = assertSpanException(
+          hasSubset(List("exception.message" -> "Error", "exception.type" -> "zio.FiberFailure"))
+        )
+
+        for {
+          tracerTestkit <- ZIO.service[TracerTestkit]
+          tracer        <-
+            tracerTestkit.getTracer(instrumentationScopeName, statusMapper = StatusMapper.defaultRecordingExceptions)
+          _             <- ZIO.unit @@ tracer.aspects.span("default-ok")
+          _             <- (
+                             ZIO.fail(new RuntimeException("Error")) @@
+                               tracer.aspects.span("default-failed")
+                           ).either
+          spans         <- tracerTestkit.getFinishedSpans
+          defaultOk      = spans.find(_.name == "default-ok")
+          defaultFailed  = spans.find(_.name == "default-failed")
+        } yield assert(defaultOk)(isSome(assertDefaultOk)) && assert(defaultFailed)(
+          isSome(assertDefaultFailed && assertErrorRuntimeException)
+        )
       },
       test("both") {
         val assertDefaultOkStatusCode  = assertSpanStatusCode(equalTo(StatusCode.UNSET))

@@ -141,11 +141,17 @@ object StatusMapper {
     new Empty
 
   /**
-   * It follows the offical specification:
+   * It follows the official specification:
    * [[https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/trace/api.md#set-status Set status]]
    */
   val default: Default[Any, Any] =
     new Default()
+
+  /**
+   * Same as [[default]] above, but also sets exception stack traces
+   */
+  val defaultRecordingExceptions: Failure[Any] =
+    StatusMapper.failureCauseNoDescription[Any](_ => StatusCode.ERROR)(c => Some(FiberFailure(c)))
 
   /**
    * Overrides both success and failure cases of the default status mapper.

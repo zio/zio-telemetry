@@ -11,6 +11,8 @@ import scala.concurrent.ExecutionContext
 
 trait Tracer { self =>
 
+  protected val defaultStatusMapper: StatusMapper[Any, Any]
+
   /**
    * Sets the new span to be the new root span with name 'spanName'.
    *
@@ -36,7 +38,7 @@ trait Tracer { self =>
     spanName: String,
     spanKind: SpanKind = SpanKind.SERVER,
     attributes: Attributes = Attributes.empty(),
-    statusMapper: StatusMapper[E, A] = StatusMapper.default,
+    statusMapper: StatusMapper[E, A] = defaultStatusMapper,
     links: Seq[SpanContext] = Seq.empty
   )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1]
 
@@ -65,7 +67,7 @@ trait Tracer { self =>
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     attributes: Attributes = Attributes.empty(),
-    statusMapper: StatusMapper[E, A] = StatusMapper.default,
+    statusMapper: StatusMapper[E, A] = defaultStatusMapper,
     links: Seq[SpanContext] = Seq.empty
   )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1]
 
@@ -87,7 +89,7 @@ trait Tracer { self =>
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     attributes: Attributes = Attributes.empty(),
-    statusMapper: StatusMapper[E, A] = StatusMapper.default,
+    statusMapper: StatusMapper[E, A] = defaultStatusMapper,
     links: Seq[SpanContext] = Seq.empty
   )(implicit trace: Trace): ZIO[Scope, Nothing, Span]
 
@@ -154,7 +156,7 @@ trait Tracer { self =>
     spanName: String,
     spanKind: SpanKind = SpanKind.INTERNAL,
     attributes: Attributes = Attributes.empty(),
-    statusMapper: StatusMapper[E, A] = StatusMapper.default,
+    statusMapper: StatusMapper[E, A] = defaultStatusMapper,
     links: Seq[SpanContext] = Seq.empty
   )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1]
 
@@ -215,7 +217,7 @@ trait Tracer { self =>
       spanName: String,
       spanKind: SpanKind = SpanKind.SERVER,
       attributes: Attributes = Attributes.empty(),
-      statusMapper: StatusMapper[E1, A1] = StatusMapper.default,
+      statusMapper: StatusMapper[E1, A1] = defaultStatusMapper,
       links: Seq[SpanContext] = Seq.empty
     ): ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] =
       new ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] {
@@ -227,7 +229,7 @@ trait Tracer { self =>
       spanName: String,
       spanKind: SpanKind = SpanKind.INTERNAL,
       attributes: Attributes = Attributes.empty(),
-      statusMapper: StatusMapper[E1, A1] = StatusMapper.default,
+      statusMapper: StatusMapper[E1, A1] = defaultStatusMapper,
       links: Seq[SpanContext] = Seq.empty
     ): ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] =
       new ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] {
@@ -240,7 +242,7 @@ trait Tracer { self =>
       spanName: String,
       spanKind: SpanKind = SpanKind.INTERNAL,
       attributes: Attributes = Attributes.empty(),
-      statusMapper: StatusMapper[E1, A1] = StatusMapper.default,
+      statusMapper: StatusMapper[E1, A1] = defaultStatusMapper,
       links: Seq[SpanContext] = Seq.empty
     ): ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] =
       new ZIOAspect[Nothing, Any, Nothing, E1, Nothing, A1] {
@@ -254,13 +256,20 @@ trait Tracer { self =>
 
 private[opentelemetry] object Tracer {
 
-  def make(tracer: JTracer, ctxStorage: ContextStorage, logAnnotated: Boolean = false): Tracer =
+  def make(
+    tracer: JTracer,
+    ctxStorage: ContextStorage,
+    logAnnotated: Boolean = false,
+    statusMapper: StatusMapper[Any, Any] = StatusMapper.default
+  ): Tracer =
     new Tracer { self =>
+      override protected val defaultStatusMapper: StatusMapper[Any, Any] = statusMapper
+
       override def root[R, E, E1 <: E, A, A1 <: A](
         spanName: String,
         spanKind: SpanKind = SpanKind.SERVER,
         attributes: Attributes = Attributes.empty(),
-        statusMapper: StatusMapper[E, A] = StatusMapper.default,
+        statusMapper: StatusMapper[E, A] = defaultStatusMapper,
         links: Seq[SpanContext] = Seq.empty
       )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
         ZIO.acquireReleaseWith {
@@ -275,7 +284,7 @@ private[opentelemetry] object Tracer {
         spanName: String,
         spanKind: SpanKind = SpanKind.INTERNAL,
         attributes: Attributes = Attributes.empty(),
-        statusMapper: StatusMapper[E, A] = StatusMapper.default,
+        statusMapper: StatusMapper[E, A] = defaultStatusMapper,
         links: Seq[SpanContext] = Seq.empty
       )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
         for {
@@ -293,7 +302,7 @@ private[opentelemetry] object Tracer {
         spanName: String,
         spanKind: SpanKind = SpanKind.INTERNAL,
         attributes: Attributes,
-        statusMapper: StatusMapper[E, A] = StatusMapper.default,
+        statusMapper: StatusMapper[E, A] = defaultStatusMapper,
         links: Seq[SpanContext]
       )(implicit trace: Trace): ZIO[Scope, Nothing, Span] =
         for {
@@ -325,7 +334,7 @@ private[opentelemetry] object Tracer {
         spanName: String,
         spanKind: SpanKind = SpanKind.INTERNAL,
         attributes: Attributes = Attributes.empty(),
-        statusMapper: StatusMapper[E, A] = StatusMapper.default,
+        statusMapper: StatusMapper[E, A] = defaultStatusMapper,
         links: Seq[SpanContext] = Seq.empty
       )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
         ZIO.acquireReleaseWith {
