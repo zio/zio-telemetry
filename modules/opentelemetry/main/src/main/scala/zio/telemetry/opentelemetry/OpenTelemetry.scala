@@ -8,7 +8,7 @@ import zio.telemetry.opentelemetry.core.context.internal.ContextStorage
 import zio.telemetry.opentelemetry.core.logs.Logger
 import zio.telemetry.opentelemetry.core.metrics.Meter
 import zio.telemetry.opentelemetry.core.metrics.internal.{Instrument, InstrumentRegistry, OtelMetricListener}
-import zio.telemetry.opentelemetry.core.trace.Tracer
+import zio.telemetry.opentelemetry.core.trace.{StatusMapper, Tracer}
 
 /**
  * The entrypoint to telemetry functionality for tracer, metrics, logger and baggage.
@@ -82,7 +82,8 @@ object OpenTelemetry {
     instrumentationScopeName: String,
     instrumentationVersion: Option[String] = None,
     schemaUrl: Option[String] = None,
-    logAnnotated: Boolean = false
+    logAnnotated: Boolean = false,
+    statusMapper: StatusMapper[Any, Any] = StatusMapper.default
   )(implicit trace: Trace): URLayer[core.OpenTelemetry, Tracer] = {
     def buildTracer(openTelemetry: JOpenTelemetry) = {
       val builder = openTelemetry.tracerBuilder(instrumentationScopeName)
@@ -97,7 +98,7 @@ object OpenTelemetry {
       for {
         openTelemetry <- ZIO.service[core.OpenTelemetry]
         jtracer        = buildTracer(openTelemetry.unsafe.asJava)
-        tracer         = Tracer.make(jtracer, openTelemetry.unsafe.getCtxStorage, logAnnotated)
+        tracer         = Tracer.make(jtracer, openTelemetry.unsafe.getCtxStorage, logAnnotated, statusMapper)
       } yield tracer
     }
   }
