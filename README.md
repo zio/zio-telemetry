@@ -31,13 +31,13 @@ ZIO Telemetry is a purely functional client which helps up propagate context bet
 In order to use this library, we need to add the following line in our `build.sbt` file if we want to use [OpenTelemetry](https://opentelemetry.io/) client:
 
 ```scala
-libraryDependencies += "dev.zio" %% "zio-opentelemetry" % "<version>"
+libraryDependencies += "dev.zio" %% "zio-opentelemetry" % "3.1.19"
 ```
 
 If you're using [ZIO Logging](https://github.com/zio/zio-logging) you can combine OpenTelemetry with ZIO Logging using:
 
 ```scala
-libraryDependencies += "dev.zio" %% "zio-opentelemetry-zio-logging" % "<version>"
+libraryDependencies += "dev.zio" %% "zio-opentelemetry-zio-logging" % "3.1.19"
 ```
 
 The support for third-party propagation protocols is available via the following modules:
@@ -53,7 +53,7 @@ libraryDependencies += "dev.zio" %% "zio-opentelemetry-extension-trace-propagato
 For using [OpenTracing](https://opentracing.io/) client we should add the following line in our `build.sbt` file:
 
 ```scala
-libraryDependencies += "dev.zio" %% "zio-opentracing" % "<version>"
+libraryDependencies += "dev.zio" %% "zio-opentracing" % "3.1.19"
 ```
 
 ### OpenCensus
@@ -61,7 +61,7 @@ libraryDependencies += "dev.zio" %% "zio-opentracing" % "<version>"
 And for using [OpenCensus](https://opencensus.io/) client we should add the following line in our `build.sbt` file:
 
 ```scala
-libraryDependencies += "dev.zio" %% "zio-opencensus" % "<version>"
+libraryDependencies += "dev.zio" %% "zio-opencensus" % "3.1.19"
 ```
 
 ## Examples

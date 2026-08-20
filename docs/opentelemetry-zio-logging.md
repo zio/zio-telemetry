@@ -12,7 +12,7 @@ In order to use `zio-opentelemetry` feature with `zio-logging` you should use `z
 ## Installation
 
 ```scala
-"dev.zio" %% "zio-opentelemetry-zio-logging" % "<version>"
+"dev.zio" %% "zio-opentelemetry-zio-logging" % "@VERSION@"
 ```
 
 ## Features
