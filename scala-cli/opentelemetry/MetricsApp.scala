@@ -7,9 +7,19 @@
 //> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.43.0
 
 import io.opentelemetry.sdk.trace.SdkTracerProvider
+// format: off
+// scalafix:off OrganizeImports
+// `export` is a Scala 3 keyword, so this package reference must remain escaped.
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
+// scalafix:on OrganizeImports
+// format: on
 import io.opentelemetry.sdk.metrics.SdkMeterProvider
+// format: off
+// scalafix:off OrganizeImports
+// `export` is a Scala 3 keyword, so this package reference must remain escaped.
 import io.opentelemetry.sdk.metrics.`export`.PeriodicMetricReader
+// scalafix:on OrganizeImports
+// format: on
 import io.opentelemetry.sdk.resources.Resource
 import io.opentelemetry.api.common
 import io.opentelemetry.semconv.ServiceAttributes

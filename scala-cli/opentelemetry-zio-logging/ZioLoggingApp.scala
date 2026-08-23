@@ -11,9 +11,19 @@ import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingLogRecordExporter
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.sdk.trace.SdkTracerProvider
+// format: off
+// scalafix:off OrganizeImports
+// `export` is a Scala 3 keyword, so this package reference must remain escaped.
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
+// scalafix:on OrganizeImports
+// format: on
 import io.opentelemetry.sdk.logs.SdkLoggerProvider
+// format: off
+// scalafix:off OrganizeImports
+// `export` is a Scala 3 keyword, so this package reference must remain escaped.
 import io.opentelemetry.sdk.logs.`export`.SimpleLogRecordProcessor
+// scalafix:on OrganizeImports
+// format: on
 import io.opentelemetry.sdk.resources.Resource
 import io.opentelemetry.semconv.ServiceAttributes
 import io.opentelemetry.sdk.OpenTelemetrySdk

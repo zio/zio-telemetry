@@ -1,7 +1,12 @@
 package zio.telemetry.opentelemetry.testkit.logs
 
 import io.opentelemetry.sdk.logs.SdkLoggerProvider
-import io.opentelemetry.sdk.logs.export.SimpleLogRecordProcessor
+// format: off
+// scalafix:off OrganizeImports
+// `export` is a Scala 3 keyword, so this package reference must remain escaped.
+import io.opentelemetry.sdk.logs.`export`.SimpleLogRecordProcessor
+// scalafix:on OrganizeImports
+// format: on
 import io.opentelemetry.sdk.testing.exporter.InMemoryLogRecordExporter
 import zio._
 import zio.telemetry.opentelemetry.core.context.internal.ContextStorage
