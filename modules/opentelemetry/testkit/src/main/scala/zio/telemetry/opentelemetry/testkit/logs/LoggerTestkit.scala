@@ -1,7 +1,7 @@
 package zio.telemetry.opentelemetry.testkit.logs
 
 import io.opentelemetry.sdk.logs.SdkLoggerProvider
-import io.opentelemetry.sdk.logs.`export`.SimpleLogRecordProcessor
+import io.opentelemetry.sdk.logs.export.SimpleLogRecordProcessor
 import io.opentelemetry.sdk.testing.exporter.InMemoryLogRecordExporter
 import zio._
 import zio.telemetry.opentelemetry.core.context.internal.ContextStorage

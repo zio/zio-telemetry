@@ -3,7 +3,7 @@ package zio.telemetry.opentelemetry.testkit.trace
 import io.opentelemetry.api.trace.{Tracer => JTracer}
 import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
 import io.opentelemetry.sdk.trace.SdkTracerProvider
-import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
+import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor
 import zio._
 import zio.telemetry.opentelemetry.core.context.internal.ContextStorage
 import zio.telemetry.opentelemetry.core.trace.{StatusMapper, Tracer}
