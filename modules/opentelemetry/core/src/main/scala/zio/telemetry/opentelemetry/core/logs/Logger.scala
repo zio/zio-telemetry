@@ -46,6 +46,13 @@ private[opentelemetry] object Logger {
         builder.setSeverityText(logLevel.label)
         builder.setSeverity(severityMapping(logLevel))
         annotations.foreach { case (k, v) => builder.setAttribute(AttributeKey.stringKey(k), v) }
+        if (!cause.isEmpty) {
+          val throwable = cause.failureOption match {
+            case Some(t: Throwable) => t
+            case _                  => FiberFailure(cause)
+          }
+          val _         = builder.setException(throwable)
+        }
 
         ctxStorage match {
           case cs: ContextStorage.ZIOFiberRef             =>

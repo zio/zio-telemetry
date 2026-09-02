@@ -49,6 +49,20 @@ object LoggerTest extends ZIOSpecDefault {
           LoggerTestkit.inMemory("filter log level", LogLevel.Warning),
           OpenTelemetryTestkit.ctxStorageZioFiberRef
         ),
+        test("exception cause") {
+          val exception = new IllegalArgumentException("boom")
+
+          for {
+            loggerTestkit <- ZIO.service[LoggerTestkit]
+            _             <- ZIO.logErrorCause("test", Cause.fail(exception))
+            logRecords    <- loggerTestkit.getFinishedLogRecords
+            record         = logRecords.head
+            attributes     = record.attributes.asMap
+          } yield assert(logRecords.length)(equalTo(1)) &&
+            assert(attributes.get("exception.type"))(isSome(equalTo("java.lang.IllegalArgumentException"))) &&
+            assert(attributes.get("exception.message"))(isSome(equalTo("boom"))) &&
+            assert(attributes.get("exception.stacktrace"))(isSome(containsString("IllegalArgumentException: boom")))
+        }.provide(LoggerTestkit.inMemory("exception cause"), OpenTelemetryTestkit.ctxStorageZioFiberRef),
         test("multiple loggers") {
           def logRecordsZIO(message: String) =
             for {
