@@ -63,6 +63,34 @@ object LoggerTest extends ZIOSpecDefault {
             assert(attributes.get("exception.message"))(isSome(equalTo("boom"))) &&
             assert(attributes.get("exception.stacktrace"))(isSome(containsString("IllegalArgumentException: boom")))
         }.provide(LoggerTestkit.inMemory("exception cause"), OpenTelemetryTestkit.ctxStorageZioFiberRef),
+        test("defect cause") {
+          val exception = new IllegalStateException("boom")
+
+          for {
+            loggerTestkit <- ZIO.service[LoggerTestkit]
+            _             <- ZIO.logErrorCause("test", Cause.die(exception))
+            logRecords    <- loggerTestkit.getFinishedLogRecords
+            attributes     = logRecords.head.attributes.asMap
+          } yield assert(attributes.get("exception.type"))(isSome(equalTo("java.lang.IllegalStateException"))) &&
+            assert(attributes.get("exception.message"))(isSome(equalTo("boom"))) &&
+            assert(attributes.get("exception.stacktrace"))(isSome(containsString("IllegalStateException: boom")))
+        }.provide(LoggerTestkit.inMemory("defect cause"), OpenTelemetryTestkit.ctxStorageZioFiberRef),
+        test("composite cause") {
+          val first  = new IllegalArgumentException("first")
+          val second = new IllegalStateException("second")
+
+          for {
+            loggerTestkit <- ZIO.service[LoggerTestkit]
+            _             <- ZIO.logErrorCause("test", Cause.fail(first) && Cause.fail(second))
+            logRecords    <- loggerTestkit.getFinishedLogRecords
+            attributes     = logRecords.head.attributes.asMap
+          } yield assert(attributes.get("exception.type"))(isSome(equalTo("zio.FiberFailure"))) &&
+            assert(attributes.get("exception.stacktrace"))(
+              isSome(
+                containsString("IllegalArgumentException: first") && containsString("IllegalStateException: second")
+              )
+            )
+        }.provide(LoggerTestkit.inMemory("composite cause"), OpenTelemetryTestkit.ctxStorageZioFiberRef),
         test("multiple loggers") {
           def logRecordsZIO(message: String) =
             for {
