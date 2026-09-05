@@ -67,7 +67,7 @@ inThisBuild(
     ),
     concurrentRestrictions += Tags.limit(missinglinkConflictsTag, 1),
     // TODO: remove once it is updated in zio-sbt
-    scala213          := "2.13.18"
+    scala213          := "3.9.0"
   )
 )
 
