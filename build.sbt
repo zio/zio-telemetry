@@ -90,9 +90,9 @@ ThisBuild / ciCheckWebsiteBuildProcess := Seq(
     name = "Check website build process",
     run = Some(
       """|sbt docs/clean "docs/installWebsite" "docs/mdoc"
-         |node -e "const fs=require('fs'),p='zio-telemetry-docs/target/website/package.json',pkg=JSON.parse(fs.readFileSync(p,'utf8'));pkg.overrides={webpack:'5.74.0'};fs.writeFileSync(p,JSON.stringify(pkg,null,2));"
-         |npm install --prefix zio-telemetry-docs/target/website
-         |npm --prefix zio-telemetry-docs/target/website run build""".stripMargin
+         |node -e "const fs=require('fs'),p='website/package.json',pkg=JSON.parse(fs.readFileSync(p,'utf8'));pkg.overrides={webpack:'5.74.0'};fs.writeFileSync(p,JSON.stringify(pkg,null,2));"
+         |npm install --prefix website
+         |npm --prefix website run build""".stripMargin
     )
   )
 )

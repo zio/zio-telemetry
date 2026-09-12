@@ -6,7 +6,12 @@ import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter
 import io.opentelemetry.sdk.resources.Resource
 import io.opentelemetry.sdk.trace.SdkTracerProvider
-import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor
+// format: off
+// scalafix:off OrganizeImports
+// `export` is a Scala 3 keyword, so this package reference must remain escaped.
+import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
+// scalafix:on OrganizeImports
+// format: on
 import io.opentelemetry.semconv.ServiceAttributes
 import zio._
 

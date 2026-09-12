@@ -1,15 +1,20 @@
 //> using scala "3.8.4"
 //> using dep dev.zio::zio:2.1.26
 //> using dep dev.zio::zio-opentelemetry:4.0.0-RC11
-//> using dep io.opentelemetry:opentelemetry-sdk:1.63.0
-//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.63.0
-//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.63.0
-//> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.42.0
+//> using dep io.opentelemetry:opentelemetry-sdk:1.65.0
+//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.65.0
+//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.65.0
+//> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.43.0
 
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter
 import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.sdk.trace.SdkTracerProvider
+// format: off
+// scalafix:off OrganizeImports
+// `export` is a Scala 3 keyword, so this package reference must remain escaped.
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
+// scalafix:on OrganizeImports
+// format: on
 import io.opentelemetry.sdk.resources.Resource
 import io.opentelemetry.semconv.ServiceAttributes
 import io.opentelemetry.api.common.Attributes

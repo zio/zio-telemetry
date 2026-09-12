@@ -3,7 +3,12 @@ package zio.telemetry.opentelemetry.example.otel
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingMetricExporter
 import io.opentelemetry.sdk.metrics.SdkMeterProvider
-import io.opentelemetry.sdk.metrics.export.PeriodicMetricReader
+// format: off
+// scalafix:off OrganizeImports
+// `export` is a Scala 3 keyword, so this package reference must remain escaped.
+import io.opentelemetry.sdk.metrics.`export`.PeriodicMetricReader
+// scalafix:on OrganizeImports
+// format: on
 import io.opentelemetry.sdk.resources.Resource
 import io.opentelemetry.semconv.ServiceAttributes
 import zio._
