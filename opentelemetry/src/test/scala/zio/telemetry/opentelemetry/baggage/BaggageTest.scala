@@ -16,7 +16,7 @@ object BaggageTest extends ZIOSpecDefault {
   def logAnnotatedBaggageLayer: ULayer[Baggage] =
     (ContextStorage.fiberRef >>> Baggage.live(logAnnotated = true))
 
-  def spec: Spec[Environment with TestEnvironment with Scope, Any] =
+  def spec: Spec[Environment & TestEnvironment & Scope, Any] =
     suite("zio opentelemetry")(
       suite("Baggage")(
         operationsSpec,

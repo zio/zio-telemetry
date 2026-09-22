@@ -59,7 +59,7 @@ object Instrument {
 
   private[opentelemetry] object Builder {
 
-    def live(logAnnotated: Boolean = false): URLayer[api.metrics.Meter with ContextStorage, Builder] =
+    def live(logAnnotated: Boolean = false): URLayer[api.metrics.Meter & ContextStorage, Builder] =
       ZLayer(
         for {
           meter      <- ZIO.service[api.metrics.Meter]
