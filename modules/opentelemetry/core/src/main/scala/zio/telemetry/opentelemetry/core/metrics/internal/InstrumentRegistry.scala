@@ -22,8 +22,8 @@ private[opentelemetry] object InstrumentRegistry {
   def concurrent(builder: Instrument.Builder): InstrumentRegistry =
     new InstrumentRegistry {
 
-      val map: ConcurrentHashMap[MetricKey[MetricKeyType], Instrument[_]] =
-        new ConcurrentHashMap[MetricKey[MetricKeyType], Instrument[_]]()
+      val map: ConcurrentHashMap[MetricKey[MetricKeyType], Instrument[?]] =
+        new ConcurrentHashMap[MetricKey[MetricKeyType], Instrument[?]]()
 
       val gauges: ConcurrentHashMap[MetricKey.Gauge, AtomicDouble] =
         new ConcurrentHashMap[MetricKey.Gauge, AtomicDouble]()
@@ -53,7 +53,7 @@ private[opentelemetry] object InstrumentRegistry {
           }
         )
 
-      private def getOrCreateInstrument[I[_] <: Instrument[_], A](
+      private def getOrCreateInstrument[I[_] <: Instrument[?], A](
         key: MetricKey[MetricKeyType]
       )(build: => I[A]): I[A] = {
         var value = map.get(key)

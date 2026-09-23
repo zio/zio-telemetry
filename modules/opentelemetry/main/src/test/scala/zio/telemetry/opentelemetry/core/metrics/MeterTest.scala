@@ -18,7 +18,7 @@ object MeterTest extends ZIOSpecDefault {
 
   val instrumentationScopeName = "MeterTest"
 
-  val otelLayer: RLayer[MeterTestkit with ContextStorage, core.OpenTelemetry] = {
+  val otelLayer: RLayer[MeterTestkit & ContextStorage, core.OpenTelemetry] = {
     val meterProvider = ZLayer {
       for {
         meterTestkit <- ZIO.service[MeterTestkit]
@@ -41,7 +41,7 @@ object MeterTest extends ZIOSpecDefault {
       } yield ref
     )
 
-  override def spec: Spec[TestEnvironment with Scope, Any] =
+  override def spec: Spec[TestEnvironment & Scope, Any] =
     suite("zio opentelemetry")(
       suite("Meter")(
         normalSpec,

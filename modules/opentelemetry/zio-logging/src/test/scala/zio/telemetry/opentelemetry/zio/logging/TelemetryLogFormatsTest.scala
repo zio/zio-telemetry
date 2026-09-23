@@ -12,7 +12,7 @@ object TelemetryLogFormatsTest extends ZIOSpecDefault {
 
   val instrumentationScopeName = "TelemetryLogFormatsTest"
 
-  override def spec: Spec[TestEnvironment with Scope, Any] =
+  override def spec: Spec[TestEnvironment & Scope, Any] =
     suiteAll("opentelemetry-zio-logging LogFormats") {
       test("SpanId and traceId are extracted") {
         val logs = mutable.Buffer[String]()
