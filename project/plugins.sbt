@@ -1,4 +1,4 @@
-val zioSbtVersion = "0.7.2"
+val zioSbtVersion = "0.8.0"
 
 addSbtPlugin("com.thoughtworks.sbt-api-mappings" % "sbt-api-mappings"          % "3.0.3")
 addSbtPlugin("com.github.sbt"                    % "sbt-unidoc"                % "0.6.1")
@@ -9,7 +9,7 @@ addSbtPlugin("org.scoverage"                     % "sbt-scoverage"             %
 addSbtPlugin("dev.zio"                           % "zio-sbt-ci"                % zioSbtVersion)
 addSbtPlugin("dev.zio"                           % "zio-sbt-ecosystem"         % zioSbtVersion)
 addSbtPlugin("dev.zio"                           % "zio-sbt-website"           % zioSbtVersion)
-addSbtPlugin("com.typesafe"                      % "sbt-mima-plugin"           % "1.2.0")
+addSbtPlugin("com.typesafe"                      % "sbt-mima-plugin"           % "1.2.1")
 addSbtPlugin("com.github.cb372"                  % "sbt-explicit-dependencies" % "0.3.1")
 addSbtPlugin("ch.epfl.scala"                     % "sbt-missinglink"           % "0.3.8")
 
