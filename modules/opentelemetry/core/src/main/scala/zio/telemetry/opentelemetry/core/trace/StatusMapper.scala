@@ -2,6 +2,7 @@ package zio.telemetry.opentelemetry.core.trace
 
 import io.opentelemetry.api.trace.StatusCode
 import zio._
+import zio.telemetry.opentelemetry.core.OpenTelemetry
 
 /**
  * Maps the result of a wrapped ZIO effect to the status of the [[io.opentelemetry.api.trace.Span]].
@@ -151,7 +152,7 @@ object StatusMapper {
    * Same as [[default]] above, but also sets exception stack traces
    */
   val defaultRecordingExceptions: Failure[Any] =
-    StatusMapper.failureCauseNoDescription[Any](_ => StatusCode.ERROR)(c => Some(FiberFailure(c)))
+    StatusMapper.failureCauseNoDescription[Any](_ => StatusCode.ERROR)(c => Some(OpenTelemetry.causeToThrowable(c)))
 
   /**
    * Overrides both success and failure cases of the default status mapper.
