@@ -542,10 +542,10 @@ object Tracing {
             propagator: TraceContextPropagator,
             carrier: IncomingContextCarrier[C],
             spanName: String,
-            spanKind: SpanKind = SpanKind.INTERNAL,
-            attributes: Attributes = Attributes.empty(),
-            statusMapper: StatusMapper[E, A] = StatusMapper.default,
-            links: Seq[SpanContext] = Seq.empty
+            spanKind: SpanKind,
+            attributes: Attributes,
+            statusMapper: StatusMapper[E, A],
+            links: Seq[SpanContext]
           )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
             extractContext(propagator, carrier).flatMap { context =>
               ZIO.acquireReleaseWith {
@@ -561,9 +561,9 @@ object Tracing {
             propagator: TraceContextPropagator,
             carrier: IncomingContextCarrier[C],
             spanName: String,
-            spanKind: SpanKind = SpanKind.INTERNAL,
-            attributes: Attributes = Attributes.empty(),
-            links: Seq[SpanContext] = Seq.empty
+            spanKind: SpanKind,
+            attributes: Attributes,
+            links: Seq[SpanContext]
           )(implicit trace: Trace): UIO[(Span, UIO[Any])] =
             for {
               ctx        <- extractContext(propagator, carrier)
@@ -575,10 +575,10 @@ object Tracing {
 
           override def root[R, E, E1 <: E, A, A1 <: A](
             spanName: String,
-            spanKind: SpanKind = SpanKind.INTERNAL,
-            attributes: Attributes = Attributes.empty(),
-            statusMapper: StatusMapper[E, A] = StatusMapper.default,
-            links: Seq[SpanContext] = Seq.empty
+            spanKind: SpanKind,
+            attributes: Attributes,
+            statusMapper: StatusMapper[E, A],
+            links: Seq[SpanContext]
           )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
             ZIO.acquireReleaseWith {
               createRoot(spanName, spanKind, attributes, links)
@@ -590,10 +590,10 @@ object Tracing {
 
           override def span[R, E, E1 <: E, A, A1 <: A](
             spanName: String,
-            spanKind: SpanKind = SpanKind.INTERNAL,
-            attributes: Attributes = Attributes.empty(),
-            statusMapper: StatusMapper[E, A] = StatusMapper.default,
-            links: Seq[SpanContext] = Seq.empty
+            spanKind: SpanKind,
+            attributes: Attributes,
+            statusMapper: StatusMapper[E, A],
+            links: Seq[SpanContext]
           )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
             getCurrentContextUnsafe.flatMap { old =>
               ZIO.acquireReleaseWith {
@@ -609,7 +609,7 @@ object Tracing {
             spanName: String,
             spanKind: SpanKind,
             attributes: Attributes,
-            statusMapper: StatusMapper[Any, Unit] = StatusMapper.default,
+            statusMapper: StatusMapper[Any, Unit],
             links: Seq[SpanContext]
           )(implicit trace: Trace): ZIO[Scope, Nothing, Unit] =
             getCurrentContextUnsafe.flatMap { old =>
@@ -631,9 +631,9 @@ object Tracing {
 
           override def spanUnsafe(
             spanName: String,
-            spanKind: SpanKind = SpanKind.INTERNAL,
-            attributes: Attributes = Attributes.empty(),
-            links: Seq[SpanContext] = Seq.empty
+            spanKind: SpanKind,
+            attributes: Attributes,
+            links: Seq[SpanContext]
           )(implicit trace: Trace): UIO[(Span, UIO[Any])] =
             for {
               ctx        <- getCurrentContextUnsafe
@@ -687,10 +687,10 @@ object Tracing {
           override def inSpan[R, E, E1 <: E, A, A1 <: A](
             span: Span,
             spanName: String,
-            spanKind: SpanKind = SpanKind.INTERNAL,
-            attributes: Attributes = Attributes.empty(),
-            statusMapper: StatusMapper[E, A] = StatusMapper.default,
-            links: Seq[SpanContext] = Seq.empty
+            spanKind: SpanKind,
+            attributes: Attributes,
+            statusMapper: StatusMapper[E, A],
+            links: Seq[SpanContext]
           )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
             ZIO.acquireReleaseWith {
               createChild(Context.root().`with`(span), spanName, spanKind, attributes, links)
