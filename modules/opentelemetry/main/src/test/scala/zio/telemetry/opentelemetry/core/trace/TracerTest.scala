@@ -408,7 +408,7 @@ object TracerTest extends ZIOSpecDefault {
           assertFailedStatusCode && assertFailedDescription
 
         val assertErrorRuntimeException = assertSpanException(
-          hasSubset(List("exception.message" -> "Error", "exception.type" -> "zio.FiberFailure"))
+          hasSubset(List("exception.message" -> "Error", "exception.type" -> "java.lang.RuntimeException"))
         )
 
         for {
