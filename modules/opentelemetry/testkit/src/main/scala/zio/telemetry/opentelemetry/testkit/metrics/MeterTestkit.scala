@@ -99,8 +99,8 @@ object MeterTestkit {
 
             override def getMeter(
               instrumentationScopeName: String,
-              instrumentationVersion: Option[String] = None,
-              schemaUrl: Option[String] = None
+              instrumentationVersion: Option[String],
+              schemaUrl: Option[String]
             )(implicit trace: Trace): Task[JMeter] = ZIO.attempt {
               val builder = meterProvider.meterBuilder(instrumentationScopeName)
 

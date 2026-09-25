@@ -267,10 +267,10 @@ private[opentelemetry] object Tracer {
 
       override def root[R, E, E1 <: E, A, A1 <: A](
         spanName: String,
-        spanKind: SpanKind = SpanKind.SERVER,
-        attributes: Attributes = Attributes.empty(),
-        statusMapper: StatusMapper[E, A] = defaultStatusMapper,
-        links: Seq[SpanContext] = Seq.empty
+        spanKind: SpanKind,
+        attributes: Attributes,
+        statusMapper: StatusMapper[E, A],
+        links: Seq[SpanContext]
       )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
         ZIO.acquireReleaseWith {
           startRoot(spanName, spanKind, attributes, links)
@@ -282,10 +282,10 @@ private[opentelemetry] object Tracer {
 
       override def span[R, E, E1 <: E, A, A1 <: A](
         spanName: String,
-        spanKind: SpanKind = SpanKind.INTERNAL,
-        attributes: Attributes = Attributes.empty(),
-        statusMapper: StatusMapper[E, A] = defaultStatusMapper,
-        links: Seq[SpanContext] = Seq.empty
+        spanKind: SpanKind,
+        attributes: Attributes,
+        statusMapper: StatusMapper[E, A],
+        links: Seq[SpanContext]
       )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
         for {
           parentCtx <- ctxStorage.get
@@ -300,9 +300,9 @@ private[opentelemetry] object Tracer {
 
       override def spanScoped[E, A](
         spanName: String,
-        spanKind: SpanKind = SpanKind.INTERNAL,
+        spanKind: SpanKind,
         attributes: Attributes,
-        statusMapper: StatusMapper[E, A] = defaultStatusMapper,
+        statusMapper: StatusMapper[E, A],
         links: Seq[SpanContext]
       )(implicit trace: Trace): ZIO[Scope, Nothing, Span] =
         for {
@@ -318,9 +318,9 @@ private[opentelemetry] object Tracer {
 
       override def spanUnmanaged(
         spanName: String,
-        spanKind: SpanKind = SpanKind.INTERNAL,
-        attributes: Attributes = Attributes.empty(),
-        links: Seq[SpanContext] = Seq.empty
+        spanKind: SpanKind,
+        attributes: Attributes,
+        links: Seq[SpanContext]
       )(implicit trace: Trace): ZIO[Any, Nothing, Span] =
         for {
           parentCtx  <- ctxStorage.get
@@ -332,9 +332,9 @@ private[opentelemetry] object Tracer {
       override def continueSpan[R, E, E1 <: E, A, A1 <: A](
         span: Span,
         spanName: String,
-        spanKind: SpanKind = SpanKind.INTERNAL,
-        attributes: Attributes = Attributes.empty(),
-        statusMapper: StatusMapper[E, A] = defaultStatusMapper,
+        spanKind: SpanKind,
+        attributes: Attributes,
+        statusMapper: StatusMapper[E, A],
         links: Seq[SpanContext] = Seq.empty
       )(f: Span => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1] =
         ZIO.acquireReleaseWith {

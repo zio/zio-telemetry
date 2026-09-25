@@ -121,8 +121,8 @@ object OpenTracing {
         override def error(
           span: Span,
           cause: Cause[_],
-          tagError: Boolean = true,
-          logError: Boolean = true
+          tagError: Boolean,
+          logError: Boolean
         )(implicit trace: Trace): UIO[Unit] =
           for {
             _        <- ZIO.succeed(span.setTag("error", true)).when(tagError)
@@ -146,8 +146,8 @@ object OpenTracing {
 
         override def root[R, E, A](
           operation: String,
-          tagError: Boolean = true,
-          logError: Boolean = true
+          tagError: Boolean,
+          logError: Boolean
         )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
           for {
             root    <- ZIO.succeed(tracer.buildSpan(operation).start())
@@ -160,8 +160,8 @@ object OpenTracing {
 
         override def span[R, E, A](
           operation: String,
-          tagError: Boolean = true,
-          logError: Boolean = true
+          tagError: Boolean,
+          logError: Boolean
         )(zio: => ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A] =
           for {
             current <- getCurrentSpanUnsafe
@@ -176,8 +176,8 @@ object OpenTracing {
           format: Format[C],
           carrier: C,
           operation: String,
-          tagError: Boolean = true,
-          logError: Boolean = true
+          tagError: Boolean,
+          logError: Boolean
         )(zio: => ZIO[R, E, S])(implicit trace: Trace): ZIO[R, E, S] =
           ZIO
             .attempt(tracer.extract(format, carrier))

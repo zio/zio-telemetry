@@ -47,16 +47,16 @@ object Counter {
   ): Counter[Long] =
     new Counter[Long] {
 
-      override def record0(value: Long, attributes: Attributes = Attributes.empty, context: Context): Unit =
+      override def record0(value: Long, attributes: Attributes, context: Context): Unit =
         counter.add(value, attributes, context)
 
-      override def add(value: Long, attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
+      override def add(value: Long, attributes: Attributes)(implicit trace: Trace): UIO[Unit] =
         for {
           annotated <- logAnnotatedAttributes(attributes, logAnnotated)
           ctx       <- ctxStorage.get
         } yield record0(value, annotated, ctx)
 
-      override def inc(attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
+      override def inc(attributes: Attributes)(implicit trace: Trace): UIO[Unit] =
         add(1L, attributes)
 
     }
