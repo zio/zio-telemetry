@@ -5,6 +5,7 @@ import io.opentelemetry.api.logs.{Logger => JLogger, LoggerProvider, Severity}
 import io.opentelemetry.context.Context
 import zio._
 import zio.telemetry.opentelemetry.core.context.internal.ContextStorage
+import zio.telemetry.opentelemetry.core.internal.CauseExtensions._
 
 private[opentelemetry] object Logger {
 
@@ -47,7 +48,7 @@ private[opentelemetry] object Logger {
         builder.setSeverity(severityMapping(logLevel))
         annotations.foreach { case (k, v) => builder.setAttribute(AttributeKey.stringKey(k), v) }
         if (!cause.isEmpty) {
-          val _ = builder.setException(causeToThrowable(cause))
+          val _ = builder.setException(cause.toUnwrappedThrowable)
         }
 
         ctxStorage match {
@@ -59,13 +60,6 @@ private[opentelemetry] object Logger {
 
         builder.emit()
       }
-
-      private def causeToThrowable(cause: Cause[Any]): Throwable =
-        (cause.failures, cause.defects, cause.isInterrupted) match {
-          case ((failure: Throwable) :: Nil, Nil, false) => failure
-          case (Nil, defect :: Nil, false)               => defect
-          case _                                         => FiberFailure(cause)
-        }
 
       private def severityMapping(level: LogLevel): Severity =
         level match {
