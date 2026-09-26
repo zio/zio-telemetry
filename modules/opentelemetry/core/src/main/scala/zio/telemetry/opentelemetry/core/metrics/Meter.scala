@@ -160,15 +160,15 @@ private[opentelemetry] object Meter {
 
       override def counter(
         name: String,
-        unit: Option[String] = None,
-        description: Option[String] = None
+        unit: Option[String],
+        description: Option[String]
       )(implicit trace: Trace): Counter[Long] =
         builder.counter(name, unit, description)
 
       override def upDownCounter(
         name: String,
-        unit: Option[String] = None,
-        description: Option[String] = None
+        unit: Option[String],
+        description: Option[String]
       )(implicit trace: Trace): UpDownCounter[Long] =
         builder.upDownCounter(name, unit, description)
 
@@ -181,16 +181,16 @@ private[opentelemetry] object Meter {
 
       override def histogram(
         name: String,
-        unit: Option[String] = None,
-        description: Option[String] = None,
-        boundaries: Option[Chunk[Double]] = None
+        unit: Option[String],
+        description: Option[String],
+        boundaries: Option[Chunk[Double]]
       )(implicit trace: Trace): Histogram[Double] =
         builder.histogram(name, unit, description, boundaries)
 
       override def observableCounter(
         name: String,
-        unit: Option[String] = None,
-        description: Option[String] = None
+        unit: Option[String],
+        description: Option[String]
       )(callback: ObservableMeasurement[Long] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit] =
         ZIO
           .fromAutoCloseable(
@@ -206,8 +206,8 @@ private[opentelemetry] object Meter {
 
       override def observableUpDownCounter(
         name: String,
-        unit: Option[String] = None,
-        description: Option[String] = None
+        unit: Option[String],
+        description: Option[String]
       )(callback: ObservableMeasurement[Long] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit] =
         ZIO
           .fromAutoCloseable(
@@ -223,8 +223,8 @@ private[opentelemetry] object Meter {
 
       override def observableGauge(
         name: String,
-        unit: Option[String] = None,
-        description: Option[String] = None
+        unit: Option[String],
+        description: Option[String]
       )(callback: ObservableMeasurement[Double] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit] =
         ZIO
           .fromAutoCloseable(

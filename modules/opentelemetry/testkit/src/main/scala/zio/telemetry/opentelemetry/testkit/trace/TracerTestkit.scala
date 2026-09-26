@@ -67,8 +67,8 @@ object TracerTestkit {
 
             override def getTracer(
               instrumentationScopeName: String,
-              instrumentationVersion: Option[String] = None,
-              schemaUrl: Option[String] = None
+              instrumentationVersion: Option[String],
+              schemaUrl: Option[String]
             )(implicit trace: Trace): Task[JTracer] = ZIO.attempt {
               val builder = tracerProvider.tracerBuilder(instrumentationScopeName)
 
@@ -80,8 +80,8 @@ object TracerTestkit {
 
             override def getTracerFromJava(
               jtracer: JTracer,
-              logAnnotated: Boolean = false,
-              statusMapper: StatusMapper[Any, Any] = StatusMapper.default
+              logAnnotated: Boolean,
+              statusMapper: StatusMapper[Any, Any]
             ): Task[Tracer] =
               ZIO.succeed(Tracer.make(jtracer, ctxStorage, logAnnotated, statusMapper))
 
@@ -101,10 +101,10 @@ object TracerTestkit {
 
         override def getTracer(
           instrumentationScopeName: String,
-          instrumentationVersion: Option[String] = None,
-          schemaUrl: Option[String] = None,
-          logAnnotated: Boolean = false,
-          statusMapper: StatusMapper[Any, Any] = StatusMapper.default
+          instrumentationVersion: Option[String],
+          schemaUrl: Option[String],
+          logAnnotated: Boolean,
+          statusMapper: StatusMapper[Any, Any]
         )(implicit trace: Trace): Task[Tracer] =
           for {
             jtracer <- unsafe.getTracer(instrumentationScopeName, instrumentationVersion, schemaUrl)

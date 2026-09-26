@@ -119,9 +119,9 @@ object Tracing {
 
         override def span[R, E, E1 <: E, A](
           name: String,
-          kind: Span.Kind = Span.Kind.SERVER,
-          toErrorStatus: ErrorMapper[E] = ErrorMapper.default,
-          attributes: Map[String, AttributeValue] = Map.empty
+          kind: Span.Kind,
+          toErrorStatus: ErrorMapper[E],
+          attributes: Map[String, AttributeValue]
         )(zio: => ZIO[R, E1, A])(implicit trace: Trace): ZIO[R, E1, A] =
           ZIO.scoped[R] {
             for {
@@ -133,9 +133,9 @@ object Tracing {
 
         override def root[R, E, E1 <: E, A](
           name: String,
-          kind: Span.Kind = Span.Kind.SERVER,
-          toErrorStatus: ErrorMapper[E] = ErrorMapper.default,
-          attributes: Map[String, AttributeValue] = Map.empty
+          kind: Span.Kind,
+          toErrorStatus: ErrorMapper[E],
+          attributes: Map[String, AttributeValue]
         )(zio: => ZIO[R, E1, A])(implicit trace: Trace): ZIO[R, E1, A] =
           ZIO.scoped[R] {
             createSpan(BlankSpan.INSTANCE, name, kind).flatMap { span =>
@@ -148,9 +148,9 @@ object Tracing {
         override def fromRemoteSpan[R, E, E1 <: E, A](
           remote: SpanContext,
           name: String,
-          kind: Span.Kind = Span.Kind.SERVER,
-          toErrorStatus: ErrorMapper[E] = ErrorMapper.default,
-          attributes: Map[String, AttributeValue] = Map.empty
+          kind: Span.Kind,
+          toErrorStatus: ErrorMapper[E],
+          attributes: Map[String, AttributeValue]
         )(zio: => ZIO[R, E1, A])(implicit trace: Trace): ZIO[R, E1, A] =
           ZIO.scoped[R] {
             createSpanFromRemote(remote, name, kind).flatMap { span =>
@@ -165,9 +165,9 @@ object Tracing {
           carrier: C,
           getter: TextFormat.Getter[C],
           name: String,
-          kind: Span.Kind = Span.Kind.SERVER,
-          toErrorStatus: ErrorMapper[E] = ErrorMapper.default,
-          attributes: Map[String, AttributeValue] = Map.empty
+          kind: Span.Kind,
+          toErrorStatus: ErrorMapper[E],
+          attributes: Map[String, AttributeValue]
         )(zio: => ZIO[R, E1, A])(implicit trace: Trace): ZIO[R, E1, A] =
           ZIO
             .attempt(format.extract(carrier, getter))

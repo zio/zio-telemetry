@@ -66,8 +66,8 @@ object Instrument {
 
         override def counter(
           name: String,
-          unit: Option[String] = None,
-          description: Option[String] = None
+          unit: Option[String],
+          description: Option[String]
         ): Counter[Long] = {
           val builder = meter.counterBuilder(name)
 
@@ -79,8 +79,8 @@ object Instrument {
 
         override def upDownCounter(
           name: String,
-          unit: Option[String] = None,
-          description: Option[String] = None
+          unit: Option[String],
+          description: Option[String]
         ): UpDownCounter[Long] = {
           val builder = meter.upDownCounterBuilder(name)
 
@@ -101,9 +101,9 @@ object Instrument {
 
         override def histogram(
           name: String,
-          unit: Option[String] = None,
-          description: Option[String] = None,
-          boundaries: Option[Chunk[Double]] = None
+          unit: Option[String],
+          description: Option[String],
+          boundaries: Option[Chunk[Double]]
         ): Histogram[Double] = {
           val builder = meter.histogramBuilder(name)
 
@@ -124,8 +124,8 @@ object Instrument {
 
         override def observableCounter(
           name: String,
-          unit: Option[String] = None,
-          description: Option[String] = None
+          unit: Option[String],
+          description: Option[String]
         )(callback: ObservableMeasurement[Long] => Unit): api.metrics.ObservableLongCounter = {
           val builder = meter.counterBuilder(name)
 
