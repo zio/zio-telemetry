@@ -32,14 +32,14 @@ object TracingTest extends ZIOSpecDefault {
     tracer          = tracerProvider.get("TracingTest")
   } yield (spanExporter, tracer)
 
-  val inMemoryTracerLayer: ULayer[InMemorySpanExporter with Tracer] =
+  val inMemoryTracerLayer: ULayer[InMemorySpanExporter & Tracer] =
     ZLayer.fromZIOEnvironment(inMemoryTracer.map { case (inMemorySpanExporter, tracer) =>
       ZEnvironment(inMemorySpanExporter).add(tracer)
     })
 
   def tracingMockLayer(
     logAnnotated: Boolean = false
-  ): URLayer[ContextStorage, Tracing with InMemorySpanExporter with Tracer] =
+  ): URLayer[ContextStorage, Tracing & InMemorySpanExporter & Tracer] =
     inMemoryTracerLayer >>> (Tracing.live(logAnnotated) ++ inMemoryTracerLayer)
 
   def getFinishedSpans: ZIO[InMemorySpanExporter, Nothing, List[SpanData]] =

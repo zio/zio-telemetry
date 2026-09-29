@@ -27,7 +27,7 @@ object LoggingTest extends ZIOSpecDefault {
       loggerProvider     <- ZIO.succeed(SdkLoggerProvider.builder().addLogRecordProcessor(logRecordProcessor).build())
     } yield (logRecordExporter, loggerProvider)
 
-  val inMemoryLoggerProviderLayer: ULayer[InMemoryLogRecordExporter with LoggerProvider] =
+  val inMemoryLoggerProviderLayer: ULayer[InMemoryLogRecordExporter & LoggerProvider] =
     ZLayer.fromZIOEnvironment(inMemoryLogLoggerProvider.map { case (inMemoryLogRecordExporter, loggerProvider) =>
       ZEnvironment(inMemoryLogRecordExporter).add(loggerProvider)
     })
@@ -35,7 +35,7 @@ object LoggingTest extends ZIOSpecDefault {
   def loggingMockLayer(
     instrumentationScopeName: String,
     logLevel: LogLevel = LogLevel.Info
-  ): URLayer[ContextStorage, InMemoryLogRecordExporter with LoggerProvider] =
+  ): URLayer[ContextStorage, InMemoryLogRecordExporter & LoggerProvider] =
     Runtime.removeDefaultLoggers >>>
       inMemoryLoggerProviderLayer >>>
       (Logging.live(instrumentationScopeName, logLevel) ++ inMemoryLoggerProviderLayer)
@@ -43,7 +43,7 @@ object LoggingTest extends ZIOSpecDefault {
   def getFinishedLogRecords: ZIO[InMemoryLogRecordExporter, Nothing, List[LogRecordData]] =
     ZIO.service[InMemoryLogRecordExporter].map(_.getFinishedLogRecordItems.asScala.toList)
 
-  override def spec: Spec[TestEnvironment with Scope, Any] =
+  override def spec: Spec[TestEnvironment & Scope, Any] =
     suite("zio opentelemetry")(
       suite("Logging")(
         test("without tracing context") {

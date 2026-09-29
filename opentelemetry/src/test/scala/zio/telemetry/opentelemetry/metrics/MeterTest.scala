@@ -22,7 +22,7 @@ object MeterTest extends ZIOSpecDefault {
 
   def meterLayer(
     logAnnotated: Boolean = false
-  ): ZLayer[InMemoryMetricReader with ContextStorage, Nothing, Meter with Instrument.Builder] = {
+  ): ZLayer[InMemoryMetricReader & ContextStorage, Nothing, Meter & Instrument.Builder] = {
     val jmeter  = ZLayer {
       for {
         metricReader  <- ZIO.service[InMemoryMetricReader]
@@ -46,7 +46,7 @@ object MeterTest extends ZIOSpecDefault {
       } yield ref
     )
 
-  override def spec: Spec[TestEnvironment with Scope, Any] =
+  override def spec: Spec[TestEnvironment & Scope, Any] =
     suite("zio opentelemetry")(
       suite("Meter")(
         normalSpec,

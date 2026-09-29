@@ -14,7 +14,7 @@ import zio.Runtime.removeDefaultLoggers
 import zio.telemetry.opentelemetry.context.ContextStorage
 import zio.telemetry.opentelemetry.tracing.Tracing
 import zio.test.{Spec, TestEnvironment, ZIOSpecDefault, assertTrue}
-import zio.{Scope, UIO, ULayer, URLayer, ZEnvironment, ZIO, ZLayer}
+import zio._
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
@@ -28,20 +28,20 @@ object TelemetryLogFormatsSpec extends ZIOSpecDefault {
     tracer          = tracerProvider.get("TracingTest")
   } yield (spanExporter, tracer)
 
-  val inMemoryTracerLayer: ULayer[InMemorySpanExporter with Tracer] =
+  val inMemoryTracerLayer: ULayer[InMemorySpanExporter & Tracer] =
     ZLayer.fromZIOEnvironment(inMemoryTracer.map { case (inMemorySpanExporter, tracer) =>
       ZEnvironment(inMemorySpanExporter).add(tracer)
     })
 
   def tracingMockLayer(
     logAnnotated: Boolean = false
-  ): URLayer[ContextStorage, Tracing with InMemorySpanExporter with Tracer] =
+  ): URLayer[ContextStorage, Tracing & InMemorySpanExporter & Tracer] =
     inMemoryTracerLayer >>> (Tracing.live(logAnnotated) ++ inMemoryTracerLayer)
 
   def getFinishedSpans: ZIO[InMemorySpanExporter, Nothing, List[SpanData]] =
     ZIO.serviceWith[InMemorySpanExporter](_.getFinishedSpanItems.asScala.toList)
 
-  override def spec: Spec[TestEnvironment with Scope, Any] =
+  override def spec: Spec[TestEnvironment & Scope, Any] =
     suiteAll("opentelemetry-zio-logging LogFormats") {
       test("SpanId and traceId are extracted") {
         ZIO.serviceWithZIO[Tracing] { tracing =>

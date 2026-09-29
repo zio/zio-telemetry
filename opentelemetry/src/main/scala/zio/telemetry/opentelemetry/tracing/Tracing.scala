@@ -516,7 +516,7 @@ trait Tracing { self =>
 
 object Tracing {
 
-  def live(logAnnotated: Boolean = false): URLayer[Tracer with ContextStorage, Tracing] =
+  def live(logAnnotated: Boolean = false): URLayer[Tracer & ContextStorage, Tracing] =
     ZLayer.scoped {
       for {
         tracer     <- ZIO.service[Tracer]

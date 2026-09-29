@@ -16,14 +16,14 @@ trait OpenTracing { self =>
 
   def error(
     span: Span,
-    cause: Cause[_],
+    cause: Cause[?],
     tagError: Boolean = true,
     logError: Boolean = true
   )(implicit trace: Trace): UIO[Unit]
 
   def finish(span: Span)(implicit trace: Trace): UIO[Unit]
 
-  def log(fields: Map[String, _])(implicit trace: Trace): UIO[Unit]
+  def log(fields: Map[String, ?])(implicit trace: Trace): UIO[Unit]
 
   def log(msg: String)(implicit trace: Trace): UIO[Unit]
 
@@ -120,7 +120,7 @@ object OpenTracing {
 
         override def error(
           span: Span,
-          cause: Cause[_],
+          cause: Cause[?],
           tagError: Boolean = true,
           logError: Boolean = true
         )(implicit trace: Trace): UIO[Unit] =
@@ -138,7 +138,7 @@ object OpenTracing {
         override def finish(span: Span)(implicit trace: Trace): UIO[Unit] =
           currentMicros.flatMap(micros => ZIO.succeed(span.finish(micros)))
 
-        override def log(fields: Map[String, _])(implicit trace: Trace): UIO[Unit] =
+        override def log(fields: Map[String, ?])(implicit trace: Trace): UIO[Unit] =
           getCurrentSpanUnsafe.zipWith(currentMicros)((span, now) => span.log(now, fields.asJava)).unit
 
         override def log(msg: String)(implicit trace: Trace): UIO[Unit] =

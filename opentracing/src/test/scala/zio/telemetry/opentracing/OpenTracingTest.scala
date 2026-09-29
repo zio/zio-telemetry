@@ -18,7 +18,7 @@ object OpenTracingTest extends ZIOSpecDefault {
   val testService: URLayer[MockTracer, OpenTracing] =
     ZLayer.scoped(ZIO.service[MockTracer].flatMap(OpenTracing.scoped(_, "ROOT")))
 
-  val customLayer: ULayer[MockTracer with OpenTracing] = mockTracer ++ (mockTracer >>> testService)
+  val customLayer: ULayer[MockTracer & OpenTracing] = mockTracer ++ (mockTracer >>> testService)
 
   def spec: Spec[Scope, Any] =
     suite("zio opentracing")(

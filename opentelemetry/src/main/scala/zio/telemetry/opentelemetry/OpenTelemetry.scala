@@ -59,7 +59,7 @@ object OpenTelemetry {
     instrumentationVersion: Option[String] = None,
     schemaUrl: Option[String] = None,
     logAnnotated: Boolean = false
-  ): URLayer[api.OpenTelemetry with ContextStorage, Tracing] = {
+  ): URLayer[api.OpenTelemetry & ContextStorage, Tracing] = {
     val tracerLayer = ZLayer(
       ZIO.serviceWith[api.OpenTelemetry] { openTelemetry =>
         val builder = openTelemetry.tracerBuilder(instrumentationScopeName)
@@ -90,7 +90,7 @@ object OpenTelemetry {
     instrumentationVersion: Option[String] = None,
     schemaUrl: Option[String] = None,
     logAnnotated: Boolean = false
-  ): URLayer[api.OpenTelemetry with ContextStorage, Meter with Instrument.Builder] = {
+  ): URLayer[api.OpenTelemetry & ContextStorage, Meter & Instrument.Builder] = {
     val meterLayer   = ZLayer(
       ZIO.serviceWith[api.OpenTelemetry] { openTelemetry =>
         val builder = openTelemetry.meterBuilder(instrumentationScopeName)
@@ -141,7 +141,7 @@ object OpenTelemetry {
   def logging(
     instrumentationScopeName: String,
     logLevel: LogLevel = LogLevel.Info
-  ): URLayer[api.OpenTelemetry with ContextStorage, Unit] = {
+  ): URLayer[api.OpenTelemetry & ContextStorage, Unit] = {
     val loggerProviderLayer = ZLayer(ZIO.serviceWith[api.OpenTelemetry](_.getLogsBridge))
 
     loggerProviderLayer >>> Logging.live(instrumentationScopeName, logLevel)

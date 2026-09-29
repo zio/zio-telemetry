@@ -28,15 +28,15 @@ object TracingTest extends ZIOSpecDefault {
       exporter -> OTracing.getTracer
     }
 
-  val exporterTracerLayer: ULayer[Ref[List[SpanData]] with Tracer] =
+  val exporterTracerLayer: ULayer[Ref[List[SpanData]] & Tracer] =
     ZLayer.fromZIOEnvironment(exporterTracer.map { case (exporter, tracer) =>
       ZEnvironment(exporter).add(tracer)
     })
 
-  val customLayer: ULayer[Ref[List[SpanData]] with Tracer with Tracing] =
+  val customLayer: ULayer[Ref[List[SpanData]] & Tracer & Tracing] =
     exporterTracerLayer ++ (exporterTracerLayer >>> Tracing.live)
 
-  def spec: Spec[Environment with TestEnvironment with Scope, Any] =
+  def spec: Spec[Environment & TestEnvironment & Scope, Any] =
     suite("zio opencensus")(
       suite("Tracing")(
         spansSpec
