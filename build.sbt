@@ -11,7 +11,7 @@ inThisBuild(
   List(
     name               := "ZIO Telemetry",
     organization       := "dev.zio",
-    zioVersion         := "2.1.26",
+    zioVersion         := "2.1.27",
     homepage           := Some(url("https://zio.dev/zio-telemetry/")),
     licenses           := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
     developers         := List(
