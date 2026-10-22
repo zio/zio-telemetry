@@ -76,6 +76,12 @@ inThisBuild(
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
+// Keep action updates when zio-sbt regenerates workflows with its bundled versions.
+ThisBuild / ciGenerateGithubWorkflow := {
+  (ThisBuild / ciGenerateGithubWorkflow).value
+  GithubActionsVersions.update((ThisBuild / baseDirectory).value / ".github" / "workflows")
+}
+
 // Docusaurus 2.x uses webpackbar@5.0.2 which is incompatible with webpack@5.75+
 // (npm now resolves webpack@^5.73.0 to the latest 5.x which breaks ProgressPlugin).
 // Workaround: run installWebsite + mdoc separately, then pin webpack to 5.74.0 via
