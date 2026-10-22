@@ -79,6 +79,30 @@ ThisBuild / ciGenerateGithubWorkflow := {
   GithubActionsVersions.update((ThisBuild / baseDirectory).value / ".github" / "workflows")
 }
 
+// Hosted runners can hang on the Azure Ubuntu mirror before tests start.
+ThisBuild / ciTestJobs ~= { jobs =>
+  jobs.map { job =>
+    job.withSteps(
+      job.steps
+        .flatMap(_.flatten)
+        .map { step =>
+          if (step.name == "Install libuv")
+            step.copy(run =
+              Some(
+                """|if [ -f /etc/apt/apt-mirrors.txt ]; then
+                   |  sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' /etc/apt/apt-mirrors.txt
+                   |fi
+                   |timeout 5m sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update
+                   |timeout 5m sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y libuv1-dev""".stripMargin
+              )
+            )
+          else step
+        }
+        .toSeq: _*
+    )
+  }
+}
+
 // Docusaurus 2.x uses webpackbar@5.0.2 which is incompatible with webpack@5.75+
 // (npm now resolves webpack@^5.73.0 to the latest 5.x which breaks ProgressPlugin).
 // Workaround: run installWebsite + mdoc separately, then pin webpack to 5.74.0 via
