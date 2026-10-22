@@ -4,7 +4,8 @@ object GithubActionsVersions {
   val overrides: Map[String, String] = Map(
     "scala-steward-org/scala-steward-action" -> "v2.97.0",
     "sbt/setup-sbt"                          -> "v1.5.12",
-    "coursier/cache-action"                  -> "v8.2.0"
+    "coursier/cache-action"                  -> "v8.2.0",
+    "actions/setup-java"                     -> "v6.1.0"
   )
 
   def update(directory: File): Unit =
