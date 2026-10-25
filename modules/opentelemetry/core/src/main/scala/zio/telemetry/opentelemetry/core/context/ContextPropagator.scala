@@ -4,6 +4,8 @@ import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.propagation.{ContextPropagators, TextMapPropagator}
 
+import scala.jdk.CollectionConverters._
+
 trait ContextPropagator {
 
   /**
@@ -59,7 +61,7 @@ object ContextPropagator {
   def combined(propagators: ContextPropagator*): ContextPropagator =
     new ContextPropagator {
       override val instance: TextMapPropagator =
-        TextMapPropagator.composite(propagators.map(_.instance): _*)
+        TextMapPropagator.composite(propagators.map(_.instance).asJava)
     }
 
   /**

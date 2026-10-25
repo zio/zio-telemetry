@@ -92,7 +92,7 @@ object MetricData {
     val startEpochNanos: Long
     val epochNanos: Long
     val attributes: Attributes
-    val exemplars: List[_ <: ExamplarData]
+    val exemplars: List[? <: ExamplarData]
   }
 
   object PointData {

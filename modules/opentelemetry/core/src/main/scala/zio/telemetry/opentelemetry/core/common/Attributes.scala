@@ -14,7 +14,7 @@ object Attributes {
   private def putAttribute[T](builder: AttributesBuilder, attr: Attribute[T]): AttributesBuilder =
     builder.put(attr.key, attr.value)
 
-  def fromList(attributes: List[Attribute[_]]): api.common.Attributes = {
+  def fromList(attributes: List[Attribute[?]]): api.common.Attributes = {
     val builder = api.common.Attributes.builder()
 
     attributes.foreach(attr => putAttribute(builder, attr))

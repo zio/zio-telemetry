@@ -17,7 +17,7 @@ object AttributeKeyTag {
   implicit case object ListLongTag    extends AttributeKeyTag[List[Long]]
   implicit case object ListDoubleTag  extends AttributeKeyTag[List[Double]]
 
-  private[testkit] def asAttributeKey[T](key: String)(implicit tag: AttributeKeyTag[T]): AttributeKey[_] =
+  private[testkit] def asAttributeKey[T](key: String)(implicit tag: AttributeKeyTag[T]): AttributeKey[?] =
     tag match {
       case StringTag      => AttributeKey.stringKey(key)
       case BooleanTag     => AttributeKey.booleanKey(key)
@@ -41,25 +41,25 @@ object AttributeKeyTag {
         Double.unbox(value.asInstanceOf[java.lang.Double])
       case ListStringTag  =>
         value
-          .asInstanceOf[java.util.List[_]]
+          .asInstanceOf[java.util.List[?]]
           .asScala
           .toList
           .map(_.asInstanceOf[String])
       case ListBooleanTag =>
         value
-          .asInstanceOf[java.util.List[_]]
+          .asInstanceOf[java.util.List[?]]
           .asScala
           .toList
           .map(v => Boolean.unbox(v.asInstanceOf[java.lang.Boolean]))
       case ListLongTag    =>
         value
-          .asInstanceOf[java.util.List[_]]
+          .asInstanceOf[java.util.List[?]]
           .asScala
           .toList
           .map(v => Long.unbox(v.asInstanceOf[java.lang.Long]))
       case ListDoubleTag  =>
         value
-          .asInstanceOf[java.util.List[_]]
+          .asInstanceOf[java.util.List[?]]
           .asScala
           .toList
           .map(v => Double.unbox(v.asInstanceOf[java.lang.Double]))

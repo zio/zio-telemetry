@@ -5,7 +5,7 @@ import io.opentelemetry.api.common.{AttributeKey, Attributes => JAttributes}
 import scala.jdk.CollectionConverters._
 
 final case class Attributes(
-  private val data: Map[AttributeKey[_], Any]
+  private val data: Map[AttributeKey[?], Any]
 ) {
 
   def get[T](key: String)(implicit tag: AttributeKeyTag[T]): Option[T] =
@@ -24,7 +24,7 @@ final case class Attributes(
 object Attributes {
 
   def apply(underlying: JAttributes): Attributes = {
-    val map = underlying.asMap.asScala.toMap[AttributeKey[_], Any]
+    val map = underlying.asMap.asScala.toMap[AttributeKey[?], Any]
 
     Attributes(map)
   }
