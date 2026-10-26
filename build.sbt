@@ -2,18 +2,19 @@ import MimaSettings.mimaSettings
 import ch.epfl.scala.sbtmissinglink.MissingLinkPlugin.missinglinkConflictsTag
 import zio.sbt.githubactions.Step.SingleStep
 import zio.sbt.githubactions.ActionRef
+import zio.sbt.githubactions.Condition
 import zio.json.ast.Json
 
 enablePlugins(ZioSbtEcosystemPlugin, ZioSbtCiPlugin)
 
 inThisBuild(
   List(
-    name              := "ZIO Telemetry",
-    organization      := "dev.zio",
-    zioVersion        := "2.1.27",
-    homepage          := Some(url("https://zio.dev/zio-telemetry/")),
-    licenses          := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-    developers        := List(
+    name                    := "ZIO Telemetry",
+    organization            := "dev.zio",
+    zioVersion              := "2.1.27",
+    homepage                := Some(url("https://zio.dev/zio-telemetry/")),
+    licenses                := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+    developers              := List(
       Developer(
         "mijicd",
         "Dejan Mijic",
@@ -33,7 +34,13 @@ inThisBuild(
         url("https://github.com/grouzen")
       )
     ),
-    ciEnabledBranches := Seq("series/2.x"),
+    ciEnabledBranches       := Seq("series/2.x"),
+    ciUpdateReadmeCondition := Some(
+      Condition.Expression("github.event_name == 'release'") &&
+        Condition.Expression("github.event.action == 'published'") &&
+        (Condition.Expression("github.event.release.target_commitish == 'series/2.x'") ||
+          Condition.Expression("github.event.release.target_commitish == 'refs/heads/series/2.x'"))
+    ),
     ciCheckArtifactsBuildSteps ++= Seq(
       SingleStep(
         name = "Compile examples",
@@ -56,10 +63,10 @@ inThisBuild(
         run = Some("sbt missinglinkCheck")
       )
     ),
-    pgpPassphrase     := sys.env.get("PGP_PASSWORD").map(_.toArray),
-    pgpPublicRing     := file("/tmp/public.asc"),
-    pgpSecretRing     := file("/tmp/secret.asc"),
-    scmInfo           := Some(
+    pgpPassphrase           := sys.env.get("PGP_PASSWORD").map(_.toArray),
+    pgpPublicRing           := file("/tmp/public.asc"),
+    pgpSecretRing           := file("/tmp/secret.asc"),
+    scmInfo                 := Some(
       ScmInfo(
         url("https://github.com/zio/zio-telemetry/"),
         "scm:git:git@github.com:zio/zio-telemetry.git"
@@ -67,7 +74,7 @@ inThisBuild(
     ),
     concurrentRestrictions += Tags.limit(missinglinkConflictsTag, 1),
     // TODO: remove once it is updated in zio-sbt
-    scala213          := "2.13.18"
+    scala213                := "2.13.18"
   )
 )
 
