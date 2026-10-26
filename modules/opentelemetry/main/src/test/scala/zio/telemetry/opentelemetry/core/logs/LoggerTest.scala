@@ -12,7 +12,7 @@ object LoggerTest extends ZIOSpecDefault {
 
   val instrumentationScopeName = "LoggerTest"
 
-  override def spec: Spec[TestEnvironment with Scope, Any] =
+  override def spec: Spec[TestEnvironment & Scope, Any] =
     suite("zio opentelemetry")(
       suite("Logger")(
         test("without tracer context") {
