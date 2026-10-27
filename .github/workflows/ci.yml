@@ -134,7 +134,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-    if: ${{ (github.event_name == 'release') && (github.event.action == 'published') }}
+    if: ${{ ((github.event_name == 'release') && (github.event.action == 'published')) && ((github.event.release.target_commitish == 'series/2.x') || (github.event.release.target_commitish == 'refs/heads/series/2.x')) }}
     steps:
     - name: Git Checkout
       uses: actions/checkout@v7.0.1
