@@ -260,9 +260,9 @@ jobs:
     - name: Cache Dependencies
       uses: coursier/cache-action@v8.2.0
     - name: Setup NodeJs
-      uses: actions/setup-node@v7.0.0
+      uses: actions/setup-node@v7.1.0
       with:
-        node-version: 24.12.0
+        node-version: 24.22.1
         registry-url: https://registry.npmjs.org
     - name: Publish Docs to NPM Registry
       run: sbt --no-colors docs/publishToNpm
