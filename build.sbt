@@ -81,7 +81,7 @@ inThisBuild(
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 // Keep action updates when zio-sbt regenerates workflows with its bundled versions.
-ThisBuild / ciGenerateGithubWorkflow := {
+ThisBuild / ciGenerateGithubWorkflow := Def.uncached {
   (ThisBuild / ciGenerateGithubWorkflow).value
   GithubActionsVersions.update((ThisBuild / baseDirectory).value / ".github" / "workflows")
 }

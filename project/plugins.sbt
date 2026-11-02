@@ -10,7 +10,6 @@ addSbtPlugin("dev.zio"                           % "zio-sbt-ci"                %
 addSbtPlugin("dev.zio"                           % "zio-sbt-ecosystem"         % zioSbtVersion)
 addSbtPlugin("dev.zio"                           % "zio-sbt-website"           % zioSbtVersion)
 addSbtPlugin("com.typesafe"                      % "sbt-mima-plugin"           % "1.2.1")
-addSbtPlugin("com.github.cb372"                  % "sbt-explicit-dependencies" % "0.3.1")
 addSbtPlugin("ch.epfl.scala"                     % "sbt-missinglink"           % "0.3.8")
 
 libraryDependencies += "org.snakeyaml" % "snakeyaml-engine" % "3.2"

@@ -9,7 +9,7 @@ object GithubActionsVersions {
   )
 
   def update(directory: File): Unit =
-    (directory ** "*.yml").get.foreach { file =>
+    (directory ** "*.yml").get().foreach { file =>
       val original = IO.read(file)
       val updated  = overrides.foldLeft(original) { case (content, (action, version)) =>
         content.replaceAll(
