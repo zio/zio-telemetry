@@ -4,7 +4,7 @@
 //> using dep io.opentelemetry:opentelemetry-sdk:1.67.0
 //> using dep io.opentelemetry:opentelemetry-sdk-trace:1.67.0
 //> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.67.0
-//> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.44.0
+//> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.45.0
 
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter
 import io.opentelemetry.api.trace.SpanKind
