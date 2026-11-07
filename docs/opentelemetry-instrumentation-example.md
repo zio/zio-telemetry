@@ -52,7 +52,7 @@ sbt -J-javaagent:$OTEL_AGENT_PATH \
     -J-Dotel.exporter.otlp.logs.endpoint="http://localhost:5341/ingest/otlp/v1/logs" \
     -J-Dotel.metrics.exporter=none \
     -J-Dotel.instrumentation.zio.enabled=false \
-    "opentelemetryInstrumentationExample/runMain zio.telemetry.opentelemetry.instrumentation.example.BackendApp"
+    "opentelemetryAutoinstrumentationExample/runMain zio.telemetry.opentelemetry.instrumentation.example.BackendApp"
  ```
 
 and the proxy application which will send your client requests over to the server application
@@ -66,7 +66,7 @@ sbt -J-javaagent:$OTEL_AGENT_PATH \
     -J-Dotel.exporter.otlp.logs.endpoint="http://localhost:5341/ingest/otlp/v1/logs" \
     -J-Dotel.metrics.exporter=none \
     -J-Dotel.instrumentation.zio.enabled=false \
-    "opentelemetryInstrumentationExample/runMain zio.telemetry.opentelemetry.instrumentation.example.ProxyApp"
+    "opentelemetryAutoinstrumentationExample/runMain zio.telemetry.opentelemetry.instrumentation.example.ProxyApp"
  ```
 
 Now perform the following request to see the results immediately:
