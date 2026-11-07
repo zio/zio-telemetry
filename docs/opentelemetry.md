@@ -36,6 +36,8 @@ For the complete list of available Java artifacts, please consult the informatio
 
 All examples below can be run using amazing [Scala CLI](https://scala-cli.virtuslab.org/). You can find their full copies in the `scala-cli/opentelemetry/` directory. To run, type `scala-cli <AppName>.scala` while in the directory where the file is located.
 
+Upgrading from ZIO Telemetry 3.x? See [Migrate to ZIO Telemetry 4.0](migrate-to-zio-telemetry-4.md) for the breaking changes and their replacements.
+
 ### Setup
 
 The `zio.telemetry.opentelemetry.OpenTelemetry` (aka entry point) offers a comprehensive set of layers for instrumenting your ZIO application. 
@@ -184,6 +186,8 @@ object TracingApp extends ZIOAppDefault {
 ```
 
 ### Metrics
+
+For a step-by-step walkthrough of each instrument, see [Record Metrics with OpenTelemetry](record-metrics-with-opentelemetry.md).
 
 To send [Metric signals](https://opentelemetry.io/docs/concepts/signals/metrics/), you will need a `Meter` service in your environment. For this, use the `OpenTelemetry.meter` layer which in turn requires an instance of `OpenTelemetry` provided by Java SDK and a suitable `ContextStorage` implementation. The `Meter` API lets you create [Counter](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#counter), [UpDownCounter](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#updowncounter), [Gauge](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#gauge), [Histogram](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#histogram) and their [asynchronous](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#asynchronous-instrument-api) (aka observable) counterparts. 
 As a rule of thumb, observable instruments must be initialized on an application startup. They are scoped, so you should not be worried about shutting them down manually.

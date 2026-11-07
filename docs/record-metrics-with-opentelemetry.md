@@ -8,7 +8,7 @@ In this guide, we will record business metrics from a small checkout service usi
 
 ## The Problem
 
-A service that wants to publish metrics through the OpenTelemetry Java API must create instruments from a `io.opentelemetry.api.metrics.Meter`, keep references to them, and pass each measurement along with its attributes. Nothing in that API ties a measurement to the ZIO effect that produced it, so every recording site becomes a side-effecting call that is easy to forget or to duplicate.
+A service that wants to publish metrics through the OpenTelemetry Java API must create instruments from a `io.opentelemetry.api.metrics.Meter`, keep references to them, and pass each measurement along with its attributes. Nothing in that API ties a measurement to the ZIO effect that produces it, so every recording site becomes a side-effecting call that is easy to forget or to duplicate.
 
 For example, the following code records an order count directly through the Java API:
 
