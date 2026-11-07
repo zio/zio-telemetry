@@ -356,6 +356,15 @@ lazy val docs =
     )
     .settings(unusedCompileDependenciesFilter -= moduleFilter("org.scalameta", "mdoc"))
     .settings(
+      // The SDK is used only by the mdoc-compiled snippets, not by sources under docs/
+      unusedCompileDependenciesFilter -= moduleFilter("io.opentelemetry", "opentelemetry-sdk"),
+      unusedCompileDependenciesFilter -= moduleFilter("io.opentelemetry", "opentelemetry-sdk-trace"),
+      unusedCompileDependenciesFilter -= moduleFilter("io.opentelemetry", "opentelemetry-sdk-metrics"),
+      unusedCompileDependenciesFilter -= moduleFilter("io.opentelemetry", "opentelemetry-sdk-logs"),
+      unusedCompileDependenciesFilter -= moduleFilter("io.opentelemetry", "opentelemetry-exporter-logging-otlp"),
+      unusedCompileDependenciesFilter -= moduleFilter("io.opentelemetry.semconv", "opentelemetry-semconv")
+    )
+    .settings(
       // OpenTelemetry SDK and exporters, so the mdoc-compiled snippets in docs/ can build a real SDK
       libraryDependencies ++= Seq(
         Dependencies.Orgs.opentelemetry        % "opentelemetry-sdk"                   % Dependencies.Versions.opentelemetry,
