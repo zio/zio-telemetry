@@ -10,6 +10,8 @@ const sidebars = {
         "opentracing-example",
         "opencensus",
         "opentelemetry",
+        "record-metrics-with-opentelemetry",
+        "migrate-to-zio-telemetry-4",
         "opentelemetry-zio-logging",
         "opentelemetry-example",
         "opentelemetry-instrumentation-example"

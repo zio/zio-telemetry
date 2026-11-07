@@ -58,6 +58,11 @@ You can find examples with full source code and instructions of how to run by fo
 - [OpenTelemetry ZIO Logging Example](opentelemetry-zio-logging.md)
 - [OpenTracing Example](opentracing-example.md)
 
+## Guides
+
+- [Record Metrics with OpenTelemetry](record-metrics-with-opentelemetry.md)
+- [Migrate to ZIO Telemetry 4.0](migrate-to-zio-telemetry-4.md)
+
 ## Articles
 
 - [Trace your microservices with ZIO](https://kadek-marek.medium.com/trace-your-microservices-with-zio-telemetry-5f88d69cb26b) by Marek Kadek (September 2021)
