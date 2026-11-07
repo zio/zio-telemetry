@@ -19,11 +19,11 @@ For this, you need to run proxy and backend parts of application in different te
 
 Run proxy:
 ```bash
-sbt "opentelemetryExample/runMain zio.telemetry.opentelemetry.example.ProxyApp"
+sbt "opentelemetryManualExample/runMain zio.telemetry.opentelemetry.example.ProxyApp"
 ```
 Run backend:
 ```bash
-sbt "opentelemetryExample/runMain zio.telemetry.opentelemetry.example.BackendApp"
+sbt "opentelemetryManualExample/runMain zio.telemetry.opentelemetry.example.BackendApp"
 ```
 Now perform the following request to see the results immediately:
 ```bash
