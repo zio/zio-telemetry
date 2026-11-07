@@ -355,5 +355,16 @@ lazy val docs =
       scalacOptions --= Seq("-Yno-imports", "-Xfatal-warnings")
     )
     .settings(unusedCompileDependenciesFilter -= moduleFilter("org.scalameta", "mdoc"))
+    .settings(
+      // OpenTelemetry SDK and exporters, so the mdoc-compiled snippets in docs/ can build a real SDK
+      libraryDependencies ++= Seq(
+        Dependencies.Orgs.opentelemetry        % "opentelemetry-sdk"                   % Dependencies.Versions.opentelemetry,
+        Dependencies.Orgs.opentelemetry        % "opentelemetry-sdk-trace"             % Dependencies.Versions.opentelemetry,
+        Dependencies.Orgs.opentelemetry        % "opentelemetry-sdk-metrics"           % Dependencies.Versions.opentelemetry,
+        Dependencies.Orgs.opentelemetry        % "opentelemetry-sdk-logs"              % Dependencies.Versions.opentelemetry,
+        Dependencies.Orgs.opentelemetry        % "opentelemetry-exporter-logging-otlp" % Dependencies.Versions.opentelemetry,
+        Dependencies.Orgs.opentelemetrySemconv % "opentelemetry-semconv"               % "1.44.0"
+      )
+    )
     .dependsOn(opentracing, opentelemetry, opencensus, opentelemetryZioLogging)
     .enablePlugins(WebsitePlugin)
