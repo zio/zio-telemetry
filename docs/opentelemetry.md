@@ -34,249 +34,243 @@ For the complete list of available Java artifacts, please consult the informatio
 
 ## Usage
 
-All examples below can be run using amazing [Scala CLI](https://scala-cli.virtuslab.org/). You can find their full copies in the `scala-cli/opentelemetry/` directory. To run, type `scala-cli <AppName>.scala` while in the directory where the file is located.
+The snippets on this page are compiled with the library, so they show the current 4.0 API. The complete, runnable applications are in the [manual example module](https://github.com/zio/zio-telemetry/tree/v4.0.0-rc/modules/examples/opentelemetry/manual) of the repository.
 
 Upgrading from ZIO Telemetry 3.x? See [Migrate to ZIO Telemetry 4.0](migrate-to-zio-telemetry-4.md) for the breaking changes and their replacements.
 
 ### Setup
 
-The `zio.telemetry.opentelemetry.OpenTelemetry` (aka entry point) offers a comprehensive set of layers for instrumenting your ZIO application. 
+The `zio.telemetry.opentelemetry.OpenTelemetry` object (the entry point) offers layers that build a `zio.telemetry.opentelemetry.core.OpenTelemetry` service. Every other layer, such as the tracer, meter, or logger, takes that service as its input.
 
-First of all, you need to provide an instance of `io.opentelemetry.api.Opentelemetry`.
-In case you don't need an automatic instrumentation, you can use `OpenTelemetry.custom` layer. It receives a scoped ZIO effect indicating that the provided instance will be closed when the application is shut down. Here is an example:
+First, you need an instance of `io.opentelemetry.api.OpenTelemetry`. If you don't need automatic instrumentation, use the `OpenTelemetry.custom` layer. It receives a scoped ZIO effect, so the provided instance is closed when the application shuts down. The example below builds an SDK that prints tracing, metric, and log data to stdout in OTLP JSON format. The `OtelSdk` object is reused by the examples further down this page:
 
-```scala
+```scala mdoc:silent
 import zio._
-import zio.telemetry.opentelemetry.OpenTelemetry
-import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.api
+import io.opentelemetry.api.common.Attributes
+import io.opentelemetry.exporter.logging.otlp.{
+  OtlpJsonLoggingLogRecordExporter,
+  OtlpJsonLoggingMetricExporter,
+  OtlpJsonLoggingSpanExporter
+}
+import io.opentelemetry.sdk.OpenTelemetrySdk
+import io.opentelemetry.sdk.logs.SdkLoggerProvider
+import io.opentelemetry.sdk.logs.`export`.SimpleLogRecordProcessor
+import io.opentelemetry.sdk.metrics.SdkMeterProvider
+import io.opentelemetry.sdk.metrics.`export`.PeriodicMetricReader
+import io.opentelemetry.sdk.resources.Resource
+import io.opentelemetry.sdk.trace.SdkTracerProvider
+import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
+import io.opentelemetry.semconv.ServiceAttributes
+import zio.telemetry.opentelemetry.OpenTelemetry
+import zio.telemetry.opentelemetry.core
+import zio.telemetry.opentelemetry.core.context.ContextPropagator
 
-def custom(resourceName: String): TaskLayer[api.OpenTelemetry] =
-  OpenTelemetry.custom(
+object OtelSdk {
+
+  val resourceName = "my-service"
+
+  val resource: Resource =
+    Resource.create(Attributes.of(ServiceAttributes.SERVICE_NAME, resourceName))
+
+  val tracerProvider: RIO[Scope, SdkTracerProvider] =
     for {
-      tracerProvider <- TracerProvider.stdout(resourceName)
-      meterProvider  <- MeterProvider.stdout(resourceName)
-      loggerProvider <- LoggerProvider.stdout(resourceName)
-      openTelemetry  <- ZIO.fromAutoCloseable(
-                          ZIO.succeed(
-                            OpenTelemetrySdk
-                              .builder()
-                              .setTracerProvider(tracerProvider)
-                              .setMeterProvider(meterProvider)
-                              .setLoggerProvider(loggerProvider)
-                              .build
-                          )
-                        )
-    } yield openTelemetry
-  )
+      exporter  <- ZIO.fromAutoCloseable(ZIO.succeed(OtlpJsonLoggingSpanExporter.create()))
+      processor <- ZIO.fromAutoCloseable(ZIO.succeed(SimpleSpanProcessor.create(exporter)))
+      provider  <- ZIO.fromAutoCloseable(
+                     ZIO.succeed(
+                       SdkTracerProvider
+                         .builder()
+                         .setResource(resource)
+                         .addSpanProcessor(processor)
+                         .build()
+                     )
+                   )
+    } yield provider
+
+  val meterProvider: RIO[Scope, SdkMeterProvider] =
+    for {
+      exporter <- ZIO.fromAutoCloseable(ZIO.succeed(OtlpJsonLoggingMetricExporter.create()))
+      reader   <- ZIO.fromAutoCloseable(ZIO.succeed(PeriodicMetricReader.builder(exporter).build()))
+      provider <- ZIO.fromAutoCloseable(
+                    ZIO.succeed(
+                      SdkMeterProvider
+                        .builder()
+                        .setResource(resource)
+                        .registerMetricReader(reader)
+                        .build()
+                    )
+                  )
+    } yield provider
+
+  val loggerProvider: RIO[Scope, SdkLoggerProvider] =
+    for {
+      exporter  <- ZIO.fromAutoCloseable(ZIO.succeed(OtlpJsonLoggingLogRecordExporter.create()))
+      processor <- ZIO.fromAutoCloseable(ZIO.succeed(SimpleLogRecordProcessor.create(exporter)))
+      provider  <- ZIO.fromAutoCloseable(
+                     ZIO.succeed(
+                       SdkLoggerProvider
+                         .builder()
+                         .setResource(resource)
+                         .addLogRecordProcessor(processor)
+                         .build()
+                     )
+                   )
+    } yield provider
+
+  def custom(
+    ctxPropagator: ContextPropagator = ContextPropagator.default,
+    logAnnotated: Boolean = false
+  ): TaskLayer[core.OpenTelemetry] =
+    OpenTelemetry.custom(ctxPropagator, logAnnotated)(
+      for {
+        tracer <- tracerProvider
+        meter  <- meterProvider
+        logger <- loggerProvider
+        sdk    <- ZIO.fromAutoCloseable(
+                    ZIO.succeed(
+                      OpenTelemetrySdk
+                        .builder()
+                        .setTracerProvider(tracer)
+                        .setMeterProvider(meter)
+                        .setLoggerProvider(logger)
+                        .build()
+                    )
+                  )
+      } yield sdk: api.OpenTelemetry
+    )
+
+}
 ```
 
-The library depends only on `opentelemetry-api` which means you have to manage an initialization of providers and depenendencies for `opentelemetry-sdk`, and `opentelemetry-exporter-*` inside your application.
+`OpenTelemetry.custom` returns a `core.OpenTelemetry`. Each layer that needs it is then wired with `.provide`, for example `OtelSdk.custom` together with `OpenTelemetry.tracer(...)`.
 
-For more details, please have a look at the source code of the [example application](https://github.com/zio/zio-telemetry/tree/series/2.x/opentelemetry-example/src/main/scala/zio/telemetry/opentelemetry/example).
+The library depends only on `opentelemetry-api`. This means you manage the providers and dependencies of `opentelemetry-sdk` and `opentelemetry-exporter-*` in your application, as shown above.
+
+#### Choosing a context propagator and log annotations
+
+`OpenTelemetry.custom` takes two optional parameters before the scoped effect:
+
+- `ctxPropagator` - the propagator used by `propagate` and `continue` (see [Context Propagation](#context-propagation)). It defaults to `ContextPropagator.default`, which combines W3C trace context and W3C baggage.
+- `logAnnotated` - when `true`, ZIO log annotations are added as attributes to spans, metric data points, and baggage. It defaults to `false`.
+
+```scala mdoc:compile-only
+import zio._
+import zio.telemetry.opentelemetry.core
+import zio.telemetry.opentelemetry.core.context.ContextPropagator
+
+val configured: TaskLayer[core.OpenTelemetry] =
+  OtelSdk.custom(ContextPropagator.w3cTraceContext, logAnnotated = true)
+```
 
 #### Usage with OpenTelemetry automatic instrumentation
 
 OpenTelemetry provides a [JVM agent for automatic instrumentation](https://opentelemetry.io/docs/instrumentation/java/automatic/) which supports many [popular Java libraries](https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/supported-libraries.md).
-Since [version 1.25.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.25.0) OpenTelemetry JVM agent supports ZIO.
+Since [version 1.25.0](https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/tag/v1.25.0) the OpenTelemetry JVM agent supports ZIO.
 
-To enable interoperability between automatic instrumentation and `zio-opentelemetry`, `Tracing` has to be created
-using `ContextStorage` backed by OpenTelemetry's native `Context` and `Tracer` provided by globally registered `TracerProvider`. It means that instead of `OpenTelemetry.contextZIO` and `OpenTelemetry.custom` you have to provide `OpenTelemetry.contextJVM` and `OpenTelemetry.global` layers.
+To make `zio-opentelemetry` interoperate with automatic instrumentation, the context must live in OpenTelemetry's native thread-local `Context`, and the tracer must come from the globally registered `TracerProvider`. Use the `OpenTelemetry.global` layer for this instead of `OpenTelemetry.custom`:
+
+```scala mdoc:compile-only
+import zio._
+import zio.telemetry.opentelemetry.OpenTelemetry
+import zio.telemetry.opentelemetry.core
+
+val autoInstrumented: TaskLayer[core.OpenTelemetry] =
+  OpenTelemetry.global()
+```
+
+Wrap the code that should run in the instrumented context with `openTelemetry.autoinstrumented`, as described in the [Tracing](#tracing) section.
 
 ### Tracing
 
-To send [Trace signals](https://opentelemetry.io/docs/concepts/signals/traces/), you will need a `Tracing` service in your environment. For this, use the `OpenTelemetry.tracing` layer which in turn requires an instance of `OpenTelemetry` provided by Java SDK and a suitable `ContextStorage` implementation. The `Tracing` API includes methods for creating spans, as well as for adding attributes and events to them. 
-Here are some of the main ones:
+To send [Trace signals](https://opentelemetry.io/docs/concepts/signals/traces/), you need a `Tracer` service in your environment. Use the `OpenTelemetry.tracer` layer, which takes the `core.OpenTelemetry` service as its input.
 
-- `root` - sets the current span to be the new root span
-- `span` - sets the current span to be the child of the current span
-- `spanScoped` - sets the current span to be the child of the current span, but ends it only when the scope closes
-- `extractSpan` - extracts the span from carrier and set its child span to be the current span
-- `injectSpan` - injects the current span into carrier
-- `setAttribute` - sets an attribute of the current span
-- `addEvent` - adds an event to the current span
+The `Tracer` API includes methods for creating spans:
 
-Some of the methods above are available via [ZIO Aspect](https://zio.dev/reference/core/zio/#zio-aspect) syntax. 
+- `root` - starts a new root span, which is not a child of the current span. Its default span kind is `SpanKind.SERVER`.
+- `span` - starts a child span of the current span.
+- `spanScoped` - starts a child span that ends only when the surrounding `Scope` closes.
+- `continueSpan` - starts a child of an existing `Span` that you pass in.
+- `spanUnmanaged` - starts a span that you end yourself with `Span#end`.
 
-```scala
-//> using scala "3.4.2"
-//> using dep dev.zio::zio:2.1.7
-//> using dep dev.zio::zio-opentelemetry:3.0.0-RC24
-//> using dep io.opentelemetry:opentelemetry-sdk:1.40.0
-//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.40.0
-//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.40.0
-//> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.22.0-alpha
+The body of `root`, `span`, and `continueSpan` is a function from the `Span` to a ZIO effect, so the body can set attributes and events on its own span. The `Span` API includes:
 
-import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter
+- `setAttribute` - sets an attribute of the span
+- `addEvent` - adds an event to the span
+- `setStatus` - sets the status of the span
+- `recordException` - records an exception on the span
+- `end` - ends the span
+
+Some of the methods above are also available via [ZIO Aspect](https://zio.dev/reference/core/zio/#zio-aspect) syntax, through `tracer.aspects`.
+
+```scala mdoc:compile-only
 import io.opentelemetry.api.trace.SpanKind
-import io.opentelemetry.sdk.trace.SdkTracerProvider
-import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
-import io.opentelemetry.sdk.resources.Resource
-import io.opentelemetry.semconv.ServiceAttributes
-import io.opentelemetry.api.common.Attributes
-import io.opentelemetry.sdk.OpenTelemetrySdk
-import io.opentelemetry.api
-import zio.*
-import zio.telemetry.opentelemetry.tracing.Tracing
+import zio._
 import zio.telemetry.opentelemetry.OpenTelemetry
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.core.trace.Tracer
 
 object TracingApp extends ZIOAppDefault {
 
   val instrumentationScopeName = "dev.zio.TracingApp"
-  val resourceName             = "tracing-app"
-
-  // Prints to stdout in OTLP Json format
-  val stdoutTracerProvider: RIO[Scope, SdkTracerProvider] =
-    for {
-      spanExporter   <- ZIO.fromAutoCloseable(ZIO.succeed(OtlpJsonLoggingSpanExporter.create()))
-      spanProcessor  <- ZIO.fromAutoCloseable(ZIO.succeed(SimpleSpanProcessor.create(spanExporter)))
-      tracerProvider <-
-        ZIO.fromAutoCloseable(
-          ZIO.succeed(
-            SdkTracerProvider
-              .builder()
-              .setResource(Resource.create(Attributes.of(ServiceAttributes.SERVICE_NAME, resourceName)))
-              .addSpanProcessor(spanProcessor)
-              .build()
-          )
-        )
-    } yield tracerProvider
-
-  val otelSdkLayer: TaskLayer[api.OpenTelemetry] =
-    OpenTelemetry.custom(
-      for {
-        tracerProvider <- stdoutTracerProvider
-        sdk            <- ZIO.fromAutoCloseable(
-                            ZIO.succeed(
-                              OpenTelemetrySdk
-                                .builder()
-                                .setTracerProvider(tracerProvider)
-                                .build()
-                            )
-                          )
-      } yield sdk
-    )
 
   override def run =
     ZIO
-      .serviceWithZIO[Tracing] { tracing =>
-        val logic = for {
-          // Set an attribute to the current span
-          _       <- tracing.setAttribute("attr1", "value1")
-          // Add an event to the current span
-          _       <- tracing.addEvent("Waiting for the user input")
-          // Read user input
-          message <- Console.readLine
-          // Add another event to the current span
-          _       <- tracing.addEvent(s"User typed: $message")
-        } yield message
-
+      .serviceWithZIO[Tracer] { tracer =>
         // Create a root span with a lifetime equal to the runtime of the given ZIO effect.
-        // We use ZIO Aspect's @@ syntax here just for the sake of example.
-        logic @@ tracing.aspects.root("root_span", SpanKind.INTERNAL)
+        tracer.root("root_span", SpanKind.INTERNAL) { span =>
+          for {
+            // Set an attribute to the current span
+            _       <- span.setAttribute("attr1", "value1")
+            // Add an event to the current span
+            _       <- span.addEvent("Waiting for the user input")
+            // Read user input
+            message <- Console.readLine
+            // Add another event to the current span
+            _       <- span.addEvent(s"User typed: $message")
+          } yield message
+        }
       }
       .provide(
-        otelSdkLayer,
-        OpenTelemetry.tracing(instrumentationScopeName),
-        OpenTelemetry.contextZIO
+        OtelSdk.custom(),
+        OpenTelemetry.tracer(instrumentationScopeName)
       )
 
 }
 ```
 
+The same root span can be created with the aspect syntax. Here the body does not need the span, so it is passed as a plain effect:
+
+```scala mdoc:compile-only
+import io.opentelemetry.api.trace.SpanKind
+import zio._
+import zio.telemetry.opentelemetry.core.trace.Tracer
+
+def handle(tracer: Tracer): UIO[Unit] =
+  ZIO.logInfo("handling request") @@ tracer.aspects.root("root_span", SpanKind.INTERNAL)
+```
+
 ### Metrics
+
+To send [Metric signals](https://opentelemetry.io/docs/concepts/signals/metrics/), you need a `Meter` service in your environment. Use the `OpenTelemetry.meter` layer, which takes the `core.OpenTelemetry` service as its input.
+
+The `Meter` API lets you create [Counter](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#counter), [UpDownCounter](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#updowncounter), [Gauge](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#gauge), [Histogram](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#histogram) and their [asynchronous](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#asynchronous-instrument-api) (aka observable) counterparts.
+Unlike in 3.x, the `Meter` methods return the instrument directly, not an effect that produces it.
+As a rule of thumb, observable instruments must be initialized on an application startup. They are scoped, so you do not need to shut them down manually.
+By default the metric instruments do not take ZIO log annotations into account. To turn it on, pass `logAnnotated = true` to the `OpenTelemetry.meter` layer initializer.
 
 For a step-by-step walkthrough of each instrument, see [Record Metrics with OpenTelemetry](record-metrics-with-opentelemetry.md).
 
-To send [Metric signals](https://opentelemetry.io/docs/concepts/signals/metrics/), you will need a `Meter` service in your environment. For this, use the `OpenTelemetry.meter` layer which in turn requires an instance of `OpenTelemetry` provided by Java SDK and a suitable `ContextStorage` implementation. The `Meter` API lets you create [Counter](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#counter), [UpDownCounter](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#updowncounter), [Gauge](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#gauge), [Histogram](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#histogram) and their [asynchronous](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/api.md#asynchronous-instrument-api) (aka observable) counterparts. 
-As a rule of thumb, observable instruments must be initialized on an application startup. They are scoped, so you should not be worried about shutting them down manually.
-By default the metric instruments does not take ZIO log annotations into account. To turn it on pass `logAnnotated = true` parameter to the `OpenTelemetry.metrics` layer initializer.
-
-```scala
-//> using scala "3.4.2"
-//> using dep dev.zio::zio:2.1.7
-//> using dep dev.zio::zio-opentelemetry:3.0.0-RC24
-//> using dep io.opentelemetry:opentelemetry-sdk:1.40.0
-//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.40.0
-//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.40.0
-//> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.22.0-alpha
-
-import io.opentelemetry.sdk.trace.SdkTracerProvider
-import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
-import io.opentelemetry.sdk.metrics.SdkMeterProvider
-import io.opentelemetry.sdk.metrics.`export`.PeriodicMetricReader
-import io.opentelemetry.sdk.resources.Resource
-import io.opentelemetry.api.common
-import io.opentelemetry.semconv.ServiceAttributes
-import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter
-import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingMetricExporter
-import io.opentelemetry.sdk.OpenTelemetrySdk
-import io.opentelemetry.api
-import zio.*
-import zio.telemetry.opentelemetry.tracing.Tracing
-import zio.telemetry.opentelemetry.metrics.Meter
-import zio.telemetry.opentelemetry.common.Attributes
-import zio.telemetry.opentelemetry.common.Attribute
+```scala mdoc:compile-only
+import io.opentelemetry.api.trace.SpanKind
+import zio._
 import zio.telemetry.opentelemetry.OpenTelemetry
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.core.common.{Attribute, Attributes}
+import zio.telemetry.opentelemetry.core.metrics.{Counter, Meter, ObservableMeasurement}
+import zio.telemetry.opentelemetry.core.trace.Tracer
 
 object MetricsApp extends ZIOAppDefault {
 
   val instrumentationScopeName = "dev.zio.MetricsApp"
-  val resourceName             = "metrics-app"
-
-  // Prints to stdout in OTLP Json format
-  val stdoutMeterProvider: RIO[Scope, SdkMeterProvider] =
-    for {
-      metricExporter <- ZIO.fromAutoCloseable(ZIO.succeed(OtlpJsonLoggingMetricExporter.create()))
-      metricReader   <-
-        ZIO.fromAutoCloseable(ZIO.succeed(PeriodicMetricReader.builder(metricExporter).setInterval(5.second).build()))
-      meterProvider  <-
-        ZIO.fromAutoCloseable(
-          ZIO.succeed(
-            SdkMeterProvider
-              .builder()
-              .registerMetricReader(metricReader)
-              .setResource(Resource.create(common.Attributes.of(ServiceAttributes.SERVICE_NAME, resourceName)))
-              .build()
-          )
-        )
-    } yield meterProvider
-
-  // Prints to stdout in OTLP Json format
-  val stdoutTracerProvider: RIO[Scope, SdkTracerProvider] =
-    for {
-      spanExporter   <- ZIO.fromAutoCloseable(ZIO.succeed(OtlpJsonLoggingSpanExporter.create()))
-      spanProcessor  <- ZIO.fromAutoCloseable(ZIO.succeed(SimpleSpanProcessor.create(spanExporter)))
-      tracerProvider <-
-        ZIO.fromAutoCloseable(
-          ZIO.succeed(
-            SdkTracerProvider
-              .builder()
-              .setResource(Resource.create(common.Attributes.of(ServiceAttributes.SERVICE_NAME, resourceName)))
-              .addSpanProcessor(spanProcessor)
-              .build()
-          )
-        )
-    } yield tracerProvider
-
-  val otelSdkLayer: TaskLayer[api.OpenTelemetry] =
-    OpenTelemetry.custom(
-      for {
-        tracerProvider <- stdoutTracerProvider
-        meterProvider  <- stdoutMeterProvider
-        sdk            <- ZIO.fromAutoCloseable(
-                            ZIO.succeed(
-                              OpenTelemetrySdk
-                                .builder()
-                                .setTracerProvider(tracerProvider)
-                                .setMeterProvider(meterProvider)
-                                .build()
-                            )
-                          )
-      } yield sdk
-    )
 
   // Stores the number of seconds elapsed since the application startup
   val tickRefLayer: ULayer[Ref[Long]] =
@@ -297,7 +291,7 @@ object MetricsApp extends ZIOAppDefault {
         meter <- ZIO.service[Meter]
         ref   <- ZIO.service[Ref[Long]]
         // Initialize observable counter instrument
-        _     <- meter.observableCounter("tick_counter") { om =>
+        _     <- meter.observableCounter("tick_counter") { (om: ObservableMeasurement[Long]) =>
                    for {
                      tick <- ref.get
                      _    <- om.record(tick)
@@ -308,28 +302,28 @@ object MetricsApp extends ZIOAppDefault {
 
   override def run =
     ZIO
-      .serviceWithZIO[Tracing] { tracing =>
-        val logic = for {
-          meter                <- ZIO.service[Meter]
-          // Create a counter
-          messageLengthCounter <- meter.counter("message_length_counter")
-          // Read user input
-          message              <- Console.readLine
-          // Sleep for the number of seconds equal to the message length  to demonstrate the work of observable counter
-          _                    <- ZIO.sleep(message.length.seconds)
-          // Record the message length
-          _                    <- messageLengthCounter.add(message.length, Attributes(Attribute.string("message", message)))
-        } yield message
+      .serviceWithZIO[Tracer] { tracer =>
+        ZIO.serviceWithZIO[Meter] { meter =>
+          // The counter is created directly, not inside an effect
+          val messageLengthCounter: Counter[Long] = meter.counter("message_length_counter")
+          val logic = for {
+            // Read user input
+            message <- Console.readLine
+            // Sleep for the number of seconds equal to the message length to demonstrate the work of the observable counter
+            _       <- ZIO.sleep(message.length.seconds)
+            // Record the message length
+            _       <- messageLengthCounter.add(message.length.toLong, Attributes(Attribute.string("message", message)))
+          } yield message
 
-        // By wrapping our logic into a span, we make the `messageLengthCounter` data points correlated with a "root_span" automatically.
-        // Additionally we implicitly add one more attribute to the `messageLenghtCounter` as it is wrapped into a `ZIO.logAnnotate` call.
-        ZIO.logAnnotate("zio", "annotation")(logic) @@ tracing.aspects.root("root_span")
+          // By wrapping our logic into a span, the `messageLengthCounter` data points are correlated with a "root_span" automatically.
+          // Additionally, the `ZIO.logAnnotate` call adds one more attribute to the `messageLengthCounter`.
+          ZIO.logAnnotate("zio", "annotation")(logic) @@ tracer.aspects.root("root_span", SpanKind.INTERNAL)
+        }
       }
       .provide(
-        otelSdkLayer,
-        OpenTelemetry.metrics(instrumentationScopeName, logAnnotated = true),
-        OpenTelemetry.tracing(instrumentationScopeName),
-        OpenTelemetry.contextZIO,
+        OtelSdk.custom(),
+        OpenTelemetry.meter(instrumentationScopeName, logAnnotated = true),
+        OpenTelemetry.tracer(instrumentationScopeName),
         tickCounterLayer,
         tickRefLayer
       )
@@ -339,96 +333,38 @@ object MetricsApp extends ZIOAppDefault {
 
 #### Integration with ZIO metrics
 
-To enable seamless integration with [ZIO metrics](https://zio.dev/reference/observability/metrics/), use the `OpenTelemetry.zioMetrics` layer. If you also need to publish JVM metrics, be sure to include `DefaultJvmMetrics.live.unit`.
+To enable seamless integration with [ZIO metrics](https://zio.dev/reference/observability/metrics/), use the `OpenTelemetry.enableZioMetrics` layer. It takes an instrumentation scope name, an optional version, and an optional schema URL, and it produces `Unit`. If you also need to publish JVM metrics, be sure to include `DefaultJvmMetrics.live.unit`.
+
+```scala mdoc:compile-only
+import zio._
+import zio.telemetry.opentelemetry.OpenTelemetry
+import zio.telemetry.opentelemetry.core
+
+val zioMetrics: URLayer[core.OpenTelemetry, Unit] =
+  OpenTelemetry.enableZioMetrics("dev.zio.MetricsApp")
+```
 
 ### Logging
 
-To send [Log signals](https://opentelemetry.io/docs/concepts/signals/logs/), you will need a `Logging` service in your environment. For this, use the `OpenTelemetry.logging` layer which in turn requires an instance of `OpenTelemetry` provided by Java SDK and a suitable `ContextStorage` implementation. You can achieve the same by incorporating [Logger MDC auto-instrumentation](https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/logger-mdc-instrumentation.md), so the rule of thumb is to use the `Logging` service when you need to propagate ZIO log annotations as log record attributes or, for some reason you don't want to use auto-instrumentation.
+To send [Log signals](https://opentelemetry.io/docs/concepts/signals/logs/), install the OpenTelemetry logger with the `OpenTelemetry.installLogger` layer. It routes calls to `ZIO.log*` as OpenTelemetry log records, and it takes the same instrumentation scope name as the other layers, plus an optional log level (`LogLevel.Info` by default).
 
-```scala
-//> using scala "3.4.2"
-//> using dep dev.zio::zio:2.1.7
-//> using dep dev.zio::zio-opentelemetry:3.0.0-RC24
-//> using dep io.opentelemetry:opentelemetry-sdk:1.40.0
-//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.40.0
-//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.40.0
-//> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.22.0-alpha
+Use this layer when you need to propagate ZIO log annotations as log record attributes, or when you do not want to use auto-instrumentation. You can achieve the same by incorporating [Logger MDC auto-instrumentation](https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/docs/logger-mdc-instrumentation.md), so the rule of thumb is to use `installLogger` only in those cases.
 
-import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter
-import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingLogRecordExporter
-import io.opentelemetry.api.common.Attributes
-import io.opentelemetry.sdk.trace.SdkTracerProvider
-import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
-import io.opentelemetry.sdk.logs.SdkLoggerProvider
-import io.opentelemetry.sdk.logs.`export`.SimpleLogRecordProcessor
-import io.opentelemetry.sdk.resources.Resource
-import io.opentelemetry.semconv.ServiceAttributes
-import io.opentelemetry.sdk.OpenTelemetrySdk
-import io.opentelemetry.api
-import zio.*
-import zio.telemetry.opentelemetry.tracing.Tracing
+If you need a `ZLogger` value rather than a layer, for example to run an effect with `ZIO.withLogger`, use `OpenTelemetry.zioLogger`.
+
+```scala mdoc:compile-only
+import io.opentelemetry.api.trace.SpanKind
+import zio._
 import zio.telemetry.opentelemetry.OpenTelemetry
-import zio.telemetry.opentelemetry.context.ContextStorage
+import zio.telemetry.opentelemetry.core.trace.Tracer
 
 object LoggingApp extends ZIOAppDefault {
 
   val instrumentationScopeName = "dev.zio.LoggingApp"
-  val resourceName             = "logging-app"
-
-  // Prints to stdout in OTLP Json format
-  val stdoutLoggerProvider: RIO[Scope, SdkLoggerProvider] =
-    for {
-      logRecordExporter  <- ZIO.fromAutoCloseable(ZIO.succeed(OtlpJsonLoggingLogRecordExporter.create()))
-      logRecordProcessor <- ZIO.fromAutoCloseable(ZIO.succeed(SimpleLogRecordProcessor.create(logRecordExporter)))
-      loggerProvider     <-
-        ZIO.fromAutoCloseable(
-          ZIO.succeed(
-            SdkLoggerProvider
-              .builder()
-              .setResource(Resource.create(Attributes.of(ServiceAttributes.SERVICE_NAME, resourceName)))
-              .addLogRecordProcessor(logRecordProcessor)
-              .build()
-          )
-        )
-    } yield loggerProvider
-
-  // Prints to stdout in OTLP Json format
-  val stdoutTracerProvider: RIO[Scope, SdkTracerProvider] =
-    for {
-      spanExporter   <- ZIO.fromAutoCloseable(ZIO.succeed(OtlpJsonLoggingSpanExporter.create()))
-      spanProcessor  <- ZIO.fromAutoCloseable(ZIO.succeed(SimpleSpanProcessor.create(spanExporter)))
-      tracerProvider <-
-        ZIO.fromAutoCloseable(
-          ZIO.succeed(
-            SdkTracerProvider
-              .builder()
-              .setResource(Resource.create(Attributes.of(ServiceAttributes.SERVICE_NAME, resourceName)))
-              .addSpanProcessor(spanProcessor)
-              .build()
-          )
-        )
-    } yield tracerProvider
-
-  val otelSdkLayer: TaskLayer[api.OpenTelemetry] =
-    OpenTelemetry.custom(
-      for {
-        tracerProvider <- stdoutTracerProvider
-        loggerProvider <- stdoutLoggerProvider
-        sdk            <- ZIO.fromAutoCloseable(
-                            ZIO.succeed(
-                              OpenTelemetrySdk
-                                .builder()
-                                .setTracerProvider(tracerProvider)
-                                .setLoggerProvider(loggerProvider)
-                                .build()
-                            )
-                          )
-      } yield sdk
-    )
 
   override def run =
     ZIO
-      .serviceWithZIO[Tracing] { tracing =>
+      .serviceWithZIO[Tracer] { tracer =>
         val logic = for {
           // Read user input
           message <- Console.readLine
@@ -439,13 +375,12 @@ object LoggingApp extends ZIOAppDefault {
         } yield ()
 
         // All log messages produced by `logic` will be correlated with a "root_span" automatically
-        logic @@ tracing.aspects.root("root_span")
+        logic @@ tracer.aspects.root("root_span", SpanKind.INTERNAL)
       }
       .provide(
-        otelSdkLayer,
-        OpenTelemetry.logging(instrumentationScopeName),
-        OpenTelemetry.tracing(instrumentationScopeName),
-        OpenTelemetry.contextZIO
+        OtelSdk.custom(),
+        OpenTelemetry.installLogger(instrumentationScopeName),
+        OpenTelemetry.tracer(instrumentationScopeName)
       )
 
 }
@@ -453,40 +388,39 @@ object LoggingApp extends ZIOAppDefault {
 
 ### Baggage
 
-To pass contextual information in [Baggage](https://opentelemetry.io/docs/concepts/signals/baggage/), you will need a `Baggage` service in your environment. For this, use the `OpenTelemetry.baggage` layer which in turn requires an instance of a suitable `ContextStorage` implementation. The `Baggage` API includes methods for getting/setting key/value pairs and injecting/extracting baggage data using the current context. By default the `Baggage` service does not take ZIO log annotations into account. To turn it on use `OpenTelemetry.baggage(logAnnotated = true)`.
+To pass contextual information in [Baggage](https://opentelemetry.io/docs/concepts/signals/baggage/), read the `baggage` member of the `core.OpenTelemetry` service. It is no longer a separate layer. The `Baggage` API includes methods for getting and setting key/value pairs, and for injecting and extracting baggage data through the propagators described in [Context Propagation](#context-propagation).
 
-```scala
-//> using scala "3.4.2"
-//> using dep dev.zio::zio:2.1.7
-//> using dep dev.zio::zio-opentelemetry:3.0.0-RC24
+Setting a value takes the effect that the value applies to: `baggage.set(name, value)(zio)` makes the value visible inside `zio`, and it is not visible after that effect ends. Use `baggage.remove(name)(zio)` and `baggage.setWithMetadata(...)` the same way.
 
-import zio.*
-import zio.telemetry.opentelemetry.baggage.Baggage
-import zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator
-import zio.telemetry.opentelemetry.context.ContextStorage
-import zio.telemetry.opentelemetry.OpenTelemetry
+By default the `Baggage` service does not take ZIO log annotations into account. To turn it on, pass `logAnnotated = true` to the layer that builds `core.OpenTelemetry`, such as `OpenTelemetry.custom(logAnnotated = true)(...)`.
+
+```scala mdoc:compile-only
+import zio._
+import zio.telemetry.opentelemetry.core
 
 object BaggageApp extends ZIOAppDefault {
 
+  val instrumentationScopeName = "dev.zio.BaggageApp"
+
   override def run =
     ZIO
-      .serviceWithZIO[Baggage] { baggage =>
+      .serviceWithZIO[core.OpenTelemetry] { openTelemetry =>
         for {
           // Read user input
           message <- Console.readLine
-          // Set baggage key/value
-          _       <- baggage.set("message", message)
-          // Read all baggage data including ZIO log annotations
-          data    <- ZIO.logAnnotate("message2", "annotation")(
-                       baggage.getAll
-                     )
+          // Set the baggage key for the duration of the inner effect, and read all baggage data
+          // including ZIO log annotations
+          data    <- openTelemetry.baggage.set("message", message) {
+                       ZIO.logAnnotate("message2", "annotation")(
+                         openTelemetry.baggage.getAll
+                       )
+                     }
           // Print the resulting data
           _       <- Console.printLine(s"Baggage data: $data")
-        } yield message
+        } yield ()
       }
       .provide(
-        OpenTelemetry.baggage(logAnnotated = true),
-        OpenTelemetry.contextZIO
+        OtelSdk.custom(logAnnotated = true)
       )
 
 }
@@ -494,129 +428,71 @@ object BaggageApp extends ZIOAppDefault {
 
 ### Context Propagation
 
-Explicitly utilizing the context propagation API becomes relevant only when auto-instrumentation is not used.
+Explicitly utilizing the context propagation API becomes relevant only when auto-instrumentation is not used. Use the `propagate` method to write the current context into an outgoing carrier, and the `continue` method to restore the context from an incoming carrier.
 Please note that injection and extraction are not referentially transparent due to the use of the mutable OpenTelemetry carrier Java API.
 
-```scala
-//> using scala "3.4.2"
-//> using dep dev.zio::zio:2.1.7
-//> using dep dev.zio::zio-opentelemetry:3.0.0-RC24
-//> using dep io.opentelemetry:opentelemetry-sdk:1.40.0
-//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.40.0
-//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.40.0
-//> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.22.0-alpha
+The `ContextPropagator` used for this is set when the `core.OpenTelemetry` service is built (see [Choosing a context propagator](#choosing-a-context-propagator-and-log-annotations)). The default propagator combines the W3C trace context and W3C baggage formats.
 
-import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter
+```scala mdoc:compile-only
 import io.opentelemetry.api.trace.SpanKind
-import io.opentelemetry.sdk.trace.SdkTracerProvider
-import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
-import io.opentelemetry.sdk.resources.Resource
-import io.opentelemetry.semconv.ServiceAttributes
-import io.opentelemetry.api.common.Attributes
-import io.opentelemetry.sdk.OpenTelemetrySdk
-import io.opentelemetry.api
-import zio.*
-import zio.telemetry.opentelemetry.baggage.Baggage
-import zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator
-import zio.telemetry.opentelemetry.tracing.Tracing
-import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
-import zio.telemetry.opentelemetry.OpenTelemetry
-import zio.telemetry.opentelemetry.context.ContextStorage
-import zio.telemetry.opentelemetry.context.IncomingContextCarrier
-import zio.telemetry.opentelemetry.context.OutgoingContextCarrier
+import zio._
+import zio.telemetry.opentelemetry.core
+import zio.telemetry.opentelemetry.core.context.{IncomingContextCarrier, OutgoingContextCarrier}
+import zio.telemetry.opentelemetry.core.trace.Tracer
 import scala.collection.mutable
 
 object PropagatingApp extends ZIOAppDefault {
 
   val instrumentationScopeName = "dev.zio.PropagatingApp"
-  val resourceName             = "propagating-app"
-
-  // Prints to stdout in OTLP Json format
-  val stdoutTracerProvider: RIO[Scope, SdkTracerProvider] =
-    for {
-      spanExporter   <- ZIO.fromAutoCloseable(ZIO.succeed(OtlpJsonLoggingSpanExporter.create()))
-      spanProcessor  <- ZIO.fromAutoCloseable(ZIO.succeed(SimpleSpanProcessor.create(spanExporter)))
-      tracerProvider <-
-        ZIO.fromAutoCloseable(
-          ZIO.succeed(
-            SdkTracerProvider
-              .builder()
-              .setResource(Resource.create(Attributes.of(ServiceAttributes.SERVICE_NAME, resourceName)))
-              .addSpanProcessor(spanProcessor)
-              .build()
-          )
-        )
-    } yield tracerProvider
-
-  val otelSdkLayer: TaskLayer[api.OpenTelemetry] =
-    OpenTelemetry.custom(
-      for {
-        tracerProvider <- stdoutTracerProvider
-        sdk            <- ZIO.fromAutoCloseable(
-                            ZIO.succeed(
-                              OpenTelemetrySdk
-                                .builder()
-                                .setTracerProvider(tracerProvider)
-                                .build()
-                            )
-                          )
-      } yield sdk
-    )
 
   override def run =
     ZIO
-      .serviceWithZIO[Tracing] { tracing =>
-        val tracePropagator   = TraceContextPropagator.default
-        val baggagePropagator = BaggagePropagator.default
-        // Using the same kernel and carriers for baggage and tracing context propagation is safe
-        // since their encodings occupy different keys in the OTEL context.
-        val kernel            = mutable.Map.empty[String, String]
-        val outgoingCarrier   = OutgoingContextCarrier.default(kernel)
-        val incomingCarrier   = IncomingContextCarrier.default(kernel)
+      .serviceWithZIO[core.OpenTelemetry] { openTelemetry =>
+        ZIO.serviceWithZIO[Tracer] { tracer =>
+          // Representing the transport between the upstream and downstream services
+          val kernel          = mutable.Map.empty[String, String]
+          val outgoingCarrier = OutgoingContextCarrier.default(kernel)
+          val incomingCarrier = IncomingContextCarrier.default(kernel)
 
-        ZIO.serviceWithZIO[Baggage] { baggage =>
           // Representing upstream service
           val upstreamService = for {
             // Read user input
             message <- Console.readLine
-            // Set and propagate the baggage data using outgoing carrier
-            _       <- baggage.set("message", message)
-            _       <- baggage.inject(baggagePropagator, outgoingCarrier)
-            // Emulate the computation to be wrapped in a root span
-            logic    = for {
-                         _ <- ZIO.logInfo(s"Message length is ${message.length}")
-                         // Inject the current span using outgoing carrier
-                         _ <- tracing.injectSpan(tracePropagator, outgoingCarrier)
-                       } yield ()
-            // Run the logic, wrapping it into a root span
-            _       <- logic @@ tracing.aspects.root("upstream_root_span")
+            // Set the baggage data for the duration of the upstream logic
+            _       <- openTelemetry.baggage.set("message", message) {
+                         tracer.root("upstream_root_span", SpanKind.INTERNAL) { span =>
+                           for {
+                             _ <- ZIO.logInfo(s"Message length is ${message.length}")
+                             _ <- span.setAttribute("message", message)
+                             // Write the current context, including baggage, into the outgoing carrier
+                             _ <- openTelemetry.propagate(outgoingCarrier)
+                           } yield ()
+                         }
+                       }
           } yield ()
 
           // Representing downstream service
-          val downstreamService = for {
-            // Extract the baggage data using incoming carrier
-            _      <- baggage.extract(baggagePropagator, incomingCarrier)
-            data   <- baggage.getAll
-            message = data("message")
-            // Emulate the logic that computes message length and sets an attribute of the current span
-            logic   = for {
-                        _ <- ZIO.logInfo(s"Message length is ${message.length}")
-                        _ <- tracing.setAttribute("message", message)
-                      } yield ()
-            // Run the logic, wrapping it into a child span of the upstream root span
-            _      <- logic @@ tracing.aspects.extractSpan(tracePropagator, incomingCarrier, "downstream_root_span")
-          } yield ()
+          val downstreamService =
+            // Restore the context from the incoming carrier
+            openTelemetry.continue(incomingCarrier) {
+              for {
+                data    <- openTelemetry.baggage.getAll
+                message  = data.getOrElse("message", "")
+                _       <- ZIO.logInfo(s"Message length is ${message.length}")
+                // Run the logic as a child span of the upstream root span
+                _       <- tracer.span("downstream_span") { span =>
+                             span.setAttribute("message", message)
+                           }
+              } yield ()
+            }
 
           // Simulate the interaction between services
           upstreamService *> downstreamService
         }
-
       }
       .provide(
-        otelSdkLayer,
-        OpenTelemetry.tracing(instrumentationScopeName),
-        OpenTelemetry.baggage(),
-        OpenTelemetry.contextZIO
+        OtelSdk.custom(),
+        OpenTelemetry.tracer(instrumentationScopeName)
       )
 
 }
