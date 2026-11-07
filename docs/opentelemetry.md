@@ -179,7 +179,7 @@ val autoInstrumented: TaskLayer[core.OpenTelemetry] =
   OpenTelemetry.global()
 ```
 
-Wrap the code that should run in the instrumented context with `openTelemetry.autoinstrumented`, as described in the [Tracing](#tracing) section.
+Wrap the code that should run in the instrumented context with `openTelemetry.autoinstrumented(zio)`, or with the `openTelemetry.aspects.autoinstrumented` aspect. Use it only together with the Java agent, and call it once per entry point of your application.
 
 ### Tracing
 
