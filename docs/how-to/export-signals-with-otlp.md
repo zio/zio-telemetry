@@ -110,7 +110,7 @@ def sdkLayer(
 Before involving a network, we plug in the exporters that print OTLP JSON. This is the quickest way to see that spans, metrics and log records are produced:
 
 ```scala mdoc:silent
-val stdoutSdk: TaskLayer[api.OpenTelemetry] =
+def stdoutSdk: TaskLayer[api.OpenTelemetry] =
   sdkLayer(
     "my-service",
     OtlpJsonLoggingSpanExporter.create(),
