@@ -18,8 +18,9 @@ import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
 import zio._
+import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.common.{Attribute, Attributes}
-import zio.telemetry.opentelemetry.context.{ContextStorage, IncomingContextCarrier, OutgoingContextCarrier}
+import zio.telemetry.opentelemetry.context.{IncomingContextCarrier, OutgoingContextCarrier}
 import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 import zio.telemetry.opentelemetry.tracing.{StatusMapper, Tracing}
 
@@ -30,8 +31,8 @@ val exporter = InMemorySpanExporter.create()
 val tracerProvider =
   SdkTracerProvider.builder().addSpanProcessor(SimpleSpanProcessor.create(exporter)).build()
 
-val tracingLayer: ULayer[Tracing] =
-  (ZLayer.succeed(tracerProvider.get("docs")) ++ ContextStorage.fiberRef) >>> Tracing.live()
+def tracingLayer: ULayer[Tracing] =
+  (ZLayer.succeed(tracerProvider.get("docs")) ++ OpenTelemetry.contextZIO) >>> Tracing.live()
 
 def run[E, A](effect: ZIO[Tracing, E, A]): A =
   Unsafe.unsafe { implicit unsafe =>
@@ -383,7 +384,7 @@ When the service is created with `logAnnotated = true`, every span created after
 
 ```scala mdoc:compile-only
 val annotatedLayer: ULayer[Tracing] =
-  (ZLayer.succeed(tracerProvider.get("docs")) ++ ContextStorage.fiberRef) >>> Tracing.live(logAnnotated = true)
+  (ZLayer.succeed(tracerProvider.get("docs")) ++ OpenTelemetry.contextZIO) >>> Tracing.live(logAnnotated = true)
 
 val program: ZIO[Tracing, Nothing, Unit] =
   ZIO.serviceWithZIO[Tracing] { tracing =>
