@@ -76,11 +76,12 @@ sbt -J-javaagent:$OTEL_AGENT_PATH \
     -J-Dotel.service.name=example-server \
     -J-Dotel.traces.sampler=always_on \
     -J-Dotel.traces.exporter=otlp \
+    -J-Dotel.exporter.otlp.protocol=grpc \
     -J-Dotel.metrics.exporter=none \
     "opentelemetryInstrumentationExample/runMain zio.telemetry.opentelemetry.instrumentation.example.ServerApp"
 ```
 
-The agent exports to `http://localhost:4317` by default. The [automatic instrumentation example](../opentelemetry-instrumentation-example.md) shows the full setup with Jaeger and Seq, including how logs are forwarded.
+The agent exports over the `http/protobuf` protocol to `http://localhost:4318` by default. To export over gRPC to `http://localhost:4317`, the port Jaeger listens on in the example below, add `-J-Dotel.exporter.otlp.protocol=grpc`. The [automatic instrumentation example](../opentelemetry-instrumentation-example.md) shows the full setup with Jaeger and Seq, including how logs are forwarded.
 
 ## Checking the Result
 
