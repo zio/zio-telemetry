@@ -42,10 +42,10 @@ import io.opentracing.noop.NoopTracerFactory
 import zio._
 import zio.telemetry.opentracing.OpenTracing
 
-val tracerLayer: ULayer[Tracer] =
+def tracerLayer: ULayer[Tracer] =
   ZLayer.succeed(NoopTracerFactory.create())
 
-val tracingLayer: ULayer[OpenTracing] =
+def tracingLayer: ULayer[OpenTracing] =
   tracerLayer >>> OpenTracing.live("my-app")
 ```
 
@@ -60,7 +60,7 @@ def scoped(tracer: Tracer, rootOperation: String): URIO[Scope, OpenTracing]
 It is what `OpenTracing.live` uses internally. The root span is finished when the `Scope` is closed. Use it when you already hold a `Tracer` value, for example in a test:
 
 ```scala mdoc:silent
-val scopedTracing: URIO[Scope, OpenTracing] =
+def scopedTracing: URIO[Scope, OpenTracing] =
   OpenTracing.scoped(NoopTracerFactory.create(), "my-app")
 ```
 
@@ -69,7 +69,7 @@ val scopedTracing: URIO[Scope, OpenTracing] =
 `OpenTracing.noop` is a ready-made layer backed by the no-op tracer. It performs no recording, which makes it useful in tests and in code paths where tracing is switched off:
 
 ```scala mdoc:silent
-val noopLayer: ULayer[OpenTracing] = OpenTracing.noop
+def noopLayer: ULayer[OpenTracing] = OpenTracing.noop
 ```
 
 ## Spans
@@ -214,7 +214,7 @@ The following example uses both overloads:
 val logged: UIO[Unit] =
   withTracing { tracing =>
     tracing.span("work") {
-      tracing.log("starting") *> tracing.log(Map("event" -> "retry", "attempt" -> 2))
+      tracing.log("starting") *> tracing.log(Map[String, Any]("event" -> "retry", "attempt" -> 2))
     }
   }
 ```
