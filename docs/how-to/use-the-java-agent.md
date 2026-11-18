@@ -44,7 +44,7 @@ import zio._
 import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.tracing.Tracing
 
-val health: ZIO[Tracing, Nothing, Unit] =
+def health: ZIO[Tracing, Nothing, Unit] =
   ZIO.serviceWithZIO[Tracing] { tracing =>
     tracing.span("health-check") {
       tracing.setAttribute("zio", "telemetry") *> ZIO.logInfo("health check finished")
