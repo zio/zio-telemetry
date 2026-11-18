@@ -62,7 +62,7 @@ val annotated: UIO[Unit] =
 
 ## Correlating Logs with the Current Span
 
-The record takes its context from the same storage that `Tracing` uses. With `ContextStorage.fiberRef`, which `OpenTelemetry.contextZIO` provides, the bridge reads the context stored in the fiber's `FiberRef`. With `ContextStorage.native`, which `OpenTelemetry.contextJVM` provides, it reads `Context.current()`. In both cases a log call made inside `Tracing#span` is exported with the trace id and span id of that span, and a call outside any span carries the all-zero invalid identifiers. The same `ContextStorage` must be shared by the logging and tracing layers. For the recipe that links logs and traces, see [How to Correlate Logs with Traces](../how-to/correlate-logs-with-traces.md). If you already use zio-logging, see [ZIO Logging Integration](../opentelemetry-zio-logging.md).
+The record takes its context from the same storage that `Tracing` uses. With the `FiberRef` storage that `OpenTelemetry.contextZIO` provides, the bridge reads the context stored in the fiber's `FiberRef`. With the native storage that `OpenTelemetry.contextJVM` provides, it reads `Context.current()`. In both cases a log call made inside `Tracing#span` is exported with the trace id and span id of that span, and a call outside any span carries the all-zero invalid identifiers. The same `ContextStorage` must be shared by the logging and tracing layers. For the recipe that links logs and traces, see [How to Correlate Logs with Traces](../how-to/correlate-logs-with-traces.md). If you already use zio-logging, see [ZIO Logging Integration](../opentelemetry-zio-logging.md).
 
 ## Related Pages
 
