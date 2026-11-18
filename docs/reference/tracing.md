@@ -5,7 +5,7 @@ title: "Tracing"
 
 `Tracing` is the ZIO service for creating and enriching OpenTelemetry spans. It wraps an OpenTelemetry `Tracer` and a [`ContextStorage`](context-storage.md), so the current span is tracked per fiber and child spans pick up their parent automatically. All methods are defined on the `zio.telemetry.opentelemetry.tracing.Tracing` trait, and every method returns a ZIO effect that you access through the environment with `ZIO.serviceWithZIO[Tracing]`.
 
-This page lists the whole API. For the underlying ideas, see the concept pages on spans, fibers, and context propagation, and for end-to-end walkthroughs see the how-to guides.
+This page lists the whole API. For the underlying ideas, see the [concept pages](../concepts/index.md) on spans, fibers, and context propagation, and for end-to-end walkthroughs see the how-to guides.
 
 ## Setting Up the Examples
 
@@ -26,10 +26,14 @@ import zio.telemetry.opentelemetry.tracing.{StatusMapper, Tracing}
 
 import scala.jdk.CollectionConverters._
 
-val exporter = InMemorySpanExporter.create()
+object Telemetry {
+  val exporter = InMemorySpanExporter.create()
 
-val tracerProvider =
-  SdkTracerProvider.builder().addSpanProcessor(SimpleSpanProcessor.create(exporter)).build()
+  val tracerProvider =
+    SdkTracerProvider.builder().addSpanProcessor(SimpleSpanProcessor.create(exporter)).build()
+}
+
+import Telemetry.{exporter, tracerProvider}
 
 def tracingLayer: ULayer[Tracing] =
   (ZLayer.succeed(tracerProvider.get("docs")) ++ OpenTelemetry.contextZIO) >>> Tracing.live()
@@ -98,7 +102,7 @@ def span[R, E, E1 <: E, A, A1 <: A](
 While the body runs, the new span is the current span, so nested calls become its children. If there is no current span, the new span is a root of a new trace. We nest two spans and look at what the in-memory exporter collected:
 
 ```scala mdoc
-val nested = ZIO.serviceWithZIO[Tracing] { tracing =>
+def nested = ZIO.serviceWithZIO[Tracing] { tracing =>
   tracing.span("parent", attributes = Attributes(Attribute.string("user.id", "u-42"))) {
     tracing.span("child")(ZIO.unit)
   }
@@ -106,7 +110,7 @@ val nested = ZIO.serviceWithZIO[Tracing] { tracing =>
 
 run(nested)
 
-exporter.getFinishedSpanItems.asScala.toList.map(s => (s.getName, s.getParentSpanContext.isValid))
+println(exporter.getFinishedSpanItems.asScala.toList.map(s => (s.getName, s.getParentSpanContext.isValid)))
 ```
 
 The child ends first and reports a valid parent, while the parent has none.
@@ -250,17 +254,21 @@ def injectSpan[C](
 ```scala mdoc
 import scala.collection.mutable
 
-val outgoingHeaders = mutable.Map.empty[String, String]
+def outgoingHeaders: mutable.Map[String, String] = {
+  val headers = mutable.Map.empty[String, String]
 
-run(
-  ZIO.serviceWithZIO[Tracing] { tracing =>
-    tracing.span("client-call", spanKind = SpanKind.CLIENT) {
-      tracing.injectSpan(TraceContextPropagator.default, OutgoingContextCarrier.default(outgoingHeaders))
+  run(
+    ZIO.serviceWithZIO[Tracing] { tracing =>
+      tracing.span("client-call", spanKind = SpanKind.CLIENT) {
+        tracing.injectSpan(TraceContextPropagator.default, OutgoingContextCarrier.default(headers))
+      }
     }
-  }
-)
+  )
 
-outgoingHeaders.keys.toList
+  headers
+}
+
+println(outgoingHeaders.keys.toList)
 ```
 
 ## Unsafe Span Management
@@ -440,7 +448,7 @@ object aspects {
 The `aspects` object belongs to a `Tracing` instance, so we import its members from the value:
 
 ```scala mdoc
-val aspectProgram = ZIO.serviceWithZIO[Tracing] { tracing =>
+def aspectProgram = ZIO.serviceWithZIO[Tracing] { tracing =>
   import tracing.aspects._
 
   ZIO.unit @@ span("inner") @@ span("outer")
@@ -448,7 +456,7 @@ val aspectProgram = ZIO.serviceWithZIO[Tracing] { tracing =>
 
 run(aspectProgram)
 
-exporter.getFinishedSpanItems.asScala.toList.map(_.getName).takeRight(2)
+println(exporter.getFinishedSpanItems.asScala.toList.map(_.getName).takeRight(2))
 ```
 
 Aspects apply from left to right, so the aspect written last wraps all the others and becomes the outermost span. The `inner` span ends first.
