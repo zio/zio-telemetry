@@ -3,6 +3,7 @@ import ch.epfl.scala.sbtmissinglink.MissingLinkPlugin.missinglinkConflictsTag
 import com.github.sbt.git.SbtGit.GitKeys.useConsoleForROGit
 import zio.sbt.githubactions.Step.SingleStep
 import zio.sbt.githubactions.ActionRef
+import zio.sbt.githubactions.Condition
 import zio.json.ast.Json
 
 enablePlugins(ZioSbtEcosystemPlugin, ZioSbtCiPlugin)
@@ -35,6 +36,12 @@ inThisBuild(
       )
     ),
     ciEnabledBranches  := Seq("series/2.x", "v4.0.0-rc"),
+    ciUpdateReadmeCondition := Some(
+      Condition.Expression("github.event_name == 'release'") &&
+        Condition.Expression("github.event.action == 'published'") &&
+        (Condition.Expression("github.event.release.target_commitish == 'series/2.x'") ||
+          Condition.Expression("github.event.release.target_commitish == 'refs/heads/series/2.x'"))
+    ),
     ciCheckArtifactsBuildSteps ++= Seq(
       SingleStep(
         name = "Compile examples",
