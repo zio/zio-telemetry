@@ -52,7 +52,7 @@ The 3.x line tracks the upstream libraries closely. The versions below are the o
 
 ## Build and Documentation Maintenance
 
-Several 3.1.x releases changed only the project's own tooling:
+Several 3.1.x releases include changes to the project's own tooling:
 
 - 3.1.1 fixes an "sbt not found" error in CI.
 - 3.1.8 configures Scala Steward and Dependabot in place of Renovate.
