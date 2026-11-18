@@ -9,9 +9,11 @@ This example consists of two services, a proxy and a backend. It shows how to pa
 
 ## Run
 
-### Print OTEL signals to console
+The example runs with console output by default, and it can publish to other backends.
 
-By default the example code uses [OTLP Logging Exporters](https://github.com/open-telemetry/opentelemetry-java/tree/main/exporters/logging-otlp) to print all signals to stdout in OTLP JSON encoding. This means that you can run the application immediately and observe the results.
+### Print OTEL Signals to Console
+
+By default the example code uses [OTLP Logging Exporters](https://github.com/open-telemetry/opentelemetry-java/tree/main/exporters/logging-otlp) to log all signals through `java.util.logging` in OTLP JSON encoding, which prints them to the console. This means that you can run the application immediately and observe the results.
 
 To run the application, start the proxy and the backend in separate terminals via sbt.
 
@@ -28,13 +30,13 @@ Now perform the following request to see the results immediately:
 curl -X GET http://localhost:8080/statuses
 ```
 
-### Publish OTEL signals to other observability platforms
+### Publish OTEL Signals to Other Observability Platforms
 
 In case you want to try different observability platforms such as [Jaeger](https://www.jaegertracing.io/), [Fluentbit](https://fluentbit.io/), [Seq](https://datalust.co/seq), [DataDog](https://www.datadoghq.com/), [Honeycomb](https://www.honeycomb.io/) or others, please change the [OtelSdk.scala](https://github.com/zio/zio-telemetry/blob/series/2.x/opentelemetry-example/src/main/scala/zio/telemetry/opentelemetry/example/otel/OtelSdk.scala) file by choosing from the available tracer, meter, and logger providers or by implementing your own.
 
-### Publish OTEL signals to Jaeger and Seq
+### Publish OTEL Signals to Jaeger and Seq
 
-We chose [Jaeger](https://www.jaegertracing.io/) for distributed traces and [Seq](https://datalust.co/seq) to store logs to demonstrate how the library works with available open-source observability platforms.
+We use [Jaeger](https://www.jaegertracing.io/) for distributed traces and [Seq](https://datalust.co/seq) to store logs to demonstrate how the library works with available open-source observability platforms.
 
 Start Jaeger by running the following command:
 ```bash
