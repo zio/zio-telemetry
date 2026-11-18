@@ -3,7 +3,7 @@ id: context-propagation
 title: "Context Propagation"
 ---
 
-Context propagation moves tracing and baggage information across a process boundary: the sender writes it into a message such as HTTP headers, and the receiver reads it back to continue the same trace. The `zio-opentelemetry` module models this with two kinds of values, carriers that hold the transported data and propagators that know how to encode and decode a particular format. The `Tracing` and `Baggage` services combine them in `injectSpan`, `extractSpan`, `Baggage#inject` and `Baggage#extract`.
+Context propagation moves tracing and baggage information across a process boundary: the sender writes it into a message such as HTTP headers, and the receiver reads it back to continue the same trace. The `zio-opentelemetry` module models this with two kinds of values, carriers that hold the transported data and propagators that know how to encode and decode a particular format. The `Tracing` and `Baggage` services combine them in `Tracing#injectSpan`, `Tracing#extractSpan`, `Baggage#inject` and `Baggage#extract`.
 
 For the underlying concepts see [Context Propagation](../concepts/context-propagation.md); for a worked HTTP example see [How to Propagate Context over HTTP](../how-to/propagate-context-over-http.md).
 
@@ -15,6 +15,8 @@ The type parameter of a carrier is the type of the container. Because extraction
 
 ### IncomingContextCarrier
 
+The trait has this shape:
+
 ```scala
 trait IncomingContextCarrier[T] extends ContextCarrier[T] with TextMapGetter[T] {
   val kernel: T
@@ -23,7 +25,7 @@ trait IncomingContextCarrier[T] extends ContextCarrier[T] with TextMapGetter[T] 
 }
 ```
 
-An `IncomingContextCarrier` represents data received from an external process. You implement two Scala-friendly methods: `getAllKeys` lists the keys present in the container and `getByKey` returns the value for a key, if any. The Java methods `keys` and `get` are implemented for you on top of them.
+An `IncomingContextCarrier` represents data received from an external process. You implement two Scala-friendly methods: `getAllKeys` lists the keys present in the container and `getByKey` returns the value for a key, if any. The Java methods `IncomingContextCarrier#keys` and `IncomingContextCarrier#get` are implemented for you on top of them.
 
 The companion provides a ready-made carrier:
 
@@ -36,6 +38,8 @@ def default(
 The `default` carrier uses a mutable `Map[String, String]` as its kernel, which starts as the `initial` map you pass.
 
 ### OutgoingContextCarrier
+
+The trait has this shape:
 
 ```scala
 trait OutgoingContextCarrier[T] extends ContextCarrier[T] with TextMapSetter[T] {
