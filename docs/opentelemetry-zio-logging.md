@@ -3,146 +3,132 @@ id: opentelemetry-zio-logging
 title: "OpenTelemetry ZIO Logging"
 ---
 
-`zio-opentelemetry` logging facilities are implemented around OpenTelemetry Logging.
+The `zio-opentelemetry-zio-logging` module connects ZIO Telemetry with [ZIO Logging](https://zio.dev/zio-logging/). It provides [log formats](https://zio.dev/zio-logging/formatting-log-records) that print the trace id and span id of the span that is current when a message is logged, so that console and file logs can be correlated with traces. The module is separate from `zio-opentelemetry` because it depends on `zio-logging`.
 
-In order to use `zio-opentelemetry` feature with `zio-logging` you should use `zio-opentelemetry-zio-logging` module.
-
-`OpenTelemetry ZIO Logging` contains utilities for combining ZIO Opentelemetry with ZIO Logging
+To export log records to OpenTelemetry instead, see [Correlating Logs with Traces](how-to/correlate-logs-with-traces.md).
 
 ## Installation
 
+Add the module to your `build.sbt`. It depends on `zio-opentelemetry`, so you do not need to add that separately, but you do need an OpenTelemetry SDK and a `zio-logging` appender to produce output:
+
 ```scala
-"dev.zio" %% "zio-opentelemetry-zio-logging" % "@VERSION@"
+libraryDependencies ++= Seq(
+  // Span and trace id log formats for ZIO Logging (JVM, Scala 2.12, 2.13, 3)
+  "dev.zio" %% "zio-opentelemetry-zio-logging" % "@VERSION@"
+)
 ```
 
-## Features
+## The LogFormats Service
 
-### Log formats
-
-This library implements [Log Format](https://zio.dev/zio-logging/formatting-log-records) for span information (`spanId` and `traceId`). 
-To use them you need a `LogFormats` service in the environment. For this, use the `ZioLogging.logFormats` layer which in turn required a suitable `ContextStorage` implementation.
+`LogFormats` is a service that provides log formats backed by the current OpenTelemetry span:
 
 ```scala
-//> using scala "3.4.2"
-//> using dep dev.zio::zio:2.1.7
-//> using dep dev.zio::zio-opentelemetry:3.0.0-RC24
-//> using dep dev.zio::zio-opentelemetry-zio-logging:3.0.0-RC24
-//> using dep io.opentelemetry:opentelemetry-sdk:1.40.0
-//> using dep io.opentelemetry:opentelemetry-sdk-trace:1.40.0
-//> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.40.0
-//> using dep io.opentelemetry.semconv:opentelemetry-semconv:1.22.0-alpha
+trait LogFormats {
+  def traceId: LogFormat
+  def spanId: LogFormat
+  def traceIdLabel: LogFormat = label("traceId", traceId)
+  def spanIdLabel: LogFormat  = label("spanId", spanId)
+}
+```
 
+The members are:
+
+- `LogFormats#traceId` appends the trace id of the current span as 32 lowercase hexadecimal characters.
+- `LogFormats#spanId` appends the span id of the current span as 16 lowercase hexadecimal characters.
+- `LogFormats#traceIdLabel` is `LogFormats#traceId` wrapped in a label, which renders as `traceId=<id>`.
+- `LogFormats#spanIdLabel` is `LogFormats#spanId` wrapped in a label, which renders as `spanId=<id>`.
+
+Because these are ordinary `LogFormat` values, you combine them with the other formats of ZIO Logging, for example with the `|-|` operator, which joins two formats with a space.
+
+## The ZioLogging Object
+
+`ZioLogging.logFormats` is the only member of the `ZioLogging` object. It builds the `LogFormats` service from a `ContextStorage`, which must be the same storage that your `Tracing` service uses:
+
+```scala
+def logFormats: ZLayer[ContextStorage, Nothing, LogFormats]
+```
+
+The storage determines where the format reads the current span:
+
+- With `OpenTelemetry.contextZIO`, the format reads the context from the `FiberRef` of the fiber that logs.
+- With `OpenTelemetry.contextJVM`, the format reads `Context.current()` of the JVM thread.
+
+Use `OpenTelemetry.contextZIO` unless you use the Java agent, as described in [Context Storage](reference/context-storage.md).
+
+## Behavior Outside a Span
+
+The formats read the context stored for the logging fiber and then take the span from it. When that context holds no span, OpenTelemetry's invalid span is used, and its ids are all zeros: `00000000000000000000000000000000` for the trace id and `0000000000000000` for the span id. When the storage holds no context for the fiber at all, nothing is appended. In either case, logging outside a span never fails.
+
+## Printing Span Ids
+
+The following example defines a console logger that prints the span id and trace id next to each message, and runs an effect inside a root span so that its log message is correlated. It builds a small SDK that prints spans to standard output in OTLP JSON format:
+
+```scala mdoc:compile-only
+import io.opentelemetry.api.common.{AttributeKey, Attributes}
+import io.opentelemetry.api.{OpenTelemetry => OtelApi}
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter
-import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingLogRecordExporter
-import io.opentelemetry.api.common.Attributes
+import io.opentelemetry.sdk.OpenTelemetrySdk
+import io.opentelemetry.sdk.resources.Resource
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.`export`.SimpleSpanProcessor
-import io.opentelemetry.sdk.logs.SdkLoggerProvider
-import io.opentelemetry.sdk.logs.`export`.SimpleLogRecordProcessor
-import io.opentelemetry.sdk.resources.Resource
-import io.opentelemetry.semconv.ServiceAttributes
-import io.opentelemetry.sdk.OpenTelemetrySdk
-import io.opentelemetry.api
-import zio.*
-import zio.logging.console
+import zio._
+import zio.logging.LogFormat
 import zio.logging.LogFormat._
-import zio.telemetry.opentelemetry.tracing.Tracing
 import zio.telemetry.opentelemetry.OpenTelemetry
-import zio.telemetry.opentelemetry.context.ContextStorage
-import zio.telemetry.opentelemetry.zio.logging.LogFormats
-import zio.telemetry.opentelemetry.zio.logging.ZioLogging
+import zio.telemetry.opentelemetry.tracing.Tracing
+import zio.telemetry.opentelemetry.zio.logging.{LogFormats, ZioLogging}
 
 object ZioLoggingApp extends ZIOAppDefault {
 
   val instrumentationScopeName = "dev.zio.LoggingApp"
-  val resourceName             = "logging-app"
 
-  // Prints to stdout in OTLP Json format
-  val stdoutLoggerProvider: RIO[Scope, SdkLoggerProvider] =
-    for {
-      logRecordExporter  <- ZIO.fromAutoCloseable(ZIO.succeed(OtlpJsonLoggingLogRecordExporter.create()))
-      logRecordProcessor <- ZIO.fromAutoCloseable(ZIO.succeed(SimpleLogRecordProcessor.create(logRecordExporter)))
-      loggerProvider     <-
-        ZIO.fromAutoCloseable(
-          ZIO.succeed(
-            SdkLoggerProvider
-              .builder()
-              .setResource(Resource.create(Attributes.of(ServiceAttributes.SERVICE_NAME, resourceName)))
-              .addLogRecordProcessor(logRecordProcessor)
-              .build()
-          )
-        )
-    } yield loggerProvider
-
-  // Prints to stdout in OTLP Json format
-  val stdoutTracerProvider: RIO[Scope, SdkTracerProvider] =
-    for {
-      spanExporter   <- ZIO.fromAutoCloseable(ZIO.succeed(OtlpJsonLoggingSpanExporter.create()))
-      spanProcessor  <- ZIO.fromAutoCloseable(ZIO.succeed(SimpleSpanProcessor.create(spanExporter)))
-      tracerProvider <-
-        ZIO.fromAutoCloseable(
-          ZIO.succeed(
-            SdkTracerProvider
-              .builder()
-              .setResource(Resource.create(Attributes.of(ServiceAttributes.SERVICE_NAME, resourceName)))
-              .addSpanProcessor(spanProcessor)
-              .build()
-          )
-        )
-    } yield tracerProvider
-
-  val otelSdkLayer: TaskLayer[api.OpenTelemetry] =
+  // Prints spans to stdout in OTLP JSON format
+  val otelSdkLayer: TaskLayer[OtelApi] =
     OpenTelemetry.custom(
       for {
-        tracerProvider <- stdoutTracerProvider
-        loggerProvider <- stdoutLoggerProvider
-        sdk            <- ZIO.fromAutoCloseable(
+        tracerProvider <- ZIO.fromAutoCloseable(
                             ZIO.succeed(
-                              OpenTelemetrySdk
+                              SdkTracerProvider
                                 .builder()
-                                .setTracerProvider(tracerProvider)
-                                .setLoggerProvider(loggerProvider)
+                                .setResource(
+                                  Resource.create(Attributes.of(AttributeKey.stringKey("service.name"), "logging-app"))
+                                )
+                                .addSpanProcessor(SimpleSpanProcessor.create(OtlpJsonLoggingSpanExporter.create()))
                                 .build()
                             )
+                          )
+        sdk            <- ZIO.fromAutoCloseable(
+                            ZIO.succeed(OpenTelemetrySdk.builder().setTracerProvider(tracerProvider).build())
                           )
       } yield sdk
     )
 
-  // Setup zio-logging with spanId and traceId labels
-  val loggingLayer: URLayer[LogFormats, Unit] = ZLayer {
-    for {
-      logFormats     <- ZIO.service[LogFormats]
-      format          =
-        timestamp.fixed(32) |-|
-          level |-|
-          label("message", quoted(line)) |-|
-          logFormats.spanIdLabel |-|
-          logFormats.traceIdLabel
-      myConsoleLogger = console(format.highlight)
-    } yield Runtime.removeDefaultLoggers >>> myConsoleLogger
-  }.flatten
+  // Replaces the default logger with one that prints the span id and trace id
+  val loggingLayer: URLayer[LogFormats, Unit] =
+    ZLayer.service[LogFormats].flatMap { env =>
+      val logFormats = env.get[LogFormats]
+      val format: LogFormat =
+        timestamp |-| level |-| label("message", quoted(line)) |-| logFormats.spanIdLabel |-| logFormats.traceIdLabel
 
-  override def run =
+      Runtime.removeDefaultLoggers >>> Runtime.addLogger(format.toLogger.map(println(_)))
+    }
+
+  override def run: Task[Unit] =
     ZIO
       .serviceWithZIO[Tracing] { tracing =>
-        val logic = for {
-          // Read user input
-          message <- Console.readLine
-          // Print span and trace ids along with message
-          _       <- ZIO.logInfo(s"User message: $message")
-        } yield ()
+        import tracing.aspects._
 
-        // All log messages produced by `logic` will be correlated with a "root_span" automatically
-        logic @@ tracing.aspects.root("root_span")
+        // The log message below is printed with the ids of "root_span"
+        ZIO.logInfo("handling a request") @@ root("root_span")
       }
       .provide(
         otelSdkLayer,
-        OpenTelemetry.logging(instrumentationScopeName),
         OpenTelemetry.tracing(instrumentationScopeName),
         OpenTelemetry.contextZIO,
         ZioLogging.logFormats,
         loggingLayer
       )
-
 }
 ```
+
+Each log message written inside the span carries the ids of that span, so the printed line can be matched to the span exported by the OpenTelemetry SDK. To use the same ids in other formats, use `LogFormats#spanId` and `LogFormats#traceId` directly instead of the labels, for example inside a JSON format.
