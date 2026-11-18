@@ -51,7 +51,11 @@ All the services share the same `ContextStorage` instance, which is what makes a
 
 ## Providing the OpenTelemetry Instance
 
+These layers provide the Java `OpenTelemetry` instance that every other layer builds on.
+
 ### OpenTelemetry#global
+
+The layer has this type:
 
 ```scala
 val global: TaskLayer[api.OpenTelemetry]
@@ -60,6 +64,8 @@ val global: TaskLayer[api.OpenTelemetry]
 Returns the instance registered with `GlobalOpenTelemetry.get()`. It fails with a `Throwable` if obtaining the instance throws. Use it together with the SDK autoconfiguration module or the OpenTelemetry Java agent, which register the global instance for you. When the agent is used, combine it with `OpenTelemetry.contextJVM`.
 
 ### OpenTelemetry#custom
+
+The method has this signature:
 
 ```scala
 def custom(zio: => ZIO[Scope, Throwable, api.OpenTelemetry]): TaskLayer[api.OpenTelemetry]
@@ -83,6 +89,8 @@ In a real application you register tracer, meter and logger providers on the bui
 
 ### OpenTelemetry#noop
 
+The layer has this type:
+
 ```scala
 val noop: ULayer[api.OpenTelemetry]
 ```
@@ -91,7 +99,11 @@ Provides `api.OpenTelemetry.noop()`. Every signal created from it is discarded, 
 
 ## Providing a ContextStorage
 
+These layers provide the `ContextStorage` that decides where the current context lives.
+
 ### OpenTelemetry#contextZIO
+
+The layer has this type:
 
 ```scala
 def contextZIO: ULayer[ContextStorage]
@@ -101,6 +113,8 @@ Creates a `ContextStorage` backed by a `ZIO` `FiberRef`. Use it when you do not 
 
 ### OpenTelemetry#contextJVM
 
+The layer has this type:
+
 ```scala
 def contextJVM: ULayer[ContextStorage]
 ```
@@ -109,7 +123,11 @@ Creates a `ContextStorage` backed by OpenTelemetry's own `Context.current()`, wh
 
 ## Building Services
 
+These layers build the ZIO services on top of an instance and a storage.
+
 ### OpenTelemetry#tracing
+
+The method has this signature:
 
 ```scala
 def tracing(
@@ -133,6 +151,8 @@ See [Tracing](tracing.md) for the service API.
 
 ### OpenTelemetry#metrics
 
+The method has this signature:
+
 ```scala
 def metrics(
   instrumentationScopeName: String,
@@ -147,6 +167,8 @@ Creates a `Meter` and an `Instrument.Builder` from a Java `Meter` built with the
 The `Instrument.Builder` output is what `OpenTelemetry#zioMetrics` consumes. If you only need the `Meter`, you do not have to ask for the builder in your environment. See [Metrics](metrics.md) for the service API.
 
 ### OpenTelemetry#zioMetrics
+
+The layer has this type:
 
 ```scala
 def zioMetrics: URLayer[Instrument.Builder, Unit]
@@ -168,6 +190,8 @@ val zioMetricsLayer: URLayer[api.OpenTelemetry & ContextStorage, Unit] =
 
 ### OpenTelemetry#logging
 
+The method has this signature:
+
 ```scala
 def logging(
   instrumentationScopeName: String,
@@ -180,6 +204,8 @@ Installs a ZIO logger that turns every `ZIO.log*` call into an OpenTelemetry log
 The `instrumentationScopeName` parameter names the log scope. The `logLevel` parameter is the minimum level that is forwarded: a record is emitted only when its level is greater than or equal to it. It defaults to `LogLevel.Info`. See [Logging](logging.md) for details.
 
 ### OpenTelemetry#baggage
+
+The method has this signature:
 
 ```scala
 def baggage(logAnnotated: Boolean = false): URLayer[ContextStorage, Baggage]
