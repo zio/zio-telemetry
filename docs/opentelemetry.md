@@ -69,6 +69,10 @@ val runnable: UIO[Unit] =
 
 Replace `OpenTelemetry.noop` with `OpenTelemetry.custom` or `OpenTelemetry.global` to export real telemetry. [Getting Started](getting-started.md) walks through a working setup end to end.
 
+## Usage with OpenTelemetry Automatic Instrumentation
+
+When the OpenTelemetry Java agent instruments the application, `Tracing` must share the agent's context and tracer provider, which means providing `OpenTelemetry.contextJVM` and `OpenTelemetry.global` instead of `OpenTelemetry.contextZIO` and `OpenTelemetry.custom`. [How to Use the Java Agent](how-to/use-the-java-agent.md) walks through the setup.
+
 ## Reference Pages
 
 The reference pages describe the API by purpose.
