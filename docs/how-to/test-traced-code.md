@@ -58,10 +58,10 @@ We use `SimpleSpanProcessor` because it exports each span synchronously when it 
 First, the exporter and the tracer:
 
 ```scala mdoc:silent
-val exporterLayer: ULayer[InMemorySpanExporter] =
+def exporterLayer: ULayer[InMemorySpanExporter] =
   ZLayer.succeed(InMemorySpanExporter.create())
 
-val tracerLayer: URLayer[InMemorySpanExporter, Tracer] =
+def tracerLayer: URLayer[InMemorySpanExporter, Tracer] =
   ZLayer.fromZIO(
     ZIO.serviceWith[InMemorySpanExporter] { exporter =>
       SdkTracerProvider
@@ -76,7 +76,7 @@ val tracerLayer: URLayer[InMemorySpanExporter, Tracer] =
 Then we assemble the final layer. It outputs both `Tracing` for the code under test and the exporter for the assertions, and both see the same exporter instance because `ZLayer.make` shares a layer that several others depend on:
 
 ```scala mdoc:silent
-val testLayer: ULayer[Tracing & InMemorySpanExporter] =
+def testLayer: ULayer[Tracing & InMemorySpanExporter] =
   ZLayer.make[Tracing & InMemorySpanExporter](
     Tracing.live(),
     tracerLayer,
@@ -92,7 +92,7 @@ val testLayer: ULayer[Tracing & InMemorySpanExporter] =
 An `InMemorySpanExporter` returns its spans through `getFinishedSpanItems`, which is a Java list of `SpanData`. A small helper converts it to a Scala list:
 
 ```scala mdoc:silent
-val finishedSpans: URIO[InMemorySpanExporter, List[SpanData]] =
+def finishedSpans: URIO[InMemorySpanExporter, List[SpanData]] =
   ZIO.serviceWith[InMemorySpanExporter](_.getFinishedSpanItems.asScala.toList)
 ```
 
@@ -121,7 +121,7 @@ def checkout(orderId: String): URIO[Tracing, Unit] =
 We run it with the test layer and project every finished span to the fields we care about. We use `Runtime.default.unsafe.run` here only to show the result in this page; in a real test the effect runs in the test framework:
 
 ```scala mdoc
-Unsafe.unsafe { implicit unsafe =>
+println(Unsafe.unsafe { implicit unsafe =>
   Runtime.default.unsafe
     .run(
       (checkout("42") *> finishedSpans)
@@ -129,7 +129,7 @@ Unsafe.unsafe { implicit unsafe =>
         .provideLayer(testLayer)
     )
     .getOrThrowFiberFailure()
-}
+})
 ```
 
 The child `charge-card` span ends first and has a valid parent, while `checkout` is a root span with no parent. Other getters on `SpanData`, such as `getAttributes`, `getEvents`, `getKind` and `getParentSpanId`, cover everything else a test usually checks.
@@ -139,7 +139,7 @@ The child `charge-card` span ends first and has a valid parent, while `checkout`
 Failures are recorded on the span in the same way. We run a failing effect inside a span and read its status back:
 
 ```scala mdoc
-Unsafe.unsafe { implicit unsafe =>
+println(Unsafe.unsafe { implicit unsafe =>
   Runtime.default.unsafe
     .run(
       (for {
@@ -150,7 +150,7 @@ Unsafe.unsafe { implicit unsafe =>
         .provideLayer(testLayer)
     )
     .getOrThrowFiberFailure()
-}
+})
 ```
 
 This is also the way to verify a custom `StatusMapper`. See [How to Customize Span Status](customize-span-status.md).
@@ -187,7 +187,6 @@ import io.opentelemetry.sdk.logs.SdkLoggerProvider
 import io.opentelemetry.sdk.logs.`export`.SimpleLogRecordProcessor
 import io.opentelemetry.sdk.logs.data.LogRecordData
 import io.opentelemetry.sdk.testing.exporter.InMemoryLogRecordExporter
-import zio.telemetry.opentelemetry.context.ContextStorage
 import zio.telemetry.opentelemetry.logging.Logging
 
 val logExporterLayer: ULayer[InMemoryLogRecordExporter] =
@@ -205,7 +204,7 @@ val loggerProviderLayer: URLayer[InMemoryLogRecordExporter, LoggerProvider] =
 
 val logTestLayer: ULayer[InMemoryLogRecordExporter] =
   Runtime.removeDefaultLoggers >>>
-    (ContextStorage.fiberRef ++ (logExporterLayer >+> loggerProviderLayer)) >>>
+    (OpenTelemetry.contextZIO ++ (logExporterLayer >+> loggerProviderLayer)) >>>
     (Logging.live("test") ++ ZLayer.environment[InMemoryLogRecordExporter])
 
 val finishedLogRecords: URIO[InMemoryLogRecordExporter, List[LogRecordData]] =
