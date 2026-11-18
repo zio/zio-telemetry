@@ -63,10 +63,7 @@ We assume that a `Tracing` service is already available. See [OpenTelemetry laye
 
 ## Understanding the Default Behavior
 
-Before customizing anything, it helps to know exactly what `Tracing#span`, `Tracing#root` and the other span methods do when no mapper is given. The default is `StatusMapper.default`, which has no cases, and the span methods then behave as follows:
-
-- On an expected failure or a defect, the status is `ERROR` and the description is the pretty-printed `Cause`. No exception event is recorded.
-- On success, the status is left untouched (`UNSET`).
+Before customizing anything, it helps to know exactly what `Tracing#span`, `Tracing#root` and the other span methods do when no mapper is given. The default is `StatusMapper.default`, which has no cases. On an expected failure or a defect, the span methods set the status to `ERROR` with the pretty-printed `Cause` as the description and record no exception event. On success, they leave the status untouched (`UNSET`).
 
 A mapper changes this per outcome, which gives us two independent extension points: one for failures and one for successes.
 
@@ -84,7 +81,7 @@ def failureMapper: StatusMapper.Failure[LookupError] =
   }
 ```
 
-We pass the mapper to the span through the `statusMapper` parameter of the `span` aspect:
+We pass the mapper to the span through the `statusMapper` parameter of the `tracing.aspects.span` aspect:
 
 ```scala mdoc:compile-only
 def tracedLookup(id: String): ZIO[Tracing, LookupError, Response] =
@@ -164,12 +161,12 @@ def tracedLookupWithBoth(id: String): ZIO[Tracing, LookupError, Response] =
 
 With this mapper, the four inputs produce the following spans:
 
-| Input        | Outcome                    | Span status         | Exception event |
-|--------------|----------------------------|---------------------|-----------------|
-| `"ok"`       | `Response(200, "ok")`      | `OK`                | No              |
-| `"overload"` | `Response(503, ...)`       | `ERROR`, with message | No            |
-| `"missing"`  | `NotFound`                 | `UNSET`             | No              |
-| `"down"`     | `Unavailable(...)`         | `ERROR`             | Yes             |
+| Input        | Outcome               | Span status           | Exception event |
+|--------------|-----------------------|-----------------------|-----------------|
+| `"ok"`       | `Response(200, "ok")` | `OK`                  | No              |
+| `"overload"` | `Response(503, ...)`  | `ERROR`, with message | No              |
+| `"missing"`  | `NotFound`            | `UNSET`               | No              |
+| `"down"`     | `Unavailable(...)`    | `ERROR`               | Yes             |
 
 ## Verifying the Result
 
