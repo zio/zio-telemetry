@@ -3,18 +3,19 @@ import ch.epfl.scala.sbtmissinglink.MissingLinkPlugin.missinglinkConflictsTag
 import com.github.sbt.git.SbtGit.GitKeys.useConsoleForROGit
 import zio.sbt.githubactions.Step.SingleStep
 import zio.sbt.githubactions.ActionRef
+import zio.sbt.githubactions.Condition
 import zio.json.ast.Json
 
 enablePlugins(ZioSbtEcosystemPlugin, ZioSbtCiPlugin)
 
 inThisBuild(
   List(
-    name               := "ZIO Telemetry",
-    organization       := "dev.zio",
-    zioVersion         := "2.1.27",
-    homepage           := Some(url("https://zio.dev/zio-telemetry/")),
-    licenses           := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-    developers         := List(
+    name                    := "ZIO Telemetry",
+    organization            := "dev.zio",
+    zioVersion              := "2.1.27",
+    homepage                := Some(url("https://zio.dev/zio-telemetry/")),
+    licenses                := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+    developers              := List(
       Developer(
         "mijicd",
         "Dejan Mijic",
@@ -34,7 +35,13 @@ inThisBuild(
         url("https://github.com/grouzen")
       )
     ),
-    ciEnabledBranches  := Seq("series/2.x", "v4.0.0-rc"),
+    ciEnabledBranches       := Seq("series/2.x", "v4.0.0-rc"),
+    ciUpdateReadmeCondition := Some(
+      Condition.Expression("github.event_name == 'release'") &&
+        Condition.Expression("github.event.action == 'published'") &&
+        (Condition.Expression("github.event.release.target_commitish == 'series/2.x'") ||
+          Condition.Expression("github.event.release.target_commitish == 'refs/heads/series/2.x'"))
+    ),
     ciCheckArtifactsBuildSteps ++= Seq(
       SingleStep(
         name = "Compile examples",
@@ -57,10 +64,10 @@ inThisBuild(
         run = Some("sbt missinglinkCheck")
       )
     ),
-    pgpPassphrase      := sys.env.get("PGP_PASSWORD").map(_.toArray),
-    pgpPublicRing      := file("/tmp/public.asc"),
-    pgpSecretRing      := file("/tmp/secret.asc"),
-    scmInfo            := Some(
+    pgpPassphrase           := sys.env.get("PGP_PASSWORD").map(_.toArray),
+    pgpPublicRing           := file("/tmp/public.asc"),
+    pgpSecretRing           := file("/tmp/secret.asc"),
+    scmInfo                 := Some(
       ScmInfo(
         url("https://github.com/zio/zio-telemetry/"),
         "scm:git:git@github.com:zio/zio-telemetry.git"
@@ -68,43 +75,13 @@ inThisBuild(
     ),
     concurrentRestrictions += Tags.limit(missinglinkConflictsTag, 1),
     // TODO: remove once it is updated in zio-sbt
-    scala213           := "2.13.18",
+    scala213                := "2.13.18",
     // Workaround for git worktrees
-    useConsoleForROGit := true
+    useConsoleForROGit      := true
   )
 )
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
-
-// Keep action updates when zio-sbt regenerates workflows with its bundled versions.
-ThisBuild / ciGenerateGithubWorkflow := {
-  (ThisBuild / ciGenerateGithubWorkflow).value
-  GithubActionsVersions.update((ThisBuild / baseDirectory).value / ".github" / "workflows")
-}
-
-// Hosted runners can hang on the Azure Ubuntu mirror before tests start.
-ThisBuild / ciTestJobs ~= { jobs =>
-  jobs.map { job =>
-    job.withSteps(
-      job.steps
-        .flatMap(_.flatten)
-        .map { step =>
-          if (step.name == "Install libuv")
-            step.copy(run =
-              Some(
-                """|if [ -f /etc/apt/apt-mirrors.txt ]; then
-                   |  sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' /etc/apt/apt-mirrors.txt
-                   |fi
-                   |timeout 5m sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update
-                   |timeout 5m sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y libuv1-dev""".stripMargin
-              )
-            )
-          else step
-        }
-        .toSeq: _*
-    )
-  }
-}
 
 // Docusaurus 2.x uses webpackbar@5.0.2 which is incompatible with webpack@5.75+
 // (npm now resolves webpack@^5.73.0 to the latest 5.x which breaks ProgressPlugin).
