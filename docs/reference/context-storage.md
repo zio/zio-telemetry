@@ -55,9 +55,11 @@ val runnable: UIO[(Option[String], Option[String])] =
   program.provide(OpenTelemetry.contextZIO)
 ```
 
-Here `inside` is `Some("req-42")` while `after` is `None`, because `locally` restored the original context.
+Here `inside` is `Some("req-42")` while `after` is `None`, because `ContextStorage#locally` restored the original context.
 
 ## Implementations
+
+The two layers that create a `ContextStorage` differ in where they keep the context.
 
 ### The FiberRef Implementation
 
@@ -69,12 +71,12 @@ Because the context lives in a `FiberRef`, it follows the ZIO fiber model. A for
 
 The `OpenTelemetry.contextJVM` layer provides a `ContextStorage` that delegates to OpenTelemetry's own storage, `Context.current()` and `Context#makeCurrent`, which is backed by a `ThreadLocal`. The layer holds no state, so building it twice is harmless.
 
-Each operation performs a single read or write of the thread-local on whatever thread executes it. It does not follow a fiber when ZIO moves it to another thread. This only gives sensible results when the OpenTelemetry Java agent is attached: the agent has ZIO support that carries the thread-local context along with fibers. The same agent instrumentation lets ZIO spans become children of spans created by the agent, such as incoming HTTP server spans.
+Each operation performs a single read or write of the thread-local on whatever thread executes it. It does not follow a fiber when ZIO moves it to another thread. This only gives sensible results when the OpenTelemetry Java agent is attached: the agent supports ZIO since version 1.25.0 and carries the thread-local context along with fibers. The same agent instrumentation lets ZIO spans become children of spans created by the agent, such as incoming HTTP server spans.
 
 ## Choosing Between the Two
 
 Pick `OpenTelemetry.contextZIO` unless you use the Java agent. It needs no agent, works with plain `OpenTelemetry.custom`, and behaves deterministically across fiber forks and thread hops. Pick `OpenTelemetry.contextJVM` when the agent instruments your application and you need ZIO code and agent-created spans to share one context; pair it with `OpenTelemetry.global` so that both sides use the same tracer provider.
 
-Do not mix the two in one application: spans created by `Tracing` over one storage are invisible to code that reads the other. The logging layer also depends on the choice, because it reads the context from the logging fiber's `FiberRef` for `contextZIO` and from `Context.current()` for `contextJVM`.
+Do not mix the two in one application: spans created by `Tracing` over one storage are invisible to code that reads the other. The logging layer also depends on the choice, because it reads the context from the logging fiber's `FiberRef` for `OpenTelemetry.contextZIO` and from `Context.current()` for `OpenTelemetry.contextJVM`.
 
 See [OpenTelemetry Layers](opentelemetry-layers.md) for the layer signatures, [Context and Fibers](../concepts/context-and-fibers.md) for the background, and [How to Use the Java Agent](../how-to/use-the-java-agent.md) for the agent setup.
