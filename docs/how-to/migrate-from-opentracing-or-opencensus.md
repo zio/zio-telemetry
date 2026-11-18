@@ -43,7 +43,7 @@ Note that both modules name their service differently, `OpenTracing` and a `Trac
 
 ## Prerequisites
 
-We replace the old module with `zio-opentelemetry` and add the OpenTelemetry SDK for the exporter you use. Remove `zio-opentracing` or `zio-opencensus` once the last usage is gone, they can live side by side during a gradual migration:
+We replace the old module with `zio-opentelemetry` and add the OpenTelemetry SDK for the exporter you use. Remove `zio-opentracing` or `zio-opencensus` once the last usage is gone. They can live side by side during a gradual migration:
 
 ```scala
 libraryDependencies ++= Seq(
@@ -119,7 +119,7 @@ def chargeWithAspect(orderId: String): ZIO[Tracing, Nothing, Unit] =
 `zio-opencensus` creates spans of kind `SERVER` unless told otherwise, while `Tracing#span` defaults to `SpanKind.INTERNAL`. When you migrate a handler for incoming requests, pass `spanKind = SpanKind.SERVER` explicitly, otherwise the backend shows the span as an internal operation. `Span.Kind.CLIENT` becomes `SpanKind.CLIENT`.
 :::
 
-`zio-opentracing` also creates an initial root span, named `ROOT` by default, when the layer is built, and every span is a child of it unless started with `root`. `Tracing` has no such initial span. A span created while no other span is current is the root of a new trace, so you can drop `rootOperation` from the layer configuration.
+`zio-opentracing` also creates an initial root span, named `ROOT` by default, when the layer is built, and every span is a child of it unless started with `OpenTracing#root`. `Tracing` has no such initial span. A span created while no other span is current is the root of a new trace, so you can drop `rootOperation` from the layer configuration.
 
 ## Translating Tags, Attributes and Logs
 
