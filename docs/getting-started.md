@@ -15,7 +15,7 @@ libraryDependencies ++= Seq(
   "dev.zio"         %% "zio-opentelemetry"                % "@VERSION@",
   // The OpenTelemetry SDK that creates real spans
   "io.opentelemetry" % "opentelemetry-sdk"                % "1.68.0",
-  // An exporter that prints OTLP JSON to standard output
+  // An exporter that logs OTLP JSON through java.util.logging
   "io.opentelemetry" % "opentelemetry-exporter-logging-otlp" % "1.68.0"
 )
 ```
@@ -24,7 +24,7 @@ libraryDependencies ++= Seq(
 
 The `OpenTelemetry.custom` layer takes a scoped effect that builds an `io.opentelemetry.api.OpenTelemetry` instance. Because the effect is scoped, ZIO closes the SDK when the application shuts down and flushes any pending spans.
 
-In the following code we create a tracer provider whose `SimpleSpanProcessor` hands every finished span to `OtlpJsonLoggingSpanExporter`, which prints it to stdout:
+In the following code we create a tracer provider whose `SimpleSpanProcessor` hands every finished span to `OtlpJsonLoggingSpanExporter`, which logs it as OTLP JSON through `java.util.logging`, so it appears on the console:
 
 ```scala mdoc:silent
 import zio._
@@ -106,7 +106,7 @@ Put the code from the previous sections in one file with the usual imports. With
 //> using dep io.opentelemetry:opentelemetry-exporter-logging-otlp:1.68.0
 ```
 
-The application prints one JSON document per finished span. The `charge-card` span appears first, because it ends first, and carries the same trace ID as `checkout`, with `checkout` as its parent span. The attributes and events we added appear inside the span they were recorded on.
+The console log shows one OTLP JSON record per finished span. The `charge-card` span appears first, because it ends first, and carries the same trace ID as `checkout`, with `checkout` as its parent span. The attributes and events we added appear inside the span they were recorded on.
 
 ## Next Steps
 
