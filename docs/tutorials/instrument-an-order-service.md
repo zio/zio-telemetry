@@ -43,7 +43,7 @@ The service we build is an order service. A gateway receives an order and calls 
 
 ## 1. Set Up the Layers
 
-Every ZIO Telemetry service needs an OpenTelemetry SDK instance and a place to keep the current context. First, we build the SDK layer. Here we export every signal to standard output in the OTLP JSON format, so you can run the program without any backend.
+Every ZIO Telemetry service needs an OpenTelemetry SDK instance and a place to keep the current context. First, we build the SDK layer. Here we export every signal as OTLP JSON through `java.util.logging`, which prints to the console, so you can run the program without any backend.
 
 The following code creates a tracer provider, a meter provider, and a logger provider, and combines them into one `OpenTelemetry` instance:
 
@@ -112,7 +112,7 @@ def sdkLayer(serviceName: String): TaskLayer[api.OpenTelemetry] =
 The code above:
 
 - `resource` — describes the service that produces the signals, using the standard `service.name` attribute
-- `spanExporter`, `metricExporter`, `logExporter` — print each signal to standard output instead of sending it to a backend
+- `spanExporter`, `metricExporter`, `logExporter` — log each signal as OTLP JSON through `java.util.logging` instead of sending it to a backend
 - `ZIO.fromAutoCloseable` — makes sure each provider is closed when the layer's scope ends, which also flushes pending data
 - `OpenTelemetry.custom` — turns the scoped effect into a layer that provides the Java SDK's `api.OpenTelemetry` instance
 
@@ -157,10 +157,10 @@ final class Checkout(tracing: Tracing) {
     }
 
   private def validate(order: Order): UIO[Unit] =
-    tracing.span("validate-order")(ZIO.sleep(10.millis))
+    tracing.span("validate-order")(tracing.setAttribute("order.items", order.items.toLong) *> ZIO.sleep(10.millis))
 
   private def charge(order: Order): UIO[Unit] =
-    tracing.span("charge-payment")(ZIO.sleep(20.millis))
+    tracing.span("charge-payment")(tracing.setAttribute("order.total", order.total) *> ZIO.sleep(20.millis))
 
 }
 ```
@@ -168,7 +168,7 @@ final class Checkout(tracing: Tracing) {
 The code above:
 
 - `place-order` — the outer span, which covers the whole method
-- `validate-order` and `charge-payment` — child spans, because they run inside the outer span's effect
+- `validate-order` and `charge-payment` — child spans, because they run inside the outer span's effect, and each records a detail of the order as an attribute
 - `ZIO.sleep` — simulates work, so each span has a visible duration
 
 When this runs, the trace looks like this tree, where each child is shorter than its parent:
@@ -286,7 +286,7 @@ final class Notifier {
 The code above uses `ZIO.logAnnotate` to attach the order id to every log message inside its block, and `ZIO.logInfo` to emit the message at the `Info` level. `OpenTelemetry.logging` forwards messages at `Info` and above by default.
 
 :::note
-Because we passed `logAnnotated = true` to `OpenTelemetry.tracing` in section 1, annotations that are active when a span starts are also copied onto that span as attributes.
+Because `OpenTelemetry.tracing` in section 1 sets `logAnnotated = true`, annotations that are active when a span starts are also copied onto that span as attributes.
 :::
 
 ## 6. Continue a Trace Across Services
@@ -407,10 +407,10 @@ final class Checkout(tracing: Tracing) {
     }
 
   private def validate(order: Order): UIO[Unit] =
-    tracing.span("validate-order")(ZIO.sleep(10.millis))
+    tracing.span("validate-order")(tracing.setAttribute("order.items", order.items.toLong) *> ZIO.sleep(10.millis))
 
   private def charge(order: Order): UIO[Unit] =
-    tracing.span("charge-payment")(ZIO.sleep(20.millis))
+    tracing.span("charge-payment")(tracing.setAttribute("order.total", order.total) *> ZIO.sleep(20.millis))
 
 }
 
@@ -568,7 +568,7 @@ object OrderServiceApp extends ZIOAppDefault {
 }
 ```
 
-Run this program with `sbt run` in a project that has the dependencies from [Getting Started](../getting-started.md). The standard output shows the spans, one log record, and (after the periodic reader fires or the program exits) the `orders_placed` and `order_total` metrics, all in OTLP JSON.
+Run this program with `sbt run` in a project that has the dependencies from [Getting Started](../getting-started.md). The console shows the spans, one log record, and (after the periodic reader fires or the program exits) the `orders_placed` and `order_total` metrics, all in OTLP JSON.
 
 ## What You've Learned
 
