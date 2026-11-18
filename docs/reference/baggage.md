@@ -22,7 +22,7 @@ import zio._
 import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.baggage.Baggage
 
-val baggageLayer: ULayer[Baggage] =
+def baggageLayer: ULayer[Baggage] =
   OpenTelemetry.contextZIO >>> OpenTelemetry.baggage()
 ```
 
