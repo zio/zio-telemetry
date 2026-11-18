@@ -10,7 +10,7 @@ keywords:
   - "OpenTelemetry.custom"
 ---
 
-In this guide, we will wire the OpenTelemetry Java SDK into ZIO Telemetry so that traces, metrics and logs leave your application over OTLP, the OpenTelemetry protocol. We build one `OpenTelemetry` layer that takes three exporters as parameters, run it first with exporters that print OTLP JSON to standard output, and then swap in network exporters that talk to a collector.
+In this guide, we will wire the OpenTelemetry Java SDK into ZIO Telemetry so that traces, metrics and logs leave your application over OTLP, the OpenTelemetry protocol. We build one `OpenTelemetry` layer that takes three exporters as parameters, run it first with exporters that log OTLP JSON through `java.util.logging`, and then swap in network exporters that talk to a collector.
 
 ## The Problem
 
@@ -20,7 +20,7 @@ The SDK is a Java library with mutable builders and resources that must be close
 
 ## Prerequisites
 
-We need ZIO Telemetry and the SDK itself. The `opentelemetry-exporter-logging-otlp` artifact prints OTLP JSON to standard output, which is convenient while developing:
+We need ZIO Telemetry and the SDK itself. The `opentelemetry-exporter-logging-otlp` artifact logs OTLP JSON through `java.util.logging`, which is convenient while developing:
 
 ```sbt
 libraryDependencies ++= Seq(
@@ -28,7 +28,7 @@ libraryDependencies ++= Seq(
   "dev.zio" %% "zio-opentelemetry" % "@VERSION@",
   // The OpenTelemetry SDK: providers, processors and readers
   "io.opentelemetry" % "opentelemetry-sdk" % "1.68.0",
-  // Exporters that print OTLP JSON to standard output
+  // Exporters that log OTLP JSON through java.util.logging
   "io.opentelemetry" % "opentelemetry-exporter-logging-otlp" % "1.68.0"
 )
 ```
@@ -105,9 +105,9 @@ def sdkLayer(
   )
 ```
 
-## Starting with Standard Output
+## Starting with Console Logging
 
-Before involving a network, we plug in the exporters that print OTLP JSON. This is the quickest way to see that spans, metrics and log records are produced:
+Before involving a network, we plug in the exporters that log OTLP JSON. This is the quickest way to see that spans, metrics and log records are produced:
 
 ```scala mdoc:silent
 def stdoutSdk: TaskLayer[api.OpenTelemetry] =
@@ -172,6 +172,6 @@ val app: Task[Unit] =
 
 ## Going Further
 
-- The [OpenTelemetry example](../opentelemetry-example.md) switches between standard output, Jaeger, Fluent Bit and Seq by swapping the provider functions.
+- The [OpenTelemetry example](../opentelemetry-example.md) switches between console logging, Jaeger, Fluent Bit and Seq by swapping the provider functions.
 - To attach to a process that already has the OpenTelemetry Java agent, follow [How to Use the Java Agent](use-the-java-agent.md).
 - Trace and log correlation across the exported data is covered in [How to Correlate Logs with Traces](correlate-logs-with-traces.md).
