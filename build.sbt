@@ -110,10 +110,6 @@ ThisBuild / ciTestJobs ~= { jobs =>
   }
 }
 
-// Docusaurus 2.x uses webpackbar@5.0.2 which is incompatible with webpack@5.75+
-// (npm now resolves webpack@^5.73.0 to the latest 5.x which breaks ProgressPlugin).
-// Workaround: run installWebsite + mdoc separately, then pin webpack to 5.74.0 via
-// npm overrides before running the final npm build.
 ThisBuild / ciCheckWebsiteBuildProcess := Seq(
   SingleStep(
     name = "Setup NodeJs",
@@ -126,7 +122,6 @@ ThisBuild / ciCheckWebsiteBuildProcess := Seq(
       """|sbt docs/clean
          |sbt docs/installWebsite
          |sbt docs/mdoc
-         |node -e "const fs=require('fs'),p='website/package.json',pkg=JSON.parse(fs.readFileSync(p,'utf8'));pkg.overrides={webpack:'5.74.0'};fs.writeFileSync(p,JSON.stringify(pkg,null,2));"
          |npm install --prefix website
          |npm --prefix website run build""".stripMargin
     )
