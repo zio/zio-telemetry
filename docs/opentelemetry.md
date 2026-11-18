@@ -41,7 +41,7 @@ Everything lives under the `zio.telemetry.opentelemetry` package:
 
 - `OpenTelemetry` is the entry point, an object of layers that builds all the services below.
 - `tracing.Tracing` creates spans and sets their attributes, events and status.
-- `metrics.Meter` creates counters, up-down counters, histograms, gauges and their observable variants.
+- `metrics.Meter` creates counters, up-down counters and histograms, and the observable counters, up-down counters and gauges that the SDK polls.
 - `baggage.Baggage` reads and writes baggage entries.
 - `logging.Logging` turns `ZIO.log*` calls into OpenTelemetry log records. It is installed with the `OpenTelemetry.logging` layer and has no service you call directly.
 - `context.ContextStorage` stores the current OpenTelemetry context, and `context.IncomingContextCarrier` and `context.OutgoingContextCarrier` move it across process boundaries.
@@ -49,7 +49,7 @@ Everything lives under the `zio.telemetry.opentelemetry` package:
 
 ## Wiring at a Glance
 
-Every service is built by a layer of the `OpenTelemetry` object, and every layer needs the Java `OpenTelemetry` instance and a `ContextStorage`. A complete wiring that discards all signals, which is convenient for a first compile, is:
+Every service is built by a layer of the `OpenTelemetry` object, and these layers need the Java `OpenTelemetry` instance and a `ContextStorage`, except `OpenTelemetry.baggage`, which needs only the `ContextStorage`. A complete wiring that discards all signals, which is convenient for a first compile, is:
 
 ```scala mdoc:compile-only
 import zio._
@@ -108,4 +108,4 @@ When you have a concrete goal, these guides give the steps:
 
 For a longer walk through a realistic service, see the [tutorial](tutorials/instrument-an-order-service.md), the [OpenTelemetry example](opentelemetry-example.md) and the [instrumentation example](opentelemetry-instrumentation-example.md). If you want logs of the ZIO Logging library to carry trace information, see [OpenTelemetry ZIO Logging](opentelemetry-zio-logging.md).
 
-The Scala CLI versions of the examples that previously lived on this page are in the `scala-cli/opentelemetry/` directory of the repository.
+The Scala CLI versions of the examples are in the `scala-cli/opentelemetry/` directory of the repository.
