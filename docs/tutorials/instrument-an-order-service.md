@@ -122,7 +122,7 @@ Next, we turn the SDK into the three ZIO Telemetry services we use throughout th
 import zio.telemetry.opentelemetry.metrics.Meter
 import zio.telemetry.opentelemetry.tracing.Tracing
 
-val telemetryLayer: TaskLayer[Tracing & Meter] =
+def telemetryLayer: TaskLayer[Tracing & Meter] =
   (sdkLayer("order-service") ++ OpenTelemetry.contextZIO) >>>
     (OpenTelemetry.tracing("order-service", logAnnotated = true) ++
       OpenTelemetry.metrics("order-service") ++
@@ -147,7 +147,7 @@ A span represents one unit of work with a start time, an end time, and a name. S
 We start with the checkout part of the service. The `Order` data type is shared by every piece we write, and `Checkout` places an order by validating it and then charging it. The sleeps stand in for real work:
 
 ```scala mdoc:silent
-final case class Order(id: String, customer: String, items: Int, total: Double)
+case class Order(id: String, customer: String, items: Int, total: Double)
 
 final class Checkout(tracing: Tracing) {
 
@@ -397,7 +397,7 @@ import zio.telemetry.opentelemetry.tracing.propagation.TraceContextPropagator
 
 import scala.collection.mutable
 
-final case class Order(id: String, customer: String, items: Int, total: Double)
+case class Order(id: String, customer: String, items: Int, total: Double)
 
 final class Checkout(tracing: Tracing) {
 
