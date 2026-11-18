@@ -282,7 +282,7 @@ lazy val docs =
         opencensus
         //  opentelemetryZioLogging TODO: Causes some weird import issues
       ),
-      scalacOptions --= Seq("-Yno-imports", "-Xfatal-warnings", "-Werror")
+      scalacOptions --= Seq("-Yno-imports", "-Xfatal-warnings")
     )
     .settings(libraryDependencies ++= Dependencies.docs)
     .settings(unusedCompileDependenciesFilter -= moduleFilter("org.scalameta", "mdoc"))
