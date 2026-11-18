@@ -1,63 +1,53 @@
 ---
 id: index
 title: "Introduction to ZIO Telemetry"
-sidebar_label: "ZIO Telemetry"
+sidebar_label: "Introduction"
 ---
 
-[ZIO telemetry](https://github.com/zio/zio-telemetry) is purely-functional and type-safe. It provides clients for
-[OpenTracing](https://opentracing.io/), [OpenCensus](https://opencensus.io/) and [OpenTelemetry](https://opentelemetry.io/).
+[ZIO Telemetry](https://github.com/zio/zio-telemetry) is a purely functional, type-safe client for distributed tracing, metrics, logs, and baggage in [ZIO](https://zio.dev) applications. Its main module wraps [OpenTelemetry](https://opentelemetry.io/); older modules wrap [OpenTracing](https://opentracing.io/) and [OpenCensus](https://opencensus.io/), both deprecated upstream.
 
 @PROJECT_BADGES@
 
-ZIO Telemetry consists of the following projects:
-
-- [OpenTracing](opentracing.md)
-- [OpenCensus](opencensus.md)
-- [OpenTelemetry](opentelemetry.md)
-
-## Introduction
-
-In monolithic architecture, everything is in one place, and we know when a request starts and then how it goes through 
-the components and when it finishes. We can obviously see what is happening with our request and where is it going. 
-But, in distributed systems like microservice architecture, we cannot find out the story of a request through various 
-services easily. This is where distributed tracing comes into play.
-
-ZIO Telemetry is a purely functional client which helps up propagate context between services in a distributed environment.
+In a monolith, a request starts, passes through a few components, and finishes in one place. In a distributed system, the story of a request is spread across many services, and no single log tells it. Distributed tracing connects those pieces: every service records spans that share a trace, and the trace context travels between services with the request. ZIO Telemetry lets a ZIO effect be the scope of a span, correlates metrics and logs with the surrounding span, and propagates context across service boundaries.
 
 ## Installation
 
-In order to use this library, we need to add the following line in our `build.sbt` file if we want to use [OpenTelemetry](https://opentelemetry.io/) client:
+The OpenTelemetry module is all most applications need. It is published for the JVM only, for Scala 2.12, 2.13, and 3:
 
 ```scala
-libraryDependencies += "dev.zio" %% "zio-opentelemetry" % "@VERSION@"
+libraryDependencies ++= Seq(
+  // ZIO Telemetry for OpenTelemetry (JVM, Scala 2.12, 2.13, 3)
+  "dev.zio" %% "zio-opentelemetry" % "@VERSION@"
+)
 ```
 
-If you're using [ZIO Logging](https://github.com/zio/zio-logging) you can combine OpenTelemetry with ZIO Logging using:
+The module depends only on the OpenTelemetry API. To produce and export signals, an application also needs the OpenTelemetry SDK and an exporter; see [Getting Started](getting-started.md) for a working setup.
+
+## Modules
+
+The remaining modules are optional.
+
+### Integrations
+
+To add trace and span ids to [ZIO Logging](https://zio.dev/zio-logging/) output, use the logging integration. See [OpenTelemetry ZIO Logging](opentelemetry-zio-logging.md):
 
 ```scala
-libraryDependencies += "dev.zio" %% "zio-opentelemetry-zio-logging" % "@VERSION@"
+libraryDependencies ++= Seq(
+  // Span and trace id log formats for ZIO Logging (JVM, Scala 2.12, 2.13, 3)
+  "dev.zio" %% "zio-opentelemetry-zio-logging" % "@VERSION@"
+)
 ```
 
-For using [OpenTracing](https://opentracing.io/) client we should add the following line in our `build.sbt` file:
+### Legacy Modules
+
+OpenTracing and OpenCensus are deprecated upstream, and new applications should use the OpenTelemetry module. These modules remain for existing code. See [OpenTracing](opentracing.md) and [OpenCensus](opencensus.md):
 
 ```scala
-libraryDependencies += "dev.zio" %% "zio-opentracing" % "@VERSION@"
+libraryDependencies ++= Seq(
+  // ZIO Telemetry for OpenTracing (JVM, Scala 2.12, 2.13, 3)
+  "dev.zio" %% "zio-opentracing" % "@VERSION@",
+
+  // ZIO Telemetry for OpenCensus (JVM, Scala 2.12, 2.13, 3)
+  "dev.zio" %% "zio-opencensus" % "@VERSION@"
+)
 ```
-
-And for using [OpenCensus](https://opencensus.io/) client we should add the following line in our `build.sbt` file:
-
-```scala
-libraryDependencies += "dev.zio" %% "zio-opencensus" % "@VERSION@"
-```
-
-## Examples
-
-You can find examples with full source code and instructions of how to run by following the links:
-- [OpenTelemetry Example](opentelemetry-example.md)
-- [OpenTelemetry Instrumentation Example](opentelemetry-instrumentation-example.md)
-- [OpenTelemetry ZIO Logging Example](opentelemetry-zio-logging.md)
-- [OpenTracing Example](opentracing-example.md)
-
-## Articles
-
-- [Trace your microservices with ZIO](https://kadek-marek.medium.com/trace-your-microservices-with-zio-telemetry-5f88d69cb26b) by Marek Kadek (September 2021)
