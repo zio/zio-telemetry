@@ -23,7 +23,7 @@ libraryDependencies ++= Seq(
 The examples on this page share the following imports. The OpenCensus `Tracing` object is renamed so that it does not clash with the ZIO Telemetry `Tracing` service:
 
 ```scala mdoc:silent
-import io.opencensus.trace.{AttributeValue, Span, SpanContext, Status, Tracer, Tracing => OcTracing}
+import io.opencensus.trace.{AttributeValue, Span, Status, Tracer, Tracing => OcTracing}
 import zio._
 import zio.telemetry.opencensus.{ErrorMapper, Tracing}
 ```
@@ -43,10 +43,10 @@ val live: URLayer[Tracer, Tracing]
 The initial current span is a blank span that records nothing, so no span exists until you start one. The following example builds the layer from the default tracer of the OpenCensus runtime:
 
 ```scala mdoc:silent
-val tracerLayer: ULayer[Tracer] =
+def tracerLayer: ULayer[Tracer] =
   ZLayer.succeed(OcTracing.getTracer)
 
-val tracingLayer: ULayer[Tracing] =
+def tracingLayer: ULayer[Tracing] =
   tracerLayer >>> Tracing.live
 ```
 
@@ -61,7 +61,7 @@ def scoped(tracer: Tracer): URIO[Scope, Tracing]
 It is what `Tracing.live` uses internally. Use it when you already hold a `Tracer` value, for example in a test:
 
 ```scala mdoc:silent
-val scopedTracing: URIO[Scope, Tracing] =
+def scopedTracing: URIO[Scope, Tracing] =
   Tracing.scoped(OcTracing.getTracer)
 ```
 
