@@ -284,6 +284,8 @@ lazy val docs =
       ),
       scalacOptions --= Seq("-Yno-imports", "-Xfatal-warnings")
     )
+    .settings(libraryDependencies ++= Dependencies.docs)
     .settings(unusedCompileDependenciesFilter -= moduleFilter("org.scalameta", "mdoc"))
+    .settings(unusedCompileDependenciesFilter -= moduleFilter("io.opentelemetry"))
     .dependsOn(opentracing, opentelemetry, opencensus, opentelemetryZioLogging)
     .enablePlugins(WebsitePlugin)
