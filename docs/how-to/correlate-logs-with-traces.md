@@ -11,7 +11,7 @@ keywords:
 
 In this guide, we will make every `ZIO.log*` call carry the id of the trace and span it runs in. By the end, you can jump from a span in your tracing backend to the exact log lines it produced, and from a log line back to its trace.
 
-There are two ways to do it, and they can be used independently. We can export the logs as OpenTelemetry log records that carry the span context automatically, or we can print the `traceId` and `spanId` in the log format of ZIO Logging.
+There are two ways to do it, and they can be used independently. We can export the logs as OpenTelemetry log records that carry the span context automatically, or we can print `LogFormats#traceId` and `LogFormats#spanId` in the log format of ZIO Logging.
 
 ## The Problem
 
@@ -32,7 +32,7 @@ libraryDependencies ++= Seq(
 )
 ```
 
-We assume that a `Tracing` service is already set up, see [How to Export Signals with OTLP](export-signals-with-otlp.md). The log bridge additionally needs a `LoggerProvider` configured on the `OpenTelemetry` SDK instance you pass to the layers.
+We assume that a `Tracing` service is already set up; see [How to Export Signals with OTLP](export-signals-with-otlp.md). The log bridge additionally needs a `LoggerProvider` configured on the `OpenTelemetry` SDK instance you pass to the layers.
 
 The examples share these imports:
 
