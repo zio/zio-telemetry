@@ -24,7 +24,7 @@ libraryDependencies ++= Seq(
 
 The `OpenTelemetry.custom` layer takes a scoped effect that builds an `io.opentelemetry.api.OpenTelemetry` instance. Because the effect is scoped, ZIO closes the SDK when the application shuts down and flushes any pending spans.
 
-In the following code we define the layer as a `def` and create a tracer provider whose `SimpleSpanProcessor` hands every finished span to `OtlpJsonLoggingSpanExporter`, which prints it to stdout:
+In the following code we create a tracer provider whose `SimpleSpanProcessor` hands every finished span to `OtlpJsonLoggingSpanExporter`, which prints it to stdout:
 
 ```scala mdoc:silent
 import zio._
