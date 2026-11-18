@@ -26,11 +26,15 @@ import io.opentelemetry.api.trace.StatusCode
 import zio._
 import zio.telemetry.opentelemetry.tracing.{StatusMapper, Tracing}
 
-sealed trait LookupError
-case object NotFound                         extends LookupError
-final case class Unavailable(reason: String) extends LookupError
+object Domain {
+  sealed trait LookupError
+  case object NotFound                         extends LookupError
+  case class Unavailable(reason: String) extends LookupError
 
-final case class Response(code: Int, message: String)
+  case class Response(code: Int, message: String)
+}
+
+import Domain._
 ```
 
 Here is the effect we want to trace. It fails with `NotFound` for unknown ids, and returns a `503` response when the backend is overloaded:
@@ -73,7 +77,7 @@ A failure mapper receives the expected error of the effect and returns the statu
 We want `NotFound` to leave the span unset and every other failure to be an error:
 
 ```scala mdoc:silent
-val failureMapper: StatusMapper.Failure[LookupError] =
+def failureMapper: StatusMapper.Failure[LookupError] =
   StatusMapper.failureNoException[LookupError] {
     case NotFound => StatusCode.UNSET
     case _        => StatusCode.ERROR
@@ -104,7 +108,7 @@ Sometimes the status code alone loses information. `StatusMapper.failure` takes 
 We record an exception for `Unavailable`, and nothing for `NotFound`:
 
 ```scala mdoc:silent
-val failureWithException: StatusMapper.Failure[LookupError] =
+def failureWithException: StatusMapper.Failure[LookupError] =
   StatusMapper.failure[LookupError] {
     case NotFound => StatusCode.UNSET
     case _        => StatusCode.ERROR
@@ -117,7 +121,7 @@ val failureWithException: StatusMapper.Failure[LookupError] =
 If the error type already is a `Throwable`, `StatusMapper.failureThrowable` does the same in one step. It sets the status you choose and records the throwable itself:
 
 ```scala mdoc:silent
-val throwableMapper: StatusMapper.Failure[Throwable] =
+def throwableMapper: StatusMapper.Failure[Throwable] =
   StatusMapper.failureThrowable(_ => StatusCode.ERROR)
 ```
 
@@ -128,7 +132,7 @@ A success mapper inspects the value produced by the effect. Use `StatusMapper.su
 We mark `5xx` responses as errors with the response message as description, and every other response as `OK`:
 
 ```scala mdoc:silent
-val successMapper: StatusMapper.Success[Response] =
+def successMapper: StatusMapper.Success[Response] =
   StatusMapper.success[Response] { response =>
     if (response.code >= 500) StatusCode.ERROR else StatusCode.OK
   } { response =>
@@ -143,7 +147,7 @@ The description is applied only when the status code is `ERROR`. For `OK` and `U
 A span method takes a single `StatusMapper`, so we merge the failure and success mappers with `StatusMapper.both`:
 
 ```scala mdoc:silent
-val statusMapper: StatusMapper[LookupError, Response] =
+def statusMapper: StatusMapper[LookupError, Response] =
   StatusMapper.both(failureWithException, successMapper)
 ```
 
