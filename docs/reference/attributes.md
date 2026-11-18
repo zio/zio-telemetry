@@ -30,14 +30,18 @@ The list constructors build the array-typed keys (`AttributeKey.stringArrayKey` 
 
 We create attributes by calling the constructors, and we can read the underlying key and value from the resulting case class:
 
-```scala mdoc
+```scala mdoc:silent
 import zio.telemetry.opentelemetry.common.{Attribute, Attributes}
 
-val userId = Attribute.string("user.id", "u-42")
-val retries = Attribute.long("retries", 3L)
-val tags = Attribute.stringList("tags", List("a", "b"))
+def userId = Attribute.string("user.id", "u-42")
+def retries = Attribute.long("retries", 3L)
+def tags = Attribute.stringList("tags", List("a", "b"))
+```
 
-userId.key.getKey
+The key of an attribute is an OpenTelemetry `AttributeKey`, whose name we read with `getKey`:
+
+```scala mdoc
+println(userId.key.getKey)
 ```
 
 Because `Attribute` is an ordinary case class, we can also wrap a key we already have, for example one from a semantic-conventions library:
@@ -63,18 +67,26 @@ The `apply` overloads accept attributes of different value types, so `Attributes
 
 We build `Attributes` with the `apply` overloads:
 
-```scala mdoc
-val attrs = Attributes(userId, retries)
+```scala mdoc:silent
+def attrs = Attributes(userId, retries)
+```
 
-attrs.size()
+The resulting `Attributes` value holds both entries:
+
+```scala mdoc
+println(attrs.size())
 ```
 
 When all attributes share a type we can use `fromList`:
 
-```scala mdoc
-val names = Attributes.fromList(List(Attribute.string("a", "1"), Attribute.string("b", "2")))
+```scala mdoc:silent
+def names = Attributes.fromList(List(Attribute.string("a", "1"), Attribute.string("b", "2")))
+```
 
-names.size()
+It holds one entry per element of the list:
+
+```scala mdoc
+println(names.size())
 ```
 
 ## Using Attributes with Tracing
