@@ -4,7 +4,7 @@ title: "OpenTracing"
 ---
 
 :::warning
-The OpenTracing project is deprecated upstream and superseded by OpenTelemetry. The `zio-opentracing` module exists for applications that already use it. For new code, use the [OpenTelemetry module](opentelemetry.md), and see [How to Migrate from OpenTracing or OpenCensus](how-to/migrate-from-opentracing-or-opencensus.md) to move an existing application.
+The OpenTracing project is archived upstream and superseded by OpenTelemetry. The `zio-opentracing` module exists for applications that already use it. For new code, use the [OpenTelemetry module](opentelemetry.md), and see [How to Migrate from OpenTracing or OpenCensus](how-to/migrate-from-opentracing-or-opencensus.md) to move an existing application.
 :::
 
 The `zio-opentracing` module wraps the [OpenTracing](https://opentracing.io/) API in a ZIO service named `OpenTracing`. Each effect that runs inside a span records its timing, tags, logs, and errors on the OpenTracing `Tracer` that you provide, for example the Jaeger or Zipkin tracer. This page lists every public member of the module.
@@ -145,7 +145,7 @@ If the tracer throws while extracting, no span is started and `zio` runs unchang
 
 ### Aspects
 
-The `aspects` object in the service offers `root`, `span`, and `spanFrom` as `ZIOAspect` values, so you can write `zio @@ span("name")` instead of nesting calls. They take the same arguments as the methods above, minus the effect, and delegate to them:
+The `aspects` object in the service offers `OpenTracing#root`, `OpenTracing#span`, and `OpenTracing#spanFrom` as `ZIOAspect` values, so you can write `zio @@ span("name")` instead of nesting calls. They take the same arguments as the methods above, minus the effect, and delegate to them:
 
 ```scala
 object aspects {
@@ -174,7 +174,7 @@ val withAspects: UIO[Unit] =
 
 ## Tags, Logs, and Baggage
 
-These methods act on the current span, which is the span started by the innermost enclosing `root`, `span`, or `spanFrom`, or the service's root span if there is none.
+These methods act on the current span, which is the span started by the innermost enclosing `OpenTracing#root`, `OpenTracing#span`, or `OpenTracing#spanFrom`, or the service's root span if there is none.
 
 ### OpenTracing#tag
 
