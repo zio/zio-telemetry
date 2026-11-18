@@ -42,7 +42,7 @@ import zio.telemetry.opentelemetry.metrics.{Counter, Histogram, Meter, UpDownCou
 `Meter` is the factory for instruments. Each factory method returns a `UIO`, so we create the instruments inside a layer and share them. The `name` is the only required parameter, and `unit` and `description` are optional. A counter only goes up, an up-down counter goes up and down, and a histogram records a distribution of values and can take explicit bucket `boundaries`:
 
 ```scala mdoc:silent
-final case class OrderMetrics(
+case class OrderMetrics(
   placed: Counter[Long],
   inProgress: UpDownCounter[Long],
   duration: Histogram[Double]
@@ -117,7 +117,7 @@ The callback runs on a thread owned by the SDK's metric reader, so keep it fast 
 If we create the metrics layer with `logAnnotated = true`, every recording also carries the current ZIO log annotations as attributes. That lets us tag metrics with request-scoped data set via `ZIO.logAnnotate` without passing it to each call:
 
 ```scala mdoc:silent
-val metricsLayer =
+def metricsLayer =
   OpenTelemetry.metrics("com.example.orders", logAnnotated = true)
 ```
 
