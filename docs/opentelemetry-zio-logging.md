@@ -113,7 +113,7 @@ object ZioLoggingApp extends ZIOAppDefault {
       Runtime.removeDefaultLoggers >>> Runtime.addLogger(format.toLogger.map(println(_)))
     }
 
-  override def run: Task[Unit] =
+  override def run =
     ZIO
       .serviceWithZIO[Tracing] { tracing =>
         import tracing.aspects._
