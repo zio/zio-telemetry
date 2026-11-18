@@ -37,18 +37,16 @@ jobs:
       uses: actions/checkout@v7.0.1
       with:
         fetch-depth: '0'
-    - name: Install libuv
-      run: sudo apt-get update && sudo apt-get install -y libuv1-dev
     - name: Setup Scala
-      uses: actions/setup-java@v6.1.0
+      uses: actions/setup-java@v6.2.0
       with:
         distribution: corretto
         java-version: '17'
         check-latest: true
     - name: Setup SBT
-      uses: sbt/setup-sbt@v1.5.12
+      uses: sbt/setup-sbt@v1.5.7
     - name: Cache Dependencies
-      uses: coursier/cache-action@v8.2.0
+      uses: coursier/cache-action@v9.0.1
     - name: Check all code compiles
       run: sbt --no-colors +Test/compile
     - name: Check artifacts build process
@@ -82,18 +80,16 @@ jobs:
       uses: actions/checkout@v7.0.1
       with:
         fetch-depth: '0'
-    - name: Install libuv
-      run: sudo apt-get update && sudo apt-get install -y libuv1-dev
     - name: Setup Scala
-      uses: actions/setup-java@v6.1.0
+      uses: actions/setup-java@v6.2.0
       with:
         distribution: corretto
         java-version: '17'
         check-latest: true
     - name: Setup SBT
-      uses: sbt/setup-sbt@v1.5.12
+      uses: sbt/setup-sbt@v1.5.7
     - name: Cache Dependencies
-      uses: coursier/cache-action@v8.2.0
+      uses: coursier/cache-action@v9.0.1
     - name: Check if the site workflow is up to date
       run: sbt --no-colors ciCheckGithubWorkflow
     - name: Lint
@@ -110,23 +106,16 @@ jobs:
         - '21'
         - '25'
     steps:
-    - name: Install libuv
-      run: |-
-        if [ -f /etc/apt/apt-mirrors.txt ]; then
-          sudo sed -i 's|http://azure.archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g' /etc/apt/apt-mirrors.txt
-        fi
-        timeout 5m sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update
-        timeout 5m sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 install -y libuv1-dev
     - name: Setup Scala
-      uses: actions/setup-java@v6.1.0
+      uses: actions/setup-java@v6.2.0
       with:
         distribution: corretto
         java-version: ${{ matrix.java }}
         check-latest: true
     - name: Setup SBT
-      uses: sbt/setup-sbt@v1.5.12
+      uses: sbt/setup-sbt@v1.5.7
     - name: Cache Dependencies
-      uses: coursier/cache-action@v8.2.0
+      uses: coursier/cache-action@v9.0.1
     - name: Git Checkout
       uses: actions/checkout@v7.0.1
       with:
@@ -146,18 +135,16 @@ jobs:
       uses: actions/checkout@v7.0.1
       with:
         fetch-depth: '0'
-    - name: Install libuv
-      run: sudo apt-get update && sudo apt-get install -y libuv1-dev
     - name: Setup Scala
-      uses: actions/setup-java@v6.1.0
+      uses: actions/setup-java@v6.2.0
       with:
         distribution: corretto
         java-version: '17'
         check-latest: true
     - name: Setup SBT
-      uses: sbt/setup-sbt@v1.5.12
+      uses: sbt/setup-sbt@v1.5.7
     - name: Cache Dependencies
-      uses: coursier/cache-action@v8.2.0
+      uses: coursier/cache-action@v9.0.1
     - name: Generate Readme
       run: sbt --no-colors docs/generateReadme
     - name: Generate Token
@@ -222,18 +209,16 @@ jobs:
       uses: actions/checkout@v7.0.1
       with:
         fetch-depth: '0'
-    - name: Install libuv
-      run: sudo apt-get update && sudo apt-get install -y libuv1-dev
     - name: Setup Scala
-      uses: actions/setup-java@v6.1.0
+      uses: actions/setup-java@v6.2.0
       with:
         distribution: corretto
         java-version: '17'
         check-latest: true
     - name: Setup SBT
-      uses: sbt/setup-sbt@v1.5.12
+      uses: sbt/setup-sbt@v1.5.7
     - name: Cache Dependencies
-      uses: coursier/cache-action@v8.2.0
+      uses: coursier/cache-action@v9.0.1
     - name: Release
       run: sbt --no-colors ci-release
       env:
@@ -253,18 +238,16 @@ jobs:
       uses: actions/checkout@v7.0.1
       with:
         fetch-depth: '0'
-    - name: Install libuv
-      run: sudo apt-get update && sudo apt-get install -y libuv1-dev
     - name: Setup Scala
-      uses: actions/setup-java@v6.1.0
+      uses: actions/setup-java@v6.2.0
       with:
         distribution: corretto
         java-version: '17'
         check-latest: true
     - name: Setup SBT
-      uses: sbt/setup-sbt@v1.5.12
+      uses: sbt/setup-sbt@v1.5.7
     - name: Cache Dependencies
-      uses: coursier/cache-action@v8.2.0
+      uses: coursier/cache-action@v9.0.1
     - name: Setup NodeJs
       uses: actions/setup-node@v7.1.0
       with:
