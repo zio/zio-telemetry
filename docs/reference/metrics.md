@@ -3,7 +3,7 @@ id: metrics
 title: "Metrics"
 ---
 
-The metrics API records measurements through instruments that are created by a `Meter`. The OpenTelemetry SDK aggregates the measurements and exports them as metrics. Every instrument writes with the OpenTelemetry context of the current fiber, so a measurement can be associated with the active span. This page lists the instruments, how they are created, and how ZIO's own metrics are forwarded to OpenTelemetry.
+The metrics API records measurements through instruments that are created by a `Meter`. The OpenTelemetry SDK aggregates the measurements and exports them as metrics. Every synchronous instrument writes with the OpenTelemetry context held by the context storage, so a measurement can be associated with the active span. This page lists the instruments, how they are created, and how ZIO's own metrics are forwarded to OpenTelemetry.
 
 ## Creating the Meter Layer
 
@@ -36,7 +36,7 @@ Instrumentation scope, layers and context storages are covered in [OpenTelemetry
 
 ## Meter
 
-`Meter` is the factory of instruments. Every method takes the instrument `name`, and an optional `unit` and `description`. Names must start with a letter and contain at most 255 alphanumeric characters, `_`, `.` or `-`, and units must be at most 63 ASCII characters. The service has two kinds of factory methods: synchronous instruments, which you call when something happens, and observable instruments, which the SDK polls through a callback.
+`Meter` is the factory of instruments. Every method takes the instrument `name`, and an optional `unit` and `description`. Names must start with a letter and contain at most 255 alphanumeric characters, `_`, `.` or `-`, and units must be at most 63 ASCII characters. The service has two kinds of factory methods: synchronous instruments, which you call when something happens, and observable instruments, which the SDK polls through a callback. The trait declares these methods:
 
 ```scala
 trait Meter {
@@ -177,7 +177,7 @@ val program: RIO[Meter & Scope, Unit] =
 
 ## ZIO Metrics Bridge
 
-`OpenTelemetry.zioMetrics` forwards metrics defined with the ZIO `Metric` API to OpenTelemetry. It requires the `Instrument.Builder` produced by `OpenTelemetry.metrics`, and it is scoped: the bridge is installed when the layer is built and removed when it is released.
+`OpenTelemetry.zioMetrics` forwards metrics defined with the ZIO `Metric` API to OpenTelemetry. It requires the `Instrument.Builder` produced by `OpenTelemetry.metrics`, and it is scoped: the bridge is installed when the layer is built and removed when it is released. The layer has this signature:
 
 ```scala
 object OpenTelemetry {
