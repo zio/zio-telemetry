@@ -28,7 +28,7 @@ import zio.telemetry.opentelemetry.OpenTelemetry
 import zio.telemetry.opentelemetry.metrics.Meter
 import zio.telemetry.opentelemetry.metrics.internal.Instrument
 
-val metricsLayer: ULayer[Meter & Instrument.Builder] =
+def metricsLayer: ULayer[Meter & Instrument.Builder] =
   (OpenTelemetry.noop ++ OpenTelemetry.contextZIO) >>> OpenTelemetry.metrics("com.example.shop")
 ```
 
