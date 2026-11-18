@@ -47,6 +47,7 @@ sbt -J-javaagent:$OTEL_AGENT_PATH \
     -J-Dotel.service.name=example-server \
     -J-Dotel.traces.sampler=always_on \
     -J-Dotel.traces.exporter=otlp \
+    -J-Dotel.exporter.otlp.protocol=grpc \
     -J-Dotel.logs.exporter=otlp \
     -J-Dotel.exporter.otlp.logs.protocol="http/protobuf" \
     -J-Dotel.exporter.otlp.logs.endpoint="http://localhost:5341/ingest/otlp/v1/logs" \
@@ -60,6 +61,7 @@ sbt -J-javaagent:$OTEL_AGENT_PATH \
     -J-Dotel.service.name=example-client \
     -J-Dotel.traces.sampler=always_on \
     -J-Dotel.traces.exporter=otlp \
+    -J-Dotel.exporter.otlp.protocol=grpc \
     -J-Dotel.metrics.exporter=none \
     "opentelemetryInstrumentationExample/runMain zio.telemetry.opentelemetry.instrumentation.example.ClientApp"
 ```
