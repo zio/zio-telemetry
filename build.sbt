@@ -10,12 +10,12 @@ enablePlugins(ZioSbtEcosystemPlugin, ZioSbtCiPlugin)
 
 inThisBuild(
   List(
-    name               := "ZIO Telemetry",
-    organization       := "dev.zio",
-    zioVersion         := "2.1.27",
-    homepage           := Some(url("https://zio.dev/zio-telemetry/")),
-    licenses           := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-    developers         := List(
+    name                    := "ZIO Telemetry",
+    organization            := "dev.zio",
+    zioVersion              := "2.1.27",
+    homepage                := Some(url("https://zio.dev/zio-telemetry/")),
+    licenses                := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+    developers              := List(
       Developer(
         "mijicd",
         "Dejan Mijic",
@@ -35,7 +35,7 @@ inThisBuild(
         url("https://github.com/grouzen")
       )
     ),
-    ciEnabledBranches  := Seq("series/2.x", "v4.0.0-rc"),
+    ciEnabledBranches       := Seq("series/2.x", "v4.0.0-rc"),
     ciUpdateReadmeCondition := Some(
       Condition.Expression("github.event_name == 'release'") &&
         Condition.Expression("github.event.action == 'published'") &&
@@ -64,10 +64,10 @@ inThisBuild(
         run = Some("sbt missinglinkCheck")
       )
     ),
-    pgpPassphrase      := sys.env.get("PGP_PASSWORD").map(_.toArray),
-    pgpPublicRing      := file("/tmp/public.asc"),
-    pgpSecretRing      := file("/tmp/secret.asc"),
-    scmInfo            := Some(
+    pgpPassphrase           := sys.env.get("PGP_PASSWORD").map(_.toArray),
+    pgpPublicRing           := file("/tmp/public.asc"),
+    pgpSecretRing           := file("/tmp/secret.asc"),
+    scmInfo                 := Some(
       ScmInfo(
         url("https://github.com/zio/zio-telemetry/"),
         "scm:git:git@github.com:zio/zio-telemetry.git"
@@ -75,9 +75,9 @@ inThisBuild(
     ),
     concurrentRestrictions += Tags.limit(missinglinkConflictsTag, 1),
     // TODO: remove once it is updated in zio-sbt
-    scala213           := "2.13.18",
+    scala213                := "2.13.18",
     // Workaround for git worktrees
-    useConsoleForROGit := true
+    useConsoleForROGit      := true
   )
 )
 
