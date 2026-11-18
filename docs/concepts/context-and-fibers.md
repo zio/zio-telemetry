@@ -21,10 +21,10 @@ A `FiberRef` is ZIO's answer. Its value belongs to the fiber, is inherited by fo
 
 ## When to Use Each
 
-Use `contextZIO` when you configure the SDK in code with `OpenTelemetry.custom`, and you do not run the Java agent. Use `contextJVM` together with `OpenTelemetry.global` when the agent is attached, so that spans created by the agent for HTTP servers, JDBC and similar libraries become the parents of the spans you create by hand, and the other way around.
+Use `OpenTelemetry.contextZIO` when you configure the SDK in code with `OpenTelemetry.custom`, and you do not run the Java agent. Use `OpenTelemetry.contextJVM` together with `OpenTelemetry.global` when the agent is attached, so that spans created by the agent for HTTP servers, JDBC and similar libraries become the parents of the spans you create by hand, and the other way around.
 
 The two choices are not interchangeable at runtime. Mixing a `FiberRef` storage with the agent leaves the agent's spans and yours in two unrelated contexts. See [Context Storage](../reference/context-storage.md) for the full API and [How to Use the Java Agent](../how-to/use-the-java-agent.md) for the set-up.
 
 ## Interplay with Non-ZIO Code
 
-With `contextZIO`, code that reads the thread-local context, such as a Java client library, cannot see your span unless you bridge it. `Tracing#scopedEffect` and its variants temporarily install the current ZIO span as the thread-local context while a block of non-ZIO code runs, so that such code can see it.
+With `OpenTelemetry.contextZIO`, code that reads the thread-local context, such as a Java client library, cannot see your span unless you bridge it. `Tracing#scopedEffect` and its variants temporarily install the current ZIO span as the thread-local context while a block of non-ZIO code runs, so that such code can see it.
