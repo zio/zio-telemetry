@@ -18,7 +18,7 @@ sealed abstract class StatusMapper[-E, -A](
 )
 ```
 
-The class is sealed and its constructor is not public, so mappers are created with the methods of the companion object described below. The supporting types are:
+The class is sealed, so it cannot be extended outside its source file, and mappers are created with the methods of the companion object described below. The supporting types are:
 
 ```scala
 final case class Result[+T](statusCode: StatusCode, error: Option[T] = None)
