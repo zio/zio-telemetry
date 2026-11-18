@@ -29,7 +29,7 @@ The remaining modules are optional.
 
 ### Integrations
 
-To add trace and span ids to [ZIO Logging](https://zio.dev/zio-logging/) output, use the logging integration. See [OpenTelemetry ZIO Logging](opentelemetry-zio-logging.md):
+To add trace and span ids to [ZIO Logging](https://zio.dev/zio-logging/) output, use the logging integration:
 
 ```scala
 libraryDependencies ++= Seq(
@@ -38,9 +38,11 @@ libraryDependencies ++= Seq(
 )
 ```
 
+See [OpenTelemetry ZIO Logging](opentelemetry-zio-logging.md).
+
 ### Legacy Modules
 
-OpenTracing and OpenCensus are deprecated upstream, and new applications should use the OpenTelemetry module. These modules remain for existing code. See [OpenTracing](opentracing.md) and [OpenCensus](opencensus.md):
+OpenTracing is archived and OpenCensus is deprecated upstream, and new applications should use the OpenTelemetry module. These modules remain for existing code:
 
 ```scala
 libraryDependencies ++= Seq(
@@ -51,3 +53,5 @@ libraryDependencies ++= Seq(
   "dev.zio" %% "zio-opencensus" % "@VERSION@"
 )
 ```
+
+See [OpenTracing](opentracing.md) and [OpenCensus](opencensus.md).
