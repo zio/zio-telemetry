@@ -43,26 +43,22 @@ To start the service, run:
 sbt "opentracingExample/runMain zio.telemetry.opentracing.example.ProxyApp"
 ```
 
-The console should output
+If the server has started properly, the console outputs:
 ```bash
 running zio.telemetry.opentracing.example.ProxyApp
 ```
-if the server has been started properly.
 
 #### ProxyHttpApp
 
-Provides the implementation of the service, which returns the status of the backend service and the proxy service itself.
-`Client` is used to retrieve the status of the backend service.
+Provides the implementation of the service, which returns the status of the backend service and the proxy service itself. `BackendClient` is used to retrieve the status of the backend service.
 
-This is also where the tracing of the application is done, by collecting the timings and logging things such as the span
-type and the HTTP method. The context is injected into a carrier, and passed along to the backend through `Client`,
-where a child span is created, and logging of the backend service is done.
+This is also where the tracing of the application is done, by collecting the timings and logging things such as the span type and the HTTP method. The context is injected into a carrier, and passed along to the backend through `BackendClient`, where a child span is created, and logging of the backend service is done.
 
 ### Backend Service
 
 Represents the "internal" service of the system. It exposes the `/status` endpoint which returns the status of the backend service.
 
-The service consists of `BackendServer` and `BackendApp`.
+The service consists of `BackendHttpServer` and `BackendHttpApp`.
 
 #### BackendApp
 
@@ -71,17 +67,18 @@ To start the service, run:
 sbt "opentracingExample/runMain zio.telemetry.opentracing.example.BackendApp"
 ```
 
-The console should output
+If the server has started properly, the console outputs:
 ```bash
 running zio.telemetry.opentracing.example.BackendApp
 ```
-if the server has been started properly.
 
 #### BackendHttpApp
 
 Provides the implementation of the service, which is to simply return the status of the backend service.
 
 ### Status
+
+The `Status` case class has the following definition:
 
 ```scala
 final case class Status(name: String, status: String)
@@ -91,8 +88,10 @@ Represents the status of a service.
 
 ### Statuses
 
+The `Statuses` case class wraps a list of `Status` values:
+
 ```scala
-final case class Statuses(data: List[Status]) extends AnyVal
+final case class Statuses(data: List[Status])
 ```
 
 Represents the statuses of a number of services.
