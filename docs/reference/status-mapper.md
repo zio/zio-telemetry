@@ -64,9 +64,9 @@ import zio.telemetry.opentelemetry.tracing.StatusMapper
 
 sealed trait OrderError
 case object OutOfStock extends OrderError
-final case class PaymentDeclined(reason: String) extends OrderError
+case class PaymentDeclined(reason: String) extends OrderError
 
-val orderFailures: StatusMapper.Failure[OrderError] =
+def orderFailures: StatusMapper.Failure[OrderError] =
   StatusMapper.failure[OrderError] {
     case OutOfStock => StatusCode.UNSET
     case _          => StatusCode.ERROR
@@ -87,7 +87,7 @@ def failureNoException[E](toStatusCode: E => StatusCode): Failure[E]
 It suits error types that are not throwables and carry no stack trace worth recording:
 
 ```scala mdoc:silent
-val noException: StatusMapper.Failure[OrderError] =
+def noException: StatusMapper.Failure[OrderError] =
   StatusMapper.failureNoException[OrderError](_ => StatusCode.ERROR)
 ```
 
@@ -102,7 +102,7 @@ def failureThrowable(toStatusCode: Throwable => StatusCode): Failure[Throwable]
 For example, we can treat illegal arguments as client errors that leave the status `UNSET`, and everything else as `ERROR`:
 
 ```scala mdoc:silent
-val throwables: StatusMapper.Failure[Throwable] =
+def throwables: StatusMapper.Failure[Throwable] =
   StatusMapper.failureThrowable {
     case _: IllegalArgumentException => StatusCode.UNSET
     case _                           => StatusCode.ERROR
@@ -120,9 +120,9 @@ def success[A](toStatusCode: A => StatusCode)(toError: A => Option[String]): Suc
 The example maps a response with code 500 or above to `ERROR` with a description and everything else to `OK`:
 
 ```scala mdoc:silent
-final case class Response(code: Int, body: String)
+case class Response(code: Int, body: String)
 
-val responses: StatusMapper.Success[Response] =
+def responses: StatusMapper.Success[Response] =
   StatusMapper.success[Response](r => if (r.code >= 500) StatusCode.ERROR else StatusCode.OK) { r =>
     if (r.code >= 500) Some(s"server returned ${r.code}") else None
   }
@@ -139,7 +139,7 @@ def successNoDescription[A](toStatusCode: A => StatusCode): Success[A]
 The next definition marks every successful span explicitly as `OK`:
 
 ```scala mdoc:silent
-val alwaysOk: StatusMapper.Success[Any] =
+def alwaysOk: StatusMapper.Success[Any] =
   StatusMapper.successNoDescription[Any](_ => StatusCode.OK)
 ```
 
@@ -154,7 +154,7 @@ def both[E, A](failure: Failure[E], success: Success[A]): StatusMapper[E, A]
 We combine the failure and success mappers defined above to get a mapper for an effect of type `ZIO[R, Throwable, Response]`:
 
 ```scala mdoc:silent
-val combined: StatusMapper[Throwable, Response] =
+def combined: StatusMapper[Throwable, Response] =
   StatusMapper.both(throwables, responses)
 ```
 
@@ -181,7 +181,7 @@ When the effect succeeds, `Tracing` applies the `success` function if it is defi
 `Tracing#spanScoped` accepts a `StatusMapper[Any, Unit]` and uses only its failure side, evaluated when the scope closes with a failure. A successful scope never sets a status. Because the type is `StatusMapper[Any, Unit]` and mappers are contravariant, the practical choices are `StatusMapper.default` and a `Failure[Any]`:
 
 ```scala mdoc:silent
-val scopedMapper: StatusMapper[Any, Unit] =
+def scopedMapper: StatusMapper[Any, Unit] =
   StatusMapper.failure[Any](_ => StatusCode.ERROR)(e => Some(new RuntimeException(e.toString)))
 ```
 
