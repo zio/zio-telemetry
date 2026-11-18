@@ -161,11 +161,11 @@ def fromRootSpan[C, R, E, E1 <: E, A](
 )(zio: => ZIO[R, E1, A])(implicit trace: Trace): ZIO[R, E1, A]
 ```
 
-If extraction throws, for example because the carrier holds no trace headers, the method falls back to `Tracing#root` with the same `name`, `kind`, and `toErrorStatus`, so the effect always runs inside a span. See [Propagating Context](#propagating-context) for a complete round trip.
+If extraction throws, for example because the carrier holds no trace headers, the method falls back to `Tracing#root` with the same `name`, `kind`, and `toErrorStatus`, and without `attributes`, so the effect always runs inside a span. See [Propagating Context](#propagating-context) for a complete round trip.
 
 ### Aspects
 
-The `aspects` object in the service offers `span`, `root`, `fromRemoteSpan`, and `fromRootSpan` as `ZIOAspect` values, so you can write `zio @@ span("name")` instead of nesting calls. Each takes the same arguments as the method of the same name, minus the effect, and has a type parameter `E` for the error type that the error mapper handles:
+The `aspects` object in the service offers `Tracing#span`, `Tracing#root`, `Tracing#fromRemoteSpan`, and `Tracing#fromRootSpan` as `ZIOAspect` values, so you can write `zio @@ span("name")` instead of nesting calls. Each takes the same arguments as the method of the same name, minus the effect, and has a type parameter `E` for the error type that the error mapper handles:
 
 ```scala
 object aspects {
