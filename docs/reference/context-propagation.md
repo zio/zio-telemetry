@@ -90,7 +90,7 @@ When the container is not a `mutable.Map`, we implement the trait for its type. 
 ```scala mdoc:compile-only
 import zio.telemetry.opentelemetry.context.{IncomingContextCarrier, OutgoingContextCarrier}
 
-final case class RequestHeaders(values: Map[String, String])
+case class RequestHeaders(values: Map[String, String])
 
 def incomingFrom(headers: RequestHeaders): IncomingContextCarrier[RequestHeaders] =
   new IncomingContextCarrier[RequestHeaders] {
