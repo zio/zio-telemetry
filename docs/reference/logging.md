@@ -37,13 +37,13 @@ The same layer is available as `Logging.live(instrumentationScopeName, logLevel)
 
 Each log call produces one OpenTelemetry log record.
 
-| Record Field  | Value                                                                              |
-| ------------- | ---------------------------------------------------------------------------------- |
-| Body          | The log message                                                                    |
+| Record Field  | Value                                                                                                                                              |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Body          | The log message                                                                                                                                    |
 | Severity      | `Trace`, `Debug`, `Info`, `Warning`, `Error` and `Fatal` map to the OpenTelemetry severities `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR` and `FATAL` |
-| Severity text | The ZIO log level label, such as `INFO` or `WARN`                                  |
-| Attributes    | ZIO log annotations, one string attribute per annotation                           |
-| Context       | The OpenTelemetry context of the fiber, which supplies the trace id and span id    |
+| Severity text | The ZIO log level label, such as `INFO` or `WARN`                                                                                                  |
+| Attributes    | ZIO log annotations, one string attribute per annotation                                                                                           |
+| Context       | The OpenTelemetry context of the fiber, which supplies the trace id and span id                                                                    |
 
 The `Cause` and the log spans of the ZIO log call are not part of the record. Log levels outside the six listed above are exported with an undefined severity number.
 
