@@ -45,7 +45,7 @@ Because `Attribute` is an ordinary case class, we can also wrap a key we already
 ```scala mdoc:silent
 import io.opentelemetry.api.common.AttributeKey
 
-val httpStatus: Attribute[java.lang.Long] =
+def httpStatus: Attribute[java.lang.Long] =
   Attribute(AttributeKey.longKey("http.response.status_code"), 200L: java.lang.Long)
 ```
 
