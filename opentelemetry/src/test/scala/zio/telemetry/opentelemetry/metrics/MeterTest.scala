@@ -62,7 +62,7 @@ object MeterTest extends ZIOSpecDefault {
         ZIO.serviceWithZIO[Meter] { meter =>
           for {
             reader          <- ZIO.service[InMemoryMetricReader]
-            counter         <- meter.counterLong("test_counter")
+            counter         <- meter.counterLong("test_long_counter")
             attributes       = Attributes(Attribute.long("attr1", 3L))
             _               <- counter.add(12, attributes)
             _               <- counter.inc(attributes)
@@ -98,7 +98,7 @@ object MeterTest extends ZIOSpecDefault {
         ZIO.serviceWithZIO[Meter] { meter =>
           for {
             reader          <- ZIO.service[InMemoryMetricReader]
-            counter         <- meter.upDownCounterLong("test_up_down_counter")
+            counter         <- meter.upDownCounterLong("test_long_up_down_counter")
             attributes       = Attributes(Attribute.boolean("attr2", value = false))
             _               <- counter.add(5, attributes)
             _               <- counter.inc(attributes)
@@ -199,7 +199,7 @@ object MeterTest extends ZIOSpecDefault {
             for {
               reader     <- ZIO.service[InMemoryMetricReader]
               ref        <- ZIO.service[Ref[Long]]
-              _          <- meter.observableCounterLong("obs") { om =>
+              _          <- meter.observableCounterLong("test_long_observable_counter") { om =>
                               for {
                                 v <- ref.get
                                 _ <- om.record(v)
@@ -279,7 +279,7 @@ object MeterTest extends ZIOSpecDefault {
         ZIO.serviceWithZIO[Meter] { meter =>
           for {
             reader          <- ZIO.service[InMemoryMetricReader]
-            counter         <- meter.counterLong("test_counter")
+            counter         <- meter.counterLong("test_long_counter")
             _               <- ZIO.logAnnotate("zio", "annotation") {
                                  counter.inc()
                                }
@@ -297,12 +297,12 @@ object MeterTest extends ZIOSpecDefault {
 
   private val contextualSpec =
     suite("contextual")(
-      test("counter") {
+      test("counterLong") {
         ZIO.serviceWithZIO[Meter] { meter =>
           for {
             reader        <- ZIO.service[InMemoryMetricReader]
             tracing       <- ZIO.service[Tracing]
-            counter       <- meter.counterLong("test_counter")
+            counter       <- meter.counterLong("test_long_counter")
             _             <- counter.inc() @@ tracing.aspects.span("counter_span")
             span          <- TracingTest.getFinishedSpans.map(_.head)
             metric         = reader.collectAllMetrics().asScala.toList.head
@@ -324,7 +324,7 @@ object MeterTest extends ZIOSpecDefault {
         ZIO.serviceWithZIO[Meter] { meter =>
           for {
             reader          <- ZIO.service[InMemoryMetricReader]
-            counter         <- meter.counterLong("test_counter")
+            counter         <- meter.counterLong("test_long_counter")
             _               <- ZIO.logAnnotate("zio", "annotation") {
                                  counter.inc()
                                }
@@ -342,7 +342,7 @@ object MeterTest extends ZIOSpecDefault {
         ZIO.serviceWithZIO[Meter] { meter =>
           for {
             reader          <- ZIO.service[InMemoryMetricReader]
-            counter         <- meter.counterLong("test_counter")
+            counter         <- meter.counterLong("test_long_counter")
             _               <- ZIO.logAnnotate("zio", "annotation") {
                                  counter.inc(Attributes(Attribute.string("zio", "annotation2")))
                                }
