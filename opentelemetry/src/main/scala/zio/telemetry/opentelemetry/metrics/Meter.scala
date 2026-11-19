@@ -14,11 +14,11 @@ import zio.telemetry.opentelemetry.metrics.internal.Instrument
 trait Meter {
 
   /**
-   * Constructs a Counter instrument.
+   * Constructs a Counter instrument for Long values.
    *
    * @param name
-   *   the name of the Counter. Instrument names must consist of 255 or fewer characters including alphanumeric, _, .,
-   *   -, and start with a letter
+   *   the name of the instrument. Instrument names must consist of 255 or fewer characters including alphanumeric, _,
+   *   ., -, and start with a letter
    * @param unit
    *   instrument units must be 63 or fewer ASCII characters
    * @param description
@@ -31,6 +31,18 @@ trait Meter {
     description: Option[String] = None
   )(implicit trace: Trace): UIO[Counter[Long]]
 
+  /**
+   * Constructs a Counter instrument for Double values.
+   *
+   * @param name
+   *   the name of the instrument. Instrument names must consist of 255 or fewer characters including alphanumeric, _,
+   *   ., -, and start with a letter
+   * @param unit
+   *   instrument units must be 63 or fewer ASCII characters
+   * @param description
+   *   description is an optional free-form text provided by the author of the instrument. The API MUST treat it as an
+   *   opaque string
+   */
   def counterDouble(
     name: String,
     unit: Option[String] = None,
@@ -45,14 +57,36 @@ trait Meter {
   )(implicit trace: Trace): UIO[Counter[Long]] =
     counterLong(name, unit, description)
 
-  /** Constructs a synchronous UpDownCounter for Long values. */
+  /**
+   * Constructs an UpDownCounter instrument for Long values.
+   *
+   * @param name
+   *   the name of the instrument. Instrument names must consist of 255 or fewer characters including alphanumeric, _,
+   *   ., -, and start with a letter
+   * @param unit
+   *   instrument units must be 63 or fewer ASCII characters
+   * @param description
+   *   description is an optional free-form text provided by the author of the instrument. The API MUST treat it as an
+   *   opaque string
+   */
   def upDownCounterLong(
     name: String,
     unit: Option[String] = None,
     description: Option[String] = None
   )(implicit trace: Trace): UIO[UpDownCounter[Long]]
 
-  /** Constructs a synchronous UpDownCounter for Double values. */
+  /**
+   * Constructs an UpDownCounter instrument for Double values.
+   *
+   * @param name
+   *   the name of the instrument. Instrument names must consist of 255 or fewer characters including alphanumeric, _,
+   *   ., -, and start with a letter
+   * @param unit
+   *   instrument units must be 63 or fewer ASCII characters
+   * @param description
+   *   description is an optional free-form text provided by the author of the instrument. The API MUST treat it as an
+   *   opaque string
+   */
   def upDownCounterDouble(
     name: String,
     unit: Option[String] = None,
@@ -79,7 +113,20 @@ trait Meter {
   )(implicit trace: Trace): UIO[UpDownCounter[Long]] =
     upDownCounterLong(name, unit, description)
 
-  /** Constructs a synchronous Histogram for Long values. */
+  /**
+   * Constructs a Histogram instrument for Long values.
+   *
+   * @param name
+   *   the name of the instrument. Instrument names must consist of 255 or fewer characters including alphanumeric, _,
+   *   ., -, and start with a letter
+   * @param unit
+   *   instrument units must be 63 or fewer ASCII characters
+   * @param description
+   *   description is an optional free-form text provided by the author of the instrument. The API MUST treat it as an
+   *   opaque string
+   * @param boundaries
+   *   the explicit bucket boundaries advice
+   */
   def histogramLong(
     name: String,
     unit: Option[String] = None,
@@ -87,7 +134,20 @@ trait Meter {
     boundaries: Option[Chunk[Long]] = None
   )(implicit trace: Trace): UIO[Histogram[Long]]
 
-  /** Constructs a synchronous Histogram for Double values. */
+  /**
+   * Constructs a Histogram instrument for Double values.
+   *
+   * @param name
+   *   the name of the instrument. Instrument names must consist of 255 or fewer characters including alphanumeric, _,
+   *   ., -, and start with a letter
+   * @param unit
+   *   instrument units must be 63 or fewer ASCII characters
+   * @param description
+   *   description is an optional free-form text provided by the author of the instrument. The API MUST treat it as an
+   *   opaque string
+   * @param boundaries
+   *   the explicit bucket boundaries advice
+   */
   def histogramDouble(
     name: String,
     unit: Option[String] = None,
@@ -118,28 +178,78 @@ trait Meter {
   )(implicit trace: Trace): UIO[Histogram[Double]] =
     histogramDouble(name, unit, description, boundaries)
 
-  /** Constructs a synchronous Gauge for Long values. */
+  /**
+   * Constructs a Gauge instrument for Long values.
+   *
+   * @param name
+   *   the name of the instrument. Instrument names must consist of 255 or fewer characters including alphanumeric, _,
+   *   ., -, and start with a letter
+   * @param unit
+   *   instrument units must be 63 or fewer ASCII characters
+   * @param description
+   *   description is an optional free-form text provided by the author of the instrument. The API MUST treat it as an
+   *   opaque string
+   */
   def gaugeLong(
     name: String,
     unit: Option[String] = None,
     description: Option[String] = None
   )(implicit trace: Trace): UIO[Gauge[Long]]
 
-  /** Constructs a synchronous Gauge for Double values. */
+  /**
+   * Constructs a Gauge instrument for Double values.
+   *
+   * @param name
+   *   the name of the instrument. Instrument names must consist of 255 or fewer characters including alphanumeric, _,
+   *   ., -, and start with a letter
+   * @param unit
+   *   instrument units must be 63 or fewer ASCII characters
+   * @param description
+   *   description is an optional free-form text provided by the author of the instrument. The API MUST treat it as an
+   *   opaque string
+   */
   def gaugeDouble(
     name: String,
     unit: Option[String] = None,
     description: Option[String] = None
   )(implicit trace: Trace): UIO[Gauge[Double]]
 
-  /** Observes Long values with an asynchronous Counter. The callback is registered for the lifetime of the scope. */
+  /**
+   * Builds an asynchronous Counter instrument for Long values with the given callback. The callback is registered for
+   * the lifetime of the scope.
+   *
+   * @param name
+   *   the name of the instrument. Instrument names must consist of 255 or fewer characters including alphanumeric, _,
+   *   ., -, and start with a letter
+   * @param unit
+   *   instrument units must be 63 or fewer ASCII characters
+   * @param description
+   *   description is an optional free-form text provided by the author of the instrument. The API MUST treat it as an
+   *   opaque string
+   * @param callback
+   *   callback which observes measurements when invoked
+   */
   def observableCounterLong(
     name: String,
     unit: Option[String] = None,
     description: Option[String] = None
   )(callback: ObservableMeasurement[Long] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit]
 
-  /** Observes Double values with an asynchronous Counter. The callback is registered for the lifetime of the scope. */
+  /**
+   * Builds an asynchronous Counter instrument for Double values with the given callback. The callback is registered for
+   * the lifetime of the scope.
+   *
+   * @param name
+   *   the name of the instrument. Instrument names must consist of 255 or fewer characters including alphanumeric, _,
+   *   ., -, and start with a letter
+   * @param unit
+   *   instrument units must be 63 or fewer ASCII characters
+   * @param description
+   *   description is an optional free-form text provided by the author of the instrument. The API MUST treat it as an
+   *   opaque string
+   * @param callback
+   *   callback which observes measurements when invoked
+   */
   def observableCounterDouble(
     name: String,
     unit: Option[String] = None,
@@ -169,7 +279,19 @@ trait Meter {
     observableCounterLong(name, unit, description)(callback)
 
   /**
-   * Observes Long values with an asynchronous UpDownCounter. The callback is registered for the lifetime of the scope.
+   * Builds an asynchronous UpDownCounter instrument for Long values with the given callback. The callback is registered
+   * for the lifetime of the scope.
+   *
+   * @param name
+   *   the name of the instrument. Instrument names must consist of 255 or fewer characters including alphanumeric, _,
+   *   ., -, and start with a letter
+   * @param unit
+   *   instrument units must be 63 or fewer ASCII characters
+   * @param description
+   *   description is an optional free-form text provided by the author of the instrument. The API MUST treat it as an
+   *   opaque string
+   * @param callback
+   *   callback which observes measurements when invoked
    */
   def observableUpDownCounterLong(
     name: String,
@@ -178,8 +300,19 @@ trait Meter {
   )(callback: ObservableMeasurement[Long] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit]
 
   /**
-   * Observes Double values with an asynchronous UpDownCounter. The callback is registered for the lifetime of the
-   * scope.
+   * Builds an asynchronous UpDownCounter instrument for Double values with the given callback. The callback is
+   * registered for the lifetime of the scope.
+   *
+   * @param name
+   *   the name of the instrument. Instrument names must consist of 255 or fewer characters including alphanumeric, _,
+   *   ., -, and start with a letter
+   * @param unit
+   *   instrument units must be 63 or fewer ASCII characters
+   * @param description
+   *   description is an optional free-form text provided by the author of the instrument. The API MUST treat it as an
+   *   opaque string
+   * @param callback
+   *   callback which observes measurements when invoked
    */
   def observableUpDownCounterDouble(
     name: String,
@@ -209,14 +342,42 @@ trait Meter {
   )(callback: ObservableMeasurement[Long] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit] =
     observableUpDownCounterLong(name, unit, description)(callback)
 
-  /** Observes Long values with an asynchronous Gauge. The callback is registered for the lifetime of the scope. */
+  /**
+   * Builds an asynchronous Gauge instrument for Long values with the given callback. The callback is registered for the
+   * lifetime of the scope.
+   *
+   * @param name
+   *   the name of the instrument. Instrument names must consist of 255 or fewer characters including alphanumeric, _,
+   *   ., -, and start with a letter
+   * @param unit
+   *   instrument units must be 63 or fewer ASCII characters
+   * @param description
+   *   description is an optional free-form text provided by the author of the instrument. The API MUST treat it as an
+   *   opaque string
+   * @param callback
+   *   callback which observes measurements when invoked
+   */
   def observableGaugeLong(
     name: String,
     unit: Option[String] = None,
     description: Option[String] = None
   )(callback: ObservableMeasurement[Long] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit]
 
-  /** Observes Double values with an asynchronous Gauge. The callback is registered for the lifetime of the scope. */
+  /**
+   * Builds an asynchronous Gauge instrument for Double values with the given callback. The callback is registered for
+   * the lifetime of the scope.
+   *
+   * @param name
+   *   the name of the instrument. Instrument names must consist of 255 or fewer characters including alphanumeric, _,
+   *   ., -, and start with a letter
+   * @param unit
+   *   instrument units must be 63 or fewer ASCII characters
+   * @param description
+   *   description is an optional free-form text provided by the author of the instrument. The API MUST treat it as an
+   *   opaque string
+   * @param callback
+   *   callback which observes measurements when invoked
+   */
   def observableGaugeDouble(
     name: String,
     unit: Option[String] = None,
