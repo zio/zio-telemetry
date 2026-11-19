@@ -58,11 +58,11 @@ object MeterTest extends ZIOSpecDefault {
 
   private val normalSpec =
     suite("normal")(
-      test("counter") {
+      test("counterLong") {
         ZIO.serviceWithZIO[Meter] { meter =>
           for {
             reader          <- ZIO.service[InMemoryMetricReader]
-            counter         <- meter.counter("test_counter")
+            counter         <- meter.counterLong("test_counter")
             attributes       = Attributes(Attribute.long("attr1", 3L))
             _               <- counter.add(12, attributes)
             _               <- counter.inc(attributes)
@@ -72,6 +72,24 @@ object MeterTest extends ZIOSpecDefault {
             metricAttributes = metricPoint.getAttributes()
           } yield assertTrue(
             metricValue == 13L,
+            metricAttributes == attributes
+          )
+        }
+      },
+      test("counterDouble") {
+        ZIO.serviceWithZIO[Meter] { meter =>
+          for {
+            reader          <- ZIO.service[InMemoryMetricReader]
+            counter         <- meter.counterDouble("test_double_counter")
+            attributes       = Attributes(Attribute.long("attr1", 3L))
+            _               <- counter.add(0.25, attributes)
+            _               <- counter.inc(attributes)
+            metric           = reader.collectAllMetrics().asScala.toList.head
+            metricPoint      = metric.getDoubleSumData().getPoints().asScala.toList.head
+            metricValue      = metricPoint.getValue()
+            metricAttributes = metricPoint.getAttributes()
+          } yield assertTrue(
+            metricValue == 1.25,
             metricAttributes == attributes
           )
         }
@@ -144,7 +162,7 @@ object MeterTest extends ZIOSpecDefault {
         ZIO.serviceWithZIO[Meter] { meter =>
           for {
             reader          <- ZIO.service[InMemoryMetricReader]
-            counter         <- meter.counter("test_counter")
+            counter         <- meter.counterLong("test_counter")
             _               <- ZIO.logAnnotate("zio", "annotation") {
                                  counter.inc()
                                }
@@ -167,7 +185,7 @@ object MeterTest extends ZIOSpecDefault {
           for {
             reader        <- ZIO.service[InMemoryMetricReader]
             tracing       <- ZIO.service[Tracing]
-            counter       <- meter.counter("test_counter")
+            counter       <- meter.counterLong("test_counter")
             _             <- counter.inc() @@ tracing.aspects.span("counter_span")
             span          <- TracingTest.getFinishedSpans.map(_.head)
             metric         = reader.collectAllMetrics().asScala.toList.head
@@ -189,7 +207,7 @@ object MeterTest extends ZIOSpecDefault {
         ZIO.serviceWithZIO[Meter] { meter =>
           for {
             reader          <- ZIO.service[InMemoryMetricReader]
-            counter         <- meter.counter("test_counter")
+            counter         <- meter.counterLong("test_counter")
             _               <- ZIO.logAnnotate("zio", "annotation") {
                                  counter.inc()
                                }
@@ -207,7 +225,7 @@ object MeterTest extends ZIOSpecDefault {
         ZIO.serviceWithZIO[Meter] { meter =>
           for {
             reader          <- ZIO.service[InMemoryMetricReader]
-            counter         <- meter.counter("test_counter")
+            counter         <- meter.counterLong("test_counter")
             _               <- ZIO.logAnnotate("zio", "annotation") {
                                  counter.inc(Attributes(Attribute.string("zio", "annotation2")))
                                }
@@ -225,6 +243,27 @@ object MeterTest extends ZIOSpecDefault {
 
   private val zioMetricsSpec =
     suite("ZIO metrics integration")(
+      test("counter preserves fractional increments") {
+        val counter = Metric.counterDouble("test_fractional_counter")
+
+        for {
+          reader <- ZIO.service[InMemoryMetricReader]
+          _      <- counter.update(0.25)
+          _      <- counter.update(0.25)
+          metric  = reader.collectAllMetrics().asScala.find(_.getName == "test_fractional_counter").get
+          values  = metric.getDoubleSumData.getPoints.asScala.map(_.getValue).toList
+        } yield assertTrue(values == List(0.5))
+      },
+      test("frequency exports long bucket counts") {
+        val frequency = Metric.frequency("test_frequency")
+
+        for {
+          reader <- ZIO.service[InMemoryMetricReader]
+          _      <- frequency.update("hit")
+          metric  = reader.collectAllMetrics().asScala.find(_.getName == "test_frequency").get
+          point   = metric.getLongSumData.getPoints.asScala.head
+        } yield assertTrue(point.getValue == 1L, point.getAttributes == Attributes(Attribute.string("bucket", "hit")))
+      },
       test("histogram boundaries should be passed to OTEL") {
         val histogram = Metric.histogram("test_histogram", Boundaries.fromChunk(Chunk(1, 2, 3)))
 

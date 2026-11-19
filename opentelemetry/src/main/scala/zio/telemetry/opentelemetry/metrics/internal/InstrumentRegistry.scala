@@ -8,7 +8,9 @@ import java.util.concurrent.ConcurrentHashMap
 
 trait InstrumentRegistry {
 
-  def getCounter(key: MetricKey.Counter): Counter[Long]
+  def getCounter(key: MetricKey.Counter): Counter[Double]
+
+  def getFrequencyCounter(key: MetricKey.Frequency): Counter[Long]
 
   def getHistogram(key: MetricKey.Histogram): Histogram[Double]
 
@@ -30,8 +32,11 @@ private[opentelemetry] object InstrumentRegistry {
         val gauges: ConcurrentHashMap[MetricKey.Gauge, AtomicDouble] =
           new ConcurrentHashMap[MetricKey.Gauge, AtomicDouble]()
 
-        def getCounter(key: MetricKey.Counter): Counter[Long] =
-          getOrCreateInstrument[Counter, Long](key)(builder.counter(key.name, description = key.description))
+        def getCounter(key: MetricKey.Counter): Counter[Double] =
+          getOrCreateInstrument[Counter, Double](key)(builder.counterDouble(key.name, description = key.description))
+
+        def getFrequencyCounter(key: MetricKey.Frequency): Counter[Long] =
+          getOrCreateInstrument[Counter, Long](key)(builder.counterLong(key.name, description = key.description))
 
         def getHistogram(key: MetricKey.Histogram): Histogram[Double] =
           getOrCreateInstrument[Histogram, Double](key)(

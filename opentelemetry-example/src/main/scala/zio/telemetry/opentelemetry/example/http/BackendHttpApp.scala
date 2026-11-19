@@ -53,7 +53,7 @@ case class BackendHttpApp(tracing: Tracing, baggage: Baggage, statusRequestsCoun
 object BackendHttpApp {
 
   val live: URLayer[Tracing with Meter with Baggage, BackendHttpApp] = {
-    val counterLayer = ZLayer(ZIO.serviceWithZIO[Meter](_.counter("status_requests_count")))
+    val counterLayer = ZLayer(ZIO.serviceWithZIO[Meter](_.counterLong("status_requests_count")))
 
     counterLayer >>> ZLayer.fromFunction(BackendHttpApp.apply _)
   }
