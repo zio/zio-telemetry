@@ -1,7 +1,7 @@
 package zio.telemetry.opentelemetry.metrics
 
 import io.opentelemetry.api.common.Attributes
-import io.opentelemetry.api.metrics.LongUpDownCounter
+import io.opentelemetry.api.metrics.{DoubleUpDownCounter, LongUpDownCounter}
 import io.opentelemetry.context.Context
 import zio._
 import zio.telemetry.opentelemetry.context.ContextStorage
@@ -11,7 +11,7 @@ import zio.telemetry.opentelemetry.metrics.internal.{Instrument, logAnnotatedAtt
  * A UpDownCounter instrument that records values of type `A`
  *
  * @tparam A
- *   according to the specification, it can be either [[scala.Long]] or [[scala.Double]] type
+ *   the type of the recorded value, either [[scala.Long]], [[scala.Double]] or [[scala.Int]]
  */
 trait UpDownCounter[-A] extends Instrument[A] {
 
@@ -76,6 +76,45 @@ object UpDownCounter {
       override def dec(attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
         add(-1L, attributes)
 
+    }
+
+  private[metrics] def double(
+    counter: DoubleUpDownCounter,
+    ctxStorage: ContextStorage,
+    logAnnotated: Boolean
+  ): UpDownCounter[Double] =
+    new UpDownCounter[Double] {
+
+      override def record0(value: Double, attributes: Attributes = Attributes.empty, context: Context): Unit =
+        counter.add(value, attributes, context)
+
+      override def add(value: Double, attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
+        for {
+          annotated <- logAnnotatedAttributes(attributes, logAnnotated)
+          ctx       <- ctxStorage.get
+        } yield record0(value, annotated, ctx)
+
+      override def inc(attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
+        add(1.0, attributes)
+
+      override def dec(attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
+        add(-1.0, attributes)
+
+    }
+
+  private[metrics] def int(instrument: UpDownCounter[Long]): UpDownCounter[Int] =
+    new UpDownCounter[Int] {
+      override def record0(value: Int, attributes: Attributes, context: Context): Unit =
+        instrument.record0(value.toLong, attributes, context)
+
+      override def add(value: Int, attributes: Attributes)(implicit trace: Trace): UIO[Unit] =
+        instrument.add(value.toLong, attributes)
+
+      override def inc(attributes: Attributes)(implicit trace: Trace): UIO[Unit] =
+        instrument.inc(attributes)
+
+      override def dec(attributes: Attributes)(implicit trace: Trace): UIO[Unit] =
+        instrument.dec(attributes)
     }
 
 }
