@@ -446,14 +446,6 @@ object Meter {
         )(implicit trace: Trace): UIO[UpDownCounter[Double]] =
           ZIO.succeed(builder.upDownCounterDouble(name, unit, description))
 
-        override def histogramDouble(
-          name: String,
-          unit: Option[String],
-          description: Option[String],
-          boundaries: Option[Chunk[Double]]
-        )(implicit trace: Trace): UIO[Histogram[Double]] =
-          ZIO.succeed(builder.histogramDouble(name, unit, description, boundaries))
-
         override def histogramLong(
           name: String,
           unit: Option[String],
@@ -462,12 +454,13 @@ object Meter {
         )(implicit trace: Trace): UIO[Histogram[Long]] =
           ZIO.succeed(builder.histogramLong(name, unit, description, boundaries))
 
-        override def gaugeDouble(
+        override def histogramDouble(
           name: String,
           unit: Option[String],
-          description: Option[String]
-        )(implicit trace: Trace): UIO[Gauge[Double]] =
-          ZIO.succeed(builder.gaugeDouble(name, unit, description))
+          description: Option[String],
+          boundaries: Option[Chunk[Double]]
+        )(implicit trace: Trace): UIO[Histogram[Double]] =
+          ZIO.succeed(builder.histogramDouble(name, unit, description, boundaries))
 
         override def gaugeLong(
           name: String,
@@ -475,6 +468,13 @@ object Meter {
           description: Option[String]
         )(implicit trace: Trace): UIO[Gauge[Long]] =
           ZIO.succeed(builder.gaugeLong(name, unit, description))
+
+        override def gaugeDouble(
+          name: String,
+          unit: Option[String],
+          description: Option[String]
+        )(implicit trace: Trace): UIO[Gauge[Double]] =
+          ZIO.succeed(builder.gaugeDouble(name, unit, description))
 
         override def observableCounterLong(
           name: String,
