@@ -45,10 +45,4 @@ object ObservableMeasurement {
 
     }
 
-  private[metrics] def int(measurement: ObservableMeasurement[Long]): ObservableMeasurement[Int] =
-    new ObservableMeasurement[Int] {
-      override def record0(value: Int, attributes: Attributes): Unit =
-        measurement.record0(value.toLong, attributes)
-    }
-
 }

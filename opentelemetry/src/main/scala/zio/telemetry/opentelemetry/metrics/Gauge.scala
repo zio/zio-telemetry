@@ -38,13 +38,4 @@ object Gauge {
         } yield record0(value, annotated, ctx)
     }
 
-  private[metrics] def int(instrument: Gauge[Long]): Gauge[Int] =
-    new Gauge[Int] {
-      override def record0(value: Int, attributes: Attributes, context: Context): Unit =
-        instrument.record0(value.toLong, attributes, context)
-
-      override def set(value: Int, attributes: Attributes)(implicit trace: Trace): UIO[Unit] =
-        instrument.set(value.toLong, attributes)
-    }
-
 }

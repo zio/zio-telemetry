@@ -11,7 +11,7 @@ import zio.telemetry.opentelemetry.metrics.internal.{Instrument, logAnnotatedAtt
  * A UpDownCounter instrument that records values of type `A`
  *
  * @tparam A
- *   the type of the recorded value, either [[scala.Long]], [[scala.Double]] or [[scala.Int]]
+ *   according to the specification, it can be either [[scala.Long]] or [[scala.Double]] type
  */
 trait UpDownCounter[-A] extends Instrument[A] {
 
@@ -100,21 +100,6 @@ object UpDownCounter {
       override def dec(attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
         add(-1.0, attributes)
 
-    }
-
-  private[metrics] def int(instrument: UpDownCounter[Long]): UpDownCounter[Int] =
-    new UpDownCounter[Int] {
-      override def record0(value: Int, attributes: Attributes, context: Context): Unit =
-        instrument.record0(value.toLong, attributes, context)
-
-      override def add(value: Int, attributes: Attributes)(implicit trace: Trace): UIO[Unit] =
-        instrument.add(value.toLong, attributes)
-
-      override def inc(attributes: Attributes)(implicit trace: Trace): UIO[Unit] =
-        instrument.inc(attributes)
-
-      override def dec(attributes: Attributes)(implicit trace: Trace): UIO[Unit] =
-        instrument.dec(attributes)
     }
 
 }

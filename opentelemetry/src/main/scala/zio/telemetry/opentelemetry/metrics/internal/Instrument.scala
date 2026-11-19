@@ -26,13 +26,6 @@ object Instrument {
 
     def counterDouble(name: String, unit: Option[String] = None, description: Option[String] = None): Counter[Double]
 
-    def counterInt(
-      name: String,
-      unit: Option[String] = None,
-      description: Option[String] = None
-    ): Counter[Int] =
-      Counter.int(counterLong(name, unit, description))
-
     def upDownCounterLong(
       name: String,
       unit: Option[String] = None,
@@ -44,13 +37,6 @@ object Instrument {
       unit: Option[String] = None,
       description: Option[String] = None
     ): UpDownCounter[Double]
-
-    def upDownCounterInt(
-      name: String,
-      unit: Option[String] = None,
-      description: Option[String] = None
-    ): UpDownCounter[Int] =
-      UpDownCounter.int(upDownCounterLong(name, unit, description))
 
     def upDownCounter(
       name: String,
@@ -73,14 +59,6 @@ object Instrument {
       boundaries: Option[Chunk[Double]] = None
     ): Histogram[Double]
 
-    def histogramInt(
-      name: String,
-      unit: Option[String] = None,
-      description: Option[String] = None,
-      boundaries: Option[Chunk[Int]] = None
-    ): Histogram[Int] =
-      Histogram.int(histogramLong(name, unit, description, boundaries.map(_.map(_.toLong))))
-
     def histogram(
       name: String,
       unit: Option[String] = None,
@@ -101,13 +79,6 @@ object Instrument {
       description: Option[String] = None
     ): Gauge[Double]
 
-    def gaugeInt(
-      name: String,
-      unit: Option[String] = None,
-      description: Option[String] = None
-    ): Gauge[Int] =
-      Gauge.int(gaugeLong(name, unit, description))
-
     def observableCounterLong(
       name: String,
       unit: Option[String] = None,
@@ -119,13 +90,6 @@ object Instrument {
       unit: Option[String] = None,
       description: Option[String] = None
     )(callback: ObservableMeasurement[Double] => Unit): api.metrics.ObservableDoubleCounter
-
-    def observableCounterInt(
-      name: String,
-      unit: Option[String] = None,
-      description: Option[String] = None
-    )(callback: ObservableMeasurement[Int] => Unit): api.metrics.ObservableLongCounter =
-      observableCounterLong(name, unit, description)(measurement => callback(ObservableMeasurement.int(measurement)))
 
     def observableCounter(
       name: String,
@@ -146,15 +110,6 @@ object Instrument {
       description: Option[String] = None
     )(callback: ObservableMeasurement[Double] => Unit): api.metrics.ObservableDoubleUpDownCounter
 
-    def observableUpDownCounterInt(
-      name: String,
-      unit: Option[String] = None,
-      description: Option[String] = None
-    )(callback: ObservableMeasurement[Int] => Unit): api.metrics.ObservableLongUpDownCounter =
-      observableUpDownCounterLong(name, unit, description)(measurement =>
-        callback(ObservableMeasurement.int(measurement))
-      )
-
     def observableUpDownCounter(
       name: String,
       unit: Option[String] = None,
@@ -173,13 +128,6 @@ object Instrument {
       unit: Option[String] = None,
       description: Option[String] = None
     )(callback: ObservableMeasurement[Double] => Unit): api.metrics.ObservableDoubleGauge
-
-    def observableGaugeInt(
-      name: String,
-      unit: Option[String] = None,
-      description: Option[String] = None
-    )(callback: ObservableMeasurement[Int] => Unit): api.metrics.ObservableLongGauge =
-      observableGaugeLong(name, unit, description)(measurement => callback(ObservableMeasurement.int(measurement)))
 
     def observableGauge(
       name: String,

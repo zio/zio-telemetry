@@ -11,7 +11,7 @@ import zio.telemetry.opentelemetry.metrics.internal.{Instrument, logAnnotatedAtt
  * A Histogram instrument that records values of type `A`
  *
  * @tparam A
- *   the type of the recorded value, either [[scala.Long]], [[scala.Double]] or [[scala.Int]]
+ *   according to the specification, it can be either [[scala.Long]] or [[scala.Double]] type
  */
 trait Histogram[-A] extends Instrument[A] {
 
@@ -66,15 +66,6 @@ object Histogram {
           ctx       <- ctxStorage.get
         } yield record0(value, annotated, ctx)
 
-    }
-
-  private[metrics] def int(instrument: Histogram[Long]): Histogram[Int] =
-    new Histogram[Int] {
-      override def record0(value: Int, attributes: Attributes, context: Context): Unit =
-        instrument.record0(value.toLong, attributes, context)
-
-      override def record(value: Int, attributes: Attributes)(implicit trace: Trace): UIO[Unit] =
-        instrument.record(value.toLong, attributes)
     }
 
 }

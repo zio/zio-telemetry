@@ -37,13 +37,6 @@ trait Meter {
     description: Option[String] = None
   )(implicit trace: Trace): UIO[Counter[Double]]
 
-  /** Records Int values using an OpenTelemetry Long instrument. */
-  def counterInt(
-    name: String,
-    unit: Option[String] = None,
-    description: Option[String] = None
-  )(implicit trace: Trace): UIO[Counter[Int]]
-
   @deprecated("Use counterLong instead", "3.1.23")
   def counter(
     name: String,
@@ -65,13 +58,6 @@ trait Meter {
     unit: Option[String] = None,
     description: Option[String] = None
   )(implicit trace: Trace): UIO[UpDownCounter[Double]]
-
-  /** Records Int values using an OpenTelemetry Long instrument. */
-  def upDownCounterInt(
-    name: String,
-    unit: Option[String] = None,
-    description: Option[String] = None
-  )(implicit trace: Trace): UIO[UpDownCounter[Int]]
 
   /**
    * Constructs a UpDownCounter instrument.
@@ -107,14 +93,6 @@ trait Meter {
     description: Option[String] = None,
     boundaries: Option[Chunk[Double]] = None
   )(implicit trace: Trace): UIO[Histogram[Double]]
-
-  /** Records Int values using an OpenTelemetry Long instrument. */
-  def histogramInt(
-    name: String,
-    unit: Option[String] = None,
-    description: Option[String] = None,
-    boundaries: Option[Chunk[Int]] = None
-  )(implicit trace: Trace): UIO[Histogram[Int]]
 
   /**
    * Constructs a Historgram instrument.
@@ -152,13 +130,6 @@ trait Meter {
     description: Option[String] = None
   )(implicit trace: Trace): UIO[Gauge[Double]]
 
-  /** Records Int values using an OpenTelemetry Long instrument. */
-  def gaugeInt(
-    name: String,
-    unit: Option[String] = None,
-    description: Option[String] = None
-  )(implicit trace: Trace): UIO[Gauge[Int]]
-
   /** Observes Long values with an asynchronous Counter. The callback is registered for the lifetime of the scope. */
   def observableCounterLong(
     name: String,
@@ -172,16 +143,6 @@ trait Meter {
     unit: Option[String] = None,
     description: Option[String] = None
   )(callback: ObservableMeasurement[Double] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit]
-
-  /**
-   * Observes Int values using an OpenTelemetry Long instrument. The callback is registered for the lifetime of the
-   * scope.
-   */
-  def observableCounterInt(
-    name: String,
-    unit: Option[String] = None,
-    description: Option[String] = None
-  )(callback: ObservableMeasurement[Int] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit]
 
   /**
    * Builds an Asynchronous Counter instrument with the given callback.
@@ -224,16 +185,6 @@ trait Meter {
   )(callback: ObservableMeasurement[Double] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit]
 
   /**
-   * Observes Int values using an OpenTelemetry Long instrument. The callback is registered for the lifetime of the
-   * scope.
-   */
-  def observableUpDownCounterInt(
-    name: String,
-    unit: Option[String] = None,
-    description: Option[String] = None
-  )(callback: ObservableMeasurement[Int] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit]
-
-  /**
    * Builds an Asynchronous UpDownCounter instrument with the given callback.
    *
    * @param name
@@ -267,16 +218,6 @@ trait Meter {
     unit: Option[String] = None,
     description: Option[String] = None
   )(callback: ObservableMeasurement[Double] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit]
-
-  /**
-   * Observes Int values using an OpenTelemetry Long instrument. The callback is registered for the lifetime of the
-   * scope.
-   */
-  def observableGaugeInt(
-    name: String,
-    unit: Option[String] = None,
-    description: Option[String] = None
-  )(callback: ObservableMeasurement[Int] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit]
 
   /**
    * Builds an Asynchronous Gauge instrument with the given callback.
@@ -325,13 +266,6 @@ object Meter {
         )(implicit trace: Trace): UIO[Counter[Double]] =
           ZIO.succeed(builder.counterDouble(name, unit, description))
 
-        override def counterInt(
-          name: String,
-          unit: Option[String],
-          description: Option[String]
-        )(implicit trace: Trace): UIO[Counter[Int]] =
-          ZIO.succeed(builder.counterInt(name, unit, description))
-
         override def upDownCounterLong(
           name: String,
           unit: Option[String],
@@ -345,13 +279,6 @@ object Meter {
           description: Option[String]
         )(implicit trace: Trace): UIO[UpDownCounter[Double]] =
           ZIO.succeed(builder.upDownCounterDouble(name, unit, description))
-
-        override def upDownCounterInt(
-          name: String,
-          unit: Option[String],
-          description: Option[String]
-        )(implicit trace: Trace): UIO[UpDownCounter[Int]] =
-          ZIO.succeed(builder.upDownCounterInt(name, unit, description))
 
         override def histogramDouble(
           name: String,
@@ -369,14 +296,6 @@ object Meter {
         )(implicit trace: Trace): UIO[Histogram[Long]] =
           ZIO.succeed(builder.histogramLong(name, unit, description, boundaries))
 
-        override def histogramInt(
-          name: String,
-          unit: Option[String],
-          description: Option[String],
-          boundaries: Option[Chunk[Int]]
-        )(implicit trace: Trace): UIO[Histogram[Int]] =
-          ZIO.succeed(builder.histogramInt(name, unit, description, boundaries))
-
         override def gaugeDouble(
           name: String,
           unit: Option[String],
@@ -390,13 +309,6 @@ object Meter {
           description: Option[String]
         )(implicit trace: Trace): UIO[Gauge[Long]] =
           ZIO.succeed(builder.gaugeLong(name, unit, description))
-
-        override def gaugeInt(
-          name: String,
-          unit: Option[String],
-          description: Option[String]
-        )(implicit trace: Trace): UIO[Gauge[Int]] =
-          ZIO.succeed(builder.gaugeInt(name, unit, description))
 
         override def observableCounterLong(
           name: String,
@@ -412,13 +324,6 @@ object Meter {
         )(callback: ObservableMeasurement[Double] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit] =
           register[Double](builder.observableCounterDouble(name, unit, description)(_))(callback)
 
-        override def observableCounterInt(
-          name: String,
-          unit: Option[String],
-          description: Option[String]
-        )(callback: ObservableMeasurement[Int] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit] =
-          register[Int](builder.observableCounterInt(name, unit, description)(_))(callback)
-
         override def observableUpDownCounterLong(
           name: String,
           unit: Option[String],
@@ -433,13 +338,6 @@ object Meter {
         )(callback: ObservableMeasurement[Double] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit] =
           register[Double](builder.observableUpDownCounterDouble(name, unit, description)(_))(callback)
 
-        override def observableUpDownCounterInt(
-          name: String,
-          unit: Option[String],
-          description: Option[String]
-        )(callback: ObservableMeasurement[Int] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit] =
-          register[Int](builder.observableUpDownCounterInt(name, unit, description)(_))(callback)
-
         override def observableGaugeLong(
           name: String,
           unit: Option[String],
@@ -453,13 +351,6 @@ object Meter {
           description: Option[String]
         )(callback: ObservableMeasurement[Double] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit] =
           register[Double](builder.observableGaugeDouble(name, unit, description)(_))(callback)
-
-        override def observableGaugeInt(
-          name: String,
-          unit: Option[String],
-          description: Option[String]
-        )(callback: ObservableMeasurement[Int] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit] =
-          register[Int](builder.observableGaugeInt(name, unit, description)(_))(callback)
 
         private def register[A](build: (ObservableMeasurement[A] => Unit) => AutoCloseable)(
           callback: ObservableMeasurement[A] => Task[Unit]
