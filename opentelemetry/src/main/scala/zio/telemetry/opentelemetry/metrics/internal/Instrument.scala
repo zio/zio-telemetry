@@ -150,74 +150,6 @@ object Instrument {
             UpDownCounter.long(builder.build(), ctxStorage, logAnnotated)
           }
 
-          override def histogramDouble(
-            name: String,
-            unit: Option[String] = None,
-            description: Option[String] = None,
-            boundaries: Option[Chunk[Double]] = None
-          ): Histogram[Double] = {
-            val builder = meter.histogramBuilder(name)
-
-            unit.foreach(builder.setUnit)
-            description.foreach(builder.setDescription)
-            boundaries.foreach { seq =>
-              builder.setExplicitBucketBoundariesAdvice(
-                seq
-                  // ZIO uses explicit Double.MaxValue boundary as upper bound. OTEL uses internal "inf" value instead
-                  .filter(_ != Double.MaxValue)
-                  .map(Double.box)
-                  .asJava
-              )
-            }
-
-            Histogram.double(builder.build(), ctxStorage, logAnnotated)
-          }
-
-          override def observableCounterLong(
-            name: String,
-            unit: Option[String] = None,
-            description: Option[String] = None
-          )(callback: ObservableMeasurement[Long] => Unit): api.metrics.ObservableLongCounter = {
-            val builder = meter.counterBuilder(name)
-
-            unit.foreach(builder.setUnit)
-            description.foreach(builder.setDescription)
-
-            builder.buildWithCallback { om =>
-              callback(ObservableMeasurement.long(om))
-            }
-          }
-
-          override def observableUpDownCounterLong(
-            name: String,
-            unit: Option[String],
-            description: Option[String]
-          )(callback: ObservableMeasurement[Long] => Unit): api.metrics.ObservableLongUpDownCounter = {
-            val builder = meter.upDownCounterBuilder(name)
-
-            unit.foreach(builder.setUnit)
-            description.foreach(builder.setDescription)
-
-            builder.buildWithCallback { om =>
-              callback(ObservableMeasurement.long(om))
-            }
-          }
-
-          override def observableGaugeDouble(
-            name: String,
-            unit: Option[String],
-            description: Option[String]
-          )(callback: ObservableMeasurement[Double] => Unit): api.metrics.ObservableDoubleGauge = {
-            val builder = meter.gaugeBuilder(name)
-
-            unit.foreach(builder.setUnit)
-            description.foreach(builder.setDescription)
-
-            builder.buildWithCallback { om =>
-              callback(ObservableMeasurement.double(om))
-            }
-          }
-
           override def upDownCounterDouble(
             name: String,
             unit: Option[String],
@@ -247,17 +179,27 @@ object Instrument {
             Histogram.long(builder.build(), ctxStorage, logAnnotated)
           }
 
-          override def gaugeDouble(
+          override def histogramDouble(
             name: String,
-            unit: Option[String],
-            description: Option[String]
-          ): Gauge[Double] = {
-            val builder = meter.gaugeBuilder(name)
+            unit: Option[String] = None,
+            description: Option[String] = None,
+            boundaries: Option[Chunk[Double]] = None
+          ): Histogram[Double] = {
+            val builder = meter.histogramBuilder(name)
 
             unit.foreach(builder.setUnit)
             description.foreach(builder.setDescription)
+            boundaries.foreach { seq =>
+              builder.setExplicitBucketBoundariesAdvice(
+                seq
+                  // ZIO uses explicit Double.MaxValue boundary as upper bound. OTEL uses internal "inf" value instead
+                  .filter(_ != Double.MaxValue)
+                  .map(Double.box)
+                  .asJava
+              )
+            }
 
-            Gauge.double(builder.build(), ctxStorage, logAnnotated)
+            Histogram.double(builder.build(), ctxStorage, logAnnotated)
           }
 
           override def gaugeLong(
@@ -273,6 +215,34 @@ object Instrument {
             Gauge.long(builder.build(), ctxStorage, logAnnotated)
           }
 
+          override def gaugeDouble(
+            name: String,
+            unit: Option[String],
+            description: Option[String]
+          ): Gauge[Double] = {
+            val builder = meter.gaugeBuilder(name)
+
+            unit.foreach(builder.setUnit)
+            description.foreach(builder.setDescription)
+
+            Gauge.double(builder.build(), ctxStorage, logAnnotated)
+          }
+
+          override def observableCounterLong(
+            name: String,
+            unit: Option[String] = None,
+            description: Option[String] = None
+          )(callback: ObservableMeasurement[Long] => Unit): api.metrics.ObservableLongCounter = {
+            val builder = meter.counterBuilder(name)
+
+            unit.foreach(builder.setUnit)
+            description.foreach(builder.setDescription)
+
+            builder.buildWithCallback { om =>
+              callback(ObservableMeasurement.long(om))
+            }
+          }
+
           override def observableCounterDouble(
             name: String,
             unit: Option[String],
@@ -285,6 +255,21 @@ object Instrument {
 
             builder.buildWithCallback { measurement =>
               callback(ObservableMeasurement.double(measurement))
+            }
+          }
+
+          override def observableUpDownCounterLong(
+            name: String,
+            unit: Option[String],
+            description: Option[String]
+          )(callback: ObservableMeasurement[Long] => Unit): api.metrics.ObservableLongUpDownCounter = {
+            val builder = meter.upDownCounterBuilder(name)
+
+            unit.foreach(builder.setUnit)
+            description.foreach(builder.setDescription)
+
+            builder.buildWithCallback { om =>
+              callback(ObservableMeasurement.long(om))
             }
           }
 
@@ -315,6 +300,21 @@ object Instrument {
 
             builder.buildWithCallback { measurement =>
               callback(ObservableMeasurement.long(measurement))
+            }
+          }
+
+          override def observableGaugeDouble(
+            name: String,
+            unit: Option[String],
+            description: Option[String]
+          )(callback: ObservableMeasurement[Double] => Unit): api.metrics.ObservableDoubleGauge = {
+            val builder = meter.gaugeBuilder(name)
+
+            unit.foreach(builder.setUnit)
+            description.foreach(builder.setDescription)
+
+            builder.buildWithCallback { om =>
+              callback(ObservableMeasurement.double(om))
             }
           }
 
