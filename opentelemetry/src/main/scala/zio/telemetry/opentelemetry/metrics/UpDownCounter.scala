@@ -59,22 +59,21 @@ object UpDownCounter {
     ctxStorage: ContextStorage,
     logAnnotated: Boolean
   ): UpDownCounter[Long] =
-    make[Long](counter.add(_, _, _), ctxStorage, logAnnotated, 1L, -1L)
+    make[Long](counter.add(_, _, _), ctxStorage, logAnnotated, 1L)
 
   private[metrics] def double(
     counter: DoubleUpDownCounter,
     ctxStorage: ContextStorage,
     logAnnotated: Boolean
   ): UpDownCounter[Double] =
-    make[Double](counter.add(_, _, _), ctxStorage, logAnnotated, 1.0, -1.0)
+    make[Double](counter.add(_, _, _), ctxStorage, logAnnotated, 1.0)
 
   private def make[A](
     recordValue: (A, Attributes, Context) => Unit,
     ctxStorage: ContextStorage,
     logAnnotated: Boolean,
-    increment: A,
-    decrement: A
-  ): UpDownCounter[A] =
+    increment: A
+  )(implicit numeric: Numeric[A]): UpDownCounter[A] =
     new UpDownCounter[A] {
       override def record0(value: A, attributes: Attributes, context: Context): Unit =
         recordValue(value, attributes, context)
@@ -89,7 +88,7 @@ object UpDownCounter {
         add(increment, attributes)
 
       override def dec(attributes: Attributes)(implicit trace: Trace): UIO[Unit] =
-        add(decrement, attributes)
+        add(numeric.negate(increment), attributes)
     }
 
 }
