@@ -32,40 +32,34 @@ trait Histogram[-A] extends Instrument[A] {
 
 object Histogram {
 
-  private[metrics] def double(
-    histogram: DoubleHistogram,
-    ctxStorage: ContextStorage,
-    logAnnotated: Boolean
-  ): Histogram[Double] =
-    new Histogram[Double] {
-
-      override def record0(value: Double, attributes: Attributes = Attributes.empty, context: Context): Unit =
-        histogram.record(value, attributes, context)
-
-      override def record(value: Double, attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
-        for {
-          annotated <- logAnnotatedAttributes(attributes, logAnnotated)
-          ctx       <- ctxStorage.get
-        } yield record0(value, annotated, ctx)
-
-    }
-
   private[metrics] def long(
     histogram: LongHistogram,
     ctxStorage: ContextStorage,
     logAnnotated: Boolean
   ): Histogram[Long] =
-    new Histogram[Long] {
+    make[Long](histogram.record(_, _, _), ctxStorage, logAnnotated)
 
-      override def record0(value: Long, attributes: Attributes = Attributes.empty, context: Context): Unit =
-        histogram.record(value, attributes, context)
+  private[metrics] def double(
+    histogram: DoubleHistogram,
+    ctxStorage: ContextStorage,
+    logAnnotated: Boolean
+  ): Histogram[Double] =
+    make[Double](histogram.record(_, _, _), ctxStorage, logAnnotated)
 
-      override def record(value: Long, attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
+  private def make[A](
+    recordValue: (A, Attributes, Context) => Unit,
+    ctxStorage: ContextStorage,
+    logAnnotated: Boolean
+  ): Histogram[A] =
+    new Histogram[A] {
+      override def record0(value: A, attributes: Attributes, context: Context): Unit =
+        recordValue(value, attributes, context)
+
+      override def record(value: A, attributes: Attributes)(implicit trace: Trace): UIO[Unit] =
         for {
           annotated <- logAnnotatedAttributes(attributes, logAnnotated)
           ctx       <- ctxStorage.get
         } yield record0(value, annotated, ctx)
-
     }
 
 }
