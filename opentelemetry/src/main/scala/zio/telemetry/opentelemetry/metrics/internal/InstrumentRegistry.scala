@@ -40,7 +40,11 @@ private[opentelemetry] object InstrumentRegistry {
 
         def getHistogram(key: MetricKey.Histogram): Histogram[Double] =
           getOrCreateInstrument[Histogram, Double](key)(
-            builder.histogram(key.name, description = key.description, boundaries = Some(key.keyType.boundaries.values))
+            builder.histogramDouble(
+              key.name,
+              description = key.description,
+              boundaries = Some(key.keyType.boundaries.values)
+            )
           )
 
         def getGauge(key: MetricKey.Gauge): AtomicDouble =
@@ -49,7 +53,7 @@ private[opentelemetry] object InstrumentRegistry {
             { gaugeKey =>
               val ref = AtomicDouble(0)
 
-              val _ = builder.observableGauge(gaugeKey.name, description = gaugeKey.description) { om =>
+              val _ = builder.observableGaugeDouble(gaugeKey.name, description = gaugeKey.description) { om =>
                 om.record0(ref.get(), attributes(gaugeKey.tags))
               }
 

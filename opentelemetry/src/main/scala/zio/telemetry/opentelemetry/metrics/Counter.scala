@@ -47,41 +47,33 @@ object Counter {
     ctxStorage: ContextStorage,
     logAnnotated: Boolean
   ): Counter[Long] =
-    new Counter[Long] {
-
-      override def record0(value: Long, attributes: Attributes = Attributes.empty, context: Context): Unit =
-        counter.add(value, attributes, context)
-
-      override def add(value: Long, attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
-        for {
-          annotated <- logAnnotatedAttributes(attributes, logAnnotated)
-          ctx       <- ctxStorage.get
-        } yield record0(value, annotated, ctx)
-
-      override def inc(attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
-        add(1L, attributes)
-
-    }
+    make[Long](counter.add(_, _, _), ctxStorage, logAnnotated, 1L)
 
   private[metrics] def double(
     counter: DoubleCounter,
     ctxStorage: ContextStorage,
     logAnnotated: Boolean
   ): Counter[Double] =
-    new Counter[Double] {
+    make[Double](counter.add(_, _, _), ctxStorage, logAnnotated, 1.0)
 
-      override def record0(value: Double, attributes: Attributes = Attributes.empty, context: Context): Unit =
-        counter.add(value, attributes, context)
+  private def make[A](
+    recordValue: (A, Attributes, Context) => Unit,
+    ctxStorage: ContextStorage,
+    logAnnotated: Boolean,
+    increment: A
+  ): Counter[A] =
+    new Counter[A] {
+      override def record0(value: A, attributes: Attributes, context: Context): Unit =
+        recordValue(value, attributes, context)
 
-      override def add(value: Double, attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
+      override def add(value: A, attributes: Attributes)(implicit trace: Trace): UIO[Unit] =
         for {
           annotated <- logAnnotatedAttributes(attributes, logAnnotated)
           ctx       <- ctxStorage.get
         } yield record0(value, annotated, ctx)
 
-      override def inc(attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
-        add(1.0, attributes)
-
+      override def inc(attributes: Attributes)(implicit trace: Trace): UIO[Unit] =
+        add(increment, attributes)
     }
 
 }
