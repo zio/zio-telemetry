@@ -1,7 +1,7 @@
 package zio.telemetry.opentelemetry.metrics
 
 import io.opentelemetry.api.common.Attributes
-import io.opentelemetry.api.metrics.LongCounter
+import io.opentelemetry.api.metrics.{DoubleCounter, LongCounter}
 import io.opentelemetry.context.Context
 import zio._
 import zio.telemetry.opentelemetry.context.ContextStorage
@@ -60,6 +60,27 @@ object Counter {
 
       override def inc(attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
         add(1L, attributes)
+
+    }
+
+  private[metrics] def double(
+    counter: DoubleCounter,
+    ctxStorage: ContextStorage,
+    logAnnotated: Boolean
+  ): Counter[Double] =
+    new Counter[Double] {
+
+      override def record0(value: Double, attributes: Attributes = Attributes.empty, context: Context): Unit =
+        counter.add(value, attributes, context)
+
+      override def add(value: Double, attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
+        for {
+          annotated <- logAnnotatedAttributes(attributes, logAnnotated)
+          ctx       <- ctxStorage.get
+        } yield record0(value, annotated, ctx)
+
+      override def inc(attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
+        add(1.0, attributes)
 
     }
 

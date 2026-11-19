@@ -22,7 +22,9 @@ object Instrument {
 
   trait Builder {
 
-    def counter(name: String, unit: Option[String] = None, description: Option[String] = None): Counter[Long]
+    def counterLong(name: String, unit: Option[String] = None, description: Option[String] = None): Counter[Long]
+
+    def counterDouble(name: String, unit: Option[String] = None, description: Option[String] = None): Counter[Double]
 
     def upDownCounter(
       name: String,
@@ -66,7 +68,7 @@ object Instrument {
           ctxStorage <- ZIO.service[ContextStorage]
         } yield new Builder {
 
-          override def counter(
+          override def counterLong(
             name: String,
             unit: Option[String] = None,
             description: Option[String] = None
@@ -77,6 +79,19 @@ object Instrument {
             description.foreach(builder.setDescription)
 
             Counter.long(builder.build(), ctxStorage, logAnnotated)
+          }
+
+          override def counterDouble(
+            name: String,
+            unit: Option[String] = None,
+            description: Option[String] = None
+          ): Counter[Double] = {
+            val builder = meter.counterBuilder(name).ofDoubles()
+
+            unit.foreach(builder.setUnit)
+            description.foreach(builder.setDescription)
+
+            Counter.double(builder.build(), ctxStorage, logAnnotated)
           }
 
           override def upDownCounter(

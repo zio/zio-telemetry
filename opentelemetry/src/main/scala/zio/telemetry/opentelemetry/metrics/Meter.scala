@@ -25,11 +25,25 @@ trait Meter {
    *   description is an optional free-form text provided by the author of the instrument. The API MUST treat it as an
    *   opaque string
    */
-  def counter(
+  def counterLong(
     name: String,
     unit: Option[String] = None,
     description: Option[String] = None
   )(implicit trace: Trace): UIO[Counter[Long]]
+
+  def counterDouble(
+    name: String,
+    unit: Option[String] = None,
+    description: Option[String] = None
+  )(implicit trace: Trace): UIO[Counter[Double]]
+
+  @deprecated("Use counterLong instead", "3.1.23")
+  def counter(
+    name: String,
+    unit: Option[String] = None,
+    description: Option[String] = None
+  )(implicit trace: Trace): UIO[Counter[Long]] =
+    counterLong(name, unit, description)
 
   /**
    * Constructs a UpDownCounter instrument.
@@ -143,12 +157,19 @@ object Meter {
         private val unsafeRuntime =
           Runtime.default.unsafe
 
-        override def counter(
+        override def counterLong(
           name: String,
           unit: Option[String] = None,
           description: Option[String] = None
         )(implicit trace: Trace): UIO[Counter[Long]] =
-          ZIO.succeed(builder.counter(name, unit, description))
+          ZIO.succeed(builder.counterLong(name, unit, description))
+
+        override def counterDouble(
+          name: String,
+          unit: Option[String] = None,
+          description: Option[String] = None
+        )(implicit trace: Trace): UIO[Counter[Double]] =
+          ZIO.succeed(builder.counterDouble(name, unit, description))
 
         override def upDownCounter(
           name: String,
