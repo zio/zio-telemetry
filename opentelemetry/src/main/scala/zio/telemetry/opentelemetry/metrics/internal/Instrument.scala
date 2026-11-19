@@ -38,14 +38,6 @@ object Instrument {
       description: Option[String] = None
     ): UpDownCounter[Double]
 
-    @deprecated("Use upDownCounterLong instead", "3.1.23")
-    def upDownCounter(
-      name: String,
-      unit: Option[String] = None,
-      description: Option[String] = None
-    ): UpDownCounter[Long] =
-      upDownCounterLong(name, unit, description)
-
     def histogramLong(
       name: String,
       unit: Option[String] = None,
@@ -59,15 +51,6 @@ object Instrument {
       description: Option[String] = None,
       boundaries: Option[Chunk[Double]] = None
     ): Histogram[Double]
-
-    @deprecated("Use histogramDouble instead", "3.1.23")
-    def histogram(
-      name: String,
-      unit: Option[String] = None,
-      description: Option[String] = None,
-      boundaries: Option[Chunk[Double]] = None
-    ): Histogram[Double] =
-      histogramDouble(name, unit, description, boundaries)
 
     def gaugeLong(
       name: String,
@@ -93,14 +76,6 @@ object Instrument {
       description: Option[String] = None
     )(callback: ObservableMeasurement[Double] => Unit): api.metrics.ObservableDoubleCounter
 
-    @deprecated("Use observableCounterLong instead", "3.1.23")
-    def observableCounter(
-      name: String,
-      unit: Option[String] = None,
-      description: Option[String] = None
-    )(callback: ObservableMeasurement[Long] => Unit): api.metrics.ObservableLongCounter =
-      observableCounterLong(name, unit, description)(callback)
-
     def observableUpDownCounterLong(
       name: String,
       unit: Option[String] = None,
@@ -113,14 +88,6 @@ object Instrument {
       description: Option[String] = None
     )(callback: ObservableMeasurement[Double] => Unit): api.metrics.ObservableDoubleUpDownCounter
 
-    @deprecated("Use observableUpDownCounterLong instead", "3.1.23")
-    def observableUpDownCounter(
-      name: String,
-      unit: Option[String] = None,
-      description: Option[String] = None
-    )(callback: ObservableMeasurement[Long] => Unit): api.metrics.ObservableLongUpDownCounter =
-      observableUpDownCounterLong(name, unit, description)(callback)
-
     def observableGaugeLong(
       name: String,
       unit: Option[String] = None,
@@ -132,14 +99,6 @@ object Instrument {
       unit: Option[String] = None,
       description: Option[String] = None
     )(callback: ObservableMeasurement[Double] => Unit): api.metrics.ObservableDoubleGauge
-
-    @deprecated("Use observableGaugeDouble instead", "3.1.23")
-    def observableGauge(
-      name: String,
-      unit: Option[String] = None,
-      description: Option[String] = None
-    )(callback: ObservableMeasurement[Double] => Unit): api.metrics.ObservableDoubleGauge =
-      observableGaugeDouble(name, unit, description)(callback)
 
   }
 
