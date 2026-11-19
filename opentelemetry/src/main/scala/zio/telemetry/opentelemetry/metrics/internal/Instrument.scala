@@ -38,6 +38,7 @@ object Instrument {
       description: Option[String] = None
     ): UpDownCounter[Double]
 
+    @deprecated("Use upDownCounterLong instead", "3.1.23")
     def upDownCounter(
       name: String,
       unit: Option[String] = None,
@@ -59,6 +60,7 @@ object Instrument {
       boundaries: Option[Chunk[Double]] = None
     ): Histogram[Double]
 
+    @deprecated("Use histogramDouble instead", "3.1.23")
     def histogram(
       name: String,
       unit: Option[String] = None,
@@ -91,6 +93,7 @@ object Instrument {
       description: Option[String] = None
     )(callback: ObservableMeasurement[Double] => Unit): api.metrics.ObservableDoubleCounter
 
+    @deprecated("Use observableCounterLong instead", "3.1.23")
     def observableCounter(
       name: String,
       unit: Option[String] = None,
@@ -110,6 +113,7 @@ object Instrument {
       description: Option[String] = None
     )(callback: ObservableMeasurement[Double] => Unit): api.metrics.ObservableDoubleUpDownCounter
 
+    @deprecated("Use observableUpDownCounterLong instead", "3.1.23")
     def observableUpDownCounter(
       name: String,
       unit: Option[String] = None,
@@ -129,6 +133,7 @@ object Instrument {
       description: Option[String] = None
     )(callback: ObservableMeasurement[Double] => Unit): api.metrics.ObservableDoubleGauge
 
+    @deprecated("Use observableGaugeDouble instead", "3.1.23")
     def observableGauge(
       name: String,
       unit: Option[String] = None,

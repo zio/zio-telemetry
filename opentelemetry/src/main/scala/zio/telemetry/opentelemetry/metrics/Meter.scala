@@ -71,6 +71,7 @@ trait Meter {
    *   description is an optional free-form text provided by the author of the instrument. The API MUST treat it as an
    *   opaque string
    */
+  @deprecated("Use upDownCounterLong instead", "3.1.23")
   def upDownCounter(
     name: String,
     unit: Option[String] = None,
@@ -108,6 +109,7 @@ trait Meter {
    * @param boundaries
    *   the explicit bucket boundaries advice
    */
+  @deprecated("Use histogramDouble instead", "3.1.23")
   def histogram(
     name: String,
     unit: Option[String] = None,
@@ -158,6 +160,7 @@ trait Meter {
    * @param callback
    *   callback which observes measurements when invoked
    */
+  @deprecated("Use observableCounterLong instead", "3.1.23")
   def observableCounter(
     name: String,
     unit: Option[String] = None,
@@ -198,6 +201,7 @@ trait Meter {
    * @param callback
    *   callback which observes measurements when invoked
    */
+  @deprecated("Use observableUpDownCounterLong instead", "3.1.23")
   def observableUpDownCounter(
     name: String,
     unit: Option[String] = None,
@@ -233,6 +237,7 @@ trait Meter {
    * @param callback
    *   callback which observes measurements when invoked
    */
+  @deprecated("Use observableGaugeDouble instead", "3.1.23")
   def observableGauge(
     name: String,
     unit: Option[String] = None,

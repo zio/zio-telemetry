@@ -94,11 +94,11 @@ object MeterTest extends ZIOSpecDefault {
           )
         }
       },
-      test("upDownCounter") {
+      test("upDownCounterLong") {
         ZIO.serviceWithZIO[Meter] { meter =>
           for {
             reader          <- ZIO.service[InMemoryMetricReader]
-            counter         <- meter.upDownCounter("test_up_down_counter")
+            counter         <- meter.upDownCounterLong("test_up_down_counter")
             attributes       = Attributes(Attribute.boolean("attr2", value = false))
             _               <- counter.add(5, attributes)
             _               <- counter.inc(attributes)
@@ -114,11 +114,11 @@ object MeterTest extends ZIOSpecDefault {
           )
         }
       },
-      test("histogram") {
+      test("histogramDouble") {
         ZIO.serviceWithZIO[Meter] { meter =>
           for {
             reader          <- ZIO.service[InMemoryMetricReader]
-            histogram       <- meter.histogram("test_histogram")
+            histogram       <- meter.histogramDouble("test_histogram")
             attributes       = Attributes(Attribute.double("attr3", 12.3))
             _               <- histogram.record(2.1, attributes)
             _               <- histogram.record(3.3, attributes)
@@ -138,13 +138,13 @@ object MeterTest extends ZIOSpecDefault {
           )
         }
       },
-      test("observableCounter") {
+      test("observableCounterLong") {
         ZIO.scoped(
           ZIO.serviceWithZIO[Meter] { meter =>
             for {
               reader     <- ZIO.service[InMemoryMetricReader]
               ref        <- ZIO.service[Ref[Long]]
-              _          <- meter.observableCounter("obs") { om =>
+              _          <- meter.observableCounterLong("obs") { om =>
                               for {
                                 v <- ref.get
                                 _ <- om.record(v)
