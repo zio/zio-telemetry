@@ -114,11 +114,38 @@ object MeterTest extends ZIOSpecDefault {
           )
         }
       },
+      test("upDownCounterDouble") {
+        ZIO.serviceWithZIO[Meter] { meter =>
+          for {
+            reader    <- ZIO.service[InMemoryMetricReader]
+            counter   <- meter.upDownCounterDouble("test_double_up_down_counter")
+            attributes = Attributes(Attribute.boolean("attr2", value = false))
+            _         <- counter.add(-1.25, attributes)
+            _         <- counter.inc(attributes)
+            _         <- counter.dec(attributes)
+            _         <- counter.dec(attributes)
+            metric     = reader.collectAllMetrics().asScala.head
+            point      = metric.getDoubleSumData().getPoints().asScala.head
+          } yield assertTrue(point.getValue() == -2.25, point.getAttributes() == attributes)
+        }
+      },
+      test("histogramLong") {
+        ZIO.serviceWithZIO[Meter] { meter =>
+          for {
+            reader    <- ZIO.service[InMemoryMetricReader]
+            histogram <- meter.histogramLong("test_long_histogram", boundaries = Some(Chunk(2L, 4L)))
+            _         <- histogram.record(3L)
+            metric     = reader.collectAllMetrics().asScala.head
+            point      = metric.getHistogramData().getPoints().asScala.head
+            counts     = point.getCounts().asScala.map(_.longValue()).toList
+          } yield assertTrue(point.getSum() == 3.0, counts == List(0L, 1L, 0L))
+        }
+      },
       test("histogramDouble") {
         ZIO.serviceWithZIO[Meter] { meter =>
           for {
             reader          <- ZIO.service[InMemoryMetricReader]
-            histogram       <- meter.histogramDouble("test_histogram")
+            histogram       <- meter.histogramDouble("test_histogram", boundaries = Some(Chunk(1.25, 2.75)))
             attributes       = Attributes(Attribute.double("attr3", 12.3))
             _               <- histogram.record(2.1, attributes)
             _               <- histogram.record(3.3, attributes)
@@ -128,14 +155,42 @@ object MeterTest extends ZIOSpecDefault {
             metricMin        = metricPoint.getMin()
             metricMax        = metricPoint.getMax()
             metricCount      = metricPoint.getCount()
+            bucketCounts     = metricPoint.getCounts().asScala.map(_.longValue()).toList
             metricAttributes = metricPoint.getAttributes()
           } yield assertTrue(
             metricSum == 5.4,
             metricMin == 2.1,
             metricMax == 3.3,
             metricCount == 2,
+            bucketCounts == List(0L, 1L, 1L),
             metricAttributes == attributes
           )
+        }
+      },
+      test("gaugeLong") {
+        ZIO.serviceWithZIO[Meter] { meter =>
+          for {
+            reader    <- ZIO.service[InMemoryMetricReader]
+            gauge     <- meter.gaugeLong("test_long_gauge")
+            attributes = Attributes(Attribute.string("source", "test"))
+            _         <- gauge.set(1L, attributes)
+            _         <- gauge.set(Long.MaxValue, attributes)
+            metric     = reader.collectAllMetrics().asScala.head
+            point      = metric.getLongGaugeData().getPoints().asScala.head
+          } yield assertTrue(point.getValue() == Long.MaxValue, point.getAttributes() == attributes)
+        }
+      },
+      test("gaugeDouble") {
+        ZIO.serviceWithZIO[Meter] { meter =>
+          for {
+            reader    <- ZIO.service[InMemoryMetricReader]
+            gauge     <- meter.gaugeDouble("test_double_gauge")
+            attributes = Attributes(Attribute.string("source", "test"))
+            _         <- gauge.set(1.25, attributes)
+            _         <- gauge.set(2.75, attributes)
+            metric     = reader.collectAllMetrics().asScala.head
+            point      = metric.getDoubleGaugeData().getPoints().asScala.head
+          } yield assertTrue(point.getValue() == 2.75, point.getAttributes() == attributes)
         }
       },
       test("observableCounterLong") {
@@ -158,65 +213,67 @@ object MeterTest extends ZIOSpecDefault {
           }
         )
       },
-      test("numeric synchronous instruments export the expected measurements") {
-        for {
-          meter         <- ZIO.service[Meter]
-          reader        <- ZIO.service[InMemoryMetricReader]
-          longUpDown    <- meter.upDownCounterLong("long_up_down")
-          _             <- longUpDown.add(Long.MaxValue)
-          doubleUpDown  <- meter.upDownCounterDouble("double_up_down")
-          _             <- doubleUpDown.add(-1.25)
-          _             <- doubleUpDown.inc()
-          longHistogram <- meter.histogramLong("long_histogram", boundaries = Some(Chunk(2L, 4L)))
-          _             <- longHistogram.record(3L)
-          dblHistogram  <- meter.histogramDouble("double_histogram", boundaries = Some(Chunk(1.25, 2.75)))
-          _             <- dblHistogram.record(1.5)
-          longGauge     <- meter.gaugeLong("long_gauge")
-          attributes     = Attributes(Attribute.string("source", "test"))
-          _             <- longGauge.set(Long.MaxValue, attributes)
-          doubleGauge   <- meter.gaugeDouble("double_gauge")
-          _             <- doubleGauge.set(1.25)
-          _             <- doubleGauge.set(2.75)
-          metrics        = reader.collectAllMetrics().asScala.map(metric => metric.getName -> metric).toMap
-          longBuckets    = metrics("long_histogram").getHistogramData.getPoints.asScala.head.getCounts.asScala
-                             .map(_.longValue())
-                             .toList
-          longGaugePoint = metrics("long_gauge").getLongGaugeData.getPoints.asScala.head
-          doublePoint    = metrics("double_histogram").getHistogramData.getPoints.asScala.head
-        } yield assertTrue(
-          metrics("long_up_down").getLongSumData.getPoints.asScala.head.getValue == Long.MaxValue,
-          metrics("double_up_down").getDoubleSumData.getPoints.asScala.head.getValue == -0.25,
-          longBuckets == List(0L, 1L, 0L),
-          doublePoint.getCounts.asScala.map(_.longValue()).toList == List(0L, 1L, 0L),
-          doublePoint.getSum == 1.5,
-          longGaugePoint.getValue == Long.MaxValue,
-          longGaugePoint.getAttributes == attributes,
-          metrics("double_gauge").getDoubleGaugeData.getPoints.asScala.head.getValue == 2.75
+      test("observableCounterDouble") {
+        ZIO.serviceWithZIO[Meter] { meter =>
+          for {
+            reader <- ZIO.service[InMemoryMetricReader]
+            value  <- ZIO.scoped[Any] {
+                        for {
+                          _     <- meter.observableCounterDouble("test_double_observable_counter")(_.record(1.25))
+                          metric = reader.collectAllMetrics().asScala.head
+                          point  = metric.getDoubleSumData().getPoints().asScala.head
+                        } yield point.getValue()
+                      }
+          } yield assertTrue(value == 1.25, reader.collectAllMetrics().isEmpty)
+        }
+      },
+      test("observableUpDownCounterLong") {
+        ZIO.scoped(
+          ZIO.serviceWithZIO[Meter] { meter =>
+            for {
+              reader <- ZIO.service[InMemoryMetricReader]
+              _      <- meter.observableUpDownCounterLong("observableUpDownCounterLong")(_.record(Long.MinValue))
+              metric  = reader.collectAllMetrics().asScala.head
+              point   = metric.getLongSumData().getPoints().asScala.head
+            } yield assertTrue(point.getValue() == Long.MinValue)
+          }
         )
       },
-      test("numeric observable instruments export measurements while their scope is open") {
-        for {
-          meter  <- ZIO.service[Meter]
-          reader <- ZIO.service[InMemoryMetricReader]
-          result <- ZIO.scoped[Any] {
-                      for {
-                        _      <- meter.observableCounterLong("long_counter")(_.record(Long.MaxValue))
-                        _      <- meter.observableCounterDouble("double_counter")(_.record(1.25))
-                        _      <- meter.observableUpDownCounterLong("long_up_down")(_.record(Long.MinValue))
-                        _      <- meter.observableUpDownCounterDouble("double_up_down")(_.record(-1.25))
-                        _      <- meter.observableGaugeLong("long_gauge")(_.record(Long.MaxValue))
-                        _      <- meter.observableGaugeDouble("double_gauge")(_.record(2.75))
-                        metrics = reader.collectAllMetrics().asScala.map(metric => metric.getName -> metric).toMap
-                      } yield assertTrue(
-                        metrics("long_counter").getLongSumData.getPoints.asScala.head.getValue == Long.MaxValue,
-                        metrics("double_counter").getDoubleSumData.getPoints.asScala.head.getValue == 1.25,
-                        metrics("long_up_down").getLongSumData.getPoints.asScala.head.getValue == Long.MinValue,
-                        metrics("double_up_down").getDoubleSumData.getPoints.asScala.head.getValue == -1.25,
-                        metrics("long_gauge").getLongGaugeData.getPoints.asScala.head.getValue == Long.MaxValue,
-                        metrics("double_gauge").getDoubleGaugeData.getPoints.asScala.head.getValue == 2.75
-                      )
-                    }
-        } yield result && assertTrue(reader.collectAllMetrics().isEmpty)
+      test("observableUpDownCounterDouble") {
+        ZIO.scoped(
+          ZIO.serviceWithZIO[Meter] { meter =>
+            for {
+              reader <- ZIO.service[InMemoryMetricReader]
+              _      <- meter.observableUpDownCounterDouble("observableUpDownCounterDouble")(_.record(-1.25))
+              metric  = reader.collectAllMetrics().asScala.head
+              point   = metric.getDoubleSumData().getPoints().asScala.head
+            } yield assertTrue(point.getValue() == -1.25)
+          }
+        )
+      },
+      test("observableGaugeLong") {
+        ZIO.scoped(
+          ZIO.serviceWithZIO[Meter] { meter =>
+            for {
+              reader <- ZIO.service[InMemoryMetricReader]
+              _      <- meter.observableGaugeLong("observableGaugeLong")(_.record(Long.MaxValue))
+              metric  = reader.collectAllMetrics().asScala.head
+              point   = metric.getLongGaugeData().getPoints().asScala.head
+            } yield assertTrue(point.getValue() == Long.MaxValue)
+          }
+        )
+      },
+      test("observableGaugeDouble") {
+        ZIO.scoped(
+          ZIO.serviceWithZIO[Meter] { meter =>
+            for {
+              reader <- ZIO.service[InMemoryMetricReader]
+              _      <- meter.observableGaugeDouble("observableGaugeDouble")(_.record(2.75))
+              metric  = reader.collectAllMetrics().asScala.head
+              point   = metric.getDoubleGaugeData().getPoints().asScala.head
+            } yield assertTrue(point.getValue() == 2.75)
+          }
+        )
       },
       test("zio log annotations are not included when turned off") {
         ZIO.serviceWithZIO[Meter] { meter =>
