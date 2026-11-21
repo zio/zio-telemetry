@@ -4,63 +4,57 @@
 
 # ZIO Telemetry
 
-[ZIO telemetry](https://github.com/zio/zio-telemetry) is purely-functional and type-safe. It provides clients for
-[OpenTracing](https://opentracing.io/), [OpenCensus](https://opencensus.io/) and [OpenTelemetry](https://opentelemetry.io/).
+[ZIO Telemetry](https://github.com/zio/zio-telemetry) is a purely functional, type-safe client for distributed tracing, metrics, logs, and baggage in [ZIO](https://zio.dev) applications. Its main module wraps [OpenTelemetry](https://opentelemetry.io/); older modules wrap [OpenTracing](https://opentracing.io/) and [OpenCensus](https://opencensus.io/), both deprecated upstream.
 
 [![Production Ready](https://img.shields.io/badge/Project%20Stage-Production%20Ready-brightgreen.svg)](https://github.com/zio/zio/wiki/Project-Stages) ![CI Badge](https://github.com/zio/zio-telemetry/workflows/CI/badge.svg) [![Sonatype Releases](https://img.shields.io/maven-central/v/dev.zio/zio-opentracing_2.13.svg?label=Sonatype%20Release)](https://central.sonatype.com/artifact/dev.zio/zio-opentracing_2.13) [![Sonatype Snapshots](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Fcentral.sonatype.com%2Frepository%2Fmaven-snapshots%2Fdev%2Fzio%2Fzio-opentracing_2.13%2Fmaven-metadata.xml&label=Sonatype%20Snapshot)](https://central.sonatype.com/repository/maven-snapshots/dev/zio/zio-opentracing_2.13/) [![javadoc](https://javadoc.io/badge2/dev.zio/zio-opentracing_2.13/javadoc.svg)](https://javadoc.io/doc/dev.zio/zio-opentracing_2.13) [![ZIO Telemetry](https://img.shields.io/github/stars/zio/zio-telemetry?style=social)](https://github.com/zio/zio-telemetry)
 
-ZIO Telemetry consists of the following projects:
-
-- [OpenTracing](docs/opentracing.md)
-- [OpenCensus](docs/opencensus.md)
-- [OpenTelemetry](docs/opentelemetry.md)
-
-## Introduction
-
-In monolithic architecture, everything is in one place, and we know when a request starts and then how it goes through 
-the components and when it finishes. We can obviously see what is happening with our request and where is it going. 
-But, in distributed systems like microservice architecture, we cannot find out the story of a request through various 
-services easily. This is where distributed tracing comes into play.
-
-ZIO Telemetry is a purely functional client which helps up propagate context between services in a distributed environment.
+In a monolith, a request starts, passes through a few components, and finishes in one place. In a distributed system, the story of a request is spread across many services, and no single log tells it. Distributed tracing connects those pieces: every service records spans that share a trace, and the trace context travels between services with the request. ZIO Telemetry lets a ZIO effect be the scope of a span, correlates metrics and logs with the surrounding span, and propagates context across service boundaries.
 
 ## Installation
 
-In order to use this library, we need to add the following line in our `build.sbt` file if we want to use [OpenTelemetry](https://opentelemetry.io/) client:
+The OpenTelemetry module is all most applications need. It is published for the JVM only, for Scala 2.12, 2.13, and 3:
 
 ```scala
-libraryDependencies += "dev.zio" %% "zio-opentelemetry" % "4.0.0-RC14"
+libraryDependencies ++= Seq(
+  // ZIO Telemetry for OpenTelemetry (JVM, Scala 2.12, 2.13, 3)
+  "dev.zio" %% "zio-opentelemetry" % "4.0.0-RC14"
+)
 ```
 
-If you're using [ZIO Logging](https://github.com/zio/zio-logging) you can combine OpenTelemetry with ZIO Logging using:
+The module depends only on the OpenTelemetry API. To produce and export signals, an application also needs the OpenTelemetry SDK and an exporter; see [Getting Started](docs/getting-started.md) for a working setup.
+
+## Modules
+
+The remaining modules are optional.
+
+### Integrations
+
+To add trace and span ids to [ZIO Logging](https://zio.dev/zio-logging/) output, use the logging integration:
 
 ```scala
-libraryDependencies += "dev.zio" %% "zio-opentelemetry-zio-logging" % "4.0.0-RC14"
+libraryDependencies ++= Seq(
+  // Span and trace id log formats for ZIO Logging (JVM, Scala 2.12, 2.13, 3)
+  "dev.zio" %% "zio-opentelemetry-zio-logging" % "4.0.0-RC14"
+)
 ```
 
-For using [OpenTracing](https://opentracing.io/) client we should add the following line in our `build.sbt` file:
+See [OpenTelemetry ZIO Logging](docs/opentelemetry-zio-logging.md).
+
+### Legacy Modules
+
+OpenTracing is archived and OpenCensus is deprecated upstream, and new applications should use the OpenTelemetry module. These modules remain for existing code:
 
 ```scala
-libraryDependencies += "dev.zio" %% "zio-opentracing" % "4.0.0-RC14"
+libraryDependencies ++= Seq(
+  // ZIO Telemetry for OpenTracing (JVM, Scala 2.12, 2.13, 3)
+  "dev.zio" %% "zio-opentracing" % "4.0.0-RC14",
+
+  // ZIO Telemetry for OpenCensus (JVM, Scala 2.12, 2.13, 3)
+  "dev.zio" %% "zio-opencensus" % "4.0.0-RC14"
+)
 ```
 
-And for using [OpenCensus](https://opencensus.io/) client we should add the following line in our `build.sbt` file:
-
-```scala
-libraryDependencies += "dev.zio" %% "zio-opencensus" % "4.0.0-RC14"
-```
-
-## Examples
-
-You can find examples with full source code and instructions of how to run by following the links:
-- [OpenTelemetry Example](docs/opentelemetry-example.md)
-- [OpenTelemetry Instrumentation Example](docs/opentelemetry-instrumentation-example.md)
-- [OpenTelemetry ZIO Logging Example](docs/opentelemetry-zio-logging.md)
-- [OpenTracing Example](docs/opentracing-example.md)
-
-## Articles
-
-- [Trace your microservices with ZIO](https://kadek-marek.medium.com/trace-your-microservices-with-zio-telemetry-5f88d69cb26b) by Marek Kadek (September 2021)
+See [OpenTracing](docs/opentracing.md) and [OpenCensus](docs/opencensus.md).
 
 ## Documentation
 

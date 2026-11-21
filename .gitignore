@@ -9,6 +9,8 @@ out/
 .vscode
 website/node_modules
 website/build
+website/.docusaurus
+website/package-lock.json
 website/docs
 website/i18n
 website/static/api
