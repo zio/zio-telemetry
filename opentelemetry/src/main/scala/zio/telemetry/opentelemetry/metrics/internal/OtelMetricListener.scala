@@ -27,13 +27,13 @@ private[opentelemetry] object OtelMetricListener {
         override def updateCounter(key: MetricKey[MetricKeyType.Counter], value: Double)(implicit
           unsafe: Unsafe
         ): Unit =
-          registry.getCounter(key).record0(value.toLong, attributes(key.tags))
+          registry.getCounter(key).record0(value, attributes(key.tags))
 
         override def updateFrequency(key: MetricKey[MetricKeyType.Frequency], value: String)(implicit
           unsafe: Unsafe
         ): Unit =
           registry
-            .getCounter(key.copy[MetricKeyType.Counter](key.name, MetricKeyType.Counter, key.tags))
+            .getFrequencyCounter(key)
             .record0(1L, attributes(key.tags + MetricLabel("bucket", value)))
 
         // TODO: implement. One of the candidates to look at for inspiration is the micrometer library.

@@ -8,7 +8,9 @@ import java.util.concurrent.ConcurrentHashMap
 
 trait InstrumentRegistry {
 
-  def getCounter(key: MetricKey.Counter): Counter[Long]
+  def getCounter(key: MetricKey.Counter): Counter[Double]
+
+  def getFrequencyCounter(key: MetricKey.Frequency): Counter[Long]
 
   def getHistogram(key: MetricKey.Histogram): Histogram[Double]
 
@@ -30,12 +32,19 @@ private[opentelemetry] object InstrumentRegistry {
         val gauges: ConcurrentHashMap[MetricKey.Gauge, AtomicDouble] =
           new ConcurrentHashMap[MetricKey.Gauge, AtomicDouble]()
 
-        def getCounter(key: MetricKey.Counter): Counter[Long] =
-          getOrCreateInstrument[Counter, Long](key)(builder.counter(key.name, description = key.description))
+        def getCounter(key: MetricKey.Counter): Counter[Double] =
+          getOrCreateInstrument[Counter, Double](key)(builder.counterDouble(key.name, description = key.description))
+
+        def getFrequencyCounter(key: MetricKey.Frequency): Counter[Long] =
+          getOrCreateInstrument[Counter, Long](key)(builder.counterLong(key.name, description = key.description))
 
         def getHistogram(key: MetricKey.Histogram): Histogram[Double] =
           getOrCreateInstrument[Histogram, Double](key)(
-            builder.histogram(key.name, description = key.description, boundaries = Some(key.keyType.boundaries.values))
+            builder.histogramDouble(
+              key.name,
+              description = key.description,
+              boundaries = Some(key.keyType.boundaries.values)
+            )
           )
 
         def getGauge(key: MetricKey.Gauge): AtomicDouble =
@@ -44,7 +53,7 @@ private[opentelemetry] object InstrumentRegistry {
             { gaugeKey =>
               val ref = AtomicDouble(0)
 
-              val _ = builder.observableGauge(gaugeKey.name, description = gaugeKey.description) { om =>
+              val _ = builder.observableGaugeDouble(gaugeKey.name, description = gaugeKey.description) { om =>
                 om.record0(ref.get(), attributes(gaugeKey.tags))
               }
 
