@@ -245,8 +245,8 @@ object OrderMetrics {
 
   def make(meter: Meter): UIO[OrderMetrics] =
     for {
-      placed <- meter.counter("orders_placed", Some("{order}"), Some("Number of orders placed"))
-      totals <- meter.histogram(
+      placed <- meter.counterLong("orders_placed", Some("{order}"), Some("Number of orders placed"))
+      totals <- meter.histogramDouble(
                   "order_total",
                   Some("USD"),
                   Some("Value of placed orders"),
@@ -259,8 +259,8 @@ object OrderMetrics {
 
 The code above:
 
-- `Meter#counter` — creates a `Counter[Long]` with a name, a unit, and a description
-- `Meter#histogram` — creates a `Histogram[Double]`; the last argument sets the bucket boundaries
+- `Meter#counterLong` — creates a `Counter[Long]` with a name, a unit, and a description
+- `Meter#histogramDouble` — creates a `Histogram[Double]`; the last argument sets the bucket boundaries
 - `Counter#inc` — adds one to the counter, tagged with attributes
 - `Histogram#record` — adds one observation to the distribution
 
@@ -450,8 +450,8 @@ object OrderMetrics {
 
   def make(meter: Meter): UIO[OrderMetrics] =
     for {
-      placed <- meter.counter("orders_placed", Some("{order}"), Some("Number of orders placed"))
-      totals <- meter.histogram(
+      placed <- meter.counterLong("orders_placed", Some("{order}"), Some("Number of orders placed"))
+      totals <- meter.histogramDouble(
                   "order_total",
                   Some("USD"),
                   Some("Value of placed orders"),

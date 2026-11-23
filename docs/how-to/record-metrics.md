@@ -2,7 +2,7 @@
 id: record-metrics
 title: "How to Record Metrics"
 sidebar_label: "Record Metrics"
-description: "Create counters, up-down counters, histograms and observable gauges with the ZIO Telemetry Meter and record measurements with attributes."
+description: "Create counters, up-down counters, histograms, gauges and observable instruments with the ZIO Telemetry Meter and record measurements with attributes."
 keywords:
   - "metrics"
   - "Meter"
@@ -39,7 +39,7 @@ import zio.telemetry.opentelemetry.metrics.{Counter, Histogram, Meter, UpDownCou
 
 ## Creating the Instruments
 
-`Meter` is the factory for instruments. Each factory method returns a `UIO`, so we create the instruments inside a layer and share them. The `name` is the only required parameter, and `unit` and `description` are optional. A counter only goes up, an up-down counter goes up and down, and a histogram records a distribution of values and can take explicit bucket `boundaries`:
+`Meter` is the factory for instruments. Each factory method returns a `UIO`, so we create the instruments inside a layer and share them. The `name` is the only required parameter, and `unit` and `description` are optional. Every kind has a `Long` and a `Double` variant, chosen by the method suffix, for example `Meter#counterLong` and `Meter#counterDouble`. A counter only goes up, an up-down counter goes up and down, and a histogram records a distribution of values and can take explicit bucket `boundaries`:
 
 ```scala mdoc:silent
 case class OrderMetrics(
@@ -54,9 +54,9 @@ object OrderMetrics {
     ZLayer {
       for {
         meter      <- ZIO.service[Meter]
-        placed     <- meter.counter("orders.placed", unit = Some("{order}"), description = Some("Orders placed"))
-        inProgress <- meter.upDownCounter("orders.in_progress", unit = Some("{order}"))
-        duration   <- meter.histogram(
+        placed     <- meter.counterLong("orders.placed", unit = Some("{order}"), description = Some("Orders placed"))
+        inProgress <- meter.upDownCounterLong("orders.in_progress", unit = Some("{order}"))
+        duration   <- meter.histogramDouble(
                         "orders.duration",
                         unit = Some("s"),
                         description = Some("Time spent processing an order"),
@@ -95,16 +95,16 @@ Attribute values become separate time series. Avoid unbounded values such as ord
 
 ## Reporting Values on Demand
 
-Some values are better sampled than incremented, such as a queue depth or a cache size. `Meter#observableGauge`, `Meter#observableCounter` and `Meter#observableUpDownCounter` register a callback that the SDK invokes when it collects metrics. The callback receives an `ObservableMeasurement`, and we call `ObservableMeasurement#record` with the current value.
+Some values are better sampled than incremented, such as a queue depth or a cache size. `Meter#observableGaugeLong`, `Meter#observableCounterLong` and `Meter#observableUpDownCounterLong` register a callback that the SDK invokes when it collects metrics. The callback receives an `ObservableMeasurement`, and we call `ObservableMeasurement#record` with the current value.
 
-The registration needs a `Scope`, because closing the scope unregisters the instrument. This layer reports the size of a queue:
+Each of them has a `Double` variant as well. When the code that learns the value can push it, a synchronous gauge from `Meter#gaugeLong` or `Meter#gaugeDouble` records it with `Gauge#set` instead. The registration needs a `Scope`, because closing the scope unregisters the instrument. This layer reports the size of a queue:
 
 ```scala mdoc:silent
 def queueDepthGauge(queue: Queue[String]): RLayer[Meter, Unit] =
   ZLayer.scoped {
     ZIO.serviceWithZIO[Meter] { meter =>
-      meter.observableGauge("orders.queue_depth", description = Some("Orders waiting")) { measurement =>
-        queue.size.flatMap(size => measurement.record(size.toDouble))
+      meter.observableGaugeLong("orders.queue_depth", description = Some("Orders waiting")) { measurement =>
+        queue.size.flatMap(size => measurement.record(size.toLong))
       }
     }
   }
