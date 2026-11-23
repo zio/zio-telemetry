@@ -74,6 +74,13 @@ object Dependencies {
     Orgs.zio          %% "zio-logging"               % Versions.zioLogging
   )
 
+  // Only for the docs project: lets mdoc compile the documentation examples against a real SDK.
+  lazy val docs = Seq(
+    Orgs.opentelemetry % "opentelemetry-sdk"                   % Versions.opentelemetry,
+    Orgs.opentelemetry % "opentelemetry-sdk-testing"           % Versions.opentelemetry,
+    Orgs.opentelemetry % "opentelemetry-exporter-logging-otlp" % Versions.opentelemetry
+  )
+
   lazy val example = zio ++ Seq(
     Orgs.typelevel               %% "cats-core"           % ExampleVersions.cats,
     Orgs.jaegertracing            % "jaeger-core"         % ExampleVersions.jaeger,
