@@ -33,7 +33,7 @@ object BackendApp extends ZIOAppDefault {
       for {
         meter <- ZIO.service[Meter]
         ref   <- ZIO.service[Ref[Long]]
-        _     <- meter.observableCounter("tick_counter") { om =>
+        _     <- meter.observableCounterLong("tick_counter") { om =>
                    for {
                      tick <- ref.get
                      _    <- om.record(tick)

@@ -1,7 +1,7 @@
 package zio.telemetry.opentelemetry.metrics
 
 import io.opentelemetry.api.common.Attributes
-import io.opentelemetry.api.metrics.LongCounter
+import io.opentelemetry.api.metrics.{DoubleCounter, LongCounter}
 import io.opentelemetry.context.Context
 import zio._
 import zio.telemetry.opentelemetry.context.ContextStorage
@@ -47,20 +47,33 @@ object Counter {
     ctxStorage: ContextStorage,
     logAnnotated: Boolean
   ): Counter[Long] =
-    new Counter[Long] {
+    make[Long](counter.add(_, _, _), ctxStorage, logAnnotated, 1L)
 
-      override def record0(value: Long, attributes: Attributes = Attributes.empty, context: Context): Unit =
-        counter.add(value, attributes, context)
+  private[metrics] def double(
+    counter: DoubleCounter,
+    ctxStorage: ContextStorage,
+    logAnnotated: Boolean
+  ): Counter[Double] =
+    make[Double](counter.add(_, _, _), ctxStorage, logAnnotated, 1.0)
 
-      override def add(value: Long, attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
+  private def make[A](
+    recordValue: (A, Attributes, Context) => Unit,
+    ctxStorage: ContextStorage,
+    logAnnotated: Boolean,
+    increment: A
+  ): Counter[A] =
+    new Counter[A] {
+      override def record0(value: A, attributes: Attributes, context: Context): Unit =
+        recordValue(value, attributes, context)
+
+      override def add(value: A, attributes: Attributes)(implicit trace: Trace): UIO[Unit] =
         for {
           annotated <- logAnnotatedAttributes(attributes, logAnnotated)
           ctx       <- ctxStorage.get
         } yield record0(value, annotated, ctx)
 
-      override def inc(attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
-        add(1L, attributes)
-
+      override def inc(attributes: Attributes)(implicit trace: Trace): UIO[Unit] =
+        add(increment, attributes)
     }
 
 }

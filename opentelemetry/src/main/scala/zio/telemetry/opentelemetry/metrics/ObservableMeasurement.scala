@@ -30,19 +30,15 @@ trait ObservableMeasurement[-A] {
 object ObservableMeasurement {
 
   private[metrics] def long(om: api.metrics.ObservableLongMeasurement): ObservableMeasurement[Long] =
-    new ObservableMeasurement[Long] {
-
-      override def record0(value: Long, attributes: Attributes): Unit =
-        om.record(value, attributes)
-
-    }
+    make[Long](om.record(_, _))
 
   private[metrics] def double(om: api.metrics.ObservableDoubleMeasurement): ObservableMeasurement[Double] =
-    new ObservableMeasurement[Double] {
+    make[Double](om.record(_, _))
 
-      override def record0(value: Double, attributes: Attributes): Unit =
-        om.record(value, attributes)
-
+  private def make[A](recordValue: (A, Attributes) => Unit): ObservableMeasurement[A] =
+    new ObservableMeasurement[A] {
+      override def record0(value: A, attributes: Attributes): Unit =
+        recordValue(value, attributes)
     }
 
 }

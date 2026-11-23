@@ -1,7 +1,7 @@
 package zio.telemetry.opentelemetry.metrics
 
 import io.opentelemetry.api.common.Attributes
-import io.opentelemetry.api.metrics.DoubleHistogram
+import io.opentelemetry.api.metrics.{DoubleHistogram, LongHistogram}
 import io.opentelemetry.context.Context
 import zio._
 import zio.telemetry.opentelemetry.context.ContextStorage
@@ -32,22 +32,34 @@ trait Histogram[-A] extends Instrument[A] {
 
 object Histogram {
 
+  private[metrics] def long(
+    histogram: LongHistogram,
+    ctxStorage: ContextStorage,
+    logAnnotated: Boolean
+  ): Histogram[Long] =
+    make[Long](histogram.record(_, _, _), ctxStorage, logAnnotated)
+
   private[metrics] def double(
     histogram: DoubleHistogram,
     ctxStorage: ContextStorage,
     logAnnotated: Boolean
   ): Histogram[Double] =
-    new Histogram[Double] {
+    make[Double](histogram.record(_, _, _), ctxStorage, logAnnotated)
 
-      override def record0(value: Double, attributes: Attributes = Attributes.empty, context: Context): Unit =
-        histogram.record(value, attributes, context)
+  private def make[A](
+    recordValue: (A, Attributes, Context) => Unit,
+    ctxStorage: ContextStorage,
+    logAnnotated: Boolean
+  ): Histogram[A] =
+    new Histogram[A] {
+      override def record0(value: A, attributes: Attributes, context: Context): Unit =
+        recordValue(value, attributes, context)
 
-      override def record(value: Double, attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit] =
+      override def record(value: A, attributes: Attributes)(implicit trace: Trace): UIO[Unit] =
         for {
           annotated <- logAnnotatedAttributes(attributes, logAnnotated)
           ctx       <- ctxStorage.get
         } yield record0(value, annotated, ctx)
-
     }
 
 }
