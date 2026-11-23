@@ -1,7 +1,7 @@
 ---
 id: whats-new
 title: "What's New"
-description: "A summary of what changed in ZIO Telemetry from 3.0.0 through 3.1.21, grouped by theme, taken from the GitHub release notes."
+description: "A summary of what changed in ZIO Telemetry from 3.0.0 through 3.1.22, grouped by theme, taken from the GitHub release notes."
 keywords:
   - "Release Notes"
   - "Changelog"
@@ -9,15 +9,15 @@ keywords:
   - "Upgrading"
 ---
 
-This page summarises the user-visible changes in the 3.x line of ZIO Telemetry, from 3.0.0 to 3.1.21, which is the latest stable release. The full, authoritative notes for every version are on the [GitHub releases page](https://github.com/zio/zio-telemetry/releases).
+This page summarises the user-visible changes in the 3.x line of ZIO Telemetry, from 3.0.0 to 3.1.22, which is the latest stable release. The full, authoritative notes for every version are on the [GitHub releases page](https://github.com/zio/zio-telemetry/releases).
 
 Almost all releases after 3.1.0 only update dependencies, so this page groups the changes by theme instead of listing each version. For the exact version where a change landed, follow the version numbers in the sections below.
 
 ## Release Lines at a Glance
 
 - **3.0.x (3.0.0 to 3.0.2)**: the release that completed the OpenTelemetry module with all signals, after 26 release candidates.
-- **3.1.x (3.1.0 to 3.1.21)**: a small API fix in 3.1.0, followed by regular maintenance releases that track new versions of ZIO, OpenTelemetry, and Scala.
-- **3.1.22**: a draft on GitHub at the time of writing, so it is not released yet. Its notes list updates to `zio-logging` 2.5.4, OpenTelemetry Java 1.68.0, and OpenTelemetry semantic conventions 1.45.0.
+- **3.1.x (3.1.0 to 3.1.22)**: a small API fix in 3.1.0, followed by regular maintenance releases that track new versions of ZIO, OpenTelemetry, and Scala. The 3.1.22 notes list updates to `zio-logging` 2.5.4, OpenTelemetry Java 1.68.0, and OpenTelemetry semantic conventions 1.45.0.
+- **3.1.23**: a draft on GitHub at the time of writing, so it is not released yet. Its notes add the `Meter` instrument variants and fix the ZIO metrics bridge, described in the next section.
 - **4.0.0-RC releases**: release candidates (4.0.0-RC1 through 4.0.0-RC14) are published from a separate branch. They are not part of this documentation, and this page does not describe their API.
 
 ## OpenTelemetry Signals
@@ -40,14 +40,18 @@ The public APIs of all modules were polished and documented in the same release.
 
 3.1.4 replaces the deprecated `ResourceAttributes` with `ServiceAttributes` from the OpenTelemetry semantic conventions.
 
+## Metrics Instruments
+
+The draft 3.1.23 notes list two changes to the metrics API. The first adds `Long` and `Double` variants of every `Meter` instrument, such as `Meter#counterLong` and `Meter#counterDouble`, and a synchronous `Gauge` created with `Meter#gaugeLong` or `Meter#gaugeDouble`. The unsuffixed factory methods, such as `Meter#counter`, are deprecated in favor of the suffixed ones. The second fix stops the ZIO metrics bridge from converting `Double` counter values to `Long`. See [Metrics](reference/metrics.md) for the instruments and [How to Record Metrics](how-to/record-metrics.md) for a walkthrough.
+
 ## Dependency Updates
 
 The 3.x line tracks the upstream libraries closely. The versions below are the ones named in the release notes. They show how far the line has moved, not a compatibility matrix.
 
-- **OpenTelemetry Java** (`opentelemetry-api` and related artifacts): 1.43.0 in 3.0.0, and 1.67.0 in 3.1.21.
-- **OpenTelemetry semantic conventions** (`opentelemetry-semconv`): 1.30.0 in 3.1.2, and 1.44.0 in 3.1.20.
+- **OpenTelemetry Java** (`opentelemetry-api` and related artifacts): 1.43.0 in 3.0.0, and 1.68.0 in 3.1.22.
+- **OpenTelemetry semantic conventions** (`opentelemetry-semconv`): 1.30.0 in 3.1.2, and 1.45.0 in 3.1.22.
 - **ZIO**: 2.1.9 and 2.1.11 in the 3.0.0 notes, and 2.1.27 in 3.1.21.
-- **ZIO Logging**: 2.3.2 in 3.0.0, 2.4.0 in 3.0.2, 2.5.0 in 3.1.2, and 2.5.2 in 3.1.13.
+- **ZIO Logging**: 2.3.2 in 3.0.0, 2.4.0 in 3.0.2, 2.5.0 in 3.1.2, 2.5.2 in 3.1.13, and 2.5.4 in 3.1.22.
 - **Scala 3**: 3.5.1 in 3.0.0, and 3.9.0 in 3.1.21.
 
 ## Build and Documentation Maintenance
