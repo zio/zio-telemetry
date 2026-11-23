@@ -17,7 +17,7 @@ The OpenTelemetry module is all most applications need. It is published for the 
 ```scala
 libraryDependencies ++= Seq(
   // ZIO Telemetry for OpenTelemetry (JVM, Scala 2.12, 2.13, 3)
-  "dev.zio" %% "zio-opentelemetry" % "4.0.0-RC14"
+  "dev.zio" %% "zio-opentelemetry" % "3.1.22"
 )
 ```
 
@@ -34,7 +34,7 @@ To add trace and span ids to [ZIO Logging](https://zio.dev/zio-logging/) output,
 ```scala
 libraryDependencies ++= Seq(
   // Span and trace id log formats for ZIO Logging (JVM, Scala 2.12, 2.13, 3)
-  "dev.zio" %% "zio-opentelemetry-zio-logging" % "4.0.0-RC14"
+  "dev.zio" %% "zio-opentelemetry-zio-logging" % "3.1.22"
 )
 ```
 
@@ -47,10 +47,10 @@ OpenTracing is archived and OpenCensus is deprecated upstream, and new applicati
 ```scala
 libraryDependencies ++= Seq(
   // ZIO Telemetry for OpenTracing (JVM, Scala 2.12, 2.13, 3)
-  "dev.zio" %% "zio-opentracing" % "4.0.0-RC14",
+  "dev.zio" %% "zio-opentracing" % "3.1.22",
 
   // ZIO Telemetry for OpenCensus (JVM, Scala 2.12, 2.13, 3)
-  "dev.zio" %% "zio-opencensus" % "4.0.0-RC14"
+  "dev.zio" %% "zio-opencensus" % "3.1.22"
 )
 ```
 
