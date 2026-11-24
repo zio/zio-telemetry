@@ -45,8 +45,8 @@ sealed abstract class StatusMapper[-E, -A](
 )
 
 /**
- * Constructors for [[StatusMapper]]. Each factory takes a function from the ZIO failure or success to a
- * [[io.opentelemetry.api.trace.StatusCode]].
+ * Constructors for [[StatusMapper]]. Most factories take a function from the ZIO failure or success to a status code.
+ * [[both]] combines a failure and a success mapping, and [[default]] maps nothing.
  */
 object StatusMapper {
 
@@ -71,7 +71,8 @@ object StatusMapper {
    * @param statusCode
    *   status to set on the span
    * @param error
-   *   optional value that is recorded with the status
+   *   for a failure, the throwable recorded on the span as an exception. For a success, the status description, used
+   *   only when `statusCode` is `StatusCode.ERROR`
    */
   final case class Result[+T](statusCode: StatusCode, error: Option[T] = None)
 
