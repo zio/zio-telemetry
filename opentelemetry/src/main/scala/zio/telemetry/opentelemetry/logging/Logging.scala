@@ -6,8 +6,24 @@ import io.opentelemetry.context.Context
 import zio._
 import zio.telemetry.opentelemetry.context.ContextStorage
 
+/**
+ * Sends ZIO log records to OpenTelemetry as log records.
+ */
 object Logging {
 
+  /**
+   * Creates a layer that sends ZIO log records to the OpenTelemetry logger named `instrumentationScopeName`. Only
+   * records at or above `logLevel` are sent. Log annotations are sent as attributes of each log record, and the context
+   * that is current when the record is logged is attached to it.
+   *
+   * The logger is added for the scope of the layer, next to the loggers that are already set up. It needs a
+   * [[zio.telemetry.opentelemetry.context.ContextStorage]] and a `LoggerProvider`.
+   *
+   * @param instrumentationScopeName
+   *   name uniquely identifying the instrumentation scope of the logger
+   * @param logLevel
+   *   the lowest severity that is sent
+   */
   def live(
     instrumentationScopeName: String,
     logLevel: LogLevel = LogLevel.Info

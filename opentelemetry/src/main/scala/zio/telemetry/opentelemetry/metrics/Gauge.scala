@@ -30,6 +30,9 @@ trait Gauge[-A] extends Instrument[A] {
 
 }
 
+/**
+ * Constructors for [[Gauge]].
+ */
 object Gauge {
 
   private[metrics] def double(gauge: DoubleGauge, ctxStorage: ContextStorage, logAnnotated: Boolean): Gauge[Double] =

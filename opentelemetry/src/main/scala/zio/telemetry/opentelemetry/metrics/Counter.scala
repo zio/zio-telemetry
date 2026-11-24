@@ -40,6 +40,9 @@ trait Counter[-A] extends Instrument[A] {
   def inc(attributes: Attributes = Attributes.empty)(implicit trace: Trace): UIO[Unit]
 }
 
+/**
+ * Constructors for [[Counter]].
+ */
 object Counter {
 
   private[metrics] def long(

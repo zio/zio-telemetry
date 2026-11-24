@@ -12,6 +12,15 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters._
 
+/**
+ * Creates spans and records their attributes and events. A span is created as a child of the current span, or as a root
+ * span. The current span is held in the `Context` of the [[zio.telemetry.opentelemetry.context.ContextStorage]].
+ *
+ * Use [[Tracing.live]] or [[zio.telemetry.opentelemetry.OpenTelemetry.tracing]] to create an instance.
+ *
+ * @see
+ *   <a href="https://zio.dev/zio-telemetry/opentelemetry/">ZIO Telemetry OpenTelemetry documentation</a>
+ */
 trait Tracing { self =>
 
   /**
@@ -38,7 +47,7 @@ trait Tracing { self =>
   )(implicit trace: Trace): UIO[Unit]
 
   /**
-   * Extracts the span from carrier `C` and set its child span with name 'spanName' as the current span.
+   * Extracts the span from carrier `C` and sets its child span with name `spanName` as the current span.
    *
    * Ends the span when the effect finishes.
    *
@@ -50,19 +59,22 @@ trait Tracing { self =>
    *   name of the child span
    * @param spanKind
    *   kind of the child span
+   * @param attributes
+   *   attributes of the child span
    * @param statusMapper
    *   status mapper
    * @param links
-   *   spanContexts of the linked Spans
+   *   spanContexts of the linked spans
    * @param zio
    *   body of the child span
-   * @param trace
    * @tparam C
    *   carrier
    * @tparam R
+   *   environment of the effect
    * @tparam E
+   *   failure type of the effect
    * @tparam A
-   * @return
+   *   success type of the effect
    */
   def extractSpan[C, R, E, E1 <: E, A, A1 <: A](
     propagator: TraceContextPropagator,
@@ -75,7 +87,7 @@ trait Tracing { self =>
   )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1]
 
   /**
-   * Extracts the span from carrier `C` and unsafely set its child span with name 'spanName' as the current span.
+   * Extracts the span from carrier `C` and unsafely sets its child span with name `spanName` as the current span.
    *
    * You need to make sure to call the finalize effect to end the span.
    *
@@ -89,10 +101,14 @@ trait Tracing { self =>
    *   name of the child span
    * @param spanKind
    *   kind of the child span
-   * @param trace
+   * @param attributes
+   *   attributes of the child span
+   * @param links
+   *   spanContexts of the linked spans
    * @tparam C
    *   carrier
    * @return
+   *   the child span, and the effect that ends it and restores the previous `Context`
    */
   def extractSpanUnsafe[C](
     propagator: TraceContextPropagator,
@@ -104,26 +120,17 @@ trait Tracing { self =>
   )(implicit trace: Trace): UIO[(Span, UIO[Any])]
 
   /**
-   * Gets the current Context
-   *
-   * @param trace
-   * @return
+   * Gets the current `Context`.
    */
   def getCurrentContextUnsafe(implicit trace: Trace): UIO[Context]
 
   /**
-   * Gets the current SpanContext.
-   *
-   * @param trace
-   * @return
+   * Gets the `SpanContext` of the current span.
    */
   def getCurrentSpanContextUnsafe(implicit trace: Trace): UIO[SpanContext]
 
   /**
-   * Gets the current Span.
-   *
-   * @param trace
-   * @return
+   * Gets the current span.
    */
   def getCurrentSpanUnsafe(implicit trace: Trace): UIO[Span]
 
@@ -145,22 +152,24 @@ trait Tracing { self =>
   )(implicit trace: Trace): UIO[Unit]
 
   /**
-   * Mark this effect as the child of an externally provided span. Ends the span when the effect finishes.
-   * zio-opentelemetry will mark the span as being the child of the external one.
+   * Marks this effect as the child of an externally provided span. Ends the child span when the effect finishes. The
+   * external `span` is not ended by this method.
+   *
+   * zio-opentelemetry marks the child span as being the child of the external span.
    *
    * This is designed for use-cases where you are incrementally introducing zio & zio-telemetry in a project that
    * already makes use of instrumentation, and you need to interoperate with futures-based code.
    *
-   * The caller is solely responsible for managing the external span, including calling Span.end
+   * The caller is solely responsible for managing the external span, including calling `Span.end`.
    *
    * It also could be useful in combination with `extractSpanUnsafe` or `spanUnsafe`:
    * {{{
-   *   for {
-   *     (span, finalize) <- tracing.spanUnsafe("unsafe-span")
-   *     // run some logic that would be wrapped in the span
-   *     // modify the span
-   *     _                <- zio @@ tracing.inSpan(span, "child-of-unsafe-span")
-   *   } yield ()
+   * import zio._
+   *
+   * def unsafeChild(tracing: Tracing): UIO[Unit] =
+   *   tracing.spanUnsafe("unsafe-span").flatMap { case (span, end) =>
+   *     tracing.inSpan(span, "child-of-unsafe-span")(ZIO.unit).unit *> end.unit
+   *   }
    * }}}
    *
    * @param span
@@ -169,17 +178,20 @@ trait Tracing { self =>
    *   name of the child span
    * @param spanKind
    *   kind of the child span
+   * @param attributes
+   *   attributes of the child span
    * @param statusMapper
    *   status mapper
    * @param links
-   *   spanContexts of the linked Spans.
+   *   spanContexts of the linked spans
    * @param zio
    *   body of the child span
-   * @param trace
    * @tparam R
+   *   environment of the effect
    * @tparam E
+   *   failure type of the effect
    * @tparam A
-   * @return
+   *   success type of the effect
    */
   def inSpan[R, E, E1 <: E, A, A1 <: A](
     span: Span,
@@ -191,25 +203,28 @@ trait Tracing { self =>
   )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1]
 
   /**
-   * Sets the current span to be the new root span with name 'spanName'.
+   * Sets the current span to be the new root span with name `spanName`.
    *
    * Ends the span when the effect finishes.
    *
    * @param spanName
    *   name of the new root span
    * @param spanKind
-   *   name of the new root span
+   *   kind of the new root span
+   * @param attributes
+   *   attributes of the new root span
    * @param statusMapper
    *   status mapper
    * @param links
-   *   spanContexts of the linked Spans.
+   *   spanContexts of the linked spans
    * @param zio
    *   body of the new root span
-   * @param trace
    * @tparam R
+   *   environment of the effect
    * @tparam E
+   *   failure type of the effect
    * @tparam A
-   * @return
+   *   success type of the effect
    */
   def root[R, E, E1 <: E, A, A1 <: A](
     spanName: String,
@@ -226,137 +241,135 @@ trait Tracing { self =>
    *
    * @param effect
    *   piece of code to execute in the current context
-   * @param trace
    * @tparam A
-   * @return
+   *   result type of the effect
    */
   def scopedEffect[A](effect: => A)(implicit trace: Trace): Task[A]
 
   /**
    * Introduces a thread-local scope from the currently active zio span allowing for non-zio context propagation. This
-   * scope will only be active during Future creation, so another mechanism must be used to ensure that the scope is
-   * passed into the Future callbacks.
+   * scope is only active while `make` runs, so another mechanism must be used to pass the scope into the Future
+   * callbacks.
    *
    * The java auto instrumentation package provides such a mechanism out of the box, so one is not provided as a part of
    * this method.
    *
-   * CLoses the scope when the effect finishes.
+   * Closes the scope when `make` returns.
    *
    * @param make
-   *   function for providing a [[scala.concurrent.Future]] by a given [[scala.concurrent.ExecutionContext]] to execute
+   *   function that provides a [[scala.concurrent.Future]] for a given [[scala.concurrent.ExecutionContext]], and runs
    *   in the current context
-   * @param trace
    * @tparam A
-   * @return
+   *   result type of the Future
    */
   def scopedEffectFromFuture[A](make: ExecutionContext => scala.concurrent.Future[A])(implicit trace: Trace): Task[A]
 
   /**
-   * Introduces a thread-local scope during the execution allowing for non-zio context propagation.
+   * Introduces a thread-local scope during the execution allowing for non-zio context propagation. Unlike
+   * [[scopedEffect]], an exception thrown by `effect` is reported as a defect, not as a failure.
    *
    * Closes the scope when the effect finishes.
    *
    * @param effect
    *   piece of code to execute in the current context
-   * @param trace
    * @tparam A
-   * @return
+   *   result type of the effect
    */
   def scopedEffectTotal[A](effect: => A)(implicit trace: Trace): UIO[A]
 
   /**
-   * Sets an attribute of the current span.
+   * Sets the Boolean attribute `name` of the current span to `value`.
    *
    * @param name
+   *   name of the attribute
    * @param value
-   * @param trace
-   * @return
+   *   value of the attribute
    */
   def setAttribute(name: String, value: Boolean)(implicit trace: Trace): UIO[Unit]
 
   /**
-   * Sets an attribute of the current span.
+   * Sets the `Double` attribute `name` of the current span to `value`.
    *
    * @param name
+   *   name of the attribute
    * @param value
-   * @param trace
-   * @return
+   *   value of the attribute
    */
   def setAttribute(name: String, value: Double)(implicit trace: Trace): UIO[Unit]
 
   /**
-   * Sets an attribute of the current span.
+   * Sets the `Long` attribute `name` of the current span to `value`.
    *
    * @param name
+   *   name of the attribute
    * @param value
-   * @param trace
-   * @return
+   *   value of the attribute
    */
   def setAttribute(name: String, value: Long)(implicit trace: Trace): UIO[Unit]
 
   /**
-   * Sets an attribute of the current span.
+   * Sets the `String` attribute `name` of the current span to `value`.
    *
    * @param name
+   *   name of the attribute
    * @param value
-   * @param trace
-   * @return
+   *   value of the attribute
    */
   def setAttribute(name: String, value: String)(implicit trace: Trace): UIO[Unit]
 
   /**
-   * Sets an attribute of the current span.
+   * Sets the attribute of the current span with the given key to `value`.
    *
    * @param key
+   *   key of the attribute
    * @param value
-   * @param trace
+   *   value of the attribute
    * @tparam T
-   * @return
+   *   type of the attribute value
    */
   def setAttribute[T](key: AttributeKey[T], value: T)(implicit trace: Trace): UIO[Unit]
 
   /**
-   * Sets an attribute of the current span.
+   * Sets the attribute of the current span from a [[zio.telemetry.opentelemetry.common.Attribute]].
    *
    * @param attribute
    *   convenient Scala wrapper for Java key/value
-   * @param trace
    */
   def setAttribute[T](attribute: Attribute[T])(implicit trace: Trace): UIO[Unit]
 
   /**
-   * Sets an attribute of the current span.
+   * Sets the attribute `name` of the current span to the list of `String` values `values`.
    *
    * @param name
+   *   name of the attribute
    * @param values
-   * @param trace
-   * @return
+   *   values of the attribute
    */
   def setAttribute(name: String, values: Seq[String])(implicit trace: Trace): UIO[Unit]
 
   /**
-   * Sets an attribute of the current span.
+   * Sets the attribute `name` of the current span to the list of `Boolean` values `values`.
    *
    * @param name
+   *   name of the attribute
    * @param values
+   *   values of the attribute
    * @param i1
    *   dummy implicit value to disambiguate the method calls
-   * @param trace
-   * @return
    */
   def setAttribute(name: String, values: Seq[Boolean])(implicit i1: DummyImplicit, trace: Trace): UIO[Unit]
 
   /**
-   * Sets an attribute of the current span.
+   * Sets the attribute `name` of the current span to the list of `Long` values `values`.
    *
    * @param name
+   *   name of the attribute
    * @param values
+   *   values of the attribute
    * @param i1
    *   dummy implicit value to disambiguate the method calls
    * @param i2
    *   dummy implicit value to disambiguate the method calls
-   * @param trace
-   * @return
    */
   def setAttribute(name: String, values: Seq[Long])(implicit
     i1: DummyImplicit,
@@ -365,18 +378,18 @@ trait Tracing { self =>
   ): UIO[Unit]
 
   /**
-   * Sets an attribute of the current span.
+   * Sets the attribute `name` of the current span to the list of `Double` values `values`.
    *
    * @param name
+   *   name of the attribute
    * @param values
+   *   values of the attribute
    * @param i1
    *   dummy implicit value to disambiguate the method calls
    * @param i2
    *   dummy implicit value to disambiguate the method calls
    * @param i3
    *   dummy implicit value to disambiguate the method calls
-   * @param trace
-   * @return
    */
   def setAttribute(name: String, values: Seq[Double])(implicit
     i1: DummyImplicit,
@@ -386,7 +399,7 @@ trait Tracing { self =>
   ): UIO[Unit]
 
   /**
-   * Sets the current span to be the child of the current span with name 'spanName'.
+   * Sets the current span to be the child of the current span with name `spanName`.
    *
    * Ends the span when the effect finishes.
    *
@@ -394,17 +407,20 @@ trait Tracing { self =>
    *   name of the child span
    * @param spanKind
    *   kind of the child span
+   * @param attributes
+   *   attributes of the child span
    * @param statusMapper
    *   status mapper
    * @param links
-   *   spanContexts of the linked Spans.
+   *   spanContexts of the linked spans
    * @param zio
    *   body of the child span
-   * @param trace
    * @tparam R
+   *   environment of the effect
    * @tparam E
+   *   failure type of the effect
    * @tparam A
-   * @return
+   *   success type of the effect
    */
   def span[R, E, E1 <: E, A, A1 <: A](
     spanName: String,
@@ -415,18 +431,21 @@ trait Tracing { self =>
   )(zio: => ZIO[R, E1, A1])(implicit trace: Trace): ZIO[R, E1, A1]
 
   /**
-   * Sets the current span to be the child of the current span with name 'spanName'.
+   * Sets the current span to be the child of the current span with name `spanName`.
    *
-   * Ends the span when the scope closes.
+   * Ends the span when the scope closes. When the scope closes with a failure, the span status is set using
+   * `statusMapper`.
    *
    * @param spanName
    *   name of the child span
    * @param spanKind
    *   kind of the child span
+   * @param attributes
+   *   attributes of the child span
    * @param statusMapper
    *   status mapper
    * @param links
-   *   spanContexts of the linked Spans.
+   *   spanContexts of the linked spans
    */
   def spanScoped(
     spanName: String,
@@ -437,7 +456,7 @@ trait Tracing { self =>
   )(implicit trace: Trace): ZIO[Scope, Nothing, Unit]
 
   /**
-   * Unsafely sets the current span to be the child of the current span with name 'spanName'.
+   * Unsafely sets the current span to be the child of the current span with name `spanName`.
    *
    * You need to manually call the finalizer to end the span.
    *
@@ -447,8 +466,12 @@ trait Tracing { self =>
    *   name of the child span
    * @param spanKind
    *   kind of the child span
-   * @param trace
+   * @param attributes
+   *   attributes of the child span
+   * @param links
+   *   spanContexts of the linked spans
    * @return
+   *   the child span, and the effect that ends it and restores the previous `Context`
    */
   def spanUnsafe(
     spanName: String,
@@ -457,8 +480,15 @@ trait Tracing { self =>
     links: Seq[SpanContext] = Seq.empty
   )(implicit trace: Trace): UIO[(Span, UIO[Any])]
 
+  /**
+   * [[ZIOAspect]] versions of the methods of [[Tracing]], for use with `@@`. Each aspect wraps the effect it is applied
+   * to in a span.
+   */
   object aspects {
 
+    /**
+     * [[ZIOAspect]] version of [[Tracing.extractSpan]]. Apply it with `@@`.
+     */
     def extractSpan[C, E1, A1](
       propagator: TraceContextPropagator,
       carrier: IncomingContextCarrier[C],
@@ -473,6 +503,9 @@ trait Tracing { self =>
           self.extractSpan(propagator, carrier, spanName, spanKind, attributes, statusMapper, links)(zio)
       }
 
+    /**
+     * [[ZIOAspect]] version of [[Tracing.inSpan]]. Apply it with `@@`.
+     */
     def inSpan[E1, A1](
       span: Span,
       spanName: String,
@@ -486,6 +519,9 @@ trait Tracing { self =>
           self.inSpan(span, spanName, spanKind, attributes, statusMapper, links)(zio)
       }
 
+    /**
+     * [[ZIOAspect]] version of [[Tracing.root]]. Apply it with `@@`.
+     */
     def root[E1, A1](
       spanName: String,
       spanKind: SpanKind = SpanKind.INTERNAL,
@@ -498,6 +534,9 @@ trait Tracing { self =>
           self.root(spanName, spanKind, attributes, statusMapper, links)(zio)
       }
 
+    /**
+     * [[ZIOAspect]] version of [[Tracing.span]]. Apply it with `@@`.
+     */
     def span[E1, A1](
       spanName: String,
       spanKind: SpanKind = SpanKind.INTERNAL,
@@ -514,8 +553,19 @@ trait Tracing { self =>
 
 }
 
+/**
+ * Constructors for [[Tracing]].
+ */
 object Tracing {
 
+  /**
+   * Creates a [[Tracing]] layer that uses the [[io.opentelemetry.api.trace.Tracer]] and the
+   * [[zio.telemetry.opentelemetry.context.ContextStorage]] from the environment. See [[scoped]] for what happens when
+   * the layer's scope closes.
+   *
+   * @param logAnnotated
+   *   add ZIO log annotations as attributes of each span that is created when `true`
+   */
   def live(logAnnotated: Boolean = false): URLayer[Tracer & ContextStorage, Tracing] =
     ZLayer.scoped {
       for {
@@ -525,6 +575,17 @@ object Tracing {
       } yield tracing
     }
 
+  /**
+   * Creates a [[Tracing]] that uses `tracer` and `ctxStorage`. When the scope closes, it ends the span that is current
+   * at that time.
+   *
+   * @param tracer
+   *   tracer that creates the spans
+   * @param ctxStorage
+   *   storage of the current `Context`
+   * @param logAnnotated
+   *   add ZIO log annotations as attributes of each span that is created when `true`
+   */
   def scoped(tracer: Tracer, ctxStorage: ContextStorage, logAnnotated: Boolean = false): URIO[Scope, Tracing] = {
     val acquire =
       ZIO.succeed {

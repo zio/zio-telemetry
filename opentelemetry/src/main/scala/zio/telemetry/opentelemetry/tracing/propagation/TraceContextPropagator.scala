@@ -4,8 +4,15 @@ import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.propagation.TextMapPropagator
 import zio.telemetry.opentelemetry.internal.Propagator
 
+/**
+ * Propagates the trace context of a span between processes. Pass it to the
+ * [[zio.telemetry.opentelemetry.tracing.Tracing]] methods that extract or inject a span.
+ */
 trait TraceContextPropagator extends Propagator
 
+/**
+ * Constructors for [[TraceContextPropagator]].
+ */
 object TraceContextPropagator {
 
   /**

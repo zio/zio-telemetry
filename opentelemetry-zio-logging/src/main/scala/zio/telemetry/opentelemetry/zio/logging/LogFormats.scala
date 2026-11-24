@@ -3,6 +3,10 @@ package zio.telemetry.opentelemetry.zio.logging
 import zio.logging.LogFormat
 import zio.logging.LogFormat.label
 
+/**
+ * Log formats that add the trace ID and the span ID of the current span to ZIO log lines. Create them with
+ * [[ZioLogging.logFormats]].
+ */
 trait LogFormats {
 
   /**
