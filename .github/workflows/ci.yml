@@ -37,7 +37,7 @@ jobs:
       with:
         fetch-depth: '0'
     - name: Setup Scala
-      uses: actions/setup-java@v6.3.0
+      uses: actions/setup-java@v6.1.0
       with:
         distribution: corretto
         java-version: '17'
@@ -81,7 +81,7 @@ jobs:
       with:
         fetch-depth: '0'
     - name: Setup Scala
-      uses: actions/setup-java@v6.3.0
+      uses: actions/setup-java@v6.1.0
       with:
         distribution: corretto
         java-version: '17'
@@ -107,7 +107,7 @@ jobs:
         - '25'
     steps:
     - name: Setup Scala
-      uses: actions/setup-java@v6.3.0
+      uses: actions/setup-java@v6.1.0
       with:
         distribution: corretto
         java-version: ${{ matrix.java }}
@@ -136,7 +136,7 @@ jobs:
       with:
         fetch-depth: '0'
     - name: Setup Scala
-      uses: actions/setup-java@v6.3.0
+      uses: actions/setup-java@v6.1.0
       with:
         distribution: corretto
         java-version: '17'
@@ -210,7 +210,7 @@ jobs:
       with:
         fetch-depth: '0'
     - name: Setup Scala
-      uses: actions/setup-java@v6.3.0
+      uses: actions/setup-java@v6.1.0
       with:
         distribution: corretto
         java-version: '17'
@@ -239,7 +239,7 @@ jobs:
       with:
         fetch-depth: '0'
     - name: Setup Scala
-      uses: actions/setup-java@v6.3.0
+      uses: actions/setup-java@v6.1.0
       with:
         distribution: corretto
         java-version: '17'
