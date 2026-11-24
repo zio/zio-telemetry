@@ -93,8 +93,9 @@ object OpenTelemetry {
    * @param schemaUrl
    *   schema URL
    * @param logAnnotated
-   *   when `true`, ZIO log annotations are added as attributes of each measurement that is recorded. Attributes given
-   *   to the measurement take precedence over annotations with the same key.
+   *   when `true`, ZIO log annotations are added as attributes of each measurement recorded by a synchronous
+   *   instrument. Observable instruments do not add them. Attributes given to the measurement take precedence over
+   *   annotations with the same key.
    */
   def metrics(
     instrumentationScopeName: String,
@@ -148,7 +149,7 @@ object OpenTelemetry {
    *   qualified class name
    * @param logLevel
    *   the lowest severity that is propagated. Log records at this level or above are sent to OpenTelemetry; records
-   *   below it are dropped
+   *   below it are not sent to OpenTelemetry
    */
   def logging(
     instrumentationScopeName: String,

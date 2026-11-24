@@ -14,8 +14,8 @@ sealed trait ContextStorage {
   def get(implicit trace: Trace): UIO[Context]
 
   /**
-   * Makes `context` the current `Context`. With `ContextStorage.fiberRef` the change is visible to the current fiber;
-   * with `ContextStorage.native` it changes the thread-local `Context`.
+   * Makes `context` the current `Context`. With [[OpenTelemetry.contextZIO]] the change is visible to the current
+   * fiber; with [[OpenTelemetry.contextJVM]] it changes the thread-local `Context`.
    */
   def set(context: Context)(implicit trace: Trace): UIO[Unit]
 
