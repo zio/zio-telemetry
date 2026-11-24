@@ -13,8 +13,9 @@ import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters._
 
 /**
- * Creates spans and records their attributes and events. A span is created as a child of the current span, or as a root
- * span. The current span is held in the `Context` of the [[zio.telemetry.opentelemetry.context.ContextStorage]].
+ * Creates spans and records their attributes and events. A span is created as a child of the current span, as a root
+ * span, as a child of a span extracted from a carrier, or as a child of a span passed in. The current span is held in
+ * the `Context` of the [[zio.telemetry.opentelemetry.context.ContextStorage]].
  *
  * Use [[Tracing.live]] or [[zio.telemetry.opentelemetry.OpenTelemetry.tracing]] to create an instance.
  *
@@ -72,9 +73,9 @@ trait Tracing { self =>
    * @tparam R
    *   environment of the effect
    * @tparam E
-   *   failure type of the effect
+   *   failure type that `statusMapper` maps
    * @tparam A
-   *   success type of the effect
+   *   success type that `statusMapper` maps
    */
   def extractSpan[C, R, E, E1 <: E, A, A1 <: A](
     propagator: TraceContextPropagator,
@@ -108,7 +109,7 @@ trait Tracing { self =>
    * @tparam C
    *   carrier
    * @return
-   *   the child span, and the effect that ends it and restores the previous `Context`
+   *   the child span, and an effect that ends the current span and restores the previous `Context` when run
    */
   def extractSpanUnsafe[C](
     propagator: TraceContextPropagator,
@@ -189,9 +190,9 @@ trait Tracing { self =>
    * @tparam R
    *   environment of the effect
    * @tparam E
-   *   failure type of the effect
+   *   failure type that `statusMapper` maps
    * @tparam A
-   *   success type of the effect
+   *   success type that `statusMapper` maps
    */
   def inSpan[R, E, E1 <: E, A, A1 <: A](
     span: Span,
@@ -222,9 +223,9 @@ trait Tracing { self =>
    * @tparam R
    *   environment of the effect
    * @tparam E
-   *   failure type of the effect
+   *   failure type that `statusMapper` maps
    * @tparam A
-   *   success type of the effect
+   *   success type that `statusMapper` maps
    */
   def root[R, E, E1 <: E, A, A1 <: A](
     spanName: String,
@@ -418,9 +419,9 @@ trait Tracing { self =>
    * @tparam R
    *   environment of the effect
    * @tparam E
-   *   failure type of the effect
+   *   failure type that `statusMapper` maps
    * @tparam A
-   *   success type of the effect
+   *   success type that `statusMapper` maps
    */
   def span[R, E, E1 <: E, A, A1 <: A](
     spanName: String,
@@ -471,7 +472,7 @@ trait Tracing { self =>
    * @param links
    *   spanContexts of the linked spans
    * @return
-   *   the child span, and the effect that ends it and restores the previous `Context`
+   *   the child span, and an effect that ends the current span and restores the previous `Context` when run
    */
   def spanUnsafe(
     spanName: String,
@@ -481,8 +482,8 @@ trait Tracing { self =>
   )(implicit trace: Trace): UIO[(Span, UIO[Any])]
 
   /**
-   * [[ZIOAspect]] versions of the methods of [[Tracing]], for use with `@@`. Each aspect wraps the effect it is applied
-   * to in a span.
+   * [[ZIOAspect]] versions of the span-creating methods of [[Tracing]], for use with `@@`. Each aspect wraps the effect
+   * it is applied to in a span.
    */
   object aspects {
 
