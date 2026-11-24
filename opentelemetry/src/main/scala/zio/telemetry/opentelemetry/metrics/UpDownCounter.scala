@@ -52,6 +52,9 @@ trait UpDownCounter[-A] extends Instrument[A] {
 
 }
 
+/**
+ * Constructors for [[UpDownCounter]].
+ */
 object UpDownCounter {
 
   private[metrics] def long(

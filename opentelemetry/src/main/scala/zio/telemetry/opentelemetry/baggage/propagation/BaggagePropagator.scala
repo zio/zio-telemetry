@@ -4,8 +4,15 @@ import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator
 import io.opentelemetry.context.propagation.TextMapPropagator
 import zio.telemetry.opentelemetry.internal.Propagator
 
+/**
+ * Propagates baggage between processes. Pass it to the [[zio.telemetry.opentelemetry.baggage.Baggage]] methods that
+ * extract or inject baggage.
+ */
 trait BaggagePropagator extends Propagator
 
+/**
+ * Constructors for [[BaggagePropagator]].
+ */
 object BaggagePropagator {
 
   /**

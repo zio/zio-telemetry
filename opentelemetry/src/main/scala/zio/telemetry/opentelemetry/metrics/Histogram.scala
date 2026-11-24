@@ -30,6 +30,9 @@ trait Histogram[-A] extends Instrument[A] {
 
 }
 
+/**
+ * Constructors for [[Histogram]].
+ */
 object Histogram {
 
   private[metrics] def long(

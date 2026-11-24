@@ -43,6 +43,9 @@ trait IncomingContextCarrier[T] extends ContextCarrier[T] with TextMapGetter[T] 
 
 }
 
+/**
+ * Constructors for [[IncomingContextCarrier]].
+ */
 object IncomingContextCarrier {
 
   /**

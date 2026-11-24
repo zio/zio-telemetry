@@ -12,6 +12,14 @@ import zio._
  */
 trait ObservableMeasurement[-A] {
 
+  /**
+   * Records a measurement immediately. Unlike [[record]], it does not return a `ZIO`.
+   *
+   * @param value
+   *   measurement value
+   * @param attributes
+   *   set of attributes to associate with the value
+   */
   def record0(value: A, attributes: Attributes = Attributes.empty): Unit
 
   /**
@@ -27,6 +35,9 @@ trait ObservableMeasurement[-A] {
 
 }
 
+/**
+ * Constructors for [[ObservableMeasurement]].
+ */
 object ObservableMeasurement {
 
   private[metrics] def long(om: api.metrics.ObservableLongMeasurement): ObservableMeasurement[Long] =

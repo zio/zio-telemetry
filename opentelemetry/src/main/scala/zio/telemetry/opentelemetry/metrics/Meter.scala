@@ -6,6 +6,8 @@ import zio.telemetry.opentelemetry.metrics.internal.Instrument
 /**
  * Provides instruments used to record measurements which are aggregated to metrics.
  *
+ * Use [[zio.telemetry.opentelemetry.OpenTelemetry.metrics]] to create an instance.
+ *
  * @see
  *   <a
  *   href="https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/supplementary-guidelines.md#instrument-selection">Instrument
@@ -49,6 +51,18 @@ trait Meter {
     description: Option[String] = None
   )(implicit trace: Trace): UIO[Counter[Double]]
 
+  /**
+   * Deprecated: use [[counterLong]] instead. Constructs a Counter instrument for Long values.
+   *
+   * @param name
+   *   the name of the instrument. Instrument names must consist of 255 or fewer characters including alphanumeric, _,
+   *   ., -, and start with a letter
+   * @param unit
+   *   instrument units must be 63 or fewer ASCII characters
+   * @param description
+   *   description is an optional free-form text provided by the author of the instrument. The API MUST treat it as an
+   *   opaque string
+   */
   @deprecated("Use counterLong instead", "3.1.23")
   def counter(
     name: String,
@@ -94,11 +108,11 @@ trait Meter {
   )(implicit trace: Trace): UIO[UpDownCounter[Double]]
 
   /**
-   * Constructs a UpDownCounter instrument.
+   * Deprecated: use [[upDownCounterLong]] instead. Constructs an UpDownCounter instrument for Long values.
    *
    * @param name
-   *   the name of the Counter. Instrument names must consist of 255 or fewer characters including alphanumeric, _, .,
-   *   -, and start with a letter
+   *   the name of the instrument. Instrument names must consist of 255 or fewer characters including alphanumeric, _,
+   *   ., -, and start with a letter
    * @param unit
    *   instrument units must be 63 or fewer ASCII characters
    * @param description
@@ -156,11 +170,11 @@ trait Meter {
   )(implicit trace: Trace): UIO[Histogram[Double]]
 
   /**
-   * Constructs a Historgram instrument.
+   * Deprecated: use [[histogramDouble]] instead. Constructs a Histogram instrument for Double values.
    *
    * @param name
-   *   the name of the Counter. Instrument names must consist of 255 or fewer characters including alphanumeric, _, .,
-   *   -, and start with a letter
+   *   the name of the instrument. Instrument names must consist of 255 or fewer characters including alphanumeric, _,
+   *   ., -, and start with a letter
    * @param unit
    *   instrument units must be 63 or fewer ASCII characters
    * @param description
@@ -257,11 +271,12 @@ trait Meter {
   )(callback: ObservableMeasurement[Double] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit]
 
   /**
-   * Builds an Asynchronous Counter instrument with the given callback.
+   * Deprecated: use [[observableCounterLong]] instead. Builds an asynchronous Counter instrument for Long values with
+   * the given callback.
    *
    * @param name
-   *   the name of the Counter. Instrument names must consist of 255 or fewer characters including alphanumeric, _, .,
-   *   -, and start with a letter
+   *   the name of the instrument. Instrument names must consist of 255 or fewer characters including alphanumeric, _,
+   *   ., -, and start with a letter
    * @param unit
    *   instrument units must be 63 or fewer ASCII characters
    * @param description
@@ -321,11 +336,12 @@ trait Meter {
   )(callback: ObservableMeasurement[Double] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit]
 
   /**
-   * Builds an Asynchronous UpDownCounter instrument with the given callback.
+   * Deprecated: use [[observableUpDownCounterLong]] instead. Builds an asynchronous UpDownCounter instrument for Long
+   * values with the given callback.
    *
    * @param name
-   *   the name of the Counter. Instrument names must consist of 255 or fewer characters including alphanumeric, _, .,
-   *   -, and start with a letter
+   *   the name of the instrument. Instrument names must consist of 255 or fewer characters including alphanumeric, _,
+   *   ., -, and start with a letter
    * @param unit
    *   instrument units must be 63 or fewer ASCII characters
    * @param description
@@ -385,11 +401,12 @@ trait Meter {
   )(callback: ObservableMeasurement[Double] => Task[Unit])(implicit trace: Trace): RIO[Scope, Unit]
 
   /**
-   * Builds an Asynchronous Gauge instrument with the given callback.
+   * Deprecated: use [[observableGaugeDouble]] instead. Builds an asynchronous Gauge instrument for Double values with
+   * the given callback.
    *
    * @param name
-   *   the name of the Counter. Instrument names must consist of 255 or fewer characters including alphanumeric, _, .,
-   *   -, and start with a letter
+   *   the name of the instrument. Instrument names must consist of 255 or fewer characters including alphanumeric, _,
+   *   ., -, and start with a letter
    * @param unit
    *   instrument units must be 63 or fewer ASCII characters
    * @param description
@@ -408,8 +425,15 @@ trait Meter {
 
 }
 
+/**
+ * Constructors for [[Meter]].
+ */
 object Meter {
 
+  /**
+   * Creates a [[Meter]] layer that builds its instruments with the
+   * [[zio.telemetry.opentelemetry.metrics.internal.Instrument.Builder]] from the environment.
+   */
   def live: URLayer[Instrument.Builder, Meter] =
     ZLayer(
       for {

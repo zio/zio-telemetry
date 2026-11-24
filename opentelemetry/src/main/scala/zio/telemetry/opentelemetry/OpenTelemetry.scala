@@ -18,7 +18,8 @@ object OpenTelemetry {
   /**
    * A global singleton for the entrypoint to telemetry functionality for tracing, metrics, logging and baggage. Should
    * be used with <a href="https://opentelemetry.io/docs/instrumentation/java/automatic/agent-config/">SDK
-   * Autoconfiguration</a> module and/or <a href="">Automatic instrumentation</a> Java agent.
+   * Autoconfiguration</a> module and/or <a
+   * href="https://opentelemetry.io/docs/instrumentation/java/automatic/">Automatic instrumentation</a> Java agent.
    *
    * @see
    *   <a href="https://zio.dev/zio-telemetry/opentelemetry/#usage-with-opentelemetry-automatic-instrumentation">Usage
@@ -40,6 +41,10 @@ object OpenTelemetry {
   def custom(zio: => ZIO[Scope, Throwable, api.OpenTelemetry]): TaskLayer[api.OpenTelemetry] =
     ZLayer.scoped(zio)
 
+  /**
+   * Provides a no-op instance of OpenTelemetry. Spans, metrics and logs that are sent to it are discarded. Use it when
+   * telemetry should be switched off.
+   */
   val noop: ULayer[api.OpenTelemetry] =
     ZLayer.succeed(api.OpenTelemetry.noop())
 
@@ -53,6 +58,9 @@ object OpenTelemetry {
    *   version of the instrumentation scope (e.g., "1.0.0")
    * @param schemaUrl
    *   schema URL
+   * @param logAnnotated
+   *   when `true`, ZIO log annotations are added as attributes of each span that is created. Attributes given to the
+   *   span take precedence over annotations with the same key.
    */
   def tracing(
     instrumentationScopeName: String,
@@ -84,6 +92,10 @@ object OpenTelemetry {
    *   version of the instrumentation scope (e.g., "1.0.0")
    * @param schemaUrl
    *   schema URL
+   * @param logAnnotated
+   *   when `true`, ZIO log annotations are added as attributes of each measurement recorded by a synchronous
+   *   instrument. Observable instruments do not add them. Attributes given to the measurement take precedence over
+   *   annotations with the same key.
    */
   def metrics(
     instrumentationScopeName: String,
@@ -136,7 +148,8 @@ object OpenTelemetry {
    *   name uniquely identifying the instrumentation scope, such as the instrumentation library, package, or fully
    *   qualified class name
    * @param logLevel
-   *   configures the logger to propagate the log records only when the log level is more than specified
+   *   the lowest severity that is propagated. Log records at this level or above are sent to OpenTelemetry; records
+   *   below it are not sent to OpenTelemetry
    */
   def logging(
     instrumentationScopeName: String,

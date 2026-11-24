@@ -13,6 +13,9 @@ import scala.collection.mutable
  */
 trait OutgoingContextCarrier[T] extends ContextCarrier[T] with TextMapSetter[T]
 
+/**
+ * Constructors for [[OutgoingContextCarrier]].
+ */
 object OutgoingContextCarrier {
 
   /**

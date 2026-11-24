@@ -6,8 +6,15 @@ import zio._
 import zio.logging.LogFormat
 import zio.telemetry.opentelemetry.context.ContextStorage
 
+/**
+ * Entry point for the OpenTelemetry integration with ZIO Logging.
+ */
 object ZioLogging {
 
+  /**
+   * Creates [[LogFormats]] that read the trace ID and the span ID from the span that is current when the log line is
+   * written, using the given [[zio.telemetry.opentelemetry.context.ContextStorage]].
+   */
   def logFormats: ZLayer[ContextStorage, Nothing, LogFormats] = ZLayer {
     for {
       ctxStorage <- ZIO.service[ContextStorage]

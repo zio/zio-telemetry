@@ -8,16 +8,37 @@ import zio._
  */
 sealed trait ContextStorage {
 
+  /**
+   * Returns the current OpenTelemetry `Context`.
+   */
   def get(implicit trace: Trace): UIO[Context]
 
+  /**
+   * Makes `context` the current `Context`. With [[OpenTelemetry.contextZIO]] the change is visible to the current
+   * fiber; with [[OpenTelemetry.contextJVM]] it changes the thread-local `Context`.
+   */
   def set(context: Context)(implicit trace: Trace): UIO[Unit]
 
+  /**
+   * Makes `context` the current `Context` and returns the `Context` that was current before.
+   */
   def getAndSet(context: Context)(implicit trace: Trace): UIO[Context]
 
+  /**
+   * Replaces the current `Context` with the result of `f` applied to it, and returns the new `Context`.
+   */
   def updateAndGet(f: Context => Context)(implicit trace: Trace): UIO[Context]
 
+  /**
+   * Runs `zio` with `context` as the current `Context`. The previous `Context` is restored when `zio` finishes, whether
+   * it succeeds or fails.
+   */
   def locally[R, E, A](context: Context)(zio: ZIO[R, E, A])(implicit trace: Trace): ZIO[R, E, A]
 
+  /**
+   * Makes `context` the current `Context` until the `Scope` closes. The previous `Context` is restored when the scope
+   * is closed.
+   */
   def locallyScoped(context: Context)(implicit trace: Trace): ZIO[Scope, Nothing, Unit]
 }
 

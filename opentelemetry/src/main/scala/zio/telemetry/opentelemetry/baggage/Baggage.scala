@@ -8,19 +8,23 @@ import zio.telemetry.opentelemetry.context.{ContextStorage, IncomingContextCarri
 
 import scala.jdk.CollectionConverters._
 
+/**
+ * Reads and writes baggage entries. A baggage entry has a name, a value and optional metadata. The entries are stored
+ * in the `Context` held by the [[zio.telemetry.opentelemetry.context.ContextStorage]].
+ *
+ * Use [[Baggage.live]] or [[zio.telemetry.opentelemetry.OpenTelemetry.baggage]] to create an instance.
+ */
 trait Baggage { self =>
 
   /**
-   * Extracts the baggage data from carrier `C` into the current context.
+   * Extracts the baggage from `carrier` with `propagator` and stores it in the current `Context`.
    *
    * @param propagator
    *   implementation of [[zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator]]
    * @param carrier
-   *   mutable data from which the parent span is extracted
-   * @param trace
+   *   mutable data from which the baggage is extracted
    * @tparam C
    *   carrier
-   * @return
    */
   def extract[C](
     propagator: BaggagePropagator,
@@ -28,51 +32,37 @@ trait Baggage { self =>
   )(implicit trace: Trace): UIO[Unit]
 
   /**
-   * Gets the value by a given name.
+   * Gets the value of the baggage entry `name`, or `None` when there is no such entry.
    *
    * @param name
-   * @param trace
-   * @return
-   *   value
+   *   name of the entry
    */
   def get(name: String)(implicit trace: Trace): UIO[Option[String]]
 
   /**
-   * Gets all values.
-   *
-   * @param trace
-   * @return
-   *   all values
+   * Gets the value of every baggage entry, keyed by name.
    */
   def getAll(implicit trace: Trace): UIO[Map[String, String]]
 
   /**
-   * Gets all values accompanied by metadata.
-   *
-   * @param trace
-   * @return
+   * Gets every baggage entry as a pair of its value and the value of its metadata, keyed by name.
    */
   def getAllWithMetadata(implicit trace: Trace): UIO[Map[String, (String, String)]]
 
   /**
-   * Gets the baggage from current context.
-   *
-   * @param trace
-   * @return
+   * Gets the OpenTelemetry `Baggage` of the current `Context`.
    */
   def getCurrentBaggageUnsafe(implicit trace: Trace): UIO[Baggaje]
 
   /**
-   * Injects the baggage data from the current context into carrier `C`.
+   * Writes the baggage of the current `Context` into `carrier` with `propagator`.
    *
    * @param propagator
    *   implementation of [[zio.telemetry.opentelemetry.baggage.propagation.BaggagePropagator]]
    * @param carrier
-   *   mutable data from which the parent span is extracted
-   * @param trace
+   *   mutable data into which the baggage is injected
    * @tparam C
    *   carrier
-   * @return
    */
   def inject[C](
     propagator: BaggagePropagator,
@@ -80,40 +70,53 @@ trait Baggage { self =>
   )(implicit trace: Trace): UIO[Unit]
 
   /**
-   * Removes the name/value by a given name.
+   * Removes the baggage entry `name` from the current `Context`.
    *
    * @param name
-   * @param trace
-   * @return
+   *   name of the entry
    */
   def remove(name: String)(implicit trace: Trace): UIO[Unit]
 
   /**
-   * Sets the new value for a given name.
+   * Sets the value of the baggage entry `name`, replacing any previous value. The entry is stored without metadata.
    *
    * @param name
+   *   name of the entry
    * @param value
-   * @param trace
-   * @return
+   *   value of the entry
    */
   def set(name: String, value: String)(implicit trace: Trace): UIO[Unit]
 
   /**
-   * Sets the new value and metadata for a given name.
+   * Sets the value and the metadata of the baggage entry `name`, replacing any previous entry.
    *
    * @param name
+   *   name of the entry
    * @param value
+   *   value of the entry
    * @param metadata
-   *   opaque string
-   * @param trace
-   * @return
+   *   opaque string stored with the entry
    */
   def setWithMetadata(name: String, value: String, metadata: String)(implicit trace: Trace): UIO[Unit]
 
 }
 
+/**
+ * Constructors for [[Baggage]].
+ */
 object Baggage {
 
+  /**
+   * Creates a [[Baggage]] that stores its entries in the `Context` held by the
+   * [[zio.telemetry.opentelemetry.context.ContextStorage]].
+   *
+   * When `logAnnotated` is `true`, each operation first copies the ZIO log annotations into the baggage, with the
+   * metadata `zio log annotation`. Baggage entries that already exist take precedence over log annotations with the
+   * same name.
+   *
+   * @param logAnnotated
+   *   propagate ZIO log annotations as baggage entries when `true`
+   */
   def live(logAnnotated: Boolean = false): URLayer[ContextStorage, Baggage] =
     ZLayer {
       for {
